@@ -1,0 +1,764 @@
+* {
+  box-sizing: border-box;
+}
+
+body, html {
+  margin: 0;
+  padding: 0;
+}
+
+/* ====== Layout principal ====== */
+.app-layout {
+  display: flex;
+  flex-direction: row; 
+  min-height: 90vh;
+}
+
+/* ====== Sidebar vertical por defecto ====== */
+.sidebar {
+  background-color: #257d93;
+  color: #fff;
+  padding: 1rem;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column; 
+}
+
+.sidebar ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column; 
+  flex: 1;
+}
+
+.sidebar li {
+  margin-bottom: 1rem;
+}
+
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #dcdcdc;
+  text-decoration: none;
+}
+
+.sidebar-logo {
+  display: flex;
+  flex-direction: column; 
+  align-items: center;
+  font-size: 1.6rem;
+  font-weight: bold;
+  color: #f1f1f1;
+  text-decoration: none;
+  margin-bottom: 2rem;
+}
+
+.logo-icon {
+  font-size: 2rem;
+  margin-bottom: 0.3rem;
+}
+
+.logo-text {
+  font-size: 1.2rem;
+}
+
+/* ====== Logout ====== */
+.logout-section {
+  margin-top: auto;
+}
+
+.logout-button {
+  width: 100%;
+  background: darkred;
+  color: white;
+  border: none;
+  padding: 0.5rem;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.logout-button:hover {
+  background: #c0392b;
+}
+
+
+/* ====== Responsive solo en móviles ====== */
+@media (max-width: 400px) {
+  .app-layout {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    flex-direction: row;
+    width: 100%;
+    min-height: auto;
+    justify-content: space-around;
+  }
+
+  .sidebar ul {
+    flex-direction: row; 
+    gap: 1rem;
+  }
+
+  .sidebar li {
+    margin-bottom: 0;
+  }
+}
+
+/* ====== Attendance Page ====== */
+.attendance-page {
+  padding: 1rem;
+}
+
+.attendance-page h2 {
+  font-size: 1.2rem;
+  color: #2c3e50;
+}
+
+.attendance-page form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.attendance-page select,
+.attendance-page input[type="date"] {
+  padding: 0.2rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
+.attendance-page button {
+  grid-column: span 2;
+  padding: 0.5rem 0.5rem;
+  background-color: #257d93;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.attendance-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.5rem;
+}
+
+.attendance-table th,
+.attendance-table td {
+  border: 1px solid #ddd;
+}
+
+.attendance-table th {
+  background-color: #257d93;
+  color: white;
+}
+
+.attendance-report li {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+/* ====== Courses Page ====== */
+.courses-page {
+  padding: 1rem;
+}
+
+.courses-page h2 {
+  font-size: 1.2rem;
+  color: #2c3e50;
+}
+
+/* ====== Formulario ====== */
+.course-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.course-form input,
+.course-form select {
+  padding: 0.2rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
+.course-form button {
+  grid-column: span 2;
+  padding: 0.5rem 0.5rem;
+  background-color: #257d93;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+/* ====== Tabla ====== */
+.courses-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.5rem;
+}
+
+.courses-table th,
+.courses-table td {
+  border: 1px solid #ddd;
+}
+
+.courses-table th {
+  background-color: #257d93;
+  color: white;
+}
+
+.courses-table button {
+  margin-right: 0.5rem;
+  padding: 0.3rem 0.6rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.courses-table button:first-child {
+  background-color: darkgreen;
+  color: white;
+}
+
+.courses-table button:last-child {
+  background-color: darkred;
+  color: white;
+}
+
+.courses-table button:hover {
+  opacity: 0.85;
+}
+
+/* ====== Students Page ====== */
+.students-page {
+  padding: 1rem;
+}
+
+.students-page h2 {
+  font-size: 1.2rem;
+  color: #2c3e50;
+}
+
+/* Formulario */
+.student-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.student-form input {
+  padding: 0.2rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
+.student-form button {
+  grid-column: span 2;
+  padding: 0.5rem;
+  background-color: #257d93;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+/* Tabla */
+.students-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.5rem;
+}
+
+.students-table th,
+.students-table td {
+  border: 1px solid #ddd;
+}
+
+.students-table th {
+  background-color: #257d93;
+  color: white;
+}
+
+.students-table button {
+  margin-right: 0.5rem;
+  padding: 0.3rem 0.6rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.students-table button:first-child {
+  background-color: darkgreen;
+  color: white;
+}
+
+.students-table button:last-child {
+  background-color: darkred;
+  color: white;
+}
+
+.students-table button:hover {
+  opacity: 0.85;
+}
+
+/* Info personal para estudiante */
+.student-info {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+/* ====== Teachers Page ====== */
+.teachers-page {
+  padding: 1rem;
+}
+
+.teachers-page h2 {
+  font-size: 1.2rem;
+  color: #2c3e50;
+}
+
+/* Formulario */
+.teacher-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.teacher-form input {
+  padding: 0.2rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
+.teacher-form button {
+  grid-column: span 2;
+  padding: 0.5rem;
+  background-color: #257d93;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+/* Tabla */
+.teachers-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.5rem;
+}
+
+.teachers-table th,
+.teachers-table td {
+  border: 1px solid #ddd;
+}
+
+.teachers-table th {
+  background-color: #257d93;
+  color: white;
+}
+
+.teachers-table button {
+  margin-right: 0.5rem;
+  padding: 0.3rem 0.6rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.teachers-table button:first-child {
+  background-color: darkgreen;
+  color: white;
+}
+
+.teachers-table button:last-child {
+  background-color: darkred;
+  color: white;
+}
+
+.teachers-table button:hover {
+  opacity: 0.85;
+}
+
+/* Info personal para teacher */
+.teacher-info {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+/* ====== Enrollments Page ====== */
+.enrollments-page {
+  padding: 1rem;
+}
+
+.enrollments-page h2 {
+  font-size: 1.2rem;
+  color: #2c3e50;
+}
+
+.enrollment-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.enrollment-form select {
+  padding: 0.2rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
+.enrollment-form button {
+  grid-column: span 2;
+  padding: 0.5rem;
+  background-color: #257d93;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.enrollments-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.5rem;
+}
+
+.enrollments-table th,
+.enrollments-table td {
+  border: 1px solid #ddd;
+}
+
+.enrollments-table th {
+  background-color: #257d93;
+  color: white;
+}
+
+.enrollments-table button {
+  margin-right: 0.5rem;
+  padding: 0.3rem 0.6rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.enrollments-table button:first-child {
+  background-color: darkgreen;
+  color: white;
+}
+
+.enrollments-table button:last-child {
+  background-color: darkred;
+  color: white;
+}
+
+.enrollments-table button:hover {
+  opacity: 0.85;
+}
+
+.enrollment-report li {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+/* ====== Dashboard Page ====== */
+.dashboard-page {
+  padding: 1rem;
+}
+
+.dashboard-title {
+  font-size: 1.5rem;
+  color: #2c3e50;
+  margin-bottom: 0.5rem;
+}
+
+.dashboard-subtitle {
+  font-size: 1rem;
+  color: #7f8c8d;
+  margin-bottom: 1rem;
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.5em;
+}
+
+.card {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  text-align: center;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.card h2 {
+  font-size: 1rem;
+  color: #257d93;
+  margin-bottom: 0.5rem;
+}
+
+.card p {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #2c3e50;
+}
+
+/* ====== Login Page ====== */
+.auth-container {
+  max-width: 360px;
+  margin: 2rem auto;
+  padding: 1rem;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  text-align: center;
+}
+
+.auth-container h2 {
+  font-size: 1rem;
+  color: #2c3e50;
+  margin-bottom: 1.2rem;
+}
+
+.auth-container form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.auth-container input {
+  padding: 0.3rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 1rem;
+}
+
+.auth-container input:focus {
+  border-color: #257d93;
+  outline: none;
+  box-shadow: 0 0 4px rgba(37,125,147,0.3);
+}
+
+.auth-container button {
+  padding: 0.6rem;
+  background-color: #257d93;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.auth-container button:hover {
+  background-color: #1abc9c;
+  transform: scale(1.03);
+}
+
+.error {
+  margin-top: 1rem;
+  color: darkred;
+  font-size: 0.9rem;
+}
+
+/* ====== Home Page ====== */
+.home-container {
+  max-width: 600px;
+  margin: 5rem auto;
+  padding: 2rem;
+  text-align: center;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.home-container h1 {
+  font-size: 1.8rem;
+  color: #2c3e50;
+  margin-bottom: 1rem;
+}
+
+.home-container p {
+  font-size: 1rem;
+  color: #7f8c8d;
+  margin-bottom: 2rem;
+}
+
+/* Botones de autenticación */
+.auth-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.auth-buttons button {
+  padding: 0.7rem 1.2rem;
+  background-color: #257d93;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.auth-buttons button:hover {
+  background-color: #1abc9c;
+  transform: scale(1.05);
+}
+
+/* ====== Sign up Page ====== */
+.auth-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.auth-buttons button {
+  padding: 0.6rem 1.2rem;
+  border: none;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.auth-buttons button[type="submit"] {
+  background-color: #257d93;
+  color: white;
+}
+
+.auth-buttons button[type="submit"]:hover {
+  background-color: #1abc9c;
+  transform: scale(1.05);
+}
+
+.cancel-button {
+  background-color: darkred;
+  color: white;
+}
+
+.cancel-button:hover {
+  background-color: #c0392b;
+  transform: scale(1.05);
+}
+
+/* ====== User Page ====== */
+.user-page {
+  padding: 1rem;
+}
+
+.user-page h2 {
+  font-size: 1.4rem;
+  color: #2c3e50;
+  margin-bottom: 1rem;
+}
+
+.user-page h3 {
+  font-size: 1.1rem;
+  color: #257d93;
+  margin-bottom: 0.75rem;
+}
+
+/* Botón crear usuario */
+.user-page button {
+  padding: 0.5rem 1rem;
+  margin: 0.25rem;
+  border: none;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.user-page button:hover {
+  transform: scale(1.05);
+}
+
+/* Tabla de usuarios */
+.users-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+}
+
+.users-table th,
+.users-table td {
+  border: 1px solid #ddd;
+  padding: 0.3rem;
+  text-align: left;
+}
+
+.users-table th {
+  background-color: #257d93;
+  color: white;
+}
+
+.users-table tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+/* Botones de acción */
+.edit-button {
+  background-color: darkgreen;
+  color: white;
+}
+
+.edit-button:hover {
+  background-color: #e67e22;
+}
+
+.delete-button {
+  background-color: darkred;
+  color: white;
+}
+
+.delete-button:hover {
+  background-color: #c0392b;
+}
+
+/* Perfil personal */
+.profile-info {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 1rem;
+  margin-top: 1rem;
+}
+
+.profile-info p {
+  margin: 0.5rem 0;
+  color: #2c3e50;
+}
