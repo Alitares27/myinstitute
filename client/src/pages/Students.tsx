@@ -64,22 +64,22 @@ export default function Students() {
   return (
     <Layout>
       <div className="students-page">
-        <h2>👨‍🎓 Students</h2>
+        <h2>👨‍🎓 Estudiantes</h2>
 
         {role === "admin" && (
           <form onSubmit={handleSubmit} className="student-form">
             <input
-              placeholder="Name"
+              placeholder="Nombre"
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
             />
             <input
-              placeholder="Grade"
+              placeholder="Grado"
               value={form.grade}
               onChange={(e) => setForm({ ...form, grade: e.target.value })}
             />
             <button type="submit">
-              {form.id ? "Update Student" : "Add Student"}
+              {form.id ? "Actualizar Estudiante" : "Agregar Estudiante"}
             </button>
           </form>
         )}
@@ -91,8 +91,7 @@ export default function Students() {
                 <th>Nombre</th>
                 <th>Email</th>
                 <th>Teléfono</th>
-                <th>Rol</th>
-                <th>Grado</th>
+                <th>Organización</th>
               </tr>
             </thead>
 
@@ -102,7 +101,6 @@ export default function Students() {
                   <td>{s.name}</td>
                   <td>{s.email}</td>
                   <td>{s.telefono}</td>
-                  <td>{s.role}</td>
                   <td>{s.grade}</td>
                 </tr>
               ))}
@@ -112,8 +110,8 @@ export default function Students() {
         ) : (
           filteredStudents.map((s) => (
             <div key={s.id} className="student-info">
-              <p><strong>Name:</strong> {s.name}</p>
-              <p><strong>Grade:</strong> {s.grade}</p>
+              <p><strong>Nombre:</strong> {s.name}</p>
+              <p><strong>Grado:</strong> {s.grade}</p>
             </div>
           ))
         )}

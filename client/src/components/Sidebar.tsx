@@ -30,7 +30,7 @@ function Sidebar() {
               <div className="icon-circle">
                 <FaUserGraduate className="icon" />
               </div>
-              <span>Students</span>
+              <span>Estudiantes</span>
             </Link>
           </li>
           <li>
@@ -38,7 +38,7 @@ function Sidebar() {
               <div className="icon-circle">
                 <FaChalkboardTeacher className="icon" />
               </div>
-              <span>Teachers</span>
+              <span>Maestros</span>
             </Link>
           </li>
           <li>
@@ -46,7 +46,7 @@ function Sidebar() {
               <div className="icon-circle">
                 <FaClipboardList className="icon" />
               </div>
-              <span>Enrollments</span>
+              <span>Matrículas</span>
             </Link>
           </li>
           <li>
@@ -54,7 +54,7 @@ function Sidebar() {
               <div className="icon-circle">
                 <FaBookOpen className="icon" />
               </div>
-              <span>Courses</span>
+              <span>Cursos</span>
             </Link>
           </li>
           <li>
@@ -62,7 +62,7 @@ function Sidebar() {
               <div className="icon-circle">
                 <FaCalendarCheck className="icon" />
               </div>
-              <span>Attendance</span>
+              <span>Asistencia</span>
             </Link>
           </li>
           <li>
@@ -70,7 +70,7 @@ function Sidebar() {
               <div className="icon-circle">
                 <FaUser className="icon" />
               </div>
-              <span>Users</span>
+              <span>Usuarios</span>
             </Link>
           </li>
         </ul>
@@ -78,7 +78,7 @@ function Sidebar() {
 
       <div className="logout-section">
         <button onClick={handleLogout} className="logout-button">
-          Logout
+          Cerrar Sesión
         </button>
       </div>
     </div>

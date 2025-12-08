@@ -64,22 +64,22 @@ export default function Teachers() {
   return (
     <Layout>
       <div className="teachers-page">
-        <h2>👨‍🏫 Teachers</h2>
+        <h2>👨‍🏫 Maestros</h2>
 
         {role === "admin" && (
           <form onSubmit={handleSubmit} className="teacher-form">
             <input
-              placeholder="User ID"
+              placeholder="ID Usuario"
               value={form.user_id}
               onChange={(e) => setForm({ ...form, user_id: e.target.value })}
             />
             <input
-              placeholder="Specialty"
+              placeholder="Especialidad"
               value={form.specialty}
               onChange={(e) => setForm({ ...form, specialty: e.target.value })}
             />
             <button type="submit">
-              {form.id ? "Update Teacher" : "Add Teacher"}
+              {form.id ? "Actualizar Maestro" : "Agregar Maestro"}
             </button>
           </form>
         )}
@@ -88,10 +88,10 @@ export default function Teachers() {
           <table className="teachers-table">
             <thead>
               <tr>
-                <th>Name</th>
+                <th>Nombre</th>
                 <th>Email</th>
-                <th>Specialty</th>
-                <th>Actions</th>
+                <th>Especialidad</th>
+                <th>Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -101,8 +101,8 @@ export default function Teachers() {
                   <td>{t.email}</td>
                   <td>{t.specialty}</td>
                   <td>
-                    <button onClick={() => handleEdit(t)}>Edit</button>
-                    <button onClick={() => handleDelete(t.id)}>Delete</button>
+                    <button onClick={() => handleEdit(t)}>Editar</button>
+                    <button onClick={() => handleDelete(t.id)}>Eliminar</button>
                   </td>
                 </tr>
               ))}
@@ -111,9 +111,9 @@ export default function Teachers() {
         ) : (
           filteredTeachers.map((t) => (
             <div key={t.id} className="teacher-info">
-              <p><strong>Name:</strong> {t.name}</p>
+              <p><strong>Nombre:</strong> {t.name}</p>
               <p><strong>Email:</strong> {t.email}</p>
-              <p><strong>Specialty:</strong> {t.specialty}</p>
+              <p><strong>Especialidad:</strong> {t.specialty}</p>
             </div>
           ))
         )}

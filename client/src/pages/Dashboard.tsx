@@ -60,19 +60,19 @@ function Dashboard() {
         {/* Tarjetas de estadísticas */}
         <div className="cards">
           <div className="card">
-            <h2>Students</h2>
+            <h2>Estudiantes</h2>
             <p>{stats.students}</p>
           </div>
           <div className="card">
-            <h2>Teachers</h2>
+            <h2>Maestros</h2>
             <p>{stats.teachers}</p>
           </div>
           <div className="card">
-            <h2>Courses</h2>
+            <h2>Cursos</h2>
             <p>{stats.courses}</p>
           </div>
           <div className="card">
-            <h2>Enrollments</h2>
+            <h2>Matriculas</h2>
             <p>{stats.enrollments}</p>
           </div>
         </div>

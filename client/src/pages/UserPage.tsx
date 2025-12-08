@@ -109,7 +109,7 @@ function UserPage() {
     }
   };
 
-  if (loading) return <Layout><p>Loading...</p></Layout>;
+  if (loading) return <Layout><p>Cargando...</p></Layout>;
   if (error) return <Layout><p>{error}</p></Layout>;
   if (!currentUser) return <Layout><p>No se encontró usuario</p></Layout>;
 
@@ -124,7 +124,7 @@ function UserPage() {
 
             <div className="user-form">
               <input
-                placeholder="Name"
+                placeholder="Nombre"
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
               />
@@ -134,7 +134,7 @@ function UserPage() {
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
               />
               <input
-                placeholder="Password"
+                placeholder="Contraseña"
                 type="password"
                 value={form.password}
                 onChange={(e) => setForm({ ...form, password: e.target.value })}
@@ -149,8 +149,8 @@ function UserPage() {
                 value={form.role}
                 onChange={(e) => setForm({ ...form, role: e.target.value })}
               >
-                <option value="student">Student</option>
-                <option value="teacher">Teacher</option>
+                <option value="student">Estudiante</option>
+                <option value="teacher">Maestro</option>
                 <option value="admin">Admin</option>
               </select>
 

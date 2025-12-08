@@ -102,7 +102,7 @@ export default function Attendance() {
   return (
     <Layout>
       <div className="attendance-page">
-        <h2>📅 Attendance</h2>
+        <h2>📅 Asistencia</h2>
 
         {role === "admin" && (
           <>
@@ -111,7 +111,7 @@ export default function Attendance() {
                 value={form.student_id}
                 onChange={(e) => setForm({ ...form, student_id: e.target.value })}
               >
-                <option value="">Select Student</option>
+                <option value="">Elegir Estudiante</option>
                 {students.map((s) => (
                   <option key={s.id} value={s.id}>
                     {s.name}
@@ -123,7 +123,7 @@ export default function Attendance() {
                 value={form.course_id}
                 onChange={(e) => setForm({ ...form, course_id: e.target.value })}
               >
-                <option value="">Select Course</option>
+                <option value="">Elegir Curso</option>
                 {courses.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.title}
@@ -141,11 +141,11 @@ export default function Attendance() {
                 value={form.status}
                 onChange={(e) => setForm({ ...form, status: e.target.value })}
               >
-                <option value="present">Present</option>
-                <option value="absent">Absent</option>
+                <option value="Present">Presente</option>
+                <option value="Absent">Ausente</option>
               </select>
 
-              <button type="submit">Mark Attendance</button>
+              <button type="submit">Marcar Asistencia</button>
             </form>
 
             <div className="attendance-filter">
@@ -172,10 +172,10 @@ export default function Attendance() {
           <table className="attendance-table">
             <thead>
               <tr>
-                <th>Student</th>
-                <th>Course</th>
-                <th>Date</th>
-                <th>Status</th>
+                <th>Estudiante</th>
+                <th>Curso</th>
+                <th>Fecha</th>
+                <th>Estado</th>
               </tr>
             </thead>
             <tbody>

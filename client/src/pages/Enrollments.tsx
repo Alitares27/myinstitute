@@ -82,7 +82,7 @@ export default function Enrollments() {
   return (
     <Layout>
       <div className="enrollments-page">
-        <h2>📝 Enrollments</h2>
+        <h2>📝 Matrículas</h2>
 
         {role === "admin" && (
           <form onSubmit={handleSubmit} className="enrollment-form">
@@ -90,7 +90,7 @@ export default function Enrollments() {
               value={form.student_id}
               onChange={(e) => setForm({ ...form, student_id: e.target.value })}
             >
-              <option value="">Select Student</option>
+              <option value="">Elegir Estudiante</option>
               {students.map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.name}
@@ -102,7 +102,7 @@ export default function Enrollments() {
               value={form.course_id}
               onChange={(e) => setForm({ ...form, course_id: e.target.value })}
             >
-              <option value="">Select Course</option>
+              <option value="">Elegir Curso</option>
               {courses.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.title}
@@ -111,7 +111,7 @@ export default function Enrollments() {
             </select>
 
             <button type="submit">
-              {form.id ? "Update Enrollment" : "Enroll Student"}
+              {form.id ? "Actualizar Matrícula" : "Matricular"}
             </button>
           </form>
         )}
@@ -120,9 +120,9 @@ export default function Enrollments() {
           <table className="enrollments-table">
             <thead>
               <tr>
-                <th>Student</th>
-                <th>Course</th>
-                <th>Actions</th>
+                <th>Estudiante</th>
+                <th>Curso</th>
+                <th>Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -146,7 +146,7 @@ export default function Enrollments() {
           </table>
         ) : (
           <div>
-            <h3>My Enrollments</h3>
+            <h3>Mis Matrículas</h3>
             <ul className="enrollment-report">
               {filteredEnrollments.map((en) => (
                 <li key={en.id}>
@@ -163,14 +163,14 @@ export default function Enrollments() {
                   setForm({ ...form, student_id: userId, course_id: e.target.value })
                 }
               >
-                <option value="">Select Course</option>
+                <option value="">Elegir Curso</option>
                 {courses.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.title}
                   </option>
                 ))}
               </select>
-              <button type="submit">Enroll Myself</button>
+              <button type="submit">Matricularme</button>
             </form>
           </div>
         )}

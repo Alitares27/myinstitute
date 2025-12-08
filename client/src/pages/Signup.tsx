@@ -26,11 +26,11 @@ export default function Signup() {
 
   return (
     <div className="auth-container">
-      <h2>📝 Sign Up</h2>
+      <h2>📝 Registrar</h2>
       <form onSubmit={handleSubmit}>
         <input
           type="text"
-          placeholder="Name"
+          placeholder="Nombre completo"
           value={form.name}
           onChange={(e) => setForm({ ...form, name: e.target.value })}
           required
@@ -44,7 +44,7 @@ export default function Signup() {
         />
         <input
           type="password"
-          placeholder="Password"
+          placeholder="Contraseña"
           value={form.password}
           onChange={(e) => setForm({ ...form, password: e.target.value })}
           required
@@ -60,12 +60,12 @@ export default function Signup() {
           value={form.role}
           onChange={(e) => setForm({ ...form, role: e.target.value })}
         >
-          <option value="student">Student</option>
-          <option value="teacher">Teacher</option>
+          <option value="Estudiante">Estudiante</option>
+          <option value="Maestro">Maestro</option>
         </select>
 
         <div className="auth-buttons">
-          <button type="submit">Sign Up</button>
+          <button type="submit">Registrar</button>
           <button type="button" className="cancel-button" onClick={() => navigate("/")}>
             Cancelar
           </button>

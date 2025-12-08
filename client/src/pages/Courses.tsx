@@ -73,12 +73,12 @@ export default function Courses() {
   return (
     <Layout>
       <div className="courses-page">
-        <h2>📚 Courses</h2>
+        <h2>📚 Cursos</h2>
 
         {role === "admin" && (
           <form onSubmit={handleSubmit} className="course-form">
             <input
-              placeholder="Title"
+              placeholder="Curso"
               value={form.title}
               onChange={(e) => setForm({ ...form, title: e.target.value })}
             />
@@ -86,7 +86,7 @@ export default function Courses() {
               value={form.teacher_id}
               onChange={(e) => setForm({ ...form, teacher_id: e.target.value })}
             >
-              <option value="">Select Teacher</option>
+              <option value="">Elegir Maestro</option>
               {teachers.map((t) => (
                 <option key={t.id} value={t.id}>
                   {t.name}
@@ -94,7 +94,7 @@ export default function Courses() {
               ))}
             </select>
             <button type="submit">
-              {form.id ? "Update Course" : "Add Course"}
+              {form.id ? "Actualizar" : "Agregar Curso"}
             </button>
           </form>
         )}
@@ -102,9 +102,9 @@ export default function Courses() {
         <table className="courses-table">
           <thead>
             <tr>
-              <th>Title</th>
-              <th>Teacher</th>
-              {role === "admin" && <th>Actions</th>}
+              <th>Titulo</th>
+              <th>Mestro</th>
+              {role === "admin" && <th>Acciones</th>}
             </tr>
           </thead>
           <tbody>
@@ -117,8 +117,8 @@ export default function Courses() {
                 </td>
                 {role === "admin" && (
                   <td>
-                    <button onClick={() => handleEdit(c)}>Edit</button>
-                    <button onClick={() => handleDelete(c.id)}>Delete</button>
+                    <button onClick={() => handleEdit(c)}>Editar</button>
+                    <button onClick={() => handleDelete(c.id)}>Eliminar</button>
                   </td>
                 )}
               </tr>
