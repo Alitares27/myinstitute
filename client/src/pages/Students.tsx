@@ -72,7 +72,7 @@ export default function Students() {
             onChange={(e) => setForm({ ...form, name: e.target.value })}
           />
           <input
-            placeholder="Grado"
+            placeholder="Organización"
             value={form.grade}
             onChange={(e) => setForm({ ...form, grade: e.target.value })}
           />

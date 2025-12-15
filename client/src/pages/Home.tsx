@@ -12,13 +12,47 @@ export default function Home() {
   }, [navigate]);
 
   return (
-    <div className="home-container">
-      <h1>🏫 Bienvenido a MyInstitute</h1>
-      <p>Por favor inicia sesión o regístrate para continuar</p>
-      <div className="auth-buttons">
-        <button onClick={() => navigate("/login")}>🔑 Iniciar Sesión</button>
-        <button onClick={() => navigate("/signup")}>📝 Registrarse</button>
+    <div className="page-container home-container">
+      <div className="home-hero">
+        <h1 className="home-title">🏫 Bienvenido a <span>MyInstitute</span></h1>
+        <p className="home-subtitle">
+          Tu plataforma académica para gestionar cursos, calificaciones y mucho más.
+        </p>
+        <div className="auth-buttons">
+          <button className="btn primary" onClick={() => navigate("/login")}>
+            🔑 Iniciar Sesión
+          </button>
+          <button className="btn secondary" onClick={() => navigate("/signup")}>
+            📝 Registrarse
+          </button>
+        </div>
       </div>
+
+      <div className="home-features">
+        <h2>✨ ¿Qué puedes hacer en MyInstitute?</h2>
+        <div className="features-grid">
+          <div className="feature-card">
+            <h3>📚 Cursos</h3>
+            <p>Accede a tus cursos y consulta toda la información en un solo lugar.</p>
+          </div>
+          <div className="feature-card">
+            <h3>📝 Calificaciones</h3>
+            <p>Revisa tus notas y mantente al día con tu progreso académico.</p>
+          </div>
+          <div className="feature-card">
+            <h3>👩‍🏫 Profesores</h3>
+            <p>Conéctate con tus docentes y recibe retroalimentación personalizada.</p>
+          </div>
+          <div className="feature-card">
+            <h3>📊 Dashboard</h3>
+            <p>Visualiza tu rendimiento y organiza tu aprendizaje de manera sencilla.</p>
+          </div>
+        </div>
+      </div>
+
+      <footer className="home-footer">
+        <p>© {new Date().getFullYear()} MyInstitute. Todos los derechos reservados.</p>
+      </footer>
     </div>
   );
 }

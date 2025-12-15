@@ -1,496 +1,508 @@
+/* =========================================
+   1. VARIABLES & CONFIGURACIÓN BASE
+   ========================================= */
 :root {
-    /* Paleta de colores */
-    --color-primary: #257d93; /* Azul principal (Sidebar, Botones, Th de tablas) */
-    --color-secondary: #1abc9c; /* Verde/Cian para hover */
-    --color-text-dark: #2c3e50; /* Texto oscuro/Títulos */
-    --color-text-light: #fff;
-    --color-text-muted: #7f8c8d; /* Texto secundario */
-    --color-background-light: #f4f4f4;
-    --color-border: #ddd;
-    --color-success: darkgreen;
-    --color-danger: darkred;
-    --color-warning: #ffc107;
+  --primary: #006184;         
+  --primary-hover: #004b66;
+  --secondary: #1abc9c;       
+  
+  --bg-body: #f4f6f8;         
+  --bg-surface: #ffffff;      
+  --bg-sidebar: #006184;      
+  
+  --text-main: #2c3e50;       
+  --text-muted: #6c757d;      
+  --text-light: #ffffff;
+  
+  --border-color: #e2e8f0;    
+  
+  /* Estados */
+  --danger: #e74c3c;
+  --success: #27ae60;
+  --warning: #f1c40f;
 
-    /* Tamaños de fuente */
-    --font-size-base: 1rem;
-    --font-size-large-title: 1.8rem;
-    --font-size-subtitle: 1.2rem;
-    --font-size-section-title: 1.2rem;
-    --font-size-card-text: 1.2rem;
-
-    /* Espaciado */
-    --spacing-xs: 0.2rem;
-    --spacing-sm: 0.5rem;
-    --spacing-md: 1rem;
-    --spacing-lg: 2rem;
-
-    /* Bordes y sombras */
-    --border-radius-base: 6px;
-    --shadow-base: 0 2px 8px rgba(0,0,0,0.08);
-    --shadow-card: 0 1px 3px rgba(0,0,0,0.05);
-    
-    /* Variables de Layout */
-    --sidebar-width: 200px;
+  /* Espaciado y Dimensiones */
+  --sidebar-width: 20%;
+  --header-height: 60px;
+  --radius: 8px;              
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  
+  /* Tipografía */
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
-/* === 1. Estilos Base y Reinicio === */
 * {
-    box-sizing: border-box;
+  box-sizing: border-box;
 }
 
 body, html {
-    margin: 0;
-    padding: 0;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    line-height: 1.6;
-    background-color: var(--color-background-light);
-    color: var(--color-text-dark);
-    /* CLAVE: Asegura 100% de altura para el layout Flexbox */
-    height: 100%; 
-    overflow: hidden; /* **CLAVE:** Evita el scroll en el body/html, el scroll lo manejará el main-content */
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  font-family: var(--font-sans);
+  background-color: var(--bg-body);
+  color: var(--text-main);
+  line-height: 1.6;
+  
 }
 
-/* === 2. Tipografía y Encabezados === */
-h1 {
-    font-size: var(--font-size-large-title);
-    color: var(--color-text-dark);
-}
-/* ... (Resto de la tipografía y formularios sin cambios) ... */
-h2 {
-    font-size: var(--font-size-section-title);
-    color: var(--color-text-dark);
-    margin-bottom: var(--spacing-sm);
-}
-
-h3 {
-    font-size: 1.1rem;
-    color: var(--color-primary);
-    margin-bottom: 0.75rem;
-}
-
-/* Estilo para los títulos de las páginas */
-.page-title {
-    font-size: var(--font-size-large-title);
-    font-weight: 600;
-    margin-bottom: 1.5rem;
-    color: #333;
-}
-
-
-/* === 3. Formularios, Inputs y Selects (Uniforme) === */
-input, select {
-    padding: var(--spacing-xs);
-    border: 1px solid var(--color-border);
-    border-radius: var(--border-radius-base);
-    font-size: var(--font-size-base);
-    width: 100%;
-}
-
-input:focus, select:focus {
-    border-color: var(--color-primary);
-    outline: none;
-    box-shadow: 0 0 4px rgba(37,125,147,0.3);
-}
-
-/* Estilos para contenedores de formulario que usan Grid */
-.grid-form {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: var(--spacing-sm);
-    margin-bottom: var(--spacing-md);
-}
-
-
-/* === 4. Botones (Uniforme) === */
-.btn-primary, button {
-    padding: 0.5rem 1rem;
-    background-color: var(--color-primary);
-    color: var(--color-text-light);
-    border: none;
-    border-radius: var(--border-radius-base);
-    font-weight: bold;
-    cursor: pointer;
-    transition: background-color 0.2s ease, transform 0.2s ease;
-}
-
-.btn-primary:hover, button:hover {
-    background-color: var(--color-secondary);
-    transform: scale(1.03);
-}
-
-/* Botones Específicos de Acción */
-.btn-success {
-    background-color: var(--color-success);
-    color: var(--color-text-light);
-}
-.btn-success:hover {
-    background-color: #155724;
-}
-
-.btn-danger {
-    background-color: var(--color-danger);
-    color: var(--color-text-light);
-}
-.btn-danger:hover {
-    background-color: #c0392b;
-}
-
-.btn-warning {
-    background-color: var(--color-warning);
-    color: var(--color-text-dark);
-}
-.btn-warning:hover {
-    background-color: #e0a800;
-}
-
-/* Botones de acción en tablas (más pequeños) */
-.data-table button,
-.courses-table button,
-.students-table button,
-.teachers-table button,
-.enrollments-table button {
-    padding: 0.3rem 0.6rem;
-    font-size: 0.85rem;
-    border-radius: 4px;
-    margin-right: var(--spacing-sm);
-}
-.data-table button:hover,
-.courses-table button:hover,
-.students-table button:hover,
-.teachers-table button:hover,
-.enrollments-table button:hover {
-    opacity: 0.85;
-    transform: none;
-}
-
-
-/* === 5. Tablas (Uniforme) === */
-.data-table,
-.attendance-table,
-.courses-table,
-.students-table,
-.teachers-table,
-.enrollments-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: var(--spacing-sm);
-}
-
-.data-table th, .data-table td,
-.attendance-table th, .attendance-table td,
-.courses-table th, .courses-table td,
-.students-table th, .students-table td,
-.teachers-table th, .teachers-table td,
-.enrollments-table th, .enrollments-table td {
-    border: 1px solid var(--color-border);
-    padding: 0.5rem 1rem;
-    text-align: left;
-}
-
-.data-table th,
-.attendance-table th,
-.courses-table th,
-.students-table th,
-.teachers-table th,
-.enrollments-table th {
-    background-color: var(--color-primary);
-    color: var(--color-text-light);
-    font-weight: 600;
-}
-
-.data-table tr:nth-child(even),
-.users-table tr:nth-child(even) {
-    background-color: #f9f9f9;
-}
-
-/* Estilo hover para filas */
-.data-table tr:hover {
-    background: #fafafa;
-}
-
-/* === 6. Contenedores de Página y Tarjetas === */
-.page-container {
-    max-width: 1200px;
-    margin: var(--spacing-lg) auto; 
-    padding: var(--spacing-lg);
-    background: var(--color-text-light);
-    border-radius: var(--border-radius-base);
-    box-shadow: var(--shadow-base);
-}
-
-/* Estilo para los contenedores de las páginas internas */
-.attendance-page,
-.courses-page,
-.students-page,
-.teachers-page,
-.enrollments-page,
-.user-page {
-    padding: var(--spacing-md);
-    flex-grow: 1;
-}
-
-/* Tarjetas de información */
-.card,
-.student-info,
-.teacher-info,
-.enrollment-report li,
-.attendance-report li {
-    background: var(--color-text-light);
-    border: 1px solid var(--color-border);
-    border-radius: var(--border-radius-base);
-    padding: var(--spacing-sm);
-    box-shadow: var(--shadow-card);
-    margin-bottom: var(--spacing-sm);
-}
-
-
-/* === 7. Mensajes de Estado === */
-.error {
-    color: #d9534f;
-    background: #f9d6d5;
-    padding: 0.75rem 1rem;
-    border-radius: var(--border-radius-base);
-    margin-bottom: var(--spacing-md);
-    font-size: 0.9rem;
-}
-
-.no-data,
-.no-grades {
-    font-style: italic;
-    color: #666;
-    margin-top: var(--spacing-sm);
-}
-
-/* ========================================================================= */
-/* === 8. ESTILOS DE LAYOUT ESPECÍFICOS (SOLUCIÓN FLEXBOX) === */
-/* ========================================================================= */
-
-/* ====== Layout principal - Ahora contenedor Flexbox de 100% de altura ====== */
+/* =========================================
+   2. LAYOUT PRINCIPAL (Sidebar Fijo)
+   ========================================= */
 .app-layout {
-    display: flex;
-    flex-direction: row; 
-    height: 100vh; /* CLAVE: Ocupa toda la altura del viewport */
+  display: flex;
+  height: 100vh;
+  width: 100%;
 }
 
-/* ====== Sidebar vertical, ahora en flujo Flexbox ====== */
+/* Sidebar */
 .sidebar {
-    background-color: var(--color-primary);
-    color: var(--color-text-light);
-    padding: var(--spacing-md);
-    
-    /* MODIFICACIÓN CLAVE 1: Eliminamos position: fixed */
-    position: relative; /* Opcional, pero neutraliza fixed */
-    
-    height: 100%; /* Ocupa el 100% del alto del app-layout (100vh) */
-    width: var(--sidebar-width); /* Mantiene el ancho fijo */
-    z-index: 1000;
-    
-    /* Propiedades internas del sidebar */
-    display: flex;
-    flex-direction: column; 
-    flex-shrink: 0; /* Evita que se encoja si el contenido es grande */
-}
-
-/* Contenido principal (lo que no es sidebar) */
-.main-content {
-    /* MODIFICACIÓN CLAVE 2: Crece para ocupar el espacio restante */
-    flex-grow: 1;
-    
-    /* MODIFICACIÓN CLAVE 3: Maneja su propio scroll */
-    height: 100%; /* Ocupa el 100% del alto del app-layout (100vh) */
-    overflow-y: auto; 
-    
-    /* Eliminamos margin-left, ya que Flexbox lo posiciona automáticamente */
-    margin-left: 0; 
-}
-
-/* Estilos de la barra lateral (mantienen el resto de estilos) */
-.sidebar ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: flex;
-    flex-direction: column; 
-    flex: 1;
-}
-
-.sidebar li {
-    margin-bottom: var(--spacing-md);
-}
-
-.sidebar-link {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-sm);
-    color: #dcdcdc;
-    text-decoration: none;
-}
-
-.sidebar-link:hover {
-    color: var(--color-text-light);
+  width: var(--sidebar-width);
+  background-color: var(--bg-sidebar);
+  color: var(--text-light);
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem;
+  flex-shrink: 0;
+  z-index: 10;
+  box-shadow: 2px 0 10px rgba(0,0,0,0.05);
 }
 
 .sidebar-logo {
-    display: flex;
-    flex-direction: column; 
-    align-items: center;
-    font-size: 1.6rem;
-    font-weight: bold;
-    color: #f1f1f1;
-    text-decoration: none;
-    margin-bottom: var(--spacing-lg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 2.5rem;
+  color: var(--text-light);
+  text-decoration: none;
+  font-weight: 700;
+  letter-spacing: 0.5px;
 }
 
 .logo-icon {
-    font-size: 2rem;
-    margin-bottom: 0.3rem;
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
 }
 
 .logo-text {
-    font-size: 1.2rem;
+  font-size: 1.25rem;
 }
 
-/* ====== Logout ====== */
+.sidebar ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  flex: 1; 
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: rgba(255, 255, 255, 0.7);
+  text-decoration: none;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius);
+  transition: all 0.2s ease;
+  font-weight: 500;
+}
+
+.sidebar-link:hover, 
+.sidebar-link.active {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: var(--text-light);
+  transform: translateX(5px);
+}
+
+/* Botón Logout en Sidebar */
 .logout-section {
-    margin-top: auto;
+  margin-top: auto;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .logout-button {
-    width: 100%;
-    background: var(--color-danger);
-    color: var(--color-text-light);
-    border: none;
-    padding: var(--spacing-sm);
-    border-radius: var(--border-radius-base);
-    cursor: pointer;
-    font-weight: bold;
+  width: 100%;
+  background: rgba(0, 0, 0, 0.2);
+  color: var(--text-light);
+  border: 1px solid transparent;
+  padding: 0.75rem;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.2s;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .logout-button:hover {
-    background: #c0392b;
-    transform: none;
+  background: var(--danger);
+  border-color: var(--danger);
 }
 
-/* ====== Responsive solo en móviles ====== */
-@media (max-width: 400px) {
-    .app-layout {
-        flex-direction: column;
-        height: auto; 
-    }
-
-    .sidebar {
-        /* Se adapta a la estructura vertical de móvil */
-        position: static; 
-        height: auto;
-        
-        flex-direction: row;
-        width: 100%;
-        min-height: auto;
-        justify-content: space-around;
-        padding: var(--spacing-sm) var(--spacing-md);
-    }
-    
-    .main-content {
-        /* El contenido fluye normalmente */
-        margin-left: 0; 
-        height: auto;
-        overflow-y: visible; 
-    }
-
-    .sidebar ul {
-        flex-direction: row; 
-        gap: var(--spacing-md);
-    }
-
-    .sidebar li {
-        margin-bottom: 0;
-    }
-    
-    .sidebar-logo {
-        display: none;
-    }
-
-    .logout-section {
-        margin-top: 0;
-    }
-
-    .logout-button {
-        width: auto;
-        padding: 0.3rem 0.6rem;
-    }
-    
-    /* Restaurar el scroll del body en móvil */
-    body, html {
-        overflow: auto;
-    }
+/* Contenido Principal (Scroll independiente) */
+.main-content {
+  flex-grow: 1;
+  height: 100vh;
+  overflow-y: auto;
+  padding: 2rem;
+  background-color: var(--bg-body);
 }
 
-/* ====== Dashboard Page (Solo estilos únicos) ====== */
-.dashboard-title {
-    font-size: 1.5rem;
-    color: var(--color-text-dark);
-    margin-bottom: var(--spacing-sm);
+main.content{
+    margin-left: 1.5em;
 }
 
-.dashboard-subtitle {
-    font-size: var(--font-size-base);
-    color: var(--color-text-muted);
-    margin-bottom: var(--spacing-md);
+/* =========================================
+   3. TIPOGRAFÍA & COMPONENTES UI
+   ========================================= */
+h1, h2, h3 {
+  margin-top: 0;
+  color: var(--text-main);
 }
 
+h1 { font-size: 1.75rem; font-weight: 700; margin-bottom: 1.5rem; }
+h2 { font-size: 1.4rem; font-weight: 600; margin-bottom: 1rem; }
+h3 { font-size: 1.1rem; color: var(--primary); margin-bottom: 0.5rem; }
+
+/* Botones Generales */
+button, .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.6rem 1.2rem;
+  border: none;
+  border-radius: var(--radius);
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background-color: var(--primary);
+  color: white;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+button:hover {
+  background-color: var(--primary-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+button:active {
+  transform: translateY(0);
+}
+
+/* Variantes de Botones */
+.btn-success, 
+.courses-table button:first-child,
+.students-table button:first-child,
+.teachers-table button:first-child,
+.enrollments-table button:first-child,
+.edit-button {
+  background-color: var(--success);
+}
+.btn-success:hover { background-color: #219150; }
+
+.btn-danger, 
+.courses-table button:last-child,
+.students-table button:last-child,
+.teachers-table button:last-child,
+.enrollments-table button:last-child,
+.delete-button,
+.cancel-button {
+  background-color: var(--danger);
+}
+.btn-danger:hover { background-color: #c0392b; }
+
+/* Formularios Modernos */
+form {
+  margin-bottom: 1rem;
+}
+
+.grid-form, 
+.course-form, 
+.student-form, 
+.teacher-form, 
+.enrollment-form, 
+.attendance-page form {
+  display: flex;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.5rem;
+  background: var(--bg-surface);
+  padding: 1.5rem;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-color);
+}
+
+input, select, textarea {
+  width: auto;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  background-color: #fff;
+  font-size: 0.95rem;
+  color: var(--text-main);
+  transition: border-color 0.2s;
+}
+
+input:focus, select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(0, 97, 132, 0.1);
+}
+
+/* Botones dentro de formularios grid */
+.grid-form button,
+.course-form button,
+.student-form button,
+.teacher-form button,
+.enrollment-form button,
+.attendance-page form button {
+  grid-column: 1 / -1; 
+  margin-top: 0.5rem;
+  width: 100%;
+}
+
+@media (min-width: 768px) {
+  .grid-form button,
+  .course-form button, 
+  .attendance-page form button {
+      width: auto;
+      justify-self: start;
+  }
+}
+
+/* =========================================
+   4. TABLAS UNIFICADAS (Modern Table)
+   ========================================= */
+/* Aplicamos estilos a todas las tablas del sistema */
+table, 
+.attendance-table,
+.courses-table, 
+.students-table, 
+.teachers-table, 
+.enrollments-table, 
+.users-table,
+.data-table {
+  width: 100%;
+  border-collapse: separate; 
+  border-spacing: 0;
+  background: var(--bg-surface);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  margin-top: 1rem;
+  border: 1px solid var(--border-color);
+}
+
+th, td {
+  padding: 1rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border-color);
+}
+
+th {
+  background-color: #f8f9fa; 
+  color: var(--text-main);
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  letter-spacing: 0.05em;
+  border-bottom: 2px solid var(--border-color);
+}
+
+tr:last-child td {
+  border-bottom: none;
+}
+
+tr:hover td {
+  background-color: #fafafa;
+}
+
+/* Botones pequeños dentro de tablas */
+table button {
+  padding: 0.4rem 0.8rem;
+  font-size: 0.85rem;
+  margin-right: 0.5rem;
+}
+
+/* =========================================
+   5. PÁGINAS ESPECÍFICAS
+   ========================================= */
+
+/* Dashboard Cards */
 .cards {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-    gap: var(--spacing-sm);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1.5rem;
 }
 
 .card {
-    text-align: center;
+  background: var(--bg-surface);
+  padding: 1.5rem;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-color);
+  text-align: center;
+  transition: transform 0.2s;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--shadow-md);
 }
 
 .card h2 {
-    font-size: var(--font-size-base);
-    color: var(--color-primary);
-    margin-bottom: var(--spacing-sm);
+  font-size: 1rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.5rem;
 }
 
 .card p {
-    font-size: var(--font-size-card-text);
-    font-weight: bold;
-    color: var(--color-text-dark);
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--primary);
+  margin: 0;
 }
 
-/* ====== Auth/Login/Signup Pages ====== */
-.auth-container,
+/* Autenticación (Login / Signup) Centrada */
+.auth-container, 
 .home-container {
-    max-width: 400px;
-    margin: var(--spacing-lg) auto;
-    padding: var(--spacing-md);
-    background: var(--color-text-light);
-    border: 1px solid var(--color-border);
-    border-radius: var(--border-radius-base);
-    box-shadow: var(--shadow-base);
-    text-align: center;
+  max-width: 400px;
+  width: 90%;
+  margin: 4rem auto;
+  padding: 2.5rem;
+  background: var(--bg-surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-md);
+  text-align: center;
+  border: 1px solid var(--border-color);
+}
+
+.auth-container h2,
+.home-container h1 {
+  color: var(--primary);
+  margin-bottom: 1.5rem;
 }
 
 .auth-container form {
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin: 0;
 }
 
 .auth-buttons {
-    display: flex;
-    justify-content: center;
-    gap: var(--spacing-md);
-    margin-top: var(--spacing-md);
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1.5rem;
 }
 
-.cancel-button {
-    background-color: var(--color-danger);
-    color: var(--color-text-light);
+.error {
+  background-color: #fce8e6;
+  color: var(--danger);
+  padding: 0.75rem;
+  border-radius: var(--radius);
+  font-size: 0.9rem;
+  margin-top: 1rem;
+  border: 1px solid rgba(231, 76, 60, 0.2);
 }
 
-.cancel-button:hover {
-    background-color: #c0392b;
+/* Reportes y Listas de Info */
+.attendance-report li,
+.enrollment-report li,
+.student-info,
+.teacher-info,
+.profile-info {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-left: 4px solid var(--primary); 
+  padding: 1rem;
+  margin-bottom: 0.75rem;
+  border-radius: 4px;
+  list-style: none;
+  box-shadow: var(--shadow-sm);
+}
+
+/* =========================================
+   6. RESPONSIVE (Móviles)
+   ========================================= */
+@media (max-width: 768px) {
+  .app-layout {
+    flex-direction: column;
+    height: auto;
+    min-height: 100vh;
+  }
+
+  /* Sidebar cambia a barra superior o inferior según prefieras */
+  .sidebar {
+    width: 100%;
+    height: auto;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem;
+    position: sticky;
+    top: 0;
+  }
+
+  .sidebar-logo {
+    margin-bottom: 0;
+    font-size: 1rem;
+    flex-direction: row;
+    gap: 0.5rem;
+  }
+  
+  .logo-icon { font-size: 1.5rem; margin-bottom: 0; }
+  .logo-text { display: none; } 
+
+  .sidebar ul {
+    flex-direction: row;
+    gap: 1rem;
+    justify-content: flex-end;
+  }
+
+  .sidebar-link {
+    padding: 0.5rem;
+  }
+  
+  .sidebar-link span {
+    display: none; 
+  }
+
+  .logout-section {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none;
+    margin-left: 1rem;
+  }
+  
+  .logout-button {
+    width: auto;
+    padding: 0.4rem 0.8rem;
+    font-size: 0.8rem;
+  }
+
+  /* Contenido principal en móvil */
+  .main-content {
+    padding: 1rem;
+    height: auto;
+    overflow-y: visible;
+  }
+
+  /* Ajuste de tablas en pantallas muy pequeñas */
+  th, td {
+    padding: 0.75rem 0.5rem;
+    font-size: 0.9rem;
+  }
 }

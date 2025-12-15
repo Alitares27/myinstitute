@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import "../styles/Global.css";
+
 
 export default function Grades() {
   const [grades, setGrades] = useState<any[]>([]);

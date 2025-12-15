@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import "../index.css";
+
 
 interface User {
   id: number;
@@ -114,7 +114,7 @@ function UserPage() {
 
   return (
     <div className="user-page">
-      <h2>👤 User Page</h2>
+      <h2>👤 Usuario</h2>
 
       {currentUser.role === "admin" ? (
         <div>
