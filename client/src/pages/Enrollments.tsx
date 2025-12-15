@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import Layout from "../components/Layout"; 
 
 export default function Enrollments() {
   const [enrollments, setEnrollments] = useState<any[]>([]);
@@ -16,7 +15,7 @@ export default function Enrollments() {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       })
       .then((res) => {
-        setRole(res.data.role); 
+        setRole(res.data.role);
         setUserId(res.data.id);
       });
 
@@ -80,27 +79,87 @@ export default function Enrollments() {
       : enrollments;
 
   return (
-    <Layout>
-      <div className="enrollments-page">
-        <h2>📝 Matrículas</h2>
+    <div className="enrollments-page">
+      <h2>📝 Matrículas</h2>
 
-        {role === "admin" && (
+      {role === "admin" && (
+        <form onSubmit={handleSubmit} className="enrollment-form">
+          <select
+            value={form.student_id}
+            onChange={(e) => setForm({ ...form, student_id: e.target.value })}
+          >
+            <option value="">Elegir Estudiante</option>
+            {students.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+              </option>
+            ))}
+          </select>
+
+          <select
+            value={form.course_id}
+            onChange={(e) => setForm({ ...form, course_id: e.target.value })}
+          >
+            <option value="">Elegir Curso</option>
+            {courses.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.title}
+              </option>
+            ))}
+          </select>
+
+          <button type="submit">
+            {form.id ? "Actualizar Matrícula" : "Matricular"}
+          </button>
+        </form>
+      )}
+
+      {role === "admin" ? (
+        <table className="enrollments-table">
+          <thead>
+            <tr>
+              <th>Estudiante</th>
+              <th>Curso</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredEnrollments.map((en) => (
+              <tr key={en.id}>
+                <td>
+                  {students.find((s) => s.id === en.student_id)?.name ||
+                    en.student_id}
+                </td>
+                <td>
+                  {courses.find((c) => c.id === en.course_id)?.title ||
+                    en.course_id}
+                </td>
+                <td>
+                  <button onClick={() => handleEdit(en)}>Edit</button>
+                  <button onClick={() => handleDelete(en.id)}>Delete</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      ) : (
+        <div>
+          <h3>Mis Matrículas</h3>
+          <ul className="enrollment-report">
+            {filteredEnrollments.map((en) => (
+              <li key={en.id}>
+                {courses.find((c) => c.id === en.course_id)?.title ||
+                  en.course_id}
+              </li>
+            ))}
+          </ul>
+
           <form onSubmit={handleSubmit} className="enrollment-form">
             <select
-              value={form.student_id}
-              onChange={(e) => setForm({ ...form, student_id: e.target.value })}
-            >
-              <option value="">Elegir Estudiante</option>
-              {students.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
-                </option>
-              ))}
-            </select>
-
-            <select
               value={form.course_id}
-              onChange={(e) => setForm({ ...form, course_id: e.target.value })}
+              onChange={(e) =>
+                setForm({ ...form, student_id: userId, course_id: e.target.value })
+              }
             >
               <option value="">Elegir Curso</option>
               {courses.map((c) => (
@@ -109,72 +168,10 @@ export default function Enrollments() {
                 </option>
               ))}
             </select>
-
-            <button type="submit">
-              {form.id ? "Actualizar Matrícula" : "Matricular"}
-            </button>
+            <button type="submit">Matricularme</button>
           </form>
-        )}
-
-        {role === "admin" ? (
-          <table className="enrollments-table">
-            <thead>
-              <tr>
-                <th>Estudiante</th>
-                <th>Curso</th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredEnrollments.map((en) => (
-                <tr key={en.id}>
-                  <td>
-                    {students.find((s) => s.id === en.student_id)?.name ||
-                      en.student_id}
-                  </td>
-                  <td>
-                    {courses.find((c) => c.id === en.course_id)?.title ||
-                      en.course_id}
-                  </td>
-                  <td>
-                    <button onClick={() => handleEdit(en)}>Edit</button>
-                    <button onClick={() => handleDelete(en.id)}>Delete</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        ) : (
-          <div>
-            <h3>Mis Matrículas</h3>
-            <ul className="enrollment-report">
-              {filteredEnrollments.map((en) => (
-                <li key={en.id}>
-                  {courses.find((c) => c.id === en.course_id)?.title ||
-                    en.course_id}
-                </li>
-              ))}
-            </ul>
-
-            <form onSubmit={handleSubmit} className="enrollment-form">
-              <select
-                value={form.course_id}
-                onChange={(e) =>
-                  setForm({ ...form, student_id: userId, course_id: e.target.value })
-                }
-              >
-                <option value="">Elegir Curso</option>
-                {courses.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.title}
-                  </option>
-                ))}
-              </select>
-              <button type="submit">Matricularme</button>
-            </form>
-          </div>
-        )}
-      </div>
-    </Layout>
+        </div>
+      )}
+    </div>
   );
 }

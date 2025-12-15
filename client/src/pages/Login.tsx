@@ -5,16 +5,37 @@ import { useNavigate } from "react-router-dom";
 export default function Login() {
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError("");
+    setLoading(true);
+
     try {
       const res = await axios.post("http://localhost:5000/api/users/login", form);
+
+      if (!res.data?.token) {
+        throw new Error("No se recibió token desde el servidor");
+      }
+
       localStorage.setItem("token", res.data.token);
+      localStorage.setItem("user", JSON.stringify(res.data.user));
+
       navigate("/dashboard");
     } catch (err: any) {
-      setError(err.response?.data?.message || "Login failed");
+      console.error("❌ Login error:", err);
+
+      if (err.response) {
+        setError(err.response.data?.message || "Error en el servidor");
+      } else if (err.request) {
+        setError("No se pudo conectar con el servidor");
+      } else {
+        setError("Error desconocido al iniciar sesión");
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -38,12 +59,19 @@ export default function Login() {
         />
 
         <div className="auth-buttons">
-          <button type="submit">Iniciar Sesión</button>
-          <button type="button" className="cancel-button" onClick={() => navigate("/")}>
+          <button type="submit" disabled={loading}>
+            {loading ? "Ingresando..." : "Iniciar Sesión"}
+          </button>
+          <button
+            type="button"
+            className="cancel-button"
+            onClick={() => navigate("/")}
+          >
             Cancelar
           </button>
         </div>
       </form>
+
       {error && <p className="error">{error}</p>}
     </div>
   );

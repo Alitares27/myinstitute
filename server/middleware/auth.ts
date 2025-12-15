@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import jwt, { JwtPayload } from "jsonwebtoken";
+import jwt, { JwtPayload, TokenExpiredError, JsonWebTokenError } from "jsonwebtoken";
 
 export type UserRole = "admin" | "student" | "teacher";
 
@@ -33,10 +33,16 @@ export function verifyToken(req: AuthRequest, res: Response, next: NextFunction)
     req.user = decoded;
     next();
   } catch (err) {
-    return res.status(403).json({ message: "Invalid or expired token" });
+    if (err instanceof TokenExpiredError) {
+      return res.status(401).json({ message: "Token expired, please login again" });
+    }
+    if (err instanceof JsonWebTokenError) {
+      return res.status(401).json({ message: "Invalid token" });
+    }
+    console.error("❌ JWT verification error:", err);
+    return res.status(500).json({ message: "Internal authentication error" });
   }
 }
-
 
 function hasRole(role: UserRole) {
   return (req: AuthRequest, res: Response, next: NextFunction) => {

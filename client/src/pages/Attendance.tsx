@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import Layout from "../components/Layout";
 
 interface AttendanceRecord {
   id: number;
@@ -92,121 +91,116 @@ export default function Attendance() {
       : attendance;
 
   if (error) {
-    return (
-      <Layout>
-        <p>{error}</p>
-      </Layout>
-    );
+    return <p>{error}</p>;
   }
 
   return (
-    <Layout>
-      <div className="attendance-page">
-        <h2>📅 Asistencia</h2>
+    <div className="attendance-page">
+      <h2>📅 Asistencia</h2>
 
-        {role === "admin" && (
-          <>
-            <form onSubmit={handleSubmit}>
-              <select
-                value={form.student_id}
-                onChange={(e) => setForm({ ...form, student_id: e.target.value })}
-              >
-                <option value="">Elegir Estudiante</option>
-                {students.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
-                  </option>
-                ))}
-              </select>
-
-              <select
-                value={form.course_id}
-                onChange={(e) => setForm({ ...form, course_id: e.target.value })}
-              >
-                <option value="">Elegir Curso</option>
-                {courses.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.title}
-                  </option>
-                ))}
-              </select>
-
-              <input
-                type="date"
-                value={form.date}
-                onChange={(e) => setForm({ ...form, date: e.target.value })}
-              />
-
-              <select
-                value={form.status}
-                onChange={(e) => setForm({ ...form, status: e.target.value })}
-              >
-                <option value="Present">Presente</option>
-                <option value="Absent">Ausente</option>
-              </select>
-
-              <button type="submit">Marcar Asistencia</button>
-            </form>
-
-            <div className="attendance-filter">
-              <label>Filtrar por estudiante: </label>
-              <select
-                value={studentFilter}
-                onChange={(e) => setStudentFilter(e.target.value)}
-              >
-                <option value="">Todos</option>
-                {students.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </>
-        )}
-
-        {/* ⚡ Mostrar mensaje si no hay registros */}
-        {filteredAttendance.length === 0 ? (
-          <p className="no-attendance">⚠️ No se registró asistencia para este estudiante.</p>
-        ) : role === "admin" ? (
-          <table className="attendance-table">
-            <thead>
-              <tr>
-                <th>Estudiante</th>
-                <th>Curso</th>
-                <th>Fecha</th>
-                <th>Estado</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredAttendance.map((a) => (
-                <tr key={a.id ?? `${a.student_id}-${a.course_id}-${a.date}`}>
-                  <td>
-                    {students.find((s) => s.id === a.student_id)?.name ||
-                      a.student_id}
-                  </td>
-                  <td>
-                    {courses.find((c) => c.id === a.course_id)?.title ||
-                      a.course_id}
-                  </td>
-                  <td>{new Date(a.date).toLocaleDateString("es-AR")}</td>
-                  <td>{a.status}</td>
-                </tr>
+      {role === "admin" && (
+        <>
+          <form onSubmit={handleSubmit}>
+            <select
+              value={form.student_id}
+              onChange={(e) => setForm({ ...form, student_id: e.target.value })}
+            >
+              <option value="">Elegir Estudiante</option>
+              {students.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                </option>
               ))}
-            </tbody>
-          </table>
-        ) : (
-          <ul className="attendance-report">
+            </select>
+
+            <select
+              value={form.course_id}
+              onChange={(e) => setForm({ ...form, course_id: e.target.value })}
+            >
+              <option value="">Elegir Curso</option>
+              {courses.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.title}
+                </option>
+              ))}
+            </select>
+
+            <input
+              type="date"
+              value={form.date}
+              onChange={(e) => setForm({ ...form, date: e.target.value })}
+            />
+
+            <select
+              value={form.status}
+              onChange={(e) => setForm({ ...form, status: e.target.value })}
+            >
+              <option value="Present">Presente</option>
+              <option value="Absent">Ausente</option>
+            </select>
+
+            <button type="submit">Marcar Asistencia</button>
+          </form>
+
+          <div className="attendance-filter">
+            <label>Filtrar por estudiante: </label>
+            <select
+              value={studentFilter}
+              onChange={(e) => setStudentFilter(e.target.value)}
+            >
+              <option value="">Todos</option>
+              {students.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </>
+      )}
+
+      {filteredAttendance.length === 0 ? (
+        <p className="no-attendance">
+          ⚠️ No se registró asistencia para este estudiante.
+        </p>
+      ) : role === "admin" ? (
+        <table className="attendance-table">
+          <thead>
+            <tr>
+              <th>Estudiante</th>
+              <th>Curso</th>
+              <th>Fecha</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody>
             {filteredAttendance.map((a) => (
-              <li key={a.id ?? `${a.student_id}-${a.course_id}-${a.date}`}>
-                {`Course #${a.course_id} - ${new Date(a.date).toLocaleDateString(
-                  "es-AR"
-                )} - ${a.status}`}
-              </li>
+              <tr key={a.id ?? `${a.student_id}-${a.course_id}-${a.date}`}>
+                <td>
+                  {students.find((s) => s.id === a.student_id)?.name ||
+                    a.student_id}
+                </td>
+                <td>
+                  {courses.find((c) => c.id === a.course_id)?.title ||
+                    a.course_id}
+                </td>
+                <td>{new Date(a.date).toLocaleDateString("es-AR")}</td>
+                <td>{a.status}</td>
+              </tr>
             ))}
-          </ul>
-        )}
-      </div>
-    </Layout>
+          </tbody>
+        </table>
+      ) : (
+        <ul className="attendance-report">
+          {filteredAttendance.map((a) => (
+            <li key={a.id ?? `${a.student_id}-${a.course_id}-${a.date}`}>
+              {`Course #${a.course_id} - ${new Date(a.date).toLocaleDateString(
+                "es-AR"
+              )} - ${a.status}`}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }

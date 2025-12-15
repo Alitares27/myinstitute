@@ -6,6 +6,7 @@ import {
   FaBookOpen,
   FaCalendarCheck,
   FaUser,
+  FaStar, 
 } from "react-icons/fa";
 
 function Sidebar() {
@@ -71,6 +72,15 @@ function Sidebar() {
                 <FaUser className="icon" />
               </div>
               <span>Usuarios</span>
+            </Link>
+          </li>
+          
+          <li>
+            <Link to="/grades" className="sidebar-link">
+              <div className="icon-circle">
+                <FaStar className="icon" />
+              </div>
+              <span>Calificaciones</span>
             </Link>
           </li>
         </ul>

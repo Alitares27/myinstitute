@@ -8,8 +8,10 @@ import Teachers from "./pages/Teachers";
 import Courses from "./pages/Courses";
 import Enrollments from "./pages/Enrollments";
 import Attendance from "./pages/Attendance";
-import UserPage from "./pages/UserPage"; 
+import UserPage from "./pages/UserPage";
+import Grades from "./pages/Grades"; 
 import PrivateRoute from "./components/PrivateRoute";
+import Layout from "./components/Layout"; 
 
 function App() {
   return (
@@ -19,11 +21,14 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
 
+        
         <Route
           path="/dashboard"
           element={
             <PrivateRoute>
-              <Dashboard />
+              <Layout>
+                <Dashboard />
+              </Layout>
             </PrivateRoute>
           }
         />
@@ -31,7 +36,9 @@ function App() {
           path="/students"
           element={
             <PrivateRoute>
-              <Students />
+              <Layout>
+                <Students />
+              </Layout>
             </PrivateRoute>
           }
         />
@@ -39,7 +46,9 @@ function App() {
           path="/teachers"
           element={
             <PrivateRoute>
-              <Teachers />
+              <Layout>
+                <Teachers />
+              </Layout>
             </PrivateRoute>
           }
         />
@@ -47,7 +56,9 @@ function App() {
           path="/courses"
           element={
             <PrivateRoute>
-              <Courses />
+              <Layout>
+                <Courses />
+              </Layout>
             </PrivateRoute>
           }
         />
@@ -55,7 +66,9 @@ function App() {
           path="/enrollments"
           element={
             <PrivateRoute>
-              <Enrollments />
+              <Layout>
+                <Enrollments />
+              </Layout>
             </PrivateRoute>
           }
         />
@@ -63,7 +76,9 @@ function App() {
           path="/attendance"
           element={
             <PrivateRoute>
-              <Attendance />
+              <Layout>
+                <Attendance />
+              </Layout>
             </PrivateRoute>
           }
         />
@@ -71,7 +86,19 @@ function App() {
           path="/users"
           element={
             <PrivateRoute>
-              <UserPage />
+              <Layout>
+                <UserPage />
+              </Layout>
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/grades"
+          element={
+            <PrivateRoute>
+              <Layout>
+                <Grades />
+              </Layout>
             </PrivateRoute>
           }
         />

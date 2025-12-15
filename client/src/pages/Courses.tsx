@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import Layout from "../components/Layout";
 
 export default function Courses() {
   const [courses, setCourses] = useState<any[]>([]);
@@ -41,9 +40,7 @@ export default function Courses() {
         { title: form.title, teacher_id: form.teacher_id },
         { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
       );
-      setCourses(
-        courses.map((c) => (c.id === form.id ? res.data : c))
-      );
+      setCourses(courses.map((c) => (c.id === form.id ? res.data : c)));
     } else {
       const res = await axios.post("http://localhost:5000/api/courses", form, {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
@@ -71,61 +68,59 @@ export default function Courses() {
       : courses;
 
   return (
-    <Layout>
-      <div className="courses-page">
-        <h2>📚 Cursos</h2>
+    <div className="courses-page">
+      <h2>📚 Cursos</h2>
 
-        {role === "admin" && (
-          <form onSubmit={handleSubmit} className="course-form">
-            <input
-              placeholder="Curso"
-              value={form.title}
-              onChange={(e) => setForm({ ...form, title: e.target.value })}
-            />
-            <select
-              value={form.teacher_id}
-              onChange={(e) => setForm({ ...form, teacher_id: e.target.value })}
-            >
-              <option value="">Elegir Maestro</option>
-              {teachers.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.name}
-                </option>
-              ))}
-            </select>
-            <button type="submit">
-              {form.id ? "Actualizar" : "Agregar Curso"}
-            </button>
-          </form>
-        )}
-
-        <table className="courses-table">
-          <thead>
-            <tr>
-              <th>Titulo</th>
-              <th>Mestro</th>
-              {role === "admin" && <th>Acciones</th>}
-            </tr>
-          </thead>
-          <tbody>
-            {filteredCourses.map((c) => (
-              <tr key={c.id}>
-                <td>{c.title}</td>
-                <td>
-                  {teachers.find((t) => t.id === c.teacher_id)?.name ||
-                    c.teacher_name}
-                </td>
-                {role === "admin" && (
-                  <td>
-                    <button onClick={() => handleEdit(c)}>Editar</button>
-                    <button onClick={() => handleDelete(c.id)}>Eliminar</button>
-                  </td>
-                )}
-              </tr>
+      {role === "admin" && (
+        <form onSubmit={handleSubmit} className="course-form">
+          <input
+            placeholder="Curso"
+            value={form.title}
+            onChange={(e) => setForm({ ...form, title: e.target.value })}
+          />
+          <select
+            value={form.teacher_id}
+            onChange={(e) => setForm({ ...form, teacher_id: e.target.value })}
+          >
+            <option value="">Elegir Maestro</option>
+            {teachers.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.name}
+              </option>
             ))}
-          </tbody>
-        </table>
-      </div>
-    </Layout>
+          </select>
+          <button type="submit">
+            {form.id ? "Actualizar" : "Agregar Curso"}
+          </button>
+        </form>
+      )}
+
+      <table className="courses-table">
+        <thead>
+          <tr>
+            <th>Titulo</th>
+            <th>Maestro</th>
+            {role === "admin" && <th>Acciones</th>}
+          </tr>
+        </thead>
+        <tbody>
+          {filteredCourses.map((c) => (
+            <tr key={c.id}>
+              <td>{c.title}</td>
+              <td>
+                {teachers.find((t) => t.id === c.teacher_id)?.name ||
+                  c.teacher_name}
+              </td>
+              {role === "admin" && (
+                <td>
+                  <button onClick={() => handleEdit(c)}>Editar</button>
+                  <button onClick={() => handleDelete(c.id)}>Eliminar</button>
+                </td>
+              )}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }

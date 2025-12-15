@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import Layout from "../components/Layout";
 
 export default function Students() {
   const [students, setStudents] = useState<any[]>([]);
@@ -14,7 +13,7 @@ export default function Students() {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       })
       .then((res) => {
-        setRole(res.data.role); 
+        setRole(res.data.role);
         setUserId(res.data.id);
       });
 
@@ -62,60 +61,56 @@ export default function Students() {
       : students;
 
   return (
-    <Layout>
-      <div className="students-page">
-        <h2>👨‍🎓 Estudiantes</h2>
+    <div className="students-page">
+      <h2>👨‍🎓 Estudiantes</h2>
 
-        {role === "admin" && (
-          <form onSubmit={handleSubmit} className="student-form">
-            <input
-              placeholder="Nombre"
-              value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-            />
-            <input
-              placeholder="Grado"
-              value={form.grade}
-              onChange={(e) => setForm({ ...form, grade: e.target.value })}
-            />
-            <button type="submit">
-              {form.id ? "Actualizar Estudiante" : "Agregar Estudiante"}
-            </button>
-          </form>
-        )}
+      {role === "admin" && (
+        <form onSubmit={handleSubmit} className="student-form">
+          <input
+            placeholder="Nombre"
+            value={form.name}
+            onChange={(e) => setForm({ ...form, name: e.target.value })}
+          />
+          <input
+            placeholder="Grado"
+            value={form.grade}
+            onChange={(e) => setForm({ ...form, grade: e.target.value })}
+          />
+          <button type="submit">
+            {form.id ? "Actualizar Estudiante" : "Agregar Estudiante"}
+          </button>
+        </form>
+      )}
 
-        {role === "admin" ? (
-          <table className="students-table">
-            <thead>
-              <tr>
-                <th>Nombre</th>
-                <th>Email</th>
-                <th>Teléfono</th>
-                <th>Organización</th>
+      {role === "admin" ? (
+        <table className="students-table">
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Email</th>
+              <th>Teléfono</th>
+              <th>Organización</th>
+            </tr>
+          </thead>
+          <tbody>
+            {students.map((s) => (
+              <tr key={s.id}>
+                <td>{s.name}</td>
+                <td>{s.email}</td>
+                <td>{s.telefono}</td>
+                <td>{s.grade}</td>
               </tr>
-            </thead>
-
-            <tbody>
-              {students.map((s) => (
-                <tr key={s.id}>
-                  <td>{s.name}</td>
-                  <td>{s.email}</td>
-                  <td>{s.telefono}</td>
-                  <td>{s.grade}</td>
-                </tr>
-              ))}
-
-            </tbody>
-          </table>
-        ) : (
-          filteredStudents.map((s) => (
-            <div key={s.id} className="student-info">
-              <p><strong>Nombre:</strong> {s.name}</p>
-              <p><strong>Grado:</strong> {s.grade}</p>
-            </div>
-          ))
-        )}
-      </div>
-    </Layout>
+            ))}
+          </tbody>
+        </table>
+      ) : (
+        filteredStudents.map((s) => (
+          <div key={s.id} className="student-info">
+            <p><strong>Nombre:</strong> {s.name}</p>
+            <p><strong>Grado:</strong> {s.grade}</p>
+          </div>
+        ))
+      )}
+    </div>
   );
 }

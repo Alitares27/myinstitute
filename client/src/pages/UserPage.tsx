@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import Layout from "../components/Layout";
 import "../index.css";
 
 interface User {
@@ -109,121 +108,119 @@ function UserPage() {
     }
   };
 
-  if (loading) return <Layout><p>Cargando...</p></Layout>;
-  if (error) return <Layout><p>{error}</p></Layout>;
-  if (!currentUser) return <Layout><p>No se encontró usuario</p></Layout>;
+  if (loading) return <p>Cargando...</p>;
+  if (error) return <p>{error}</p>;
+  if (!currentUser) return <p>No se encontró usuario</p>;
 
   return (
-    <Layout>
-      <div className="user-page">
-        <h2>👤 User Page</h2>
+    <div className="user-page">
+      <h2>👤 User Page</h2>
 
-        {currentUser.role === "admin" ? (
-          <div>
-            <h3>Admin Panel</h3>
+      {currentUser.role === "admin" ? (
+        <div>
+          <h3>Admin Panel</h3>
 
-            <div className="user-form">
-              <input
-                placeholder="Nombre"
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-              />
-              <input
-                placeholder="Email"
-                value={form.email}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
-              />
-              <input
-                placeholder="Contraseña"
-                type="password"
-                value={form.password}
-                onChange={(e) => setForm({ ...form, password: e.target.value })}
-              />
-              <input
-                placeholder="Telefono"
-                value={form.telefono}
-                onChange={(e) => setForm({ ...form, telefono: e.target.value })}
-              />
+          <div className="user-form">
+            <input
+              placeholder="Nombre"
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+            />
+            <input
+              placeholder="Email"
+              value={form.email}
+              onChange={(e) => setForm({ ...form, email: e.target.value })}
+            />
+            <input
+              placeholder="Contraseña"
+              type="password"
+              value={form.password}
+              onChange={(e) => setForm({ ...form, password: e.target.value })}
+            />
+            <input
+              placeholder="Telefono"
+              value={form.telefono}
+              onChange={(e) => setForm({ ...form, telefono: e.target.value })}
+            />
 
-              <select
-                value={form.role}
-                onChange={(e) => setForm({ ...form, role: e.target.value })}
-              >
-                <option value="student">Estudiante</option>
-                <option value="teacher">Maestro</option>
-                <option value="admin">Admin</option>
-              </select>
-
-              {form.role === "teacher" && (
-                <input
-                  placeholder="Specialty"
-                  value={form.specialty}
-                  onChange={(e) => setForm({ ...form, specialty: e.target.value })}
-                />
-              )}
-
-              <button onClick={handleCreate}>➕ Crear Usuario</button>
-            </div>
-
-            <table className="users-table">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Nombre</th>
-                  <th>Email</th>
-                  <th>Rol</th>
-                  <th>Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {users.map((u) => (
-                  <tr key={u.id}>
-                    <td>{u.id}</td>
-                    <td>{u.name}</td>
-                    <td>{u.email}</td>
-                    <td>{u.role}</td>
-                    <td>
-                      <button
-                        className="edit-button"
-                        onClick={() =>
-                          handleEdit(u.id, { name: u.name + " (editado)" })
-                        }
-                      >
-                        ✏️ Editar
-                      </button>
-                      <button
-                        className="delete-button"
-                        onClick={() => handleDelete(u.id)}
-                      >
-                        🗑️ Eliminar
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <div className="profile-info">
-            <h3>Mi Perfil</h3>
-            <p><strong>ID:</strong> {currentUser.id}</p>
-            <p><strong>Nombre:</strong> {currentUser.name}</p>
-            <p><strong>Email:</strong> {currentUser.email}</p>
-            <p><strong>Rol:</strong> {currentUser.role}</p>
-            <button
-              className="edit-button"
-              onClick={() =>
-                handleEdit(currentUser.id, {
-                  name: currentUser.name + " (editado)",
-                })
-              }
+            <select
+              value={form.role}
+              onChange={(e) => setForm({ ...form, role: e.target.value })}
             >
-              ✏️ Editar Perfil
-            </button>
+              <option value="student">Estudiante</option>
+              <option value="teacher">Maestro</option>
+              <option value="admin">Admin</option>
+            </select>
+
+            {form.role === "teacher" && (
+              <input
+                placeholder="Specialty"
+                value={form.specialty}
+                onChange={(e) => setForm({ ...form, specialty: e.target.value })}
+              />
+            )}
+
+            <button onClick={handleCreate}>➕ Crear Usuario</button>
           </div>
-        )}
-      </div>
-    </Layout>
+
+          <table className="users-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Nombre</th>
+                <th>Email</th>
+                <th>Rol</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {users.map((u) => (
+                <tr key={u.id}>
+                  <td>{u.id}</td>
+                  <td>{u.name}</td>
+                  <td>{u.email}</td>
+                  <td>{u.role}</td>
+                  <td>
+                    <button
+                      className="edit-button"
+                      onClick={() =>
+                        handleEdit(u.id, { name: u.name + " (editado)" })
+                      }
+                    >
+                      ✏️ Editar
+                    </button>
+                    <button
+                      className="delete-button"
+                      onClick={() => handleDelete(u.id)}
+                    >
+                      🗑️ Eliminar
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <div className="profile-info">
+          <h3>Mi Perfil</h3>
+          <p><strong>ID:</strong> {currentUser.id}</p>
+          <p><strong>Nombre:</strong> {currentUser.name}</p>
+          <p><strong>Email:</strong> {currentUser.email}</p>
+          <p><strong>Rol:</strong> {currentUser.role}</p>
+          <button
+            className="edit-button"
+            onClick={() =>
+              handleEdit(currentUser.id, {
+                name: currentUser.name + " (editado)",
+              })
+            }
+          >
+            ✏️ Editar Perfil
+          </button>
+        </div>
+      )}
+    </div>
   );
 }
 

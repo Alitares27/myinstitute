@@ -1,0 +1,496 @@
+:root {
+    /* Paleta de colores */
+    --color-primary: #257d93; /* Azul principal (Sidebar, Botones, Th de tablas) */
+    --color-secondary: #1abc9c; /* Verde/Cian para hover */
+    --color-text-dark: #2c3e50; /* Texto oscuro/Títulos */
+    --color-text-light: #fff;
+    --color-text-muted: #7f8c8d; /* Texto secundario */
+    --color-background-light: #f4f4f4;
+    --color-border: #ddd;
+    --color-success: darkgreen;
+    --color-danger: darkred;
+    --color-warning: #ffc107;
+
+    /* Tamaños de fuente */
+    --font-size-base: 1rem;
+    --font-size-large-title: 1.8rem;
+    --font-size-subtitle: 1.2rem;
+    --font-size-section-title: 1.2rem;
+    --font-size-card-text: 1.2rem;
+
+    /* Espaciado */
+    --spacing-xs: 0.2rem;
+    --spacing-sm: 0.5rem;
+    --spacing-md: 1rem;
+    --spacing-lg: 2rem;
+
+    /* Bordes y sombras */
+    --border-radius-base: 6px;
+    --shadow-base: 0 2px 8px rgba(0,0,0,0.08);
+    --shadow-card: 0 1px 3px rgba(0,0,0,0.05);
+    
+    /* Variables de Layout */
+    --sidebar-width: 200px;
+}
+
+/* === 1. Estilos Base y Reinicio === */
+* {
+    box-sizing: border-box;
+}
+
+body, html {
+    margin: 0;
+    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    line-height: 1.6;
+    background-color: var(--color-background-light);
+    color: var(--color-text-dark);
+    /* CLAVE: Asegura 100% de altura para el layout Flexbox */
+    height: 100%; 
+    overflow: hidden; /* **CLAVE:** Evita el scroll en el body/html, el scroll lo manejará el main-content */
+}
+
+/* === 2. Tipografía y Encabezados === */
+h1 {
+    font-size: var(--font-size-large-title);
+    color: var(--color-text-dark);
+}
+/* ... (Resto de la tipografía y formularios sin cambios) ... */
+h2 {
+    font-size: var(--font-size-section-title);
+    color: var(--color-text-dark);
+    margin-bottom: var(--spacing-sm);
+}
+
+h3 {
+    font-size: 1.1rem;
+    color: var(--color-primary);
+    margin-bottom: 0.75rem;
+}
+
+/* Estilo para los títulos de las páginas */
+.page-title {
+    font-size: var(--font-size-large-title);
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    color: #333;
+}
+
+
+/* === 3. Formularios, Inputs y Selects (Uniforme) === */
+input, select {
+    padding: var(--spacing-xs);
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius-base);
+    font-size: var(--font-size-base);
+    width: 100%;
+}
+
+input:focus, select:focus {
+    border-color: var(--color-primary);
+    outline: none;
+    box-shadow: 0 0 4px rgba(37,125,147,0.3);
+}
+
+/* Estilos para contenedores de formulario que usan Grid */
+.grid-form {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
+}
+
+
+/* === 4. Botones (Uniforme) === */
+.btn-primary, button {
+    padding: 0.5rem 1rem;
+    background-color: var(--color-primary);
+    color: var(--color-text-light);
+    border: none;
+    border-radius: var(--border-radius-base);
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.btn-primary:hover, button:hover {
+    background-color: var(--color-secondary);
+    transform: scale(1.03);
+}
+
+/* Botones Específicos de Acción */
+.btn-success {
+    background-color: var(--color-success);
+    color: var(--color-text-light);
+}
+.btn-success:hover {
+    background-color: #155724;
+}
+
+.btn-danger {
+    background-color: var(--color-danger);
+    color: var(--color-text-light);
+}
+.btn-danger:hover {
+    background-color: #c0392b;
+}
+
+.btn-warning {
+    background-color: var(--color-warning);
+    color: var(--color-text-dark);
+}
+.btn-warning:hover {
+    background-color: #e0a800;
+}
+
+/* Botones de acción en tablas (más pequeños) */
+.data-table button,
+.courses-table button,
+.students-table button,
+.teachers-table button,
+.enrollments-table button {
+    padding: 0.3rem 0.6rem;
+    font-size: 0.85rem;
+    border-radius: 4px;
+    margin-right: var(--spacing-sm);
+}
+.data-table button:hover,
+.courses-table button:hover,
+.students-table button:hover,
+.teachers-table button:hover,
+.enrollments-table button:hover {
+    opacity: 0.85;
+    transform: none;
+}
+
+
+/* === 5. Tablas (Uniforme) === */
+.data-table,
+.attendance-table,
+.courses-table,
+.students-table,
+.teachers-table,
+.enrollments-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: var(--spacing-sm);
+}
+
+.data-table th, .data-table td,
+.attendance-table th, .attendance-table td,
+.courses-table th, .courses-table td,
+.students-table th, .students-table td,
+.teachers-table th, .teachers-table td,
+.enrollments-table th, .enrollments-table td {
+    border: 1px solid var(--color-border);
+    padding: 0.5rem 1rem;
+    text-align: left;
+}
+
+.data-table th,
+.attendance-table th,
+.courses-table th,
+.students-table th,
+.teachers-table th,
+.enrollments-table th {
+    background-color: var(--color-primary);
+    color: var(--color-text-light);
+    font-weight: 600;
+}
+
+.data-table tr:nth-child(even),
+.users-table tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+/* Estilo hover para filas */
+.data-table tr:hover {
+    background: #fafafa;
+}
+
+/* === 6. Contenedores de Página y Tarjetas === */
+.page-container {
+    max-width: 1200px;
+    margin: var(--spacing-lg) auto; 
+    padding: var(--spacing-lg);
+    background: var(--color-text-light);
+    border-radius: var(--border-radius-base);
+    box-shadow: var(--shadow-base);
+}
+
+/* Estilo para los contenedores de las páginas internas */
+.attendance-page,
+.courses-page,
+.students-page,
+.teachers-page,
+.enrollments-page,
+.user-page {
+    padding: var(--spacing-md);
+    flex-grow: 1;
+}
+
+/* Tarjetas de información */
+.card,
+.student-info,
+.teacher-info,
+.enrollment-report li,
+.attendance-report li {
+    background: var(--color-text-light);
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius-base);
+    padding: var(--spacing-sm);
+    box-shadow: var(--shadow-card);
+    margin-bottom: var(--spacing-sm);
+}
+
+
+/* === 7. Mensajes de Estado === */
+.error {
+    color: #d9534f;
+    background: #f9d6d5;
+    padding: 0.75rem 1rem;
+    border-radius: var(--border-radius-base);
+    margin-bottom: var(--spacing-md);
+    font-size: 0.9rem;
+}
+
+.no-data,
+.no-grades {
+    font-style: italic;
+    color: #666;
+    margin-top: var(--spacing-sm);
+}
+
+/* ========================================================================= */
+/* === 8. ESTILOS DE LAYOUT ESPECÍFICOS (SOLUCIÓN FLEXBOX) === */
+/* ========================================================================= */
+
+/* ====== Layout principal - Ahora contenedor Flexbox de 100% de altura ====== */
+.app-layout {
+    display: flex;
+    flex-direction: row; 
+    height: 100vh; /* CLAVE: Ocupa toda la altura del viewport */
+}
+
+/* ====== Sidebar vertical, ahora en flujo Flexbox ====== */
+.sidebar {
+    background-color: var(--color-primary);
+    color: var(--color-text-light);
+    padding: var(--spacing-md);
+    
+    /* MODIFICACIÓN CLAVE 1: Eliminamos position: fixed */
+    position: relative; /* Opcional, pero neutraliza fixed */
+    
+    height: 100%; /* Ocupa el 100% del alto del app-layout (100vh) */
+    width: var(--sidebar-width); /* Mantiene el ancho fijo */
+    z-index: 1000;
+    
+    /* Propiedades internas del sidebar */
+    display: flex;
+    flex-direction: column; 
+    flex-shrink: 0; /* Evita que se encoja si el contenido es grande */
+}
+
+/* Contenido principal (lo que no es sidebar) */
+.main-content {
+    /* MODIFICACIÓN CLAVE 2: Crece para ocupar el espacio restante */
+    flex-grow: 1;
+    
+    /* MODIFICACIÓN CLAVE 3: Maneja su propio scroll */
+    height: 100%; /* Ocupa el 100% del alto del app-layout (100vh) */
+    overflow-y: auto; 
+    
+    /* Eliminamos margin-left, ya que Flexbox lo posiciona automáticamente */
+    margin-left: 0; 
+}
+
+/* Estilos de la barra lateral (mantienen el resto de estilos) */
+.sidebar ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column; 
+    flex: 1;
+}
+
+.sidebar li {
+    margin-bottom: var(--spacing-md);
+}
+
+.sidebar-link {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    color: #dcdcdc;
+    text-decoration: none;
+}
+
+.sidebar-link:hover {
+    color: var(--color-text-light);
+}
+
+.sidebar-logo {
+    display: flex;
+    flex-direction: column; 
+    align-items: center;
+    font-size: 1.6rem;
+    font-weight: bold;
+    color: #f1f1f1;
+    text-decoration: none;
+    margin-bottom: var(--spacing-lg);
+}
+
+.logo-icon {
+    font-size: 2rem;
+    margin-bottom: 0.3rem;
+}
+
+.logo-text {
+    font-size: 1.2rem;
+}
+
+/* ====== Logout ====== */
+.logout-section {
+    margin-top: auto;
+}
+
+.logout-button {
+    width: 100%;
+    background: var(--color-danger);
+    color: var(--color-text-light);
+    border: none;
+    padding: var(--spacing-sm);
+    border-radius: var(--border-radius-base);
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.logout-button:hover {
+    background: #c0392b;
+    transform: none;
+}
+
+/* ====== Responsive solo en móviles ====== */
+@media (max-width: 400px) {
+    .app-layout {
+        flex-direction: column;
+        height: auto; 
+    }
+
+    .sidebar {
+        /* Se adapta a la estructura vertical de móvil */
+        position: static; 
+        height: auto;
+        
+        flex-direction: row;
+        width: 100%;
+        min-height: auto;
+        justify-content: space-around;
+        padding: var(--spacing-sm) var(--spacing-md);
+    }
+    
+    .main-content {
+        /* El contenido fluye normalmente */
+        margin-left: 0; 
+        height: auto;
+        overflow-y: visible; 
+    }
+
+    .sidebar ul {
+        flex-direction: row; 
+        gap: var(--spacing-md);
+    }
+
+    .sidebar li {
+        margin-bottom: 0;
+    }
+    
+    .sidebar-logo {
+        display: none;
+    }
+
+    .logout-section {
+        margin-top: 0;
+    }
+
+    .logout-button {
+        width: auto;
+        padding: 0.3rem 0.6rem;
+    }
+    
+    /* Restaurar el scroll del body en móvil */
+    body, html {
+        overflow: auto;
+    }
+}
+
+/* ====== Dashboard Page (Solo estilos únicos) ====== */
+.dashboard-title {
+    font-size: 1.5rem;
+    color: var(--color-text-dark);
+    margin-bottom: var(--spacing-sm);
+}
+
+.dashboard-subtitle {
+    font-size: var(--font-size-base);
+    color: var(--color-text-muted);
+    margin-bottom: var(--spacing-md);
+}
+
+.cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: var(--spacing-sm);
+}
+
+.card {
+    text-align: center;
+}
+
+.card h2 {
+    font-size: var(--font-size-base);
+    color: var(--color-primary);
+    margin-bottom: var(--spacing-sm);
+}
+
+.card p {
+    font-size: var(--font-size-card-text);
+    font-weight: bold;
+    color: var(--color-text-dark);
+}
+
+/* ====== Auth/Login/Signup Pages ====== */
+.auth-container,
+.home-container {
+    max-width: 400px;
+    margin: var(--spacing-lg) auto;
+    padding: var(--spacing-md);
+    background: var(--color-text-light);
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius-base);
+    box-shadow: var(--shadow-base);
+    text-align: center;
+}
+
+.auth-container form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.auth-buttons {
+    display: flex;
+    justify-content: center;
+    gap: var(--spacing-md);
+    margin-top: var(--spacing-md);
+}
+
+.cancel-button {
+    background-color: var(--color-danger);
+    color: var(--color-text-light);
+}
+
+.cancel-button:hover {
+    background-color: #c0392b;
+}

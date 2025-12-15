@@ -1,13 +1,31 @@
 import express, { Response } from "express";
 import { pool } from "../models/db";
-import { registerUser, loginUser, getProfile } from "../controllers/users";
+import { registerUser, loginUser } from "../controllers/users";
 import { verifyToken, isAdmin, AuthRequest } from "../middleware/auth";
 
 const router = express.Router();
 
 router.post("/register", registerUser);
 router.post("/login", loginUser);
-router.get("/me", verifyToken, getProfile);
+
+router.get("/me", verifyToken, async (req: AuthRequest, res: Response) => {
+  try {
+    const result = await pool.query(
+      "SELECT id, name, email, telefono, role FROM users WHERE id = $1",
+      [req.user?.id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: "Usuario no encontrado" });
+    }
+
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error("❌ Error fetching current user:", err);
+    res.status(500).json({ message: "Error obteniendo usuario" });
+  }
+});
+
 router.get("/", verifyToken, isAdmin, async (_req, res) => {
   try {
     const result = await pool.query(
@@ -15,12 +33,11 @@ router.get("/", verifyToken, isAdmin, async (_req, res) => {
     );
     res.json(result.rows);
   } catch (err) {
-    console.error("Error fetching users:", err);
+    console.error("❌ Error fetching users:", err);
     res.status(500).json({ message: "Error fetching users" });
   }
 });
 
-router.post("/", verifyToken, isAdmin, registerUser);
 router.put("/:id", verifyToken, isAdmin, async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
@@ -38,29 +55,32 @@ router.put("/:id", verifyToken, isAdmin, async (req: AuthRequest, res: Response)
     );
 
     if (result.rows.length === 0) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(404).json({ message: "Usuario no encontrado" });
     }
 
-    res.json(result.rows[0]);
+    res.json({ message: "Usuario actualizado correctamente", user: result.rows[0] });
   } catch (err) {
-    console.error("Error updating user:", err);
-    res.status(500).json({ message: "Error updating user" });
+    console.error("❌ Error updating user:", err);
+    res.status(500).json({ message: "Error actualizando usuario" });
   }
 });
 
 router.delete("/:id", verifyToken, isAdmin, async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
-    const result = await pool.query("DELETE FROM users WHERE id = $1 RETURNING *", [id]);
+    const result = await pool.query(
+      "DELETE FROM users WHERE id = $1 RETURNING id, name, email, telefono, role",
+      [id]
+    );
 
     if (result.rows.length === 0) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(404).json({ message: "Usuario no encontrado" });
     }
 
-    res.json({ message: "User deleted successfully" });
+    res.json({ message: "Usuario eliminado correctamente", user: result.rows[0] });
   } catch (err) {
-    console.error("Error deleting user:", err);
-    res.status(500).json({ message: "Error deleting user" });
+    console.error("❌ Error deleting user:", err);
+    res.status(500).json({ message: "Error eliminando usuario" });
   }
 });
 

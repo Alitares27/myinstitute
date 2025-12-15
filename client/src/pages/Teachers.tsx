@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import Layout from "../components/Layout";
 
 export default function Teachers() {
   const [teachers, setTeachers] = useState<any[]>([]);
@@ -62,62 +61,60 @@ export default function Teachers() {
     role === "teacher" ? teachers.filter((t) => t.user_id === userId) : teachers;
 
   return (
-    <Layout>
-      <div className="teachers-page">
-        <h2>👨‍🏫 Maestros</h2>
+    <div className="teachers-page">
+      <h2>👨‍🏫 Maestros</h2>
 
-        {role === "admin" && (
-          <form onSubmit={handleSubmit} className="teacher-form">
-            <input
-              placeholder="ID Usuario"
-              value={form.user_id}
-              onChange={(e) => setForm({ ...form, user_id: e.target.value })}
-            />
-            <input
-              placeholder="Especialidad"
-              value={form.specialty}
-              onChange={(e) => setForm({ ...form, specialty: e.target.value })}
-            />
-            <button type="submit">
-              {form.id ? "Actualizar Maestro" : "Agregar Maestro"}
-            </button>
-          </form>
-        )}
+      {role === "admin" && (
+        <form onSubmit={handleSubmit} className="teacher-form">
+          <input
+            placeholder="ID Usuario"
+            value={form.user_id}
+            onChange={(e) => setForm({ ...form, user_id: e.target.value })}
+          />
+          <input
+            placeholder="Especialidad"
+            value={form.specialty}
+            onChange={(e) => setForm({ ...form, specialty: e.target.value })}
+          />
+          <button type="submit">
+            {form.id ? "Actualizar Maestro" : "Agregar Maestro"}
+          </button>
+        </form>
+      )}
 
-        {role === "admin" ? (
-          <table className="teachers-table">
-            <thead>
-              <tr>
-                <th>Nombre</th>
-                <th>Email</th>
-                <th>Especialidad</th>
-                <th>Acciones</th>
+      {role === "admin" ? (
+        <table className="teachers-table">
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Email</th>
+              <th>Especialidad</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredTeachers.map((t) => (
+              <tr key={t.id}>
+                <td>{t.name}</td>
+                <td>{t.email}</td>
+                <td>{t.specialty}</td>
+                <td>
+                  <button onClick={() => handleEdit(t)}>Editar</button>
+                  <button onClick={() => handleDelete(t.id)}>Eliminar</button>
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {filteredTeachers.map((t) => (
-                <tr key={t.id}>
-                  <td>{t.name}</td>
-                  <td>{t.email}</td>
-                  <td>{t.specialty}</td>
-                  <td>
-                    <button onClick={() => handleEdit(t)}>Editar</button>
-                    <button onClick={() => handleDelete(t.id)}>Eliminar</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        ) : (
-          filteredTeachers.map((t) => (
-            <div key={t.id} className="teacher-info">
-              <p><strong>Nombre:</strong> {t.name}</p>
-              <p><strong>Email:</strong> {t.email}</p>
-              <p><strong>Especialidad:</strong> {t.specialty}</p>
-            </div>
-          ))
-        )}
-      </div>
-    </Layout>
+            ))}
+          </tbody>
+        </table>
+      ) : (
+        filteredTeachers.map((t) => (
+          <div key={t.id} className="teacher-info">
+            <p><strong>Nombre:</strong> {t.name}</p>
+            <p><strong>Email:</strong> {t.email}</p>
+            <p><strong>Especialidad:</strong> {t.specialty}</p>
+          </div>
+        ))
+      )}
+    </div>
   );
 }
