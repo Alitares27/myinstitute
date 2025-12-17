@@ -157,6 +157,27 @@ body, html {
 
 main.content{
     margin-left: 1.5em;
+    padding-top: 2rem;
+}
+
+/* Contenido Principal (Paginacion) */
+.pagination {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.pagination button {
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius);
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-color);
+}
+
+.pagination button.active {
+  background-color: var(--primary);
+  color: white;
 }
 
 /* =========================================
