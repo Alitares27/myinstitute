@@ -81,12 +81,12 @@ body, html {
 }
 
 .logo-icon {
-  font-size: 2rem;
+  font-size: 4rem;
   margin-bottom: 0.5rem;
 }
 
 .logo-text {
-  font-size: 1.25rem;
+  font-size: 1.5rem;
 }
 
 .sidebar ul {
@@ -105,6 +105,7 @@ body, html {
   gap: 0.75rem;
   color: rgba(255, 255, 255, 0.7);
   text-decoration: none;
+  font-size: 1.2rem;
   padding: 0.75rem 1rem;
   border-radius: var(--radius);
   transition: all 0.2s ease;
@@ -157,7 +158,7 @@ body, html {
 
 main.content{
     margin-left: 1.5em;
-    padding-top: 2rem;
+    padding-top: 1rem;
 }
 
 /* Contenido Principal (Paginacion) */
@@ -398,9 +399,6 @@ table button {
 /* Autenticación (Login / Signup) Centrada */
 .auth-container, 
 .home-container {
-  max-width: 400px;
-  width: 90%;
-  margin: 4rem auto;
   padding: 2.5rem;
   background: var(--bg-surface);
   border-radius: var(--radius);

@@ -18,10 +18,8 @@ router.get("/me", verifyToken, async (req: AuthRequest, res: Response) => {
     if (result.rows.length === 0) {
       return res.status(404).json({ message: "Usuario no encontrado" });
     }
-
     res.json(result.rows[0]);
   } catch (err) {
-    console.error("❌ Error fetching current user:", err);
     res.status(500).json({ message: "Error obteniendo usuario" });
   }
 });
@@ -33,7 +31,6 @@ router.get("/", verifyToken, isAdmin, async (_req, res) => {
     );
     res.json(result.rows);
   } catch (err) {
-    console.error("❌ Error fetching users:", err);
     res.status(500).json({ message: "Error fetching users" });
   }
 });
@@ -58,9 +55,8 @@ router.put("/:id", verifyToken, isAdmin, async (req: AuthRequest, res: Response)
       return res.status(404).json({ message: "Usuario no encontrado" });
     }
 
-    res.json({ message: "Usuario actualizado correctamente", user: result.rows[0] });
+    res.json(result.rows[0]);
   } catch (err) {
-    console.error("❌ Error updating user:", err);
     res.status(500).json({ message: "Error actualizando usuario" });
   }
 });
@@ -68,18 +64,9 @@ router.put("/:id", verifyToken, isAdmin, async (req: AuthRequest, res: Response)
 router.delete("/:id", verifyToken, isAdmin, async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
-    const result = await pool.query(
-      "DELETE FROM users WHERE id = $1 RETURNING id, name, email, telefono, role",
-      [id]
-    );
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({ message: "Usuario no encontrado" });
-    }
-
-    res.json({ message: "Usuario eliminado correctamente", user: result.rows[0] });
+    await pool.query("DELETE FROM users WHERE id = $1", [id]);
+    res.json({ message: "Usuario eliminado correctamente" });
   } catch (err) {
-    console.error("❌ Error deleting user:", err);
     res.status(500).json({ message: "Error eliminando usuario" });
   }
 });

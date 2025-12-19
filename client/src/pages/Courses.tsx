@@ -1,120 +1,124 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 
+const API_URL = "http://localhost:5000/api";
+
 export default function Courses() {
   const [courses, setCourses] = useState<any[]>([]);
   const [teachers, setTeachers] = useState<any[]>([]);
-  const [form, setForm] = useState({ id: "", title: "", teacher_id: "" });
   const [role, setRole] = useState<string>("");
-  const [userId, setUserId] = useState<string>("");
+  const [error, setError] = useState("");
+  const [form, setForm] = useState({ id: "", title: "", teacher_id: "" });
 
   useEffect(() => {
-    axios
-      .get("http://localhost:5000/api/me", {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-      })
-      .then((res) => {
-        setRole(res.data.role);
-        setUserId(res.data.id);
-      });
+    const fetchCoursesData = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const config = { headers: { Authorization: `Bearer ${token}` } };
 
-    axios
-      .get("http://localhost:5000/api/courses", {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-      })
-      .then((res) => setCourses(res.data));
+        const meRes = await axios.get(`${API_URL}/users/me`, config);
+        setRole(meRes.data.role);
 
-    axios
-      .get("http://localhost:5000/api/teachers", {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-      })
-      .then((res) => setTeachers(res.data));
+        const coursesRes = await axios.get(`${API_URL}/courses`, config);
+        setCourses(coursesRes.data);
+
+        if (meRes.data.role === "admin") {
+          const teachersRes = await axios.get(`${API_URL}/teachers`, config);
+          setTeachers(teachersRes.data);
+        }
+      } catch (err) {
+        setError("Error al cargar los datos de cursos.");
+      }
+    };
+
+    fetchCoursesData();
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const token = localStorage.getItem("token");
+    const config = { headers: { Authorization: `Bearer ${token}` } };
 
-    if (form.id) {
-      const res = await axios.put(
-        `http://localhost:5000/api/courses/${form.id}`,
-        { title: form.title, teacher_id: form.teacher_id },
-        { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
-      );
-      setCourses(courses.map((c) => (c.id === form.id ? res.data : c)));
-    } else {
-      const res = await axios.post("http://localhost:5000/api/courses", form, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-      });
-      setCourses([...courses, res.data]);
+    try {
+      if (form.id) {
+        await axios.put(`${API_URL}/courses/${form.id}`, form, config);
+      } else {
+        await axios.post(`${API_URL}/courses`, form, config);
+      }
+      window.location.reload();
+    } catch {
+      setError("Error al guardar el curso.");
     }
-
-    setForm({ id: "", title: "", teacher_id: "" });
-  };
-
-  const handleEdit = (course: any) => {
-    setForm({ id: course.id, title: course.title, teacher_id: course.teacher_id });
   };
 
   const handleDelete = async (id: string) => {
-    await axios.delete(`http://localhost:5000/api/courses/${id}`, {
-      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-    });
-    setCourses(courses.filter((c) => c.id !== id));
+    if (!window.confirm("¿Estás seguro de eliminar este curso?")) return;
+    try {
+      const token = localStorage.getItem("token");
+      await axios.delete(`${API_URL}/courses/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setCourses(courses.filter((c) => c.id !== id));
+    } catch {
+      setError("No se pudo eliminar el curso.");
+    }
   };
 
-  const filteredCourses =
-    role === "student"
-      ? courses.filter((c) => c.students?.includes(userId))
-      : courses;
+  const handleEdit = (course: any) => {
+    setForm({ 
+      id: course.id, 
+      title: course.title, 
+      teacher_id: course.teacher_id || "" 
+    });
+  };
 
   return (
-    <div className="courses-page">
-      <h2>📚 Cursos</h2>
+    <div className="page-container">
+      <h2>📚 {role === "admin" ? "Administrar Cursos" : "Cursos Disponibles"}</h2>
+      {error && <p style={{ color: "red" }}>{error}</p>}
 
       {role === "admin" && (
-        <form onSubmit={handleSubmit} className="course-form">
+        <form onSubmit={handleSubmit} style={{ marginBottom: "2rem", display: "flex", gap: "10px" }}>
           <input
-            placeholder="Curso"
+            placeholder="Nombre del Curso"
             value={form.title}
             onChange={(e) => setForm({ ...form, title: e.target.value })}
+            required
           />
           <select
             value={form.teacher_id}
             onChange={(e) => setForm({ ...form, teacher_id: e.target.value })}
+            required
           >
-            <option value="">Elegir Maestro</option>
+            <option value="">Asignar Maestro</option>
             {teachers.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.name}
-              </option>
+              <option key={t.id} value={t.id}>{t.name}</option>
             ))}
           </select>
-          <button type="submit">
-            {form.id ? "Actualizar" : "Agregar Curso"}
-          </button>
+          <button type="submit">{form.id ? "Actualizar" : "Crear"}</button>
+          {form.id && <button type="button" onClick={() => setForm({ id: "", title: "", teacher_id: "" })}>Cancelar</button>}
         </form>
       )}
 
-      <table className="courses-table">
+      <table border={1} style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
         <thead>
-          <tr>
-            <th>Titulo</th>
-            <th>Maestro</th>
-            {role === "admin" && <th>Acciones</th>}
+          <tr style={{ backgroundColor: "#f2f2f2" }}>
+            <th style={{ padding: "10px" }}>ID</th>
+            <th style={{ padding: "10px" }}>Título</th>
+            <th style={{ padding: "10px" }}>Maestro</th>
+            {role === "admin" && <th style={{ padding: "10px" }}>Acciones</th>}
           </tr>
         </thead>
         <tbody>
-          {filteredCourses.map((c) => (
+          {courses.map((c) => (
             <tr key={c.id}>
-              <td>{c.title}</td>
-              <td>
-                {teachers.find((t) => t.id === c.teacher_id)?.name ||
-                  c.teacher_name}
-              </td>
+              <td style={{ padding: "10px" }}>{c.id}</td>
+              <td style={{ padding: "10px" }}>{c.title}</td>
+              <td style={{ padding: "10px" }}>{c.teacher_name || "No asignado"}</td>
               {role === "admin" && (
-                <td>
-                  <button onClick={() => handleEdit(c)}>Editar</button>
-                  <button onClick={() => handleDelete(c.id)}>Eliminar</button>
+                <td style={{ padding: "10px" }}>
+                  <button onClick={() => handleEdit(c)} style={{ marginRight: "5px" }}>✏️</button>
+                  <button onClick={() => handleDelete(c.id)}>🗑️</button>
                 </td>
               )}
             </tr>

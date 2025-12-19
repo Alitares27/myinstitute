@@ -6,33 +6,34 @@ const router = express.Router();
 
 router.get("/", verifyToken, async (req: AuthRequest, res: Response) => {
   try {
-    if (req.user?.role === "admin") {
-      const result = await pool.query(`
-        SELECT g.id, s.user_id, u.name AS student_name, 
-               c.title AS course_title, g.grade, g.grade_type, g.created_at
+    const { role, id } = req.user as { role: string; id: string };
+    const userId = Number(id);
+
+    let query = "";
+    let params: any[] = [];
+
+    if (role === "admin") {
+      query = `
+        SELECT g.id, g.student_id, u.name AS student_name, 
+               g.course_id, c.title AS course_title, g.grade, g.grade_type, g.created_at
         FROM grades g
         JOIN students s ON g.student_id = s.id
         JOIN users u ON s.user_id = u.id
         JOIN courses c ON g.course_id = c.id
-        ORDER BY u.name ASC, c.title ASC
-      `);
-      return res.json(result.rows); 
-    } else if (req.user?.role === "student") {
-      const result = await pool.query(
-        `
+        ORDER BY g.created_at DESC`;
+    } else {
+      query = `
         SELECT g.id, c.title AS course_title, g.grade, g.grade_type, g.created_at
         FROM grades g
         JOIN students s ON g.student_id = s.id
         JOIN courses c ON g.course_id = c.id
         WHERE s.user_id = $1
-        ORDER BY c.title ASC
-      `,
-        [req.user.id]
-      );
-      return res.json(result.rows); 
-    } else {
-      return res.status(403).json({ message: "Acceso denegado" });
+        ORDER BY g.created_at DESC`;
+      params = [userId];
     }
+
+    const result = await pool.query(query, params);
+    res.json(result.rows);
   } catch (err) {
     console.error("❌ Error fetching grades:", err);
     res.status(500).json({ message: "Error al obtener calificaciones" });
@@ -44,50 +45,38 @@ router.post("/", verifyToken, isAdmin, async (req: AuthRequest, res: Response) =
     const { student_id, course_id, grade, grade_type } = req.body;
     const result = await pool.query(
       `INSERT INTO grades (student_id, course_id, grade, grade_type) 
-       VALUES ($1, $2, $3, $4) 
-       RETURNING id, student_id, course_id, grade, grade_type, created_at`,
+       VALUES ($1, $2, $3, $4) RETURNING *`,
       [student_id, course_id, grade, grade_type]
     );
-    res.json(result.rows[0]);
+    res.status(201).json(result.rows[0]);
   } catch (err) {
-    console.error("❌ Error creating grade:", err);
-    res.status(500).json({ message: "Error al crear calificación" });
+    res.status(500).json({ message: "Error al crear registro" });
   }
 });
 
 router.put("/:id", verifyToken, isAdmin, async (req: AuthRequest, res: Response) => {
   try {
-    const { grade, grade_type } = req.body;
+    const { id } = req.params;
+    const { grade, grade_type, student_id, course_id } = req.body;
     const result = await pool.query(
-      `UPDATE grades 
-       SET grade = $1, grade_type = $2 
-       WHERE id = $3 
-       RETURNING id, student_id, course_id, grade, grade_type, created_at`,
-      [grade, grade_type, req.params.id]
+      `UPDATE grades SET grade = $1, grade_type = $2, student_id = $3, course_id = $4 
+       WHERE id = $5 RETURNING *`,
+      [grade, grade_type, student_id, course_id, id]
     );
-    if (result.rows.length === 0) {
-      return res.status(404).json({ message: "Calificación no encontrada" });
-    }
+    
+    if (result.rows.length === 0) return res.status(404).json({ message: "No encontrado" });
     res.json(result.rows[0]);
   } catch (err) {
-    console.error("❌ Error updating grade:", err);
-    res.status(500).json({ message: "Error al actualizar calificación" });
+    res.status(500).json({ message: "Error al actualizar" });
   }
 });
 
 router.delete("/:id", verifyToken, isAdmin, async (req: AuthRequest, res: Response) => {
   try {
-    const result = await pool.query(
-      "DELETE FROM grades WHERE id = $1 RETURNING id, student_id, course_id, grade, grade_type, created_at",
-      [req.params.id]
-    );
-    if (result.rows.length === 0) {
-      return res.status(404).json({ message: "Calificación no encontrada" });
-    }
-    res.json({ message: "Calificación eliminada correctamente", data: result.rows[0] });
+    await pool.query("DELETE FROM grades WHERE id = $1", [req.params.id]);
+    res.json({ message: "Calificación eliminada" });
   } catch (err) {
-    console.error("❌ Error deleting grade:", err);
-    res.status(500).json({ message: "Error al eliminar calificación" });
+    res.status(500).json({ message: "Error al eliminar" });
   }
 });
 

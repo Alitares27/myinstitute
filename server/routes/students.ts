@@ -14,22 +14,44 @@ router.get("/", verifyToken, async (req: AuthRequest, res: Response) => {
     `);
     res.json(result.rows);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Error fetching students" });
+    res.status(500).json({ message: "Error al obtener estudiantes" });
   }
 });
 
-router.post("/", verifyToken, isAdmin, async (req: AuthRequest, res: Response) => {
+router.put("/:id", verifyToken, isAdmin, async (req: AuthRequest, res: Response) => {
+  const { id } = req.params; 
+  const { name, grade } = req.body;
+  
   try {
-    const { user_id, grade } = req.body;
-    const result = await pool.query(
-      "INSERT INTO students (user_id, grade) VALUES ($1, $2) RETURNING *",
-      [user_id, grade]
+    const studentRes = await pool.query(
+      "UPDATE students SET grade = $1 WHERE id = $2 RETURNING user_id",
+      [grade, id]
     );
-    res.json(result.rows[0]);
+
+    if (studentRes.rows.length === 0) return res.status(404).json({ message: "Estudiante no encontrado" });
+
+    const userId = studentRes.rows[0].user_id;
+
+    await pool.query("UPDATE users SET name = $1 WHERE id = $2", [name, userId]);
+
+    const updated = await pool.query(`
+      SELECT s.id, s.grade, u.id AS user_id, u.name, u.email, u.telefono, u.role
+      FROM students s JOIN users u ON s.user_id = u.id WHERE s.id = $1`, [id]
+    );
+
+    res.json(updated.rows[0]);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Error creating student" });
+    res.status(500).json({ message: "Error al actualizar" });
+  }
+});
+
+router.delete("/:id", verifyToken, isAdmin, async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    await pool.query("DELETE FROM students WHERE id = $1", [id]);
+    res.json({ message: "Estudiante eliminado correctamente" });
+  } catch (err) {
+    res.status(500).json({ message: "Error al eliminar" });
   }
 });
 

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import Layout from "../components/Layout";
 
 export default function Login() {
   const [form, setForm] = useState({ email: "", password: "" });
@@ -22,11 +23,11 @@ export default function Login() {
 
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("user", JSON.stringify(res.data.user));
+      localStorage.setItem("role", res.data.user.role);
 
       navigate("/dashboard");
     } catch (err: any) {
       console.error("❌ Login error:", err);
-
       if (err.response) {
         setError(err.response.data?.message || "Error en el servidor");
       } else if (err.request) {
@@ -40,39 +41,56 @@ export default function Login() {
   };
 
   return (
-    <div className="auth-container">
-      <h2>🔑 Login</h2>
-      <form onSubmit={handleSubmit}>
-        <input
-          type="email"
-          placeholder="Email"
-          value={form.email}
-          onChange={(e) => setForm({ ...form, email: e.target.value })}
-          required
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          value={form.password}
-          onChange={(e) => setForm({ ...form, password: e.target.value })}
-          required
-        />
+    <Layout>
+      <div className="auth-page-wrapper">
+        <div className="auth-container card">
+          <h2>🔑 Iniciar Sesión</h2>
+          <p className="auth-subtitle">Ingresa tu Usuario y Contraseña</p>
+          
+          <form onSubmit={handleSubmit} className="auth-form">
+            <div className="form-group">
+              <label>Correo Electrónico</label>
+              <input
+                type="email"
+                placeholder="ejemplo@correo.com"
+                value={form.email}
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
+                required
+              />
+            </div>
 
-        <div className="auth-buttons">
-          <button type="submit" disabled={loading}>
-            {loading ? "Ingresando..." : "Iniciar Sesión"}
-          </button>
-          <button
-            type="button"
-            className="cancel-button"
-            onClick={() => navigate("/")}
-          >
-            Cancelar
-          </button>
+            <div className="form-group">
+              <label>Contraseña</label>
+              <input
+                type="password"
+                placeholder="••••••••"
+                value={form.password}
+                onChange={(e) => setForm({ ...form, password: e.target.value })}
+                required
+              />
+            </div>
+
+            {error && <p className="error-message">{error}</p>}
+
+            <div className="auth-buttons">
+              <button type="submit" className="btn-login" disabled={loading}>
+                {loading ? "Verificando..." : "Ingresar al Sistema"}
+              </button>
+              <button
+                type="button"
+                className="btn-cancel"
+                onClick={() => navigate("/")}
+              >
+                Volver al Inicio
+              </button>
+            </div>
+          </form>
+          
+          <div className="auth-footer">
+            <p>¿No tienes una cuenta? <span onClick={() => navigate("/signup")} style={{color: '#007bff', cursor: 'pointer'}}>Regístrate aquí</span></p>
+          </div>
         </div>
-      </form>
-
-      {error && <p className="error">{error}</p>}
-    </div>
+      </div>
+    </Layout>
   );
 }

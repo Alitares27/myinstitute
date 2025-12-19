@@ -59,8 +59,9 @@ router.get("/", verifyToken, async (req: AuthRequest, res: Response) => {
         ORDER BY a.date DESC
       `);
     } else if (role === "student") {
+      
       result = await pool.query(
-        `SELECT a.id, a.course_id, c.title AS course, a.date, a.status
+        `SELECT a.id, a.student_id, a.course_id, c.title AS course, a.date, a.status
          FROM attendance a
          JOIN courses c ON a.course_id = c.id
          WHERE a.student_id = $1
