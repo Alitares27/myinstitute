@@ -17,12 +17,8 @@ export default function Home() {
       <div className="home-container">
         <section className="home-hero">
           <h1 className="home-title">
-            🏫 Bienvenido a <span>MyInstitute</span>
+            🏫 Bienvenido al <span>Instituto</span>
           </h1>
-          <p className="home-subtitle">
-            Tu plataforma académica integral para gestionar cursos, 
-            asistencias y rendimiento escolar de manera eficiente.
-          </p>
           
           <div className="auth-buttons">
             <button className="btn primary" onClick={() => navigate("/login")}>
@@ -35,7 +31,7 @@ export default function Home() {
         </section>
 
         <section className="home-features">
-          <h2>✨ ¿Qué puedes hacer en MyInstitute?</h2>
+          <h2>✨ ¿Qué puedes aquí?</h2>
           <div className="features-grid">
             <div className="feature-card">
               <div className="feature-icon">📚</div>
@@ -61,7 +57,7 @@ export default function Home() {
         </section>
 
         <footer className="home-footer">
-          <p>© {new Date().getFullYear()} MyInstitute. Gestión Educativa Moderna.</p>
+          <p>© {new Date().getFullYear()} Instituto.</p>
         </footer>
       </div>
     </Layout>
