@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "nodemon --watch . --ext ts --exec ts-node index.ts",
     "build": "tsc",
-    "start": "node index"
+    "start": "node index.ts"
   },
   "dependencies": {
     "bcrypt": "^5.1.1",
