@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import axios from "axios";
 
 const API_URL = "http://localhost:5000/api";
@@ -8,6 +8,8 @@ export default function Students() {
   const [form, setForm] = useState({ id: "", name: "", grade: "" });
   const [role, setRole] = useState<string>("");
   const [userId, setUserId] = useState<string>("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const recordsPerPage = 5;
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -28,7 +30,7 @@ export default function Students() {
 
     try {
       if (form.id) {
-        const res = await axios.put(`${API_URL}/students/${form.id}`, 
+        const res = await axios.put(`${API_URL}/students/${form.id}`,
           { name: form.name, grade: form.grade }, config
         );
         setStudents(students.map((s) => (s.id === form.id ? res.data : s)));
@@ -44,17 +46,17 @@ export default function Students() {
   };
 
   const handleEdit = (student: any) => {
-    setForm({ 
-      id: student.id, 
-      name: student.name, 
-      grade: student.grade 
+    setForm({
+      id: student.id,
+      name: student.name,
+      grade: student.grade
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleDelete = async (id: string) => {
     if (!window.confirm("¿Seguro que deseas eliminar este estudiante?")) return;
-    
+
     try {
       const token = localStorage.getItem("token");
       await axios.delete(`${API_URL}/students/${id}`, {
@@ -66,18 +68,35 @@ export default function Students() {
     }
   };
 
-  const filteredStudents = role === "student" 
-    ? students.filter((s) => s.user_id === userId) 
-    : students;
+  const filteredStudents = useMemo(() => {
+    return role === "student"
+      ? students.filter((s) => s.user_id === userId)
+      : students;
+  }, [students, role, userId]);
+
+  const totalPages = Math.ceil(filteredStudents.length / recordsPerPage);
+
+  const currentRecords = useMemo(() => {
+    const lastIdx = currentPage * recordsPerPage;
+    const firstIdx = lastIdx - recordsPerPage;
+    return filteredStudents.slice(firstIdx, lastIdx);
+  }, [filteredStudents, currentPage]);
+
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(totalPages);
+    }
+  }, [totalPages, currentPage]);
 
   return (
     <div className="students-page">
       <h2>👨‍🎓 Estudiantes</h2>
-
+      <h3>{form.id ? "✏️ Actualizar" : "➕ Agregar"}</h3>
       {role === "admin" && (
-        <div style={{ background: "#f4f4f4", padding: "15px", borderRadius: "8px", marginBottom: "20px" }}>
-          <h3>{form.id ? "Editar Estudiante" : "Agregar Nuevo"}</h3>
-          <form onSubmit={handleSubmit} style={{ display: "flex", gap: "10px" }}>
+
+        <div className="form-card">
+
+          <form onSubmit={handleSubmit} className="grid-form">
             <input
               placeholder="Nombre"
               value={form.name}
@@ -85,23 +104,27 @@ export default function Students() {
               required
             />
             <input
-              placeholder="Organización/Grado"
+              placeholder="Organización"
               value={form.grade}
               onChange={(e) => setForm({ ...form, grade: e.target.value })}
               required
             />
-            <button type="submit" style={{ backgroundColor: form.id ? "#2196F3" : "#4CAF50", color: "white" }}>
-              {form.id ? "Guardar Cambios" : "Agregar Estudiante"}
+            <button type="submit">
+              {form.id ? "Actualizar" : "Agregar"}
             </button>
-            {form.id && <button onClick={() => setForm({ id: "", name: "", grade: "" })}>Cancelar</button>}
+            {form.id && (
+              <button type="button" className="cancel-button" onClick={() => setForm({ id: "", name: "", grade: "" })}>
+                Cancelar
+              </button>
+            )}
           </form>
         </div>
       )}
 
       {role === "admin" ? (
-        <table className="students-table" border={1} style={{ width: "100%", borderCollapse: "collapse" }}>
+        <table className="students-table">
           <thead>
-            <tr style={{ backgroundColor: "#ddd" }}>
+            <tr>
               <th>Nombre</th>
               <th>Email</th>
               <th>Teléfono</th>
@@ -110,15 +133,15 @@ export default function Students() {
             </tr>
           </thead>
           <tbody>
-            {students.map((s) => (
+            {currentRecords.map((s) => (
               <tr key={s.id}>
                 <td>{s.name}</td>
                 <td>{s.email}</td>
                 <td>{s.telefono}</td>
                 <td>{s.grade}</td>
                 <td>
-                  <button onClick={() => handleEdit(s)} style={{ marginRight: "5px" }}>✏️</button>
-                  <button onClick={() => handleDelete(s.id)} style={{ color: "red" }}>🗑️</button>
+                  <button onClick={() => handleEdit(s)} className="edit-button">✏️</button>
+                  <button onClick={() => handleDelete(s.id)} className="delete-button">🗑️</button>
                 </td>
               </tr>
             ))}
@@ -126,12 +149,26 @@ export default function Students() {
         </table>
       ) : (
         <div className="student-list">
-          {filteredStudents.map((s) => (
-            <div key={s.id} className="student-info" style={{ border: "1px solid #ccc", padding: "10px", margin: "10px 0" }}>
+          {currentRecords.map((s) => (
+            <div key={s.id} className="student-info">
               <p><strong>Nombre:</strong> {s.name}</p>
               <p><strong>Organización:</strong> {s.grade}</p>
               <p><strong>Email:</strong> {s.email}</p>
             </div>
+          ))}
+        </div>
+      )}
+
+      {totalPages > 1 && (
+        <div className="pagination">
+          {Array.from({ length: totalPages }, (_, i) => (
+            <button
+              key={i + 1}
+              onClick={() => setCurrentPage(i + 1)}
+              className={currentPage === i + 1 ? "active" : ""}
+            >
+              {i + 1}
+            </button>
           ))}
         </div>
       )}

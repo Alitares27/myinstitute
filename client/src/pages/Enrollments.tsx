@@ -81,7 +81,7 @@ export default function Enrollments() {
   return (
     <div className="enrollments-page">
       <h2>📝 Matrículas</h2>
-
+      <h3>{form.id ? "✏️ Actualizar" : "➕ Matricular"}</h3>
       {role === "admin" && (
         <form onSubmit={handleSubmit} className="enrollment-form">
           <select
@@ -135,8 +135,8 @@ export default function Enrollments() {
                     en.course_id}
                 </td>
                 <td>
-                  <button onClick={() => handleEdit(en)}>Edit</button>
-                  <button onClick={() => handleDelete(en.id)}>Delete</button>
+                  <button onClick={() => handleEdit(en)}>✏️</button>
+                  <button onClick={() => handleDelete(en.id)}>🗑️</button>
                 </td>
               </tr>
             ))}

@@ -63,7 +63,7 @@ export default function Teachers() {
   return (
     <div className="teachers-page">
       <h2>👨‍🏫 Maestros</h2>
-
+      <h3>{form.id ? "✏️ Actualizar" : "➕ Agregar"}</h3>
       {role === "admin" && (
         <form onSubmit={handleSubmit} className="teacher-form">
           <input
@@ -77,7 +77,7 @@ export default function Teachers() {
             onChange={(e) => setForm({ ...form, specialty: e.target.value })}
           />
           <button type="submit">
-            {form.id ? "Actualizar Maestro" : "Agregar Maestro"}
+            {form.id ? "Actualizar" : "Agregar"}
           </button>
         </form>
       )}
@@ -99,8 +99,8 @@ export default function Teachers() {
                 <td>{t.email}</td>
                 <td>{t.specialty}</td>
                 <td>
-                  <button onClick={() => handleEdit(t)}>Editar</button>
-                  <button onClick={() => handleDelete(t.id)}>Eliminar</button>
+                  <button onClick={() => handleEdit(t)}>✏️</button>
+                  <button onClick={() => handleDelete(t.id)}>🗑️</button>
                 </td>
               </tr>
             ))}
