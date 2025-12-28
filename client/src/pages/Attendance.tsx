@@ -199,8 +199,8 @@ export default function Attendance() {
                   )}
                   <td>{courses.find((c) => c.id === a.course_id)?.title || `ID: ${a.course_id}`}</td>
                   <td>{new Date(a.date).toLocaleDateString()}</td>
-                  <td style={{ color: a.status === "present" ? "green" : "red", fontWeight: "bold" }}>
-                    {a.status === "present" ? "Presente" : "Ausente"}
+                  <td style={{ color: a.status === "Present" ? "green" : "red", fontWeight: "bold" }}>
+                    {a.status === "Present" ? "Presente" : "Ausente"}
                   </td>
                 </tr>
               ))}
