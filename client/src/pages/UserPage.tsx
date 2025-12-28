@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import axios from "axios";
 
 interface User {
@@ -15,14 +15,16 @@ function UserPage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const recordsPerPage = 5;
 
   const [form, setForm] = useState({
-    id: "", 
+    id: "",
     name: "",
     email: "",
     password: "",
     telefono: "",
-    role: "student",
+    role: "student" as "admin" | "student" | "teacher",
     specialty: "",
   });
 
@@ -53,12 +55,26 @@ function UserPage() {
     }
   };
 
+  const totalPages = Math.ceil(users.length / recordsPerPage);
+
+  const currentRecords = useMemo(() => {
+    const lastIdx = currentPage * recordsPerPage;
+    const firstIdx = lastIdx - recordsPerPage;
+    return users.slice(firstIdx, lastIdx);
+  }, [users, currentPage]);
+
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(totalPages);
+    }
+  }, [totalPages, currentPage]);
+
   const handleEditClick = (user: User) => {
     setForm({
       id: user.id.toString(),
       name: user.name,
       email: user.email,
-      password: "", 
+      password: "",
       telefono: user.telefono || "",
       role: user.role,
       specialty: user.specialty || "",
@@ -91,7 +107,7 @@ function UserPage() {
           telefono: form.telefono,
           role: form.role,
         }, config);
-        
+
         setUsers(users.map((u) => (u.id === Number(form.id) ? res.data : u)));
         alert("Usuario actualizado con éxito");
       } else {
@@ -103,7 +119,7 @@ function UserPage() {
           role: form.role,
           specialty: form.role === "teacher" ? form.specialty : null,
         }, config);
-        
+
         setUsers([...users, res.data.user]);
         alert("Usuario creado con éxito");
       }
@@ -124,21 +140,20 @@ function UserPage() {
   return (
     <div className="user-page">
       <h2>👤 Gestión de Usuarios</h2>
-
+      <h3>{form.id ? "✏️ Actualizar" : "➕ Agregar"}</h3>
       {currentUser.role === "admin" ? (
         <div>
-          <div style={{ background: "#f0f0f0", borderRadius: "8px", marginBottom: "20px" }}>
-            <h3>{form.id ? "✏️ Editando Usuario" : "➕ Crear Nuevo Usuario"}</h3>
-            <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+          <div className="form-card">
+            <div className="grid-form">
               <input placeholder="Nombre" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
               <input placeholder="Email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
-              
+
               {!form.id && (
-                <input 
-                  placeholder="Contraseña" 
-                  type="password" 
-                  value={form.password} 
-                  onChange={(e) => setForm({ ...form, password: e.target.value })} 
+                <input
+                  placeholder="Contraseña"
+                  type="password"
+                  value={form.password}
+                  onChange={(e) => setForm({ ...form, password: e.target.value })}
                 />
               )}
 
@@ -154,17 +169,17 @@ function UserPage() {
                 <input placeholder="Especialidad" value={form.specialty} onChange={(e) => setForm({ ...form, specialty: e.target.value })} />
               )}
 
-              <button onClick={handleSave} style={{ background: form.id ? "#2196F3" : "#4CAF50", color: "white", padding: "8px 15px", border: "none", cursor: "pointer" }}>
-                {form.id ? "Guardar Cambios" : "Crear Usuario"}
+              <button onClick={handleSave}>
+                {form.id ? "Actualizar" : "Crear"}
               </button>
-              
-              {form.id && <button onClick={resetForm}>Cancelar</button>}
+
+              {form.id && <button onClick={resetForm} className="cancel-button">Cancelar</button>}
             </div>
           </div>
 
-          <table border={1} cellPadding={10} style={{ width: "100%", borderCollapse: "collapse" }}>
+          <table>
             <thead>
-              <tr style={{ background: "#eee" }}>
+              <tr>
                 <th>ID</th>
                 <th>Nombre</th>
                 <th>Email</th>
@@ -173,20 +188,34 @@ function UserPage() {
               </tr>
             </thead>
             <tbody>
-              {users.map((u) => (
+              {currentRecords.map((u) => (
                 <tr key={u.id}>
                   <td>{u.id}</td>
                   <td>{u.name}</td>
                   <td>{u.email}</td>
                   <td><span className={`badge-${u.role}`}>{u.role}</span></td>
                   <td>
-                    <button onClick={() => handleEditClick(u)} style={{ marginRight: "10px" }}>✏️ Editar</button>
-                    <button onClick={() => handleDelete(u.id)} style={{ color: "red" }}>🗑️ Eliminar</button>
+                    <button onClick={() => handleEditClick(u)} className="edit-button">✏️</button>
+                    <button onClick={() => handleDelete(u.id)} className="delete-button">🗑️</button>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
+
+          {totalPages > 1 && (
+            <div className="pagination">
+              {Array.from({ length: totalPages }, (_, i) => (
+                <button
+                  key={i + 1}
+                  onClick={() => setCurrentPage(i + 1)}
+                  className={currentPage === i + 1 ? "active" : ""}
+                >
+                  {i + 1}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       ) : (
         <div className="profile-info">

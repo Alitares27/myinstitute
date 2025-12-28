@@ -75,7 +75,7 @@ export default function Courses() {
   return (
     <div className="page-container">
       <h2>📚 {role === "admin" ? "Administrar Cursos" : "Cursos Disponibles"}</h2>
-      {error && <p style={{ color: "red" }}>{error}</p>}
+      <h3>{form.id ? "✏️ Actualizar" : "➕ Agregar"}</h3>
 
       {role === "admin" && (
         <form onSubmit={handleSubmit} style={{ marginBottom: "2rem", display: "flex", gap: "10px" }}>

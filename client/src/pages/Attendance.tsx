@@ -28,7 +28,7 @@ export default function Attendance() {
   const [role, setRole] = useState<string>("");
   const [userId, setUserId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
-  
+
   const [form, setForm] = useState({
     student_id: "",
     course_id: "",
@@ -88,6 +88,16 @@ export default function Attendance() {
     });
   }, [attendance, studentFilter, dateFilter, role, userId]);
 
+  const attendanceStats = useMemo(() => {
+    const totalPresent = filteredAttendance.filter(a => a.status === "Present").length;
+    const maxClasses = 14;
+    const percentage = Math.min((totalPresent / maxClasses) * 100, 100);
+    return {
+      percentage: Math.round(percentage),
+      count: totalPresent
+    };
+  }, [filteredAttendance]);
+
   useEffect(() => {
     setCurrentPage(1);
   }, [studentFilter, dateFilter]);
@@ -119,11 +129,11 @@ export default function Attendance() {
   return (
     <div className="attendance-page">
       <h2>📅 Control de Asistencia</h2>
-
+      <h3>{form.student_id ? "✏️ Editar Asistencia" : "➕ Marcar Asistencia"}</h3>
+      
       {role === "admin" && (
-        <div style={{ background: "#f9f9f9", padding: "20px", borderRadius: "8px" }}>
-          <h3>Registrar Nueva Asistencia</h3>
-          <form onSubmit={handleSubmit} style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+        <div >
+          <form onSubmit={handleSubmit}>
             <select
               value={form.student_id}
               onChange={(e) => setForm({ ...form, student_id: e.target.value })}
@@ -157,32 +167,72 @@ export default function Attendance() {
               <option value="Absent">Ausente</option>
             </select>
 
-            <button type="submit" style={{ cursor: "pointer" }}>Guardar</button>
+            <button type="submit" style={{ cursor: "pointer" }}>Marcar</button>
           </form>
 
-          <h3>🔍 Filtros de Búsqueda</h3>
-          <div style={{ display: "flex", gap: "20px" }}>
-            <div>
-              <label>Por Estudiante: </label>
-              <select value={studentFilter} onChange={(e) => setStudentFilter(e.target.value)}>
-                <option value="">Todos</option>
-                {students.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-              </select>
+          <hr style={{ margin: "10px 0", border: "0.5px solid #ddd" }} />
+
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "20px" }}>
+            <div style={{ flex: 1 }}>
+              <h3>🔍 Filtros de Búsqueda</h3>
+              <div style={{ display: "flex", gap: "20px" }}>
+                <div>
+                  <label>Por Estudiante: </label>
+                  <select value={studentFilter} onChange={(e) => setStudentFilter(e.target.value)}>
+                    <option value="">Todos</option>
+                    {students.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label>Por Fecha: </label>
+                  <input type="date" value={dateFilter} onChange={(e) => setDateFilter(e.target.value)} />
+                  {dateFilter && <button onClick={() => setDateFilter("")} style={{ marginLeft: "5px" }}>Limpiar</button>}
+                </div>
+              </div>
             </div>
-            <div>
-              <label>Por Fecha: </label>
-              <input type="date" value={dateFilter} onChange={(e) => setDateFilter(e.target.value)} />
-              {dateFilter && <button onClick={() => setDateFilter("")} style={{ marginLeft: "5px" }}>Limpiar</button>}
+
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", minWidth: "150px" }}>
+              <div style={{ position: "relative", width: "100px", height: "100px" }}>
+                <svg width="90" height="90" viewBox="0 0 100 100">
+
+                  <circle
+                    cx="50" cy="50" r="40"
+                    fill="transparent"
+                    stroke="#e6e6e6"
+                    strokeWidth="10"
+                  />
+
+                  <circle
+                    cx="50" cy="50" r="40"
+                    fill="transparent"
+                    stroke={attendanceStats.percentage >= 75 ? "#4caf50" : "#ff9800"}
+                    strokeWidth="10"
+                    strokeDasharray={`${attendanceStats.percentage * 2.51} 251`}
+                    strokeLinecap="round"
+                    transform="rotate(-90 50 50)"
+                    style={{ transition: "stroke-dasharray 0.5s ease" }}
+                  />
+                  <text
+                    x="50" y="55"
+                    textAnchor="middle"
+                    fontSize="18"
+                    fontWeight="bold"
+                    fill="#333"
+                  >
+                    {attendanceStats.percentage}%
+                  </text>
+                </svg>
+              </div>
             </div>
           </div>
         </div>
       )}
 
       {filteredAttendance.length === 0 ? (
-        <p>No se encontraron registros de asistencia.</p>
+        <p style={{ marginTop: "20px" }}>No se encontraron registros de asistencia.</p>
       ) : (
         <>
-          <table border={1} cellPadding={10} style={{ width: "100%", borderCollapse: "collapse", marginTop: "5px" }}>
+          <table border={1} cellPadding={10} style={{ width: "100%", borderCollapse: "collapse", marginTop: "10px" }}>
             <thead style={{ background: "#eee" }}>
               <tr>
                 {role === "admin" && <th>Estudiante</th>}
@@ -207,17 +257,12 @@ export default function Attendance() {
             </tbody>
           </table>
 
-          <div style={{ marginTop: "10px", display: "flex", gap: "5px" }}>
+          <div className="pagination">
             {Array.from({ length: totalPages }, (_, i) => (
               <button
                 key={i + 1}
                 onClick={() => setCurrentPage(i + 1)}
-                style={{
-                  padding: "2px 10px",
-                  backgroundColor: currentPage === i + 1 ? "#333" : "#fff",
-                  color: currentPage === i + 1 ? "#fff" : "#333",
-                  cursor: "pointer"
-                }}
+                className={currentPage === i + 1 ? "active" : ""}
               >
                 {i + 1}
               </button>

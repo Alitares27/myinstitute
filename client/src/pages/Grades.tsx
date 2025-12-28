@@ -9,9 +9,10 @@ export default function Grades() {
   const [courses, setCourses] = useState<any[]>([]);
   const [role, setRole] = useState<string>("");
   const [error, setError] = useState("");
-
   const [filterStudent, setFilterStudent] = useState("");
   const [filterType, setFilterType] = useState("");
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const recordsPerPage = 5;
 
   const [form, setForm] = useState({
     id: "",
@@ -57,6 +58,17 @@ export default function Grades() {
     });
   }, [grades, filterStudent, filterType]);
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filterStudent, filterType]);
+
+  const totalPages = Math.ceil(filteredGrades.length / recordsPerPage);
+  const currentRecords = useMemo(() => {
+    const lastIdx = currentPage * recordsPerPage;
+    const firstIdx = lastIdx - recordsPerPage;
+    return filteredGrades.slice(firstIdx, lastIdx);
+  }, [filteredGrades, currentPage]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const token = localStorage.getItem("token");
@@ -68,7 +80,7 @@ export default function Grades() {
       } else {
         await axios.post(`${API_URL}/grades`, form, config);
       }
-      
+
       setForm({ id: "", student_id: "", course_id: "", grade: "", grade_type: "examen" });
       fetchData();
     } catch (err) {
@@ -101,14 +113,12 @@ export default function Grades() {
 
   return (
     <div className="grades-page">
-      <h2>📊 Historial de Calificaciones</h2>
-      {error && <p style={{ color: "red" }}>{error}</p>}
-
+      <h2>📊 Calificaciones</h2>
+      <h3>{form.id ? "✏️ Actualizar" : "➕ Calificar"}</h3>
       {role === "admin" && (
-        <div className="form-card" style={{ background: "#f4f4f4", padding: "20px", borderRadius: "8px", marginBottom: "30px" }}>
-          <h3>{form.id ? "✏️ Editando Calificación" : "➕ Registrar Calificación"}</h3>
-          <form onSubmit={handleSubmit} style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
-            
+        <div >
+          <form onSubmit={handleSubmit}>
+
             <select
               value={form.student_id}
               onChange={(e) => setForm({ ...form, student_id: e.target.value })}
@@ -147,7 +157,7 @@ export default function Grades() {
               <option value="participacion">Participación</option>
             </select>
 
-            <button type="submit" style={{ background: form.id ? "#3498db" : "#27ae60", color: "white", padding: "8px 15px", border: "none", cursor: "pointer", borderRadius: "4px" }}>
+            <button type="submit">
               {form.id ? "Actualizar" : "Calificar"}
             </button>
             {form.id && (
@@ -156,12 +166,12 @@ export default function Grades() {
               </button>
             )}
           </form>
-        </div>
+        </div >
       )}
 
       <div className="filters-section" style={{ background: "#e9ecef", padding: "15px", borderRadius: "8px", marginBottom: "20px", display: "flex", gap: "20px", alignItems: "center" }}>
         <strong>🔍 Filtrar por:</strong>
-        
+
         {role === "admin" && (
           <div>
             <label>Estudiante: </label>
@@ -202,8 +212,8 @@ export default function Grades() {
           </tr>
         </thead>
         <tbody>
-          {filteredGrades.length > 0 ? (
-            filteredGrades.map((g) => (
+          {currentRecords.length > 0 ? (
+            currentRecords.map((g) => (
               <tr key={g.id}>
                 {role === "admin" && <td style={{ padding: "10px" }}>{g.student_name}</td>}
                 <td style={{ padding: "10px" }}>{g.course_title}</td>
@@ -212,8 +222,8 @@ export default function Grades() {
                 <td style={{ padding: "10px" }}>{new Date(g.created_at).toLocaleDateString()}</td>
                 {role === "admin" && (
                   <td style={{ padding: "10px" }}>
-                    <button onClick={() => handleEditClick(g)} style={{ marginRight: "10px" }}>✏️</button>
-                    <button onClick={() => handleDelete(g.id)} style={{ color: "red" }}>🗑️</button>
+                    <button onClick={() => handleEditClick(g)} >✏️</button>
+                    <button onClick={() => handleDelete(g.id)} >🗑️</button>
                   </td>
                 )}
               </tr>
@@ -227,6 +237,25 @@ export default function Grades() {
           )}
         </tbody>
       </table>
+
+      {totalPages > 1 && (
+        <div style={{ marginTop: "15px", display: "flex", gap: "5px", justifyContent: "center" }}>
+          {Array.from({ length: totalPages }, (_, i) => (
+            <button
+              key={i + 1}
+              onClick={() => setCurrentPage(i + 1)}
+              style={{
+                padding: "2px 10px",
+                backgroundColor: currentPage === i + 1 ? "#333" : "#fff",
+                color: currentPage === i + 1 ? "#fff" : "#333",
+                cursor: "pointer"
+              }}
+            >
+              {i + 1}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
