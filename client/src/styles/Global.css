@@ -214,6 +214,7 @@ button:active {
 form {
   margin-bottom: 1rem;
   display: flex;
+  gap: 0.5rem;
 }
 .grades-page form,
 .grid-form, 
