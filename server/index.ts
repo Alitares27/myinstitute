@@ -8,7 +8,7 @@ import teachers from "./routes/teachers";
 import courses from "./routes/courses";
 import enrollments from "./routes/enrollments";
 import attendance from "./routes/attendance";
-import grades from "./routes/grades";   
+import grades from "./routes/grades";    
 import auth from "./routes/auth";
 import dashboard from "./routes/dashboard";
 
@@ -62,7 +62,7 @@ async function startServer() {
 
     app.listen(PORT, () => {
       console.log(`🚀 Servidor listo en puerto ${PORT}`);
-      console.log(`📡 CORS activo para: https://myinstitute-three.vercel.app`);
+      console.log(`📡 CORS activo para: https://intitutoas-three.vercel.app`);
     });
   } catch (err) {
     console.error("❌ Error Crítico de DB:", err);
