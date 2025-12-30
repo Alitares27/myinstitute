@@ -53,7 +53,7 @@ function Dashboard() {
   return (
     <div className="dashboard-page">
       <h1 className="dashboard-title">
-        👋 Bienvenido, {user?.name || "Usuario"}
+        👋 Bienvenid@, {user?.name }
       </h1>
 
       {user && (
