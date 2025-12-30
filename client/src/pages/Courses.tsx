@@ -100,13 +100,11 @@ export default function Courses() {
               value={form.title}
               onChange={(e) => setForm({ ...form, title: e.target.value })}
               required
-              style={{ padding: "8px", borderRadius: "4px", border: "1px solid #ccc", flex: "1" }}
             />
             <select
               value={form.teacher_id}
               onChange={(e) => setForm({ ...form, teacher_id: e.target.value })}
               required
-              style={{ padding: "8px", borderRadius: "4px", border: "1px solid #ccc" }}
             >
               <option value="">Asignar Maestro</option>
               {teachers.map((t) => (
