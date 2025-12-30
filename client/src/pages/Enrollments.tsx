@@ -131,7 +131,6 @@ export default function Enrollments() {
         </table>
       ) : (
         <div>
-          <h3>Mis Matrículas</h3>
           <ul className="enrollment-report">
             {filteredEnrollments.map((en) => (
               <li key={en.id}>
