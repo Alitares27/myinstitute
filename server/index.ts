@@ -2,6 +2,8 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import { pool } from "./models/db"; 
+
+// Importación de Rutas
 import users from "./routes/users";
 import students from "./routes/students";
 import teachers from "./routes/teachers";
@@ -16,21 +18,29 @@ dotenv.config();
 
 const app = express();
 
+
 const allowedOrigins = [
   "http://localhost:5173", 
-  "https://myinstitute-1.onrender.com" 
+  "http://localhost:3000", 
 ];
 
+if (process.env.FRONTEND_URL) {
+  allowedOrigins.push(process.env.FRONTEND_URL);
+}
+
 app.use(cors({
-  origin: function (origin, callback) {
+  origin: (origin, callback) => {
     if (!origin) return callback(null, true);
-    if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV === 'development') {
+    
+    if (allowedOrigins.includes(origin) || process.env.NODE_ENV === "development") {
       callback(null, true);
     } else {
+      console.warn(`⚠️ Intento de acceso bloqueado por CORS desde: ${origin}`);
       callback(new Error("No permitido por CORS"));
     }
   },
-  credentials: true
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
 }));
 
 app.use(express.json());
@@ -45,31 +55,33 @@ app.use("/api/grades", grades);
 app.use("/api", auth);
 app.use("/api", dashboard);
 
+app.get("/health", (req, res) => {
+  res.status(200).send("OK");
+});
 
 app.use(
   (err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-    console.error("❌ Error en el servidor:", err.stack);
-    res.status(500).json({ 
-      message: "Internal Server Error", 
-      detail: process.env.NODE_ENV === 'development' ? err.message : "Error interno" 
+    console.error("❌ Error detectado:", err.stack);
+    res.status(err.status || 500).json({ 
+      message: err.message || "Internal Server Error",
+      detail: process.env.NODE_ENV === "development" ? err.stack : undefined
     });
   }
 );
-
 
 const PORT = process.env.PORT || 5000;
 
 async function startServer() {
   try {
-    
     const res = await pool.query("SELECT NOW()");
-    console.log("✅ Conexión a Base de Datos exitosa:", res.rows[0].now);
+    console.log("✅ Base de Datos Conectada correctamente:", res.rows[0].now);
 
     app.listen(PORT, () => {
-      console.log(`🚀 Servidor listo en el puerto ${PORT}`);
+      console.log(`🚀 Servidor ejecutándose en puerto ${PORT}`);
+      console.log(`🌍 Modo: ${process.env.NODE_ENV || "development"}`);
     });
   } catch (err) {
-    console.error("❌ Error crítico: No se pudo conectar a la DB", err);
+    console.error("❌ Error Crítico: No se pudo conectar a la DB", err);
     process.exit(1);
   }
 }

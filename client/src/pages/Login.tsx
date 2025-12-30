@@ -1,7 +1,10 @@
+/// <reference types="vite/client" />
 import { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import Layout from "../components/Layout";
+
+const API_BASE_URL = (import.meta.env.VITE_API_URL as string) || "http://localhost:5000/api";
 
 export default function Login() {
   const [form, setForm] = useState({ email: "", password: "" });
@@ -15,10 +18,10 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const res = await axios.post("http://localhost:5000/api/users/login", form);
+      const res = await axios.post(`${API_BASE_URL}/users/login`, form);
 
       if (!res.data?.token) {
-        throw new Error("No se recibió token desde el servidor");
+        throw new Error("No se recibió el token de autenticación.");
       }
 
       localStorage.setItem("token", res.data.token);
@@ -27,13 +30,14 @@ export default function Login() {
 
       navigate("/dashboard");
     } catch (err: any) {
-      console.error("❌ Login error:", err);
+      console.error("❌ Error detallado de Login:", err);
+
       if (err.response) {
-        setError(err.response.data?.message || "Error en el servidor");
+        setError(err.response.data?.message || "Correo o contraseña incorrectos.");
       } else if (err.request) {
-        setError("No se pudo conectar con el servidor");
+        setError("No se pudo conectar con el servidor. Verifica que el Backend esté encendido.");
       } else {
-        setError("Error desconocido al iniciar sesión");
+        setError("Ocurrió un error inesperado. Inténtalo de nuevo.");
       }
     } finally {
       setLoading(false);
@@ -44,38 +48,53 @@ export default function Login() {
     <Layout>
       <div className="auth-page-wrapper">
         <div className="auth-container card">
-          <h2>🔑 Iniciar Sesión</h2>
-          <p className="auth-subtitle">Ingresa tu Usuario y Contraseña</p>
+          <div className="auth-header">
+            <h2>🔑 Iniciar Sesión</h2>
+            <p className="auth-subtitle">Sistema de Gestión de Instituto</p>
+          </div>
           
           <form onSubmit={handleSubmit} className="auth-form">
             <div className="form-group">
-              <label>Correo Electrónico</label>
+              <label htmlFor="email">Correo Electrónico</label>
               <input
+                id="email"
                 type="email"
                 placeholder="ejemplo@correo.com"
                 value={form.email}
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
                 required
+                autoComplete="email"
               />
             </div>
 
             <div className="form-group">
-              <label>Contraseña</label>
+              <label htmlFor="password">Contraseña</label>
               <input
+                id="password"
                 type="password"
                 placeholder="••••••••"
                 value={form.password}
                 onChange={(e) => setForm({ ...form, password: e.target.value })}
                 required
+                autoComplete="current-password"
               />
             </div>
 
-            {error && <p className="error-message">{error}</p>}
+            {error && (
+              <div className="error-container">
+                <p className="error-message">⚠️ {error}</p>
+              </div>
+            )}
 
             <div className="auth-buttons">
-              <button type="submit" className="btn-login" disabled={loading}>
+              <button 
+                type="submit" 
+                className="btn-login" 
+                disabled={loading}
+              >
                 {loading ? "Verificando..." : "Ingresar al Sistema"}
               </button>
+              
               <button
                 type="button"
                 className="btn-cancel"
@@ -87,7 +106,15 @@ export default function Login() {
           </form>
           
           <div className="auth-footer">
-            <p>¿No tienes una cuenta? <span onClick={() => navigate("/signup")} style={{color: '#007bff', cursor: 'pointer'}}>Regístrate aquí</span></p>
+            <p>
+              ¿No tienes una cuenta?{" "}
+              <span 
+                onClick={() => navigate("/signup")} 
+                className="auth-link"
+              >
+                Regístrate aquí
+              </span>
+            </p>
           </div>
         </div>
       </div>
