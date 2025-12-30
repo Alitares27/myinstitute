@@ -2,8 +2,6 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import { pool } from "./models/db"; 
-
-// Importación de Rutas
 import users from "./routes/users";
 import students from "./routes/students";
 import teachers from "./routes/teachers";
@@ -15,32 +13,23 @@ import auth from "./routes/auth";
 import dashboard from "./routes/dashboard";
 
 dotenv.config();
-
 const app = express();
 
 
 const allowedOrigins = [
-  "http://localhost:5173", 
-  "http://localhost:3000", 
-];
-
-if (process.env.FRONTEND_URL) {
-  allowedOrigins.push(process.env.FRONTEND_URL);
-}
+  "http://localhost:5173",
+  process.env.FRONTEND_URL 
+].filter(Boolean) as string[];
 
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin) return callback(null, true);
-    
-    if (allowedOrigins.includes(origin) || process.env.NODE_ENV === "development") {
+    if (!origin || allowedOrigins.includes(origin) || process.env.NODE_ENV === "development") {
       callback(null, true);
     } else {
-      console.warn(`⚠️ Intento de acceso bloqueado por CORS desde: ${origin}`);
-      callback(new Error("No permitido por CORS"));
+      callback(new Error("Bloqueado por CORS"));
     }
   },
-  credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+  credentials: true
 }));
 
 app.use(express.json());
