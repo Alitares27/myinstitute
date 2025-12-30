@@ -198,7 +198,7 @@ export default function Attendance() {
 
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", minWidth: "150px" }}>
               <div style={{ position: "relative", width: "100px", height: "100px" }}>
-                <svg width="100" height="100" viewBox="0 0 100 100">
+                <svg width="80" height="80" viewBox="0 0 100 100">
                   <circle
                     cx="50" cy="50" r="40"
                     fill="transparent"
@@ -225,7 +225,6 @@ export default function Attendance() {
                     {attendanceStats.percentage}%
                   </text>
                 </svg>
-                <p style={{ fontSize: "12px", textAlign: "center" }}>Asistencia Total</p>
               </div>
             </div>
           </div>

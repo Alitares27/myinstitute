@@ -122,7 +122,7 @@ export default function Grades() {
       {role === "admin" && (
         <div className="form-container">
           <h3>{form.id ? "✏️ Actualizar" : "➕ Calificar"}</h3>
-          <form onSubmit={handleSubmit} style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+          <form onSubmit={handleSubmit}>
             <select
               value={form.student_id}
               onChange={(e) => setForm({ ...form, student_id: e.target.value })}
