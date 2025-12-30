@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 
+const API_BASE_URL = (import.meta as any).env.VITE_API_URL || "http://localhost:5000/api";
+
 export default function Enrollments() {
   const [enrollments, setEnrollments] = useState<any[]>([]);
   const [students, setStudents] = useState<any[]>([]);
@@ -10,48 +12,33 @@ export default function Enrollments() {
   const [userId, setUserId] = useState<string>("");
 
   useEffect(() => {
-    axios
-      .get("http://localhost:5000/api/me", {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-      })
-      .then((res) => {
-        setRole(res.data.role);
-        setUserId(res.data.id);
-      });
+    const token = localStorage.getItem("token");
+    const config = { headers: { Authorization: `Bearer ${token}` } };
 
-    axios
-      .get("http://localhost:5000/api/enrollments", {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-      })
-      .then((res) => setEnrollments(res.data));
+    axios.get(`${API_BASE_URL}/users/me`, config).then((res) => {
+      setRole(res.data.role);
+      setUserId(res.data.id);
+    });
 
-    axios
-      .get("http://localhost:5000/api/students", {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-      })
-      .then((res) => setStudents(res.data));
-
-    axios
-      .get("http://localhost:5000/api/courses", {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-      })
-      .then((res) => setCourses(res.data));
+    axios.get(`${API_BASE_URL}/enrollments`, config).then((res) => setEnrollments(res.data));
+    axios.get(`${API_BASE_URL}/students`, config).then((res) => setStudents(res.data));
+    axios.get(`${API_BASE_URL}/courses`, config).then((res) => setCourses(res.data));
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const token = localStorage.getItem("token");
+    const config = { headers: { Authorization: `Bearer ${token}` } };
 
     if (form.id) {
       const res = await axios.put(
-        `http://localhost:5000/api/enrollments/${form.id}`,
+        `${API_BASE_URL}/enrollments/${form.id}`,
         { student_id: form.student_id, course_id: form.course_id },
-        { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
+        config
       );
       setEnrollments(enrollments.map((en) => (en.id === form.id ? res.data : en)));
     } else {
-      const res = await axios.post("http://localhost:5000/api/enrollments", form, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-      });
+      const res = await axios.post(`${API_BASE_URL}/enrollments`, form, config);
       setEnrollments([...enrollments, res.data]);
     }
 
@@ -67,8 +54,9 @@ export default function Enrollments() {
   };
 
   const handleDelete = async (id: string) => {
-    await axios.delete(`http://localhost:5000/api/enrollments/${id}`, {
-      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+    const token = localStorage.getItem("token");
+    await axios.delete(`${API_BASE_URL}/enrollments/${id}`, {
+      headers: { Authorization: `Bearer ${token}` },
     });
     setEnrollments(enrollments.filter((en) => en.id !== id));
   };
@@ -87,6 +75,7 @@ export default function Enrollments() {
           <select
             value={form.student_id}
             onChange={(e) => setForm({ ...form, student_id: e.target.value })}
+            required
           >
             <option value="">Elegir Estudiante</option>
             {students.map((s) => (
@@ -99,6 +88,7 @@ export default function Enrollments() {
           <select
             value={form.course_id}
             onChange={(e) => setForm({ ...form, course_id: e.target.value })}
+            required
           >
             <option value="">Elegir Curso</option>
             {courses.map((c) => (
@@ -160,6 +150,7 @@ export default function Enrollments() {
               onChange={(e) =>
                 setForm({ ...form, student_id: userId, course_id: e.target.value })
               }
+              required
             >
               <option value="">Elegir Curso</option>
               {courses.map((c) => (

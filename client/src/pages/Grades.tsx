@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import axios from "axios";
 
-const API_URL = "http://localhost:5000/api";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 export default function Grades() {
   const [grades, setGrades] = useState<any[]>([]);
@@ -29,18 +29,19 @@ export default function Grades() {
   const fetchData = async () => {
     try {
       const token = localStorage.getItem("token");
+      if (!token) return;
       const config = { headers: { Authorization: `Bearer ${token}` } };
 
-      const meRes = await axios.get(`${API_URL}/users/me`, config);
+      const meRes = await axios.get(`${API_BASE_URL}/users/me`, config);
       setRole(meRes.data.role);
 
-      const gradesRes = await axios.get(`${API_URL}/grades`, config);
+      const gradesRes = await axios.get(`${API_BASE_URL}/grades`, config);
       setGrades(gradesRes.data);
 
       if (meRes.data.role === "admin") {
         const [sRes, cRes] = await Promise.all([
-          axios.get(`${API_URL}/students`, config),
-          axios.get(`${API_URL}/courses`, config),
+          axios.get(`${API_BASE_URL}/students`, config),
+          axios.get(`${API_BASE_URL}/courses`, config),
         ]);
         setStudents(sRes.data);
         setCourses(cRes.data);
@@ -76,9 +77,9 @@ export default function Grades() {
 
     try {
       if (form.id) {
-        await axios.put(`${API_URL}/grades/${form.id}`, form, config);
+        await axios.put(`${API_BASE_URL}/grades/${form.id}`, form, config);
       } else {
-        await axios.post(`${API_URL}/grades`, form, config);
+        await axios.post(`${API_BASE_URL}/grades`, form, config);
       }
 
       setForm({ id: "", student_id: "", course_id: "", grade: "", grade_type: "examen" });
@@ -102,8 +103,9 @@ export default function Grades() {
   const handleDelete = async (id: number) => {
     if (!window.confirm("¿Seguro que deseas eliminar esta calificación?")) return;
     try {
-      await axios.delete(`${API_URL}/grades/${id}`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      const token = localStorage.getItem("token");
+      await axios.delete(`${API_BASE_URL}/grades/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
       });
       setGrades(grades.filter((g) => g.id !== id));
     } catch {
@@ -114,11 +116,13 @@ export default function Grades() {
   return (
     <div className="grades-page">
       <h2>📊 Calificaciones</h2>
-      <h3>{form.id ? "✏️ Actualizar" : "➕ Calificar"}</h3>
-      {role === "admin" && (
-        <div >
-          <form onSubmit={handleSubmit}>
+      
+      {error && <p style={{ color: "red" }}>{error}</p>}
 
+      {role === "admin" && (
+        <div className="form-container" style={{ marginBottom: "20px", padding: "15px", border: "1px solid #ddd" }}>
+          <h3>{form.id ? "✏️ Actualizar" : "➕ Calificar"}</h3>
+          <form onSubmit={handleSubmit} style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
             <select
               value={form.student_id}
               onChange={(e) => setForm({ ...form, student_id: e.target.value })}
@@ -140,11 +144,11 @@ export default function Grades() {
             <input
               type="number"
               step="0.1"
-              placeholder="Calificación"
+              placeholder="Nota"
               value={form.grade}
               onChange={(e) => setForm({ ...form, grade: e.target.value })}
               required
-              style={{ width: "100px" }}
+              style={{ width: "80px" }}
             />
 
             <select
@@ -157,82 +161,73 @@ export default function Grades() {
               <option value="participacion">Participación</option>
             </select>
 
-            <button type="submit">
-              {form.id ? "Actualizar" : "Calificar"}
-            </button>
+            <button type="submit">{form.id ? "Actualizar" : "Calificar"}</button>
             {form.id && (
               <button type="button" onClick={() => setForm({ id: "", student_id: "", course_id: "", grade: "", grade_type: "examen" })}>
                 Cancelar
               </button>
             )}
           </form>
-        </div >
+        </div>
       )}
 
-      <div className="filters-section" style={{ background: "#e9ecef", padding: "15px", borderRadius: "8px", marginBottom: "20px", display: "flex", gap: "20px", alignItems: "center" }}>
-        <strong>🔍 Filtrar por:</strong>
-
+      <div className="filters-section" style={{ background: "#f4f4f4", padding: "15px", borderRadius: "8px", marginBottom: "20px", display: "flex", gap: "20px", flexWrap: "wrap" }}>
+        <strong>🔍 Filtrar:</strong>
         {role === "admin" && (
           <div>
             <label>Estudiante: </label>
             <select value={filterStudent} onChange={(e) => setFilterStudent(e.target.value)}>
-              <option value="">Todos los estudiantes</option>
+              <option value="">Todos</option>
               {students.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
           </div>
         )}
-
         <div>
           <label>Tipo: </label>
           <select value={filterType} onChange={(e) => setFilterType(e.target.value)}>
-            <option value="">Todos los tipos</option>
+            <option value="">Todos</option>
             <option value="examen">Examen</option>
             <option value="Lectura">Lectura</option>
             <option value="proyecto">Proyecto</option>
             <option value="participacion">Participación</option>
           </select>
         </div>
-
         {(filterStudent || filterType) && (
-          <button onClick={() => { setFilterStudent(""); setFilterType(""); }} style={{ padding: "4px 10px", cursor: "pointer" }}>
-            Limpiar Filtros
-          </button>
+          <button onClick={() => { setFilterStudent(""); setFilterType(""); }}>Limpiar</button>
         )}
       </div>
 
       <table border={1} style={{ width: "100%", borderCollapse: "collapse" }}>
         <thead>
-          <tr style={{ background: "#333", color: "white" }}>
-            {role === "admin" && <th style={{ padding: "10px" }}>Estudiante</th>}
-            <th style={{ padding: "10px" }}>Curso</th>
-            <th style={{ padding: "10px" }}>Nota</th>
-            <th style={{ padding: "10px" }}>Tipo</th>
-            <th style={{ padding: "10px" }}>Fecha</th>
-            {role === "admin" && <th style={{ padding: "10px" }}>Acciones</th>}
+          <tr style={{ background: "#eee" }}>
+            {role === "admin" && <th style={{ padding: "8px" }}>Estudiante</th>}
+            <th style={{ padding: "8px" }}>Curso</th>
+            <th style={{ padding: "8px" }}>Nota</th>
+            <th style={{ padding: "8px" }}>Tipo</th>
+            <th style={{ padding: "8px" }}>Fecha</th>
+            {role === "admin" && <th style={{ padding: "8px" }}>Acciones</th>}
           </tr>
         </thead>
         <tbody>
           {currentRecords.length > 0 ? (
             currentRecords.map((g) => (
               <tr key={g.id}>
-                {role === "admin" && <td style={{ padding: "10px" }}>{g.student_name}</td>}
-                <td style={{ padding: "10px" }}>{g.course_title}</td>
-                <td style={{ padding: "10px", fontWeight: "bold", color: g.grade >= 6 ? "green" : "red" }}>{g.grade}</td>
-                <td style={{ padding: "10px" }}>{g.grade_type}</td>
-                <td style={{ padding: "10px" }}>{new Date(g.created_at).toLocaleDateString()}</td>
+                {role === "admin" && <td style={{ padding: "8px" }}>{g.student_name}</td>}
+                <td style={{ padding: "8px" }}>{g.course_title}</td>
+                <td style={{ padding: "8px", fontWeight: "bold", color: g.grade >= 6 ? "green" : "red" }}>{g.grade}</td>
+                <td style={{ padding: "8px" }}>{g.grade_type}</td>
+                <td style={{ padding: "8px" }}>{new Date(g.created_at).toLocaleDateString()}</td>
                 {role === "admin" && (
-                  <td style={{ padding: "10px" }}>
-                    <button onClick={() => handleEditClick(g)} >✏️</button>
-                    <button onClick={() => handleDelete(g.id)} >🗑️</button>
+                  <td style={{ padding: "8px" }}>
+                    <button onClick={() => handleEditClick(g)}>✏️</button>
+                    <button onClick={() => handleDelete(g.id)}>🗑️</button>
                   </td>
                 )}
               </tr>
             ))
           ) : (
             <tr>
-              <td colSpan={role === "admin" ? 6 : 4} style={{ textAlign: "center", padding: "20px" }}>
-                No se encontraron calificaciones con los filtros seleccionados.
-              </td>
+              <td colSpan={6} style={{ textAlign: "center", padding: "20px" }}>Sin registros.</td>
             </tr>
           )}
         </tbody>
@@ -244,12 +239,7 @@ export default function Grades() {
             <button
               key={i + 1}
               onClick={() => setCurrentPage(i + 1)}
-              style={{
-                padding: "2px 10px",
-                backgroundColor: currentPage === i + 1 ? "#333" : "#fff",
-                color: currentPage === i + 1 ? "#fff" : "#333",
-                cursor: "pointer"
-              }}
+              style={{ padding: "5px 10px", background: currentPage === i + 1 ? "#333" : "#fff", color: currentPage === i + 1 ? "#fff" : "#000" }}
             >
               {i + 1}
             </button>

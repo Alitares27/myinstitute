@@ -12,31 +12,46 @@ function Dashboard() {
   const [user, setUser] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+
   useEffect(() => {
     const token = localStorage.getItem("token");
 
-    axios
-      .get("http://localhost:5000/api/users/me", {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      .then((res) => setUser(res.data))
-      .catch(() => setError("Error cargando usuario"));
+    if (!token) {
+      setError("No hay una sesión activa. Por favor, inicia sesión.");
+      return;
+    }
+
+    const config = {
+      headers: { Authorization: `Bearer ${token}` },
+    };
 
     axios
-      .get("http://localhost:5000/api/dashboard-stats", {
-        headers: { Authorization: `Bearer ${token}` },
-      })
+      .get(`${API_BASE_URL}/users/me`, config)
+      .then((res) => setUser(res.data))
+      .catch((err) => {
+        console.error("Error cargando usuario:", err);
+        setError("Error al obtener datos del perfil");
+      });
+
+    axios
+      .get(`${API_BASE_URL}/dashboard-stats`, config)
       .then((res) => setStats(res.data))
-      .catch(() => setError("Error cargando estadísticas"));
-  }, []);
+      .catch((err) => {
+        console.error("Error cargando estadísticas:", err);
+      });
+  }, [API_BASE_URL]);
 
   if (error) {
-    return <p>{error}</p>;
+    return (
+      <div className="error-container">
+        <p style={{ color: "red", padding: "20px" }}>⚠️ {error}</p>
+      </div>
+    );
   }
 
   return (
     <div className="dashboard-page">
-      
       <h1 className="dashboard-title">
         👋 Bienvenido, {user?.name || "Usuario"}
       </h1>
@@ -51,7 +66,6 @@ function Dashboard() {
         Aquí encontrarás un resumen de la actividad y estadísticas más relevantes.
       </p>
 
-      
       <div className="cards">
         <div className="card">
           <h2>Estudiantes</h2>
@@ -66,7 +80,7 @@ function Dashboard() {
           <p>{stats.courses}</p>
         </div>
         <div className="card">
-          <h2>Matriculas</h2>
+          <h2>Matrículas</h2>
           <p>{stats.enrollments}</p>
         </div>
       </div>

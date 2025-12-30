@@ -19,7 +19,7 @@ interface Course {
   title: string;
 }
 
-const API_URL = "http://localhost:5000";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 export default function Attendance() {
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
@@ -43,15 +43,19 @@ export default function Attendance() {
 
   useEffect(() => {
     const token = localStorage.getItem("token");
+    if (!token) {
+      setError("No hay sesión activa");
+      return;
+    }
     const headers = { Authorization: `Bearer ${token}` };
 
     const fetchData = async () => {
       try {
         const [userRes, attRes, stdRes, crsRes] = await Promise.all([
-          axios.get(`${API_URL}/api/users/me`, { headers }),
-          axios.get(`${API_URL}/api/attendance`, { headers }),
-          axios.get(`${API_URL}/api/students`, { headers }),
-          axios.get(`${API_URL}/api/courses`, { headers }),
+          axios.get(`${API_BASE_URL}/users/me`, { headers }),
+          axios.get(`${API_BASE_URL}/attendance`, { headers }),
+          axios.get(`${API_BASE_URL}/students`, { headers }),
+          axios.get(`${API_BASE_URL}/courses`, { headers }),
         ]);
 
         setRole(userRes.data.role);
@@ -60,7 +64,8 @@ export default function Attendance() {
         setStudents(stdRes.data);
         setCourses(crsRes.data);
       } catch (err) {
-        setError("Error al cargar los datos desde el servidor");
+        console.error("Error fetching data:", err);
+        setError("Error al cargar los datos desde el servidor. Verifica la conexión.");
       }
     };
 
@@ -113,7 +118,7 @@ export default function Attendance() {
     e.preventDefault();
     const token = localStorage.getItem("token");
     try {
-      const res = await axios.post(`${API_URL}/api/attendance`, form, {
+      const res = await axios.post(`${API_BASE_URL}/attendance`, form, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setAttendance((prev) => [...prev, res.data]);
@@ -124,16 +129,16 @@ export default function Attendance() {
     }
   };
 
-  if (error) return <div style={{ padding: "20px", color: "red" }}>{error}</div>;
+  if (error) return <div style={{ padding: "20px", color: "red" }}>⚠️ {error}</div>;
 
   return (
     <div className="attendance-page">
       <h2>📅 Control de Asistencia</h2>
-      <h3>{form.student_id ? "✏️ Editar Asistencia" : "➕ Marcar Asistencia"}</h3>
       
       {role === "admin" && (
-        <div >
-          <form onSubmit={handleSubmit}>
+        <div className="admin-section">
+          <h3>{form.student_id ? "✏️ Editar Asistencia" : "➕ Marcar Asistencia"}</h3>
+          <form onSubmit={handleSubmit} className="attendance-form">
             <select
               value={form.student_id}
               onChange={(e) => setForm({ ...form, student_id: e.target.value })}
@@ -167,12 +172,12 @@ export default function Attendance() {
               <option value="Absent">Ausente</option>
             </select>
 
-            <button type="submit" style={{ cursor: "pointer" }}>Marcar</button>
+            <button type="submit" className="btn-submit">Marcar</button>
           </form>
 
-          <hr style={{ margin: "10px 0", border: "0.5px solid #ddd" }} />
+          <hr style={{ margin: "20px 0", border: "0.5px solid #ddd" }} />
 
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "20px" }}>
+          <div className="filters-container" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "20px" }}>
             <div style={{ flex: 1 }}>
               <h3>🔍 Filtros de Búsqueda</h3>
               <div style={{ display: "flex", gap: "20px" }}>
@@ -193,15 +198,13 @@ export default function Attendance() {
 
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", minWidth: "150px" }}>
               <div style={{ position: "relative", width: "100px", height: "100px" }}>
-                <svg width="90" height="90" viewBox="0 0 100 100">
-
+                <svg width="100" height="100" viewBox="0 0 100 100">
                   <circle
                     cx="50" cy="50" r="40"
                     fill="transparent"
                     stroke="#e6e6e6"
                     strokeWidth="10"
                   />
-
                   <circle
                     cx="50" cy="50" r="40"
                     fill="transparent"
@@ -222,6 +225,7 @@ export default function Attendance() {
                     {attendanceStats.percentage}%
                   </text>
                 </svg>
+                <p style={{ fontSize: "12px", textAlign: "center" }}>Asistencia Total</p>
               </div>
             </div>
           </div>
@@ -232,37 +236,45 @@ export default function Attendance() {
         <p style={{ marginTop: "20px" }}>No se encontraron registros de asistencia.</p>
       ) : (
         <>
-          <table border={1} cellPadding={10} style={{ width: "100%", borderCollapse: "collapse", marginTop: "10px" }}>
-            <thead style={{ background: "#eee" }}>
-              <tr>
-                {role === "admin" && <th>Estudiante</th>}
-                <th>Curso</th>
-                <th>Fecha</th>
-                <th>Estado</th>
-              </tr>
-            </thead>
-            <tbody>
-              {currentRecords.map((a) => (
-                <tr key={a.id || `${a.student_id}-${a.course_id}-${a.date}`}>
-                  {role === "admin" && (
-                    <td>{students.find((s) => s.id === a.student_id)?.name || `ID: ${a.student_id}`}</td>
-                  )}
-                  <td>{courses.find((c) => c.id === a.course_id)?.title || `ID: ${a.course_id}`}</td>
-                  <td>{new Date(a.date).toLocaleDateString()}</td>
-                  <td style={{ color: a.status === "Present" ? "green" : "red", fontWeight: "bold" }}>
-                    {a.status === "Present" ? "Presente" : "Ausente"}
-                  </td>
+          <div className="table-responsive">
+            <table border={1} cellPadding={10} style={{ width: "100%", borderCollapse: "collapse", marginTop: "10px" }}>
+              <thead style={{ background: "#f8f9fa" }}>
+                <tr>
+                  {role === "admin" && <th>Estudiante</th>}
+                  <th>Curso</th>
+                  <th>Fecha</th>
+                  <th>Estado</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {currentRecords.map((a) => (
+                  <tr key={a.id}>
+                    {role === "admin" && (
+                      <td>{students.find((s) => s.id === a.student_id)?.name || `ID: ${a.student_id}`}</td>
+                    )}
+                    <td>{courses.find((c) => c.id === a.course_id)?.title || `ID: ${a.course_id}`}</td>
+                    <td>{new Date(a.date).toLocaleDateString()}</td>
+                    <td style={{ color: a.status === "Present" ? "green" : "red", fontWeight: "bold" }}>
+                      {a.status === "Present" ? "Presente" : "Ausente"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
-          <div className="pagination">
+          <div className="pagination" style={{ marginTop: "20px", display: "flex", gap: "5px" }}>
             {Array.from({ length: totalPages }, (_, i) => (
               <button
                 key={i + 1}
                 onClick={() => setCurrentPage(i + 1)}
-                className={currentPage === i + 1 ? "active" : ""}
+                style={{
+                  padding: "5px 10px",
+                  backgroundColor: currentPage === i + 1 ? "#007bff" : "#fff",
+                  color: currentPage === i + 1 ? "#fff" : "#000",
+                  border: "1px solid #ddd",
+                  cursor: "pointer"
+                }}
               >
                 {i + 1}
               </button>
