@@ -213,6 +213,7 @@ button:active {
 /* Formularios Modernos */
 form {
   margin-bottom: 1rem;
+  display: flex;
 }
 .grades-page form,
 .grid-form, 
