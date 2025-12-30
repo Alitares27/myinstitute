@@ -10,7 +10,7 @@ interface User {
   specialty?: string;
 }
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api/users";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 function UserPage() {
   const [users, setUsers] = useState<User[]>([]);
@@ -39,11 +39,11 @@ function UserPage() {
     if (!token) return;
     const config = { headers: { Authorization: `Bearer ${token}` } };
     try {
-      const meRes = await axios.get(`${API_BASE_URL}/me`, config);
+      const meRes = await axios.get(`${API_BASE_URL}/users/me`, config);
       setCurrentUser(meRes.data);
 
       if (meRes.data.role === "admin") {
-        const usersRes = await axios.get(API_BASE_URL, config);
+        const usersRes = await axios.get(`${API_BASE_URL}/users`, config);
         setUsers(usersRes.data);
       }
     } catch (err) {
@@ -84,7 +84,7 @@ function UserPage() {
     if (!window.confirm("¿Estás seguro de eliminar este usuario?")) return;
     const token = localStorage.getItem("token");
     try {
-      await axios.delete(`${API_BASE_URL}/${id}`, {
+      await axios.delete(`${API_BASE_URL}/users/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setUsers(users.filter((u) => u.id !== id));
@@ -99,7 +99,7 @@ function UserPage() {
 
     try {
       if (form.id) {
-        const res = await axios.put(`${API_BASE_URL}/${form.id}`, {
+        const res = await axios.put(`${API_BASE_URL}/users/${form.id}`, {
           name: form.name,
           email: form.email,
           telefono: form.telefono,
@@ -109,7 +109,7 @@ function UserPage() {
         setUsers(users.map((u) => (u.id === Number(form.id) ? res.data : u)));
         alert("Usuario actualizado con éxito");
       } else {
-        const res = await axios.post(API_BASE_URL, {
+        const res = await axios.post(`${API_BASE_URL}/users`, {
           name: form.name,
           email: form.email,
           password: form.password,
