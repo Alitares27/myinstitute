@@ -15,7 +15,24 @@ import dashboard from "./routes/dashboard";
 dotenv.config();
 
 const app = express();
-app.use(cors());
+
+const allowedOrigins = [
+  "http://localhost:5173", 
+  "https://myinstitute-1.onrender.com" 
+];
+
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV === 'development') {
+      callback(null, true);
+    } else {
+      callback(new Error("No permitido por CORS"));
+    }
+  },
+  credentials: true
+}));
+
 app.use(express.json());
 
 app.use("/api/users", users);
@@ -28,25 +45,31 @@ app.use("/api/grades", grades);
 app.use("/api", auth);
 app.use("/api", dashboard);
 
+
 app.use(
   (err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-    console.error("❌ Error:", err);
-    res.status(500).json({ message: "Internal Server Error", detail: err.message });
+    console.error("❌ Error en el servidor:", err.stack);
+    res.status(500).json({ 
+      message: "Internal Server Error", 
+      detail: process.env.NODE_ENV === 'development' ? err.message : "Error interno" 
+    });
   }
 );
+
 
 const PORT = process.env.PORT || 5000;
 
 async function startServer() {
   try {
+    
     const res = await pool.query("SELECT NOW()");
-    console.log("✅ Database connected:", res.rows[0]);
+    console.log("✅ Conexión a Base de Datos exitosa:", res.rows[0].now);
 
     app.listen(PORT, () => {
-      console.log(`🚀 Server running on http://localhost:${PORT}`);
+      console.log(`🚀 Servidor listo en el puerto ${PORT}`);
     });
   } catch (err) {
-    console.error("❌ Database connection failed:", err);
+    console.error("❌ Error crítico: No se pudo conectar a la DB", err);
     process.exit(1);
   }
 }
