@@ -97,3 +97,46 @@ export async function getProfile(req: AuthRequest, res: Response) {
     res.status(500).json({ message: "Error al obtener perfil" });
   }
 }
+
+export async function updateUser(req: AuthRequest, res: Response) {
+  try {
+    const { id } = req.params;
+    const { name, email, password, telefono, role } = req.body;
+    const authenticatedUser = req.user;
+
+    if (!authenticatedUser) {
+      return res.status(401).json({ message: "No autorizado" });
+    }
+
+    if (authenticatedUser.role !== "admin" && authenticatedUser.id !== Number(id)) {
+      return res.status(403).json({ message: "No tienes permiso para actualizar este perfil" });
+    }
+
+    const userExist = await pool.query("SELECT * FROM users WHERE id = $1", [id]);
+    if (userExist.rows.length === 0) {
+      return res.status(404).json({ message: "Usuario no encontrado" });
+    }
+
+    let query = "UPDATE users SET name = $1, email = $2, telefono = $3";
+    const values: any[] = [name, email, telefono];
+
+    if (authenticatedUser.role === "admin" && role) {
+      query += `, role = $${values.length + 1}`;
+      values.push(role);
+    }
+
+    if (password && password.trim() !== "") {
+      const hash = await bcrypt.hash(password, 10);
+      query += `, password = $${values.length + 1}`;
+      values.push(hash);
+    }
+
+    query += ` WHERE id = $${values.length + 1} RETURNING id, name, email, telefono, role`;
+    values.push(id);
+
+    const result = await pool.query(query, values);
+    res.json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ message: "Error al actualizar usuario" });
+  }
+}

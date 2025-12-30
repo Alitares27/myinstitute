@@ -4,7 +4,7 @@ import jwt, { JwtPayload, TokenExpiredError, JsonWebTokenError } from "jsonwebto
 export type UserRole = "admin" | "student" | "teacher";
 
 export interface AuthPayload extends JwtPayload {
-  id: string;
+  id: number;
   role: UserRole;
 }
 
@@ -39,7 +39,6 @@ export function verifyToken(req: AuthRequest, res: Response, next: NextFunction)
     if (err instanceof JsonWebTokenError) {
       return res.status(401).json({ message: "Invalid token" });
     }
-    console.error("❌ JWT verification error:", err);
     return res.status(500).json({ message: "Internal authentication error" });
   }
 }
@@ -60,3 +59,4 @@ function hasRole(role: UserRole) {
 
 export const isAdmin = hasRole("admin");
 export const isStudent = hasRole("student");
+export const isTeacher = hasRole("teacher");

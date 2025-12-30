@@ -6,8 +6,10 @@ const router = express.Router();
 
 router.get("/", verifyToken, async (req: AuthRequest, res: Response) => {
   try {
-    const { role, id } = req.user as { role: string; id: string };
-    const userId = Number(id);
+    const user = req.user;
+    if (!user) return res.status(401).json({ message: "Unauthorized" });
+
+    const { role, id: userId } = user;
 
     let query = "";
     let params: any[] = [];
@@ -35,7 +37,6 @@ router.get("/", verifyToken, async (req: AuthRequest, res: Response) => {
     const result = await pool.query(query, params);
     res.json(result.rows);
   } catch (err) {
-    console.error("❌ Error fetching grades:", err);
     res.status(500).json({ message: "Error al obtener calificaciones" });
   }
 });

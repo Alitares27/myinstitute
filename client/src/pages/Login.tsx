@@ -30,12 +30,10 @@ export default function Login() {
 
       navigate("/dashboard");
     } catch (err: any) {
-      console.error("❌ Error detallado de Login:", err);
-
       if (err.response) {
         setError(err.response.data?.message || "Correo o contraseña incorrectos.");
       } else if (err.request) {
-        setError("No se pudo conectar con el servidor. Verifica que el Backend esté encendido.");
+        setError("No se pudo conectar con el servidor. Verifica que el Backend esté encendido en el puerto 5000.");
       } else {
         setError("Ocurrió un error inesperado. Inténtalo de nuevo.");
       }
@@ -50,7 +48,6 @@ export default function Login() {
         <div className="auth-container card">
           <div className="auth-header">
             <h2>🔑 Iniciar Sesión</h2>
-            <p className="auth-subtitle">Sistema de Gestión de Instituto</p>
           </div>
           
           <form onSubmit={handleSubmit} className="auth-form">

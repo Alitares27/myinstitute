@@ -41,7 +41,6 @@ function UserPage() {
     try {
       const meRes = await axios.get(`${API_BASE_URL}/users/me`, config);
       setCurrentUser(meRes.data);
-
       if (meRes.data.role === "admin") {
         const usersRes = await axios.get(`${API_BASE_URL}/users`, config);
         setUsers(usersRes.data);
@@ -61,12 +60,6 @@ function UserPage() {
     return users.slice(firstIdx, lastIdx);
   }, [users, currentPage]);
 
-  useEffect(() => {
-    if (currentPage > totalPages && totalPages > 0) {
-      setCurrentPage(totalPages);
-    }
-  }, [totalPages, currentPage]);
-
   const handleEditClick = (user: User) => {
     setForm({
       id: user.id.toString(),
@@ -78,6 +71,11 @@ function UserPage() {
       specialty: user.specialty || "",
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleProfileEdit = () => {
+    if (!currentUser) return;
+    handleEditClick(currentUser);
   };
 
   const handleDelete = async (id: number) => {
@@ -96,18 +94,27 @@ function UserPage() {
   const handleSave = async () => {
     const token = localStorage.getItem("token");
     const config = { headers: { Authorization: `Bearer ${token}` } };
-
     try {
       if (form.id) {
-        const res = await axios.put(`${API_BASE_URL}/users/${form.id}`, {
+        const updateData: any = {
           name: form.name,
           email: form.email,
           telefono: form.telefono,
           role: form.role,
-        }, config);
+        };
+        if (form.password) updateData.password = form.password;
 
-        setUsers(users.map((u) => (u.id === Number(form.id) ? res.data : u)));
-        alert("Usuario actualizado con éxito");
+        const res = await axios.put(`${API_BASE_URL}/users/${form.id}`, updateData, config);
+        
+        if (Number(form.id) === currentUser?.id) {
+          setCurrentUser(res.data);
+        }
+        
+        if (currentUser?.role === "admin") {
+          setUsers(users.map((u) => (u.id === Number(form.id) ? res.data : u)));
+        }
+        
+        alert("Datos actualizados con éxito");
       } else {
         const res = await axios.post(`${API_BASE_URL}/users`, {
           name: form.name,
@@ -117,7 +124,6 @@ function UserPage() {
           role: form.role,
           specialty: form.role === "teacher" ? form.specialty : null,
         }, config);
-
         setUsers([...users, res.data.user]);
         alert("Usuario creado con éxito");
       }
@@ -137,50 +143,53 @@ function UserPage() {
 
   return (
     <div className="user-page">
-      <h2>👤 Gestión de Usuarios</h2>
-      <h3>{form.id ? "✏️ Actualizar" : "➕ Agregar"}</h3>
-      {currentUser.role === "admin" ? (
-        <div>
-          <div className="form-card">
-            <div className="grid-form">
-              <input placeholder="Nombre" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-              <input placeholder="Email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+      <h2>👤 Gestión de Usuarios / Perfil</h2>
+      <h3>{form.id ? `✏️ Editando: ${form.name}` : "➕ Agregar Nuevo Usuario"}</h3>
+      <div className="form-card">
+        
+        <div className="grid-form">
+          <input placeholder="Nombre" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+          <input placeholder="Email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+          
+          <input
+            placeholder={form.id ? "Nueva contraseña (opcional)" : "Contraseña"}
+            type="password"
+            value={form.password}
+            onChange={(e) => setForm({ ...form, password: e.target.value })}
+          />
 
-              {!form.id && (
-                <input
-                  placeholder="Contraseña"
-                  type="password"
-                  value={form.password}
-                  onChange={(e) => setForm({ ...form, password: e.target.value })}
-                />
-              )}
+          <input placeholder="Teléfono" value={form.telefono} onChange={(e) => setForm({ ...form, telefono: e.target.value })} />
 
-              <input placeholder="Teléfono" value={form.telefono} onChange={(e) => setForm({ ...form, telefono: e.target.value })} />
+          {currentUser.role === "admin" && (
+            <select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value as any })}>
+              <option value="student">Estudiante</option>
+              <option value="teacher">Maestro</option>
+              <option value="admin">Admin</option>
+            </select>
+          )}
 
-              <select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value as any })}>
-                <option value="student">Estudiante</option>
-                <option value="teacher">Maestro</option>
-                <option value="admin">Admin</option>
-              </select>
+          {form.role === "teacher" && currentUser.role === "admin" && (
+            <input placeholder="Especialidad" value={form.specialty} onChange={(e) => setForm({ ...form, specialty: e.target.value })} />
+          )}
 
-              {form.role === "teacher" && (
-                <input placeholder="Especialidad" value={form.specialty} onChange={(e) => setForm({ ...form, specialty: e.target.value })} />
-              )}
-
-              <button onClick={handleSave}>
-                {form.id ? "Actualizar" : "Crear"}
-              </button>
-
-              {form.id && <button onClick={resetForm} className="cancel-button">Cancelar</button>}
-            </div>
+          <div className="form-actions">
+            <button onClick={handleSave} className="btn-save">
+              {form.id ? "Actualizar" : "Agregar"}
+            </button>
+            {form.id && <button onClick={resetForm} className="btn-cancel">Cancelar</button>}
           </div>
+        </div>
+      </div>
 
+      {currentUser.role === "admin" ? (
+        <div className="admin-section">
+          <h3>Lista de Usuarios</h3>
           <table>
             <thead>
               <tr>
-                <th>ID</th>
                 <th>Nombre</th>
                 <th>Email</th>
+                <th>Teléfono</th>
                 <th>Rol</th>
                 <th>Acciones</th>
               </tr>
@@ -188,9 +197,9 @@ function UserPage() {
             <tbody>
               {currentRecords.map((u) => (
                 <tr key={u.id}>
-                  <td>{u.id}</td>
                   <td>{u.name}</td>
                   <td>{u.email}</td>
+                  <td>{u.telefono || "-"}</td>
                   <td><span className={`badge-${u.role}`}>{u.role}</span></td>
                   <td>
                     <button onClick={() => handleEditClick(u)} className="edit-button">✏️</button>
@@ -200,15 +209,10 @@ function UserPage() {
               ))}
             </tbody>
           </table>
-
           {totalPages > 1 && (
             <div className="pagination">
               {Array.from({ length: totalPages }, (_, i) => (
-                <button
-                  key={i + 1}
-                  onClick={() => setCurrentPage(i + 1)}
-                  className={currentPage === i + 1 ? "active" : ""}
-                >
+                <button key={i + 1} onClick={() => setCurrentPage(i + 1)} className={currentPage === i + 1 ? "active" : ""}>
                   {i + 1}
                 </button>
               ))}
@@ -216,12 +220,15 @@ function UserPage() {
           )}
         </div>
       ) : (
-        <div className="profile-info">
-          <h3>Mi Perfil</h3>
-          <p><strong>Nombre:</strong> {currentUser.name}</p>
-          <p><strong>Email:</strong> {currentUser.email}</p>
-          <p><strong>Rol:</strong> {currentUser.role}</p>
-        </div>
+        !form.id && (
+          <div className="profile-display card">
+            <h3>Mis Datos Actuales</h3>
+            <p><strong>Nombre:</strong> {currentUser.name}</p>
+            <p><strong>Email:</strong> {currentUser.email}</p>
+            <p><strong>Teléfono:</strong> {currentUser.telefono || "No registrado"}</p>
+            <button onClick={handleProfileEdit} className="btn-edit-profile">Editar Mi Perfil</button>
+          </div>
+        )
       )}
     </div>
   );

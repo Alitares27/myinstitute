@@ -111,8 +111,8 @@ export default function Courses() {
                 <option key={t.id} value={t.id}>{t.name}</option>
               ))}
             </select>
-            <button type="submit" disabled={loading} style={{ padding: "8px 15px", cursor: "pointer", backgroundColor: "#007bff", color: "white", border: "none", borderRadius: "4px" }}>
-              {loading ? "Guardando..." : (form.id ? "Actualizar" : "Crear")}
+            <button type="submit" disabled={loading}>
+              {loading ? "Guardando..." : (form.id ? "Actualizar" : "Agregar")}
             </button>
             {form.id && (
               <button type="button" onClick={() => setForm({ id: "", title: "", teacher_id: "" })} style={{ padding: "8px 15px", cursor: "pointer" }}>
