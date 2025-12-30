@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+
 export default function Teachers() {
   const [teachers, setTeachers] = useState<any[]>([]);
   const [form, setForm] = useState({ id: "", user_id: "", specialty: "" });
@@ -8,37 +10,36 @@ export default function Teachers() {
   const [userId, setUserId] = useState<string>("");
 
   useEffect(() => {
-    axios
-      .get("http://localhost:5000/api/users/me", {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-      })
+    const token = localStorage.getItem("token");
+    const config = { headers: { Authorization: `Bearer ${token}` } };
+
+    axios.get(`${API_BASE_URL}/users/me`, config)
       .then((res) => {
         setRole(res.data.role);
         setUserId(res.data.id);
       });
 
-    axios
-      .get("http://localhost:5000/api/teachers", {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-      })
+    axios.get(`${API_BASE_URL}/teachers`, config)
       .then((res) => setTeachers(res.data));
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const token = localStorage.getItem("token");
+    const config = { headers: { Authorization: `Bearer ${token}` } };
 
     if (form.id) {
       const res = await axios.put(
-        `http://localhost:5000/api/teachers/${form.id}`,
+        `${API_BASE_URL}/teachers/${form.id}`,
         { specialty: form.specialty },
-        { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
+        config
       );
       setTeachers(teachers.map((t) => (t.id === form.id ? res.data : t)));
     } else {
       const res = await axios.post(
-        "http://localhost:5000/api/teachers",
+        `${API_BASE_URL}/teachers`,
         { user_id: form.user_id, specialty: form.specialty },
-        { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
+        config
       );
       setTeachers([...teachers, res.data]);
     }
@@ -51,8 +52,9 @@ export default function Teachers() {
   };
 
   const handleDelete = async (id: string) => {
-    await axios.delete(`http://localhost:5000/api/teachers/${id}`, {
-      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+    const token = localStorage.getItem("token");
+    await axios.delete(`${API_BASE_URL}/teachers/${id}`, {
+      headers: { Authorization: `Bearer ${token}` },
     });
     setTeachers(teachers.filter((t) => t.id !== id));
   };
@@ -70,11 +72,13 @@ export default function Teachers() {
             placeholder="ID Usuario"
             value={form.user_id}
             onChange={(e) => setForm({ ...form, user_id: e.target.value })}
+            required
           />
           <input
             placeholder="Especialidad"
             value={form.specialty}
             onChange={(e) => setForm({ ...form, specialty: e.target.value })}
+            required
           />
           <button type="submit">
             {form.id ? "Actualizar" : "Agregar"}

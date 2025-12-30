@@ -120,7 +120,7 @@ export default function Grades() {
       {error && <p style={{ color: "red" }}>{error}</p>}
 
       {role === "admin" && (
-        <div className="form-container" style={{ marginBottom: "20px", padding: "15px", border: "1px solid #ddd" }}>
+        <div className="form-container">
           <h3>{form.id ? "✏️ Actualizar" : "➕ Calificar"}</h3>
           <form onSubmit={handleSubmit} style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
             <select

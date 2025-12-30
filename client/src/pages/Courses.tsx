@@ -86,15 +86,15 @@ export default function Courses() {
   };
 
   return (
-    <div className="page-container" style={{ padding: "20px" }}>
+    <div className="page-container">
       <h2>📚 {role === "admin" ? "Administrar Cursos" : "Cursos Disponibles"}</h2>
       
       {error && <p style={{ color: "red", backgroundColor: "#ffe6e6", padding: "10px", borderRadius: "5px" }}>⚠️ {error}</p>}
 
       {role === "admin" && (
-        <div className="form-section" style={{ backgroundColor: "#f9f9f9", padding: "20px", borderRadius: "8px", marginBottom: "20px" }}>
+        <div className="form-section">
           <h3>{form.id ? "✏️ Actualizar Curso" : "➕ Agregar Nuevo Curso"}</h3>
-          <form onSubmit={handleSubmit} style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+          <form onSubmit={handleSubmit}>
             <input
               placeholder="Nombre del Curso"
               value={form.title}

@@ -3,6 +3,8 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import Layout from "../components/Layout"; 
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+
 export default function Signup() {
   const [form, setForm] = useState({
     name: "",
@@ -21,7 +23,7 @@ export default function Signup() {
     setLoading(true);
 
     try {
-      const res = await axios.post("http://localhost:5000/api/users/register", form);
+      const res = await axios.post(`${API_BASE_URL}/users/register`, form);
       
       localStorage.setItem("token", res.data.token);
       if (res.data.user) {
@@ -100,7 +102,7 @@ export default function Signup() {
               </select>
             </div>
 
-            {error && <p className="error-message">{error}</p>}
+            {error && <p className="error-message" style={{ color: "red" }}>{error}</p>}
 
             <div className="auth-buttons">
               <button type="submit" className="btn-login" disabled={loading}>

@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import axios from "axios";
 
-const API_URL = "http://localhost:5000/api";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 export default function Students() {
   const [students, setStudents] = useState<any[]>([]);
@@ -13,14 +13,15 @@ export default function Students() {
 
   useEffect(() => {
     const token = localStorage.getItem("token");
+    if (!token) return;
     const config = { headers: { Authorization: `Bearer ${token}` } };
 
-    axios.get(`${API_URL}/me`, config).then((res) => {
+    axios.get(`${API_BASE_URL}/users/me`, config).then((res) => {
       setRole(res.data.role);
       setUserId(res.data.id);
     });
 
-    axios.get(`${API_URL}/students`, config).then((res) => setStudents(res.data));
+    axios.get(`${API_BASE_URL}/students`, config).then((res) => setStudents(res.data));
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -30,13 +31,13 @@ export default function Students() {
 
     try {
       if (form.id) {
-        const res = await axios.put(`${API_URL}/students/${form.id}`,
+        const res = await axios.put(`${API_BASE_URL}/students/${form.id}`,
           { name: form.name, grade: form.grade }, config
         );
         setStudents(students.map((s) => (s.id === form.id ? res.data : s)));
         alert("Estudiante actualizado");
       } else {
-        const res = await axios.post(`${API_URL}/students`, form, config);
+        const res = await axios.post(`${API_BASE_URL}/students`, form, config);
         setStudents([...students, res.data]);
       }
       setForm({ id: "", name: "", grade: "" });
@@ -59,7 +60,7 @@ export default function Students() {
 
     try {
       const token = localStorage.getItem("token");
-      await axios.delete(`${API_URL}/students/${id}`, {
+      await axios.delete(`${API_BASE_URL}/students/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setStudents(students.filter((s) => s.id !== id));
@@ -93,9 +94,7 @@ export default function Students() {
       <h2>👨‍🎓 Estudiantes</h2>
       <h3>{form.id ? "✏️ Actualizar" : "➕ Agregar"}</h3>
       {role === "admin" && (
-
         <div className="form-card">
-
           <form onSubmit={handleSubmit} className="grid-form">
             <input
               placeholder="Nombre"

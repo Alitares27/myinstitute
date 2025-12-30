@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 
-const API_BASE_URL = (import.meta as any).env.VITE_API_URL || "http://localhost:5000/api";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 export default function Enrollments() {
   const [enrollments, setEnrollments] = useState<any[]>([]);
@@ -13,6 +13,7 @@ export default function Enrollments() {
 
   useEffect(() => {
     const token = localStorage.getItem("token");
+    if (!token) return;
     const config = { headers: { Authorization: `Bearer ${token}` } };
 
     axios.get(`${API_BASE_URL}/users/me`, config).then((res) => {
@@ -30,19 +31,22 @@ export default function Enrollments() {
     const token = localStorage.getItem("token");
     const config = { headers: { Authorization: `Bearer ${token}` } };
 
-    if (form.id) {
-      const res = await axios.put(
-        `${API_BASE_URL}/enrollments/${form.id}`,
-        { student_id: form.student_id, course_id: form.course_id },
-        config
-      );
-      setEnrollments(enrollments.map((en) => (en.id === form.id ? res.data : en)));
-    } else {
-      const res = await axios.post(`${API_BASE_URL}/enrollments`, form, config);
-      setEnrollments([...enrollments, res.data]);
+    try {
+      if (form.id) {
+        const res = await axios.put(
+          `${API_BASE_URL}/enrollments/${form.id}`,
+          { student_id: form.student_id, course_id: form.course_id },
+          config
+        );
+        setEnrollments(enrollments.map((en) => (en.id === form.id ? res.data : en)));
+      } else {
+        const res = await axios.post(`${API_BASE_URL}/enrollments`, form, config);
+        setEnrollments([...enrollments, res.data]);
+      }
+      setForm({ id: "", student_id: "", course_id: "" });
+    } catch (error) {
+      alert("Error al procesar la matrícula");
     }
-
-    setForm({ id: "", student_id: "", course_id: "" });
   };
 
   const handleEdit = (enrollment: any) => {
@@ -51,9 +55,11 @@ export default function Enrollments() {
       student_id: enrollment.student_id,
       course_id: enrollment.course_id,
     });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleDelete = async (id: string) => {
+    if (!window.confirm("¿Eliminar matrícula?")) return;
     const token = localStorage.getItem("token");
     await axios.delete(`${API_BASE_URL}/enrollments/${id}`, {
       headers: { Authorization: `Bearer ${token}` },
@@ -70,6 +76,7 @@ export default function Enrollments() {
     <div className="enrollments-page">
       <h2>📝 Matrículas</h2>
       <h3>{form.id ? "✏️ Actualizar" : "➕ Matricular"}</h3>
+      
       {role === "admin" && (
         <form onSubmit={handleSubmit} className="enrollment-form">
           <select
@@ -79,9 +86,7 @@ export default function Enrollments() {
           >
             <option value="">Elegir Estudiante</option>
             {students.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.name}
-              </option>
+              <option key={s.id} value={s.id}>{s.name}</option>
             ))}
           </select>
 
@@ -92,9 +97,7 @@ export default function Enrollments() {
           >
             <option value="">Elegir Curso</option>
             {courses.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.title}
-              </option>
+              <option key={c.id} value={c.id}>{c.title}</option>
             ))}
           </select>
 
@@ -116,14 +119,8 @@ export default function Enrollments() {
           <tbody>
             {filteredEnrollments.map((en) => (
               <tr key={en.id}>
-                <td>
-                  {students.find((s) => s.id === en.student_id)?.name ||
-                    en.student_id}
-                </td>
-                <td>
-                  {courses.find((c) => c.id === en.course_id)?.title ||
-                    en.course_id}
-                </td>
+                <td>{students.find((s) => s.id === en.student_id)?.name || en.student_id}</td>
+                <td>{courses.find((c) => c.id === en.course_id)?.title || en.course_id}</td>
                 <td>
                   <button onClick={() => handleEdit(en)}>✏️</button>
                   <button onClick={() => handleDelete(en.id)}>🗑️</button>
@@ -138,8 +135,7 @@ export default function Enrollments() {
           <ul className="enrollment-report">
             {filteredEnrollments.map((en) => (
               <li key={en.id}>
-                {courses.find((c) => c.id === en.course_id)?.title ||
-                  en.course_id}
+                {courses.find((c) => c.id === en.course_id)?.title || en.course_id}
               </li>
             ))}
           </ul>
@@ -152,11 +148,9 @@ export default function Enrollments() {
               }
               required
             >
-              <option value="">Elegir Curso</option>
+              <option value="">Elegir Curso para Inscribirse</option>
               {courses.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.title}
-                </option>
+                <option key={c.id} value={c.id}>{c.title}</option>
               ))}
             </select>
             <button type="submit">Matricularme</button>

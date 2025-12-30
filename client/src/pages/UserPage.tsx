@@ -10,6 +10,8 @@ interface User {
   specialty?: string;
 }
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api/users";
+
 function UserPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -28,24 +30,20 @@ function UserPage() {
     specialty: "",
   });
 
-  const API_URL = "http://localhost:5000/api/users";
-
   useEffect(() => {
     fetchData();
   }, []);
 
   const fetchData = async () => {
     const token = localStorage.getItem("token");
+    if (!token) return;
+    const config = { headers: { Authorization: `Bearer ${token}` } };
     try {
-      const meRes = await axios.get(`${API_URL}/me`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const meRes = await axios.get(`${API_BASE_URL}/me`, config);
       setCurrentUser(meRes.data);
 
       if (meRes.data.role === "admin") {
-        const usersRes = await axios.get(API_URL, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const usersRes = await axios.get(API_BASE_URL, config);
         setUsers(usersRes.data);
       }
     } catch (err) {
@@ -86,7 +84,7 @@ function UserPage() {
     if (!window.confirm("¿Estás seguro de eliminar este usuario?")) return;
     const token = localStorage.getItem("token");
     try {
-      await axios.delete(`${API_URL}/${id}`, {
+      await axios.delete(`${API_BASE_URL}/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setUsers(users.filter((u) => u.id !== id));
@@ -101,7 +99,7 @@ function UserPage() {
 
     try {
       if (form.id) {
-        const res = await axios.put(`${API_URL}/${form.id}`, {
+        const res = await axios.put(`${API_BASE_URL}/${form.id}`, {
           name: form.name,
           email: form.email,
           telefono: form.telefono,
@@ -111,7 +109,7 @@ function UserPage() {
         setUsers(users.map((u) => (u.id === Number(form.id) ? res.data : u)));
         alert("Usuario actualizado con éxito");
       } else {
-        const res = await axios.post(API_URL, {
+        const res = await axios.post(API_BASE_URL, {
           name: form.name,
           email: form.email,
           password: form.password,
