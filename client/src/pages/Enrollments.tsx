@@ -12,7 +12,7 @@ export default function Enrollments() {
   const [userId, setUserId] = useState<string>("");
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
+    const token = sessionStorage.getItem("token");
     if (!token) return;
     const config = { headers: { Authorization: `Bearer ${token}` } };
 
@@ -28,7 +28,7 @@ export default function Enrollments() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const token = localStorage.getItem("token");
+    const token = sessionStorage.getItem("token");
     const config = { headers: { Authorization: `Bearer ${token}` } };
 
     try {
@@ -60,7 +60,7 @@ export default function Enrollments() {
 
   const handleDelete = async (id: string) => {
     if (!window.confirm("¿Eliminar matrícula?")) return;
-    const token = localStorage.getItem("token");
+    const token = sessionStorage.getItem("token");
     await axios.delete(`${API_BASE_URL}/enrollments/${id}`, {
       headers: { Authorization: `Bearer ${token}` },
     });

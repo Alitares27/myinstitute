@@ -35,7 +35,7 @@ function UserPage() {
   }, []);
 
   const fetchData = async () => {
-    const token = localStorage.getItem("token");
+    const token = sessionStorage.getItem("token");
     if (!token) return;
     const config = { headers: { Authorization: `Bearer ${token}` } };
     try {
@@ -80,7 +80,7 @@ function UserPage() {
 
   const handleDelete = async (id: number) => {
     if (!window.confirm("¿Estás seguro de eliminar este usuario?")) return;
-    const token = localStorage.getItem("token");
+    const token = sessionStorage.getItem("token");
     try {
       await axios.delete(`${API_BASE_URL}/users/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -92,7 +92,7 @@ function UserPage() {
   };
 
   const handleSave = async () => {
-    const token = localStorage.getItem("token");
+    const token = sessionStorage.getItem("token");
     const config = { headers: { Authorization: `Bearer ${token}` } };
     try {
       if (form.id) {

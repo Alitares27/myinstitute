@@ -21,7 +21,7 @@ export default function Courses() {
   useEffect(() => {
     const fetchCoursesData = async () => {
       try {
-        const token = localStorage.getItem("token");
+        const token = sessionStorage.getItem("token");
         if (!token) return;
         const config = { headers: { Authorization: `Bearer ${token}` } };
 
@@ -51,7 +51,7 @@ export default function Courses() {
   const loadTopics = async (courseId: string) => {
     setLoadingTopics(true);
     try {
-      const token = localStorage.getItem("token");
+      const token = sessionStorage.getItem("token");
       const res = await axios.get(`${API_BASE_URL}/courses/${courseId}/topics`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -66,7 +66,7 @@ export default function Courses() {
   // --- Lógica CRUD Temas (Modal) ---
   const handleTopicSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const token = localStorage.getItem("token");
+    const token = sessionStorage.getItem("token");
     const config = { headers: { Authorization: `Bearer ${token}` } };
     
     try {
@@ -85,7 +85,7 @@ export default function Courses() {
   const handleTopicDelete = async (id: string) => {
     if (!window.confirm("¿Eliminar este tema?")) return;
     try {
-      const token = localStorage.getItem("token");
+      const token = sessionStorage.getItem("token");
       await axios.delete(`${API_BASE_URL}/topics/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -99,7 +99,7 @@ export default function Courses() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const token = localStorage.getItem("token");
+    const token = sessionStorage.getItem("token");
     const config = { headers: { Authorization: `Bearer ${token}` } };
     try {
       if (form.id) {
@@ -121,7 +121,7 @@ export default function Courses() {
   const handleDelete = async (id: string) => {
     if (!window.confirm("¿Estás seguro de eliminar este curso?")) return;
     try {
-      const token = localStorage.getItem("token");
+      const token = sessionStorage.getItem("token");
       await axios.delete(`${API_BASE_URL}/courses/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -177,13 +177,13 @@ export default function Courses() {
 
       {selectedCourse && (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
-          <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '8px', width: '90%', maxWidth: '700px', maxHeight: '90vh', overflowY: 'auto' }}>
+          <div style={{ backgroundColor: 'white', padding: '10px', borderRadius: '8px', width: '90%', maxWidth: '700px', maxHeight: '90vh', overflowY: 'auto' }}>
             <h3>Temas: {selectedCourse.title}</h3>
 
             {role === "admin" && (
               <form onSubmit={handleTopicSubmit} style={{ display: 'flex', gap: '5px', marginBottom: '20px', backgroundColor: '#f0f4f8', padding: '10px', borderRadius: '5px' }}>
                 <input style={{ flex: 2 }} placeholder="Nuevo Tema" value={topicForm.title} onChange={e => setTopicForm({ ...topicForm, title: e.target.value })} required />
-                <input style={{ width: '5rem' }} type="number" placeholder="Orden" value={topicForm.order_index} onChange={e => setTopicForm({ ...topicForm, order_index: e.target.value })} required />
+                <input  type="number" placeholder="Orden" value={topicForm.order_index} onChange={e => setTopicForm({ ...topicForm, order_index: e.target.value })} required />
                 <button type="submit" style={{ color: 'white', border: 'none', borderRadius: '4px' }}>
                   {topicForm.id ? "OK" : "＋"}
                 </button>
@@ -192,7 +192,7 @@ export default function Courses() {
             )}
 
             {loadingTopics ? <p>Cargando...</p> : (
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <table >
                 <thead>
                   <tr style={{ backgroundColor: '#eee' }}>
                     <th>#</th>
@@ -202,7 +202,7 @@ export default function Courses() {
                 </thead>
                 <tbody>
                   {topics.map((t) => (
-                    <tr key={t.id} style={{ borderBottom: '1px solid #eee' }}>
+                    <tr key={t.id} >
                       <td>{t.order_index}</td>
                       <td>{t.title}</td>
                       {role === "admin" && (

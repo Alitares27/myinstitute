@@ -21,15 +21,11 @@
   --success: #27ae60;
   --warning: #f1c40f;
 
-  /* Espaciado y Dimensiones */
-  --sidebar-width: 20%;
-  --header-height: 60px;
+  /* Dimensiones */
+  --sidebar-width: 280px;
   --radius: 8px;              
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  
-  /* Tipografía */
-  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
 * {
@@ -43,206 +39,189 @@ html, body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   background-color: var(--bg-body);
   color: var(--text-main);
-  
 }
 
-
 /* =========================================
-   2. LAYOUT PRINCIPAL (Sidebar Fijo)
+   2. LAYOUT PRINCIPAL (SOLUCIÓN ESPACIO BLANCO)
    ========================================= */
 .app-layout {
   display: flex;
   width: 100%;
-  overflow-y:auto;
+  min-height: 100vh;
 }
 
-/* Sidebar */
+/* Sidebar Estilizado */
 .sidebar {
- width: var(--sidebar-width);
+  width: var(--sidebar-width);
+  min-width: var(--sidebar-width);
   background-color: var(--bg-sidebar);
   color: var(--text-light);
   display: flex;
   flex-direction: column;
-  padding: 2rem 1rem;
-  flex-shrink: 0;
+  padding: 1.5rem 1rem;
+  height: 100vh;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 2px 0 10px rgba(0,0,0,0.1);
 }
 
+/* Contenido Principal (Ocupa el 100% del resto) */
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0; 
+  background-color: var(--bg-body);
+}
+
+main.content {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+/* =========================================
+   3. ESTILOS DETALLADOS DEL SIDEBAR
+   ========================================= */
 .sidebar-logo {
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-bottom: 1.5rem;
+  margin-bottom: 2rem;
   text-decoration: none;
   color: white;
 }
 
-.logo-icon { font-size: 3rem; margin-bottom: 0.5rem; }
-.logo-text { font-size: 1.4rem; font-weight: 700; }
+.logo-icon { font-size: 2.8rem; margin-bottom: 0.5rem; }
+.logo-text { font-size: 1.5rem; font-weight: 800; letter-spacing: 1px; }
 
 .sidebar ul {
   list-style: none;
   padding: 0;
   margin: 0;
-  flex: 1; 
+  flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.6rem;
 }
 
 .sidebar-link {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  color: rgba(255, 255, 255, 0.7);
+  gap: 1rem;
+  color: rgba(255, 255, 255, 0.8);
   text-decoration: none;
-  font-size: 1.2rem;
-  padding: 0.75rem 1rem;
-  border-radius: var(--radius);
-  transition: all 0.2s ease;
+  font-size: 1rem;
+  padding: 0.7rem 1rem;
+  border-radius: 12px;
+  transition: all 0.3s ease;
   font-weight: 500;
 }
 
-.sidebar-link:hover, 
-.sidebar-link.active {
-  background-color: rgba(255, 255, 255, 0.1);
-  color: var(--text-light);
+/* Círculos de los iconos en el Sidebar */
+.icon-circle {
+  width: 35px;
+  height: 35px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.3s;
+}
+
+.icon { font-size: 1.1rem; }
+
+.sidebar-link:hover, .sidebar-link.active {
+  background-color: rgba(255, 255, 255, 0.2);
+  color: white;
   transform: translateX(5px);
 }
 
-/* Botón Logout en Sidebar */
-.logout-section {
-  margin-top: auto;
-  padding-top: 1rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.logout-button {
-  width: 100%;
-  padding: 0.8rem;
-  background: rgba(0, 0, 0, 0.2);
-  border: 1px solid rgba(255,255,255,0.2);
-  color: white;
-  border-radius: 40px;
-  cursor: pointer;
-  font-weight: 600;
-}
-
-.logout-button:hover {
-  background: var(--danger);
-  border-color: var(--danger);
-}
-
-/* Contenido Principal */
-.main-content {
-  flex: 1;
-  padding: 1rem;
-  background-color: var(--bg-dark);
-}
-
-main.content{
-    padding-top: 1rem;
-    width: 75%;
-    margin: 0 auto;
-    justify-content: center;
-}
-
-/* Contenido Principal (Paginacion) */
-.pagination {
-  display: flex;
-  justify-content: center;
-  gap: 0.5rem;
-  margin-top: 1rem;
-  padding-bottom: 1rem;
-}
-
-.pagination button {
-  padding: 0.5rem 1rem;
-  border-radius: var(--radius);
-  background-color: var(--bg-surface);
-  border: 1px solid var(--border-color);
-}
-
-.pagination button.active {
-  background-color: var(--primary);
-  color: white;
+.sidebar-link:hover .icon-circle {
+  background: var(--secondary);
 }
 
 /* =========================================
-   3. TIPOGRAFÍA & COMPONENTES UI
+   4. TABLAS MODERNAS Y RESPONSIVAS
    ========================================= */
-h1, h2, h3 {
-  margin-top: 0;
-  color: var(--text-main);
+.table-container {
+  width: 100%;
+  overflow-x: auto; 
+  background: var(--bg-surface);
+  border-radius: var(--radius);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+  margin-top: 1rem;
 }
 
-h1 { font-size: 1.75rem; font-weight: 700; margin-bottom: 1.5rem; }
-h2 { font-size: 1.4rem; font-weight: 600; margin-bottom: 1rem; }
-h3 { font-size: 1.1rem; color: var(--primary); margin-bottom: 0.5rem; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
 
-/* Botones Generales */
-button, .btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+th {
+  background-color: #f8f9fa;
+  color: var(--text-main);
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  padding: 1.2rem 1rem;
+  border-bottom: 2px solid var(--border-color);
+}
+
+td {
+  padding: 1rem;
+  border-bottom: 1px solid var(--border-color);
+  font-size: 0.95rem;
+}
+
+tr:last-child td { border-bottom: none; }
+
+tr:hover td {
+  background-color: #fdfdfd;
+}
+
+/* =========================================
+   5. BOTONES, INPUTS Y SELECTS
+   ========================================= */
+form {
+  display: flex;
+  flex-direction:row;
+  
+  gap: 1rem;
+}
+
+
+
+
+
+   button, .btn {
   padding: 0.6rem 1.2rem;
-  border: none;
   border-radius: var(--radius);
   font-weight: 600;
-  font-size: 0.95rem;
   cursor: pointer;
   transition: all 0.2s ease;
   background-color: var(--primary);
   color: white;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+  border: none;
 }
 
 button:hover {
   background-color: var(--primary-hover);
   transform: translateY(-1px);
-  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
 }
 
-button:active {
-  transform: translateY(0);
-}
-
-/* Variantes de Botones */
-.btn-success:hover { background-color: #219150; }
-.btn-danger:hover { background-color: #c0392b; }
-
-/* Formularios Modernos */
-form {
-  margin-bottom: 1rem;
-  display: flex;
-  gap: 0.5rem;
-}
-.grades-page form,
-.grid-form, 
-.course-form, 
-.student-form, 
-.teacher-form, 
-.enrollment-form, 
-.attendance-page form,
-.form-card {
-  display: flex;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 0.5rem;
-  background: var(--bg-surface);
-  padding: 1rem;
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-sm);
-  border: 1px solid var(--border-color);
-}
-
-input, select, textarea {
-  width: 100%;
-  padding: 0.6rem 0.6rem;
+input, select {
+  padding: 0.7rem;
   border: 1px solid var(--border-color);
   border-radius: var(--radius);
-  background-color: #fff;
   font-size: 0.95rem;
-  color: var(--text-main);
-  transition: border-color 0.2s;
+  transition: all 0.2s;
 }
 
 input:focus, select:focus {
@@ -251,245 +230,48 @@ input:focus, select:focus {
   box-shadow: 0 0 0 3px rgba(0, 97, 132, 0.1);
 }
 
-/* Botones dentro de formularios grid */
-.grid-form button,
-.course-form button,
-.student-form button,
-.teacher-form button,
-.enrollment-form button,
-.attendance-page form button {
-  grid-column: 1 / -1; 
-}
-
-@media (min-width: 600px) {
-  .grid-form button,
-  .course-form button, 
-  .attendance-page form button {
-      width: 100%;
-      justify-self: start;
-  }
-}
-
-/* =========================================
-   4. TABLAS UNIFICADAS (Modern Table)
-   ========================================= */
-/* Aplicamos estilos a todas las tablas del sistema */
-table, 
-.attendance-table,
-.courses-table, 
-.students-table, 
-.teachers-table, 
-.enrollments-table, 
-.users-table,
-.data-table {
+.logout-button {
   width: 100%;
-  border-collapse: separate; 
-  border-spacing: 0;
-  background: var(--bg-surface);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-sm);
-  margin-bottom: 1.5rem ;
-  border: 1px solid var(--border-color);
+  padding: 0.8rem;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255,255,255,0.2);
+  color: white;
+  border-radius: 40px;
+  font-weight: 600;
 }
 
-th, td {
-  padding: 1rem;
-  text-align: left;
-  border-bottom: 1px solid var(--border-color);
-}
-
-th {
-  background-color: #f8f9fa; 
-  color: var(--text-main);
-  font-weight: 700;
-  text-transform: uppercase;
-  font-size: 0.8rem;
-  letter-spacing: 0.05em;
-  border-bottom: 2px solid var(--border-color);
-}
-
-tr:last-child td {
-  border-bottom: none;
-}
-
-tr:hover td {
-  background-color: #fafafa;
-}
-
-/* Botones pequeños dentro de tablas */
-table button {
-  padding: 0.4rem 0.8rem;
-  font-size: 0.85rem;
-  margin-right: 0.5rem;
-}
+.logout-button:hover { background: var(--danger); border-color: var(--danger); }
 
 /* =========================================
-   5. PÁGINAS ESPECÍFICAS
+   6. RESPONSIVE (MAGIA ADAPTATIVA)
    ========================================= */
-
-/* Dashboard Cards */
-.cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 1.5rem;
+@media (max-width: 1100px) {
+  :root { --sidebar-width: 85px; }
+  .logo-text, .sidebar-link span { display: none; }
+  .sidebar-link { justify-content: center; padding: 0.8rem; }
+  .sidebar-logo .logo-icon { font-size: 2.5rem; }
 }
 
-.card {
-  background: var(--bg-surface);
-  padding: 1.5rem;
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-sm);
-  border: 1px solid var(--border-color);
-  text-align: center;
-  transition: transform 0.2s;
-}
-
-.card:hover {
-  transform: translateY(-5px);
-  box-shadow: var(--shadow-md);
-}
-
-.card h2 {
-  font-size: 1rem;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: 0.5rem;
-}
-
-.card p {
-  font-size: 2rem;
-  font-weight: 700;
-  color: var(--primary);
-  margin: 0;
-}
-
-/* Autenticación (Login / Signup) Centrada */
-.auth-container, 
-.home-container {
-  padding: 2.5rem;
-  background: var(--bg-surface);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-md);
-  text-align: center;
-  border: 1px solid var(--border-color);
-}
-
-.auth-container h2,
-.home-container h1 {
-  color: var(--primary);
-  margin-bottom: 1.5rem;
-}
-
-.auth-container form {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  margin: 0;
-}
-
-.auth-buttons {
-  display: flex;
-  justify-content: center;
-  gap: 1rem;
-  margin-top: 1.5rem;
-}
-
-.error {
-  background-color: #fce8e6;
-  color: var(--danger);
-  padding: 0.75rem;
-  border-radius: var(--radius);
-  font-size: 0.9rem;
-  margin-top: 1rem;
-  border: 1px solid rgba(231, 76, 60, 0.2);
-}
-
-/* Reportes y Listas de Info */
-.attendance-report li,
-.enrollment-report li,
-.student-info,
-.teacher-info,
-.profile-info {
-  background: var(--bg-surface);
-  border: 1px solid var(--border-color);
-  border-left: 4px solid var(--primary); 
-  padding: 1rem;
-  margin-bottom: 0.75rem;
-  border-radius: 4px;
-  list-style: none;
-  box-shadow: var(--shadow-sm);
-}
-
-/* =========================================
-   6. RESPONSIVE (Móviles)
-   ========================================= */
 @media (max-width: 768px) {
-  .app-layout {
-    flex-direction: column;
-    height: auto;
-    min-height: 100vh;
-  }
-
-  /* Sidebar cambia a barra superior o inferior según prefieras */
+  .app-layout { flex-direction: column; }
+  
   .sidebar {
     width: 100%;
     height: auto;
+    position: relative;
     flex-direction: row;
-    align-items: center;
+    padding: 0.8rem 1rem;
     justify-content: space-between;
-    padding: 1rem;
-    position: sticky;
-    top: 0;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
   }
 
-  .sidebar-logo {
-    margin-bottom: 0;
-    font-size: 1rem;
-    flex-direction: row;
-    gap: 0.5rem;
-  }
+  .sidebar-logo { margin-bottom: 0; flex-direction: row; gap: 10px; }
+  .sidebar ul { display: none; }
+
+  .logout-section { margin-top: 0; border: none; padding: 0; }
+  .logout-button { width: auto; padding: 0.5rem 1rem; font-size: 0.8rem; }
+
+  main.content { padding: 1rem; }
   
-  .logo-icon { font-size: 1.5rem; margin-bottom: 0; }
-  .logo-text { display: none; } 
-
-  .sidebar ul {
-    flex-direction: row;
-    gap: 1rem;
-    justify-content: flex-end;
-  }
-
-  .sidebar-link {
-    padding: 0.5rem;
-  }
-  
-  .sidebar-link span {
-    display: none; 
-  }
-
-  .logout-section {
-    margin-top: 0;
-    padding-top: 0;
-    border-top: none;
-    margin-left: 1rem;
-  }
-  
-  .logout-button {
-    width: auto;
-    padding: 0.4rem 0.8rem;
-    font-size: 0.8rem;
-  }
-
-  /* Contenido principal en móvil */
-  .main-content {
-    padding: 1rem;
-    height: auto;
-    overflow-y: visible;
-  }
-
-  /* Ajuste de tablas en pantallas muy pequeñas */
-  th, td {
-    padding: 0.75rem 0.5rem;
-    font-size: 0.9rem;
-  }
+  .card p { font-size: 1.6rem; }
 }

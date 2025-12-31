@@ -10,7 +10,7 @@ export default function Teachers() {
   const [userId, setUserId] = useState<string>("");
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
+    const token = sessionStorage.getItem("token");
     const config = { headers: { Authorization: `Bearer ${token}` } };
 
     axios.get(`${API_BASE_URL}/users/me`, config)
@@ -25,7 +25,7 @@ export default function Teachers() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const token = localStorage.getItem("token");
+    const token = sessionStorage.getItem("token");
     const config = { headers: { Authorization: `Bearer ${token}` } };
 
     if (form.id) {
@@ -52,7 +52,7 @@ export default function Teachers() {
   };
 
   const handleDelete = async (id: string) => {
-    const token = localStorage.getItem("token");
+    const token = sessionStorage.getItem("token");
     await axios.delete(`${API_BASE_URL}/teachers/${id}`, {
       headers: { Authorization: `Bearer ${token}` },
     });

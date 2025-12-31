@@ -12,7 +12,7 @@ export default function Students() {
   const recordsPerPage = 5;
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
+    const token = sessionStorage.getItem("token");
     if (!token) return;
     const config = { headers: { Authorization: `Bearer ${token}` } };
 
@@ -26,7 +26,7 @@ export default function Students() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const token = localStorage.getItem("token");
+    const token = sessionStorage.getItem("token");
     const config = { headers: { Authorization: `Bearer ${token}` } };
 
     try {
@@ -59,7 +59,7 @@ export default function Students() {
     if (!window.confirm("¿Seguro que deseas eliminar este estudiante?")) return;
 
     try {
-      const token = localStorage.getItem("token");
+      const token = sessionStorage.getItem("token");
       await axios.delete(`${API_BASE_URL}/students/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });

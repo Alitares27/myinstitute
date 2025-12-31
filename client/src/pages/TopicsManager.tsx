@@ -23,7 +23,7 @@ export default function TopicsManager() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState({ title: "", description: "", order_index: 0 });
 
-  const headers = { Authorization: `Bearer ${localStorage.getItem("token")}` };
+  const headers = { Authorization: `Bearer ${sessionStorage.getItem("token")}` };
 
   useEffect(() => {
     fetchCourses();
@@ -72,10 +72,10 @@ export default function TopicsManager() {
   };
 
   return (
-    <div style={{ padding: "20px" }}>
+    <div>
       <h2>📚 Gestión de Temas del Manual</h2>
       
-      <div style={{ marginBottom: "20px" }}>
+      <div>
         <label>Seleccionar Curso: </label>
         <select value={selectedCourseId} onChange={(e) => setSelectedCourseId(e.target.value)}>
           <option value="">-- Seleccione un curso --</option>

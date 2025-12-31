@@ -1,7 +1,7 @@
 import { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import Layout from "../components/Layout"; 
+import Layout from "../components/Layout";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
@@ -11,7 +11,7 @@ export default function Signup() {
     email: "",
     password: "",
     telefono: "",
-    role: "student", 
+    role: "student",
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -24,13 +24,13 @@ export default function Signup() {
 
     try {
       const res = await axios.post(`${API_BASE_URL}/users/register`, form);
-      
-      localStorage.setItem("token", res.data.token);
+
+      sessionStorage.setItem("token", res.data.token);
       if (res.data.user) {
-        localStorage.setItem("user", JSON.stringify(res.data.user));
-        localStorage.setItem("role", res.data.user.role);
+        sessionStorage.setItem("user", JSON.stringify(res.data.user));
+        sessionStorage.setItem("role", res.data.user.role);
       }
-      
+
       navigate("/dashboard");
     } catch (err: any) {
       setError(err.response?.data?.message || "Error al crear la cuenta");
@@ -108,9 +108,9 @@ export default function Signup() {
               <button type="submit" className="btn-login" disabled={loading}>
                 {loading ? "Registrando..." : "Registrar Cuenta"}
               </button>
-              <button 
-                type="button" 
-                className="btn-cancel" 
+              <button
+                type="button"
+                className="btn-cancel"
                 onClick={() => navigate("/")}
               >
                 Cancelar
@@ -121,8 +121,8 @@ export default function Signup() {
           <div className="auth-footer">
             <p>
               ¿Ya tienes cuenta?{" "}
-              <span 
-                onClick={() => navigate("/login")} 
+              <span
+                onClick={() => navigate("/login")}
                 style={{ color: "#007bff", cursor: "pointer", fontWeight: "bold" }}
               >
                 Inicia sesión aquí

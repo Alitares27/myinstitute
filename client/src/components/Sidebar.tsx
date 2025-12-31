@@ -12,8 +12,8 @@ import {
 function Sidebar() {
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
+ const handleLogout = () => {
+    sessionStorage.clear(); 
     navigate("/");
   };
 
@@ -21,7 +21,7 @@ function Sidebar() {
     <div className="sidebar">
       <Link to="/dashboard" className="sidebar-logo">
         <span className="logo-icon">🎓</span>
-        <span className="logo-text">MyInstitute</span>
+        <span className="logo-text">Institute</span>
       </Link>
 
       <nav>

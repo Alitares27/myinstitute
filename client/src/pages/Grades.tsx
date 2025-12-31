@@ -28,7 +28,7 @@ export default function Grades() {
 
   const fetchData = async () => {
     try {
-      const token = localStorage.getItem("token");
+      const token = sessionStorage.getItem("token");
       if (!token) return;
       const config = { headers: { Authorization: `Bearer ${token}` } };
 
@@ -72,7 +72,7 @@ export default function Grades() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const token = localStorage.getItem("token");
+    const token = sessionStorage.getItem("token");
     const config = { headers: { Authorization: `Bearer ${token}` } };
 
     try {
@@ -103,7 +103,7 @@ export default function Grades() {
   const handleDelete = async (id: number) => {
     if (!window.confirm("¿Seguro que deseas eliminar esta calificación?")) return;
     try {
-      const token = localStorage.getItem("token");
+      const token = sessionStorage.getItem("token");
       await axios.delete(`${API_BASE_URL}/grades/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -148,7 +148,7 @@ export default function Grades() {
               value={form.grade}
               onChange={(e) => setForm({ ...form, grade: e.target.value })}
               required
-              style={{ width: "80px" }}
+              
             />
 
             <select
@@ -171,7 +171,7 @@ export default function Grades() {
         </div>
       )}
 
-      <div className="filters-section" style={{ background: "#f4f4f4", padding: "15px", borderRadius: "8px", marginBottom: "20px", display: "flex", gap: "20px", flexWrap: "wrap" }}>
+      <div className="filters-section" >
         <strong>🔍 Filtrar:</strong>
         {role === "admin" && (
           <div>
@@ -197,28 +197,28 @@ export default function Grades() {
         )}
       </div>
 
-      <table border={1} style={{ width: "100%", borderCollapse: "collapse" }}>
+      <table >
         <thead>
-          <tr style={{ background: "#eee" }}>
-            {role === "admin" && <th style={{ padding: "8px" }}>Estudiante</th>}
-            <th style={{ padding: "8px" }}>Curso</th>
-            <th style={{ padding: "8px" }}>Nota</th>
-            <th style={{ padding: "8px" }}>Tipo</th>
-            <th style={{ padding: "8px" }}>Fecha</th>
-            {role === "admin" && <th style={{ padding: "8px" }}>Acciones</th>}
+          <tr >
+            {role === "admin" && <th >Estudiante</th>}
+            <th >Curso</th>
+            <th >Nota</th>
+            <th >Tipo</th>
+            <th >Fecha</th>
+            {role === "admin" && <th >Acciones</th>}
           </tr>
         </thead>
         <tbody>
           {currentRecords.length > 0 ? (
             currentRecords.map((g) => (
               <tr key={g.id}>
-                {role === "admin" && <td style={{ padding: "8px" }}>{g.student_name}</td>}
-                <td style={{ padding: "8px" }}>{g.course_title}</td>
-                <td style={{ padding: "8px", fontWeight: "bold", color: g.grade >= 6 ? "green" : "red" }}>{g.grade}</td>
-                <td style={{ padding: "8px" }}>{g.grade_type}</td>
-                <td style={{ padding: "8px" }}>{new Date(g.created_at).toLocaleDateString()}</td>
+                {role === "admin" && <td>{g.student_name}</td>}
+                <td>{g.course_title}</td>
+                <td >{g.grade}</td>
+                <td>{g.grade_type}</td>
+                <td>{new Date(g.created_at).toLocaleDateString()}</td>
                 {role === "admin" && (
-                  <td style={{ padding: "8px" }}>
+                  <td>
                     <button onClick={() => handleEditClick(g)}>✏️</button>
                     <button onClick={() => handleDelete(g.id)}>🗑️</button>
                   </td>
@@ -227,7 +227,7 @@ export default function Grades() {
             ))
           ) : (
             <tr>
-              <td colSpan={6} style={{ textAlign: "center", padding: "20px" }}>Sin registros.</td>
+              <td colSpan={6}>Sin registros.</td>
             </tr>
           )}
         </tbody>

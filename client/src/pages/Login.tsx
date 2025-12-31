@@ -24,9 +24,9 @@ export default function Login() {
         throw new Error("No se recibió el token de autenticación.");
       }
 
-      localStorage.setItem("token", res.data.token);
-      localStorage.setItem("user", JSON.stringify(res.data.user));
-      localStorage.setItem("role", res.data.user.role);
+      sessionStorage.setItem("token", res.data.token);
+      sessionStorage.setItem("user", JSON.stringify(res.data.user));
+      sessionStorage.setItem("role", res.data.user.role);
 
       navigate("/dashboard");
     } catch (err: any) {
@@ -49,7 +49,7 @@ export default function Login() {
           <div className="auth-header">
             <h2>🔑 Iniciar Sesión</h2>
           </div>
-          
+
           <form onSubmit={handleSubmit} className="auth-form">
             <div className="form-group">
               <label htmlFor="email">Correo Electrónico</label>
@@ -84,14 +84,14 @@ export default function Login() {
             )}
 
             <div className="auth-buttons">
-              <button 
-                type="submit" 
-                className="btn-login" 
+              <button
+                type="submit"
+                className="btn-login"
                 disabled={loading}
               >
                 {loading ? "Verificando..." : "Ingresar"}
               </button>
-              
+
               <button
                 type="button"
                 className="btn-cancel"
@@ -101,12 +101,12 @@ export default function Login() {
               </button>
             </div>
           </form>
-          
+
           <div className="auth-footer">
             <p>
               ¿No tienes una cuenta?{" "}
-              <span 
-                onClick={() => navigate("/signup")} 
+              <span
+                onClick={() => navigate("/signup")}
                 className="auth-link"
               >
                 Regístrate aquí

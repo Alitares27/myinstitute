@@ -54,7 +54,7 @@ export default function Attendance() {
   const recordsPerPage = 10;
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
+    const token = sessionStorage.getItem("token");
     if (!token) {
       setError("No hay sesión activa");
       return;
@@ -118,7 +118,7 @@ export default function Attendance() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const token = localStorage.getItem("token");
+    const token = sessionStorage.getItem("token");
     try {
       const res = await axios.post(`${API_BASE_URL}/attendance`, form, {
         headers: { Authorization: `Bearer ${token}` },
@@ -196,8 +196,8 @@ export default function Attendance() {
         </div>
       )}
 
-      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "20px", alignItems: "center" }}>
-        <div style={{ display: "flex", gap: "10px" }}>
+      <div >
+        <div >
           <input 
             type="date" 
             value={dateFilter} 
@@ -212,7 +212,7 @@ export default function Attendance() {
           )}
         </div>
         
-        <div style={{ textAlign: "center" }}>
+        <div >
           <small>Asistencia</small>
           <div style={{ fontWeight: "bold", color: attendanceStats.percentage >= 75 ? "green" : "orange" }}>
             {attendanceStats.percentage}% ({attendanceStats.count} clases)
@@ -221,32 +221,32 @@ export default function Attendance() {
       </div>
 
       <div className="table-responsive">
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+        <table >
           <thead>
-            <tr style={{ background: "#eee", textAlign: "left" }}>
-              {role !== "student" && <th style={{ padding: "12px" }}>Estudiante</th>}
-              <th style={{ padding: "12px" }}>Curso</th>
-              <th style={{ padding: "12px" }}>Fecha</th>
-              <th style={{ padding: "12px" }}>Estado</th>
-              <th style={{ padding: "12px" }}>Capítulo</th>
+            <tr >
+              {role !== "student" && <th>Estudiante</th>}
+              <th>Curso</th>
+              <th>Fecha</th>
+              <th>Estado</th>
+              <th>Capítulo</th>
             </tr>
           </thead>
           <tbody>
             {currentRecords.map((a) => (
-              <tr key={a.id} style={{ borderBottom: "1px solid #ddd" }}>
+              <tr key={a.id} >
                 {role !== "student" && (
-                  <td style={{ padding: "12px" }}>
+                  <td >
                     {students.find(s => s.id === a.student_id)?.name || `ID: ${a.student_id}`}
                   </td>
                 )}
-                <td style={{ padding: "12px" }}>
+                <td>
                   {courses.find(c => c.id === a.course_id)?.title || `ID: ${a.course_id}`}
                 </td>
-                <td style={{ padding: "12px" }}>{new Date(a.date).toLocaleDateString()}</td>
-                <td style={{ padding: "12px", color: (a.status === "Present" || a.status === "Presente") ? "green" : "red", fontWeight: "bold" }}>
+                <td>{new Date(a.date).toLocaleDateString()}</td>
+                <td style={{ color: (a.status === "Present" || a.status === "Presente") ? "green" : "red", fontWeight: "bold" }}>
                   {a.status}
                 </td>
-                <td style={{ padding: "12px", color: "#666", fontStyle: "italic" }}>
+                <td style={{ color: "#666", fontStyle: "italic" }}>
                   {a.topic || "—"}
                 </td>
               </tr>
