@@ -160,7 +160,7 @@ export default function Courses() {
         <tbody>
           {courses.map((c) => (
             <tr key={c.id}>
-              <td style={{ color: "#007bff", cursor: "pointer", fontWeight: "bold" }} onClick={() => handleCourseClick(c)}>
+              <td style={{cursor: "pointer", fontWeight: "bold" }} onClick={() => handleCourseClick(c)}>
                 {c.title}
               </td>
               <td>{c.teacher_name || "No asignado"}</td>
