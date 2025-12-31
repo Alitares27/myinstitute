@@ -69,7 +69,7 @@ export default function Login() {
               <input
                 id="password"
                 type="password"
-                placeholder="••••••••"
+                placeholder="********"
                 value={form.password}
                 onChange={(e) => setForm({ ...form, password: e.target.value })}
                 required
@@ -89,7 +89,7 @@ export default function Login() {
                 className="btn-login" 
                 disabled={loading}
               >
-                {loading ? "Verificando..." : "Ingresar al Sistema"}
+                {loading ? "Verificando..." : "Ingresar"}
               </button>
               
               <button

@@ -7,6 +7,8 @@ interface AttendanceRecord {
   course_id: number;
   date: string;
   status: string;
+  topic?: string;
+  topic_id?: number | null;
 }
 
 interface Student {
@@ -19,12 +21,20 @@ interface Course {
   title: string;
 }
 
+interface Topic {
+  id: number;
+  course_id: number;
+  title: string;
+}
+
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 export default function Attendance() {
+
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
+  const [allTopics, setAllTopics] = useState<Topic[]>([]);
   const [role, setRole] = useState<string>("");
   const [userId, setUserId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -32,14 +42,16 @@ export default function Attendance() {
   const [form, setForm] = useState({
     student_id: "",
     course_id: "",
-    date: "",
+    topic_id: "",
+    date: new Date().toISOString().split("T")[0],
     status: "Present",
   });
+
 
   const [studentFilter, setStudentFilter] = useState<string>("");
   const [dateFilter, setDateFilter] = useState<string>("");
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const recordsPerPage = 5;
+  const recordsPerPage = 10;
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -51,11 +63,12 @@ export default function Attendance() {
 
     const fetchData = async () => {
       try {
-        const [userRes, attRes, stdRes, crsRes] = await Promise.all([
+        const [userRes, attRes, stdRes, crsRes, topRes] = await Promise.all([
           axios.get(`${API_BASE_URL}/users/me`, { headers }),
           axios.get(`${API_BASE_URL}/attendance`, { headers }),
           axios.get(`${API_BASE_URL}/students`, { headers }),
           axios.get(`${API_BASE_URL}/courses`, { headers }),
+          axios.get(`${API_BASE_URL}/topics`, { headers }), 
         ]);
 
         setRole(userRes.data.role);
@@ -63,49 +76,38 @@ export default function Attendance() {
         setAttendance(attRes.data);
         setStudents(stdRes.data);
         setCourses(crsRes.data);
+        setAllTopics(topRes.data);
       } catch (err) {
         console.error("Error fetching data:", err);
-        setError("Error al cargar los datos desde el servidor. Verifica la conexión.");
+        setError("Error al conectar con el servidor.");
       }
     };
 
     fetchData();
   }, []);
 
+  const filteredTopics = useMemo(() => {
+    if (!form.course_id) return [];
+    return allTopics.filter((t) => t.course_id === Number(form.course_id));
+  }, [allTopics, form.course_id]);
+
   const filteredAttendance = useMemo(() => {
     return attendance.filter((record) => {
-      if (role === "student" && record.student_id !== userId) {
-        return false;
-      }
-
-      if (studentFilter && record.student_id !== Number(studentFilter)) {
-        return false;
-      }
-
+      if (role === "student" && record.student_id !== userId) return false;
+      if (studentFilter && record.student_id !== Number(studentFilter)) return false;
       if (dateFilter) {
         const recordDate = new Date(record.date).toISOString().split("T")[0];
-        if (recordDate !== dateFilter) {
-          return false;
-        }
+        if (recordDate !== dateFilter) return false;
       }
-
       return true;
     });
   }, [attendance, studentFilter, dateFilter, role, userId]);
 
   const attendanceStats = useMemo(() => {
-    const totalPresent = filteredAttendance.filter(a => a.status === "Present").length;
-    const maxClasses = 14;
-    const percentage = Math.min((totalPresent / maxClasses) * 100, 100);
-    return {
-      percentage: Math.round(percentage),
-      count: totalPresent
-    };
+    const presentCount = filteredAttendance.filter(a => a.status === "Present" || a.status === "Presente").length;
+    const percentage = Math.min((presentCount / 14) * 100, 100);
+    return { percentage: Math.round(percentage), count: presentCount };
   }, [filteredAttendance]);
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [studentFilter, dateFilter]);
 
   const totalPages = Math.ceil(filteredAttendance.length / recordsPerPage);
   const currentRecords = useMemo(() => {
@@ -121,11 +123,18 @@ export default function Attendance() {
       const res = await axios.post(`${API_BASE_URL}/attendance`, form, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setAttendance((prev) => [...prev, res.data]);
-      setForm({ student_id: "", course_id: "", date: "", status: "Present" });
-      alert("Asistencia registrada con éxito");
+
+      const selectedTopic = allTopics.find(t => t.id === Number(form.topic_id));
+      const newRecord = { 
+        ...res.data, 
+        topic: selectedTopic ? selectedTopic.title : "N/A" 
+      };
+
+      setAttendance((prev) => [newRecord, ...prev]);
+      setForm({ ...form, student_id: "", topic_id: "" });
+      alert("Asistencia guardada");
     } catch (err) {
-      setError("Error registrando asistencia");
+      setError("Error al registrar la asistencia");
     }
   };
 
@@ -134,153 +143,125 @@ export default function Attendance() {
   return (
     <div className="attendance-page">
       <h2>📅 Control de Asistencia</h2>
-      
-      {role === "admin" && (
+
+      {(role === "admin" || role === "teacher") && (
         <div className="admin-section">
-          <h3>{form.student_id ? "✏️ Editar Asistencia" : "➕ Marcar Asistencia"}</h3>
-          <form onSubmit={handleSubmit} className="attendance-form">
-            <select
-              value={form.student_id}
-              onChange={(e) => setForm({ ...form, student_id: e.target.value })}
+          <h3>➕ Registrar Nueva Asistencia</h3>
+          <form onSubmit={handleSubmit}>
+            
+            <select 
+              value={form.student_id} 
+              onChange={(e) => setForm({ ...form, student_id: e.target.value })} 
               required
             >
-              <option value="">Elegir Estudiante</option>
+              <option value="">Seleccionar Estudiante</option>
               {students.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
 
-            <select
-              value={form.course_id}
-              onChange={(e) => setForm({ ...form, course_id: e.target.value })}
+            <select 
+              value={form.course_id} 
+              onChange={(e) => setForm({ ...form, course_id: e.target.value, topic_id: "" })} 
               required
             >
-              <option value="">Elegir Curso</option>
+              <option value="">Seleccionar Curso</option>
               {courses.map((c) => <option key={c.id} value={c.id}>{c.title}</option>)}
             </select>
 
-            <input
-              type="date"
-              value={form.date}
-              onChange={(e) => setForm({ ...form, date: e.target.value })}
+            <select 
+              value={form.topic_id} 
+              onChange={(e) => setForm({ ...form, topic_id: e.target.value })}
+              disabled={!form.course_id}
               required
+            >
+              <option value="">-- Seleccionar Tema --</option>
+              {filteredTopics.map((t) => <option key={t.id} value={t.id}>{t.title}</option>)}
+            </select>
+
+            <input 
+              type="date" 
+              value={form.date} 
+              onChange={(e) => setForm({ ...form, date: e.target.value })} 
+              required 
             />
 
-            <select
-              value={form.status}
-              onChange={(e) => setForm({ ...form, status: e.target.value })}
-            >
+            <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
               <option value="Present">Presente</option>
               <option value="Absent">Ausente</option>
             </select>
 
-            <button type="submit" className="btn-submit">Marcar</button>
+            <button type="submit">
+              Marcar
+            </button>
           </form>
-
-          <hr style={{ margin: "20px 0", border: "0.5px solid #ddd" }} />
-
-          <div className="filters-container" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "20px" }}>
-            <div style={{ flex: 1 }}>
-              <h3>🔍 Filtros de Búsqueda</h3>
-              <div style={{ display: "flex", gap: "20px" }}>
-                <div>
-                  <label>Por Estudiante: </label>
-                  <select value={studentFilter} onChange={(e) => setStudentFilter(e.target.value)}>
-                    <option value="">Todos</option>
-                    {students.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label>Por Fecha: </label>
-                  <input type="date" value={dateFilter} onChange={(e) => setDateFilter(e.target.value)} />
-                  {dateFilter && <button onClick={() => setDateFilter("")} style={{ marginLeft: "5px" }}>Limpiar</button>}
-                </div>
-              </div>
-            </div>
-
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", minWidth: "150px" }}>
-              <div style={{ position: "relative", width: "100px", height: "100px" }}>
-                <svg width="80" height="80" viewBox="0 0 100 100">
-                  <circle
-                    cx="50" cy="50" r="40"
-                    fill="transparent"
-                    stroke="#e6e6e6"
-                    strokeWidth="10"
-                  />
-                  <circle
-                    cx="50" cy="50" r="40"
-                    fill="transparent"
-                    stroke={attendanceStats.percentage >= 75 ? "#4caf50" : "#ff9800"}
-                    strokeWidth="10"
-                    strokeDasharray={`${attendanceStats.percentage * 2.51} 251`}
-                    strokeLinecap="round"
-                    transform="rotate(-90 50 50)"
-                    style={{ transition: "stroke-dasharray 0.5s ease" }}
-                  />
-                  <text
-                    x="50" y="55"
-                    textAnchor="middle"
-                    fontSize="18"
-                    fontWeight="bold"
-                    fill="#333"
-                  >
-                    {attendanceStats.percentage}%
-                  </text>
-                </svg>
-              </div>
-            </div>
-          </div>
         </div>
       )}
 
-      {filteredAttendance.length === 0 ? (
-        <p style={{ marginTop: "20px" }}>No se encontraron registros de asistencia.</p>
-      ) : (
-        <>
-          <div className="table-responsive">
-            <table border={1} cellPadding={10} style={{ width: "100%", borderCollapse: "collapse", marginTop: "10px" }}>
-              <thead style={{ background: "#f8f9fa" }}>
-                <tr>
-                  {role === "admin" && <th>Estudiante</th>}
-                  <th>Curso</th>
-                  <th>Fecha</th>
-                  <th>Estado</th>
-                </tr>
-              </thead>
-              <tbody>
-                {currentRecords.map((a) => (
-                  <tr key={a.id}>
-                    {role === "admin" && (
-                      <td>{students.find((s) => s.id === a.student_id)?.name || `ID: ${a.student_id}`}</td>
-                    )}
-                    <td>{courses.find((c) => c.id === a.course_id)?.title || `ID: ${a.course_id}`}</td>
-                    <td>{new Date(a.date).toLocaleDateString()}</td>
-                    <td style={{ color: a.status === "Present" ? "green" : "red", fontWeight: "bold" }}>
-                      {a.status === "Present" ? "Presente" : "Ausente"}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "20px", alignItems: "center" }}>
+        <div style={{ display: "flex", gap: "10px" }}>
+          <input 
+            type="date" 
+            value={dateFilter} 
+            onChange={(e) => setDateFilter(e.target.value)} 
+            placeholder="Filtrar por fecha"
+          />
+          {role !== "student" && (
+            <select value={studentFilter} onChange={(e) => setStudentFilter(e.target.value)}>
+              <option value="">Todos los estudiantes</option>
+              {students.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+            </select>
+          )}
+        </div>
+        
+        <div style={{ textAlign: "center" }}>
+          <small>Asistencia</small>
+          <div style={{ fontWeight: "bold", color: attendanceStats.percentage >= 75 ? "green" : "orange" }}>
+            {attendanceStats.percentage}% ({attendanceStats.count} clases)
           </div>
+        </div>
+      </div>
 
-          <div className="pagination" style={{ marginTop: "20px", display: "flex", gap: "5px" }}>
-            {Array.from({ length: totalPages }, (_, i) => (
-              <button
-                key={i + 1}
-                onClick={() => setCurrentPage(i + 1)}
-                style={{
-                  padding: "5px 10px",
-                  backgroundColor: currentPage === i + 1 ? "#007bff" : "#fff",
-                  color: currentPage === i + 1 ? "#fff" : "#000",
-                  border: "1px solid #ddd",
-                  cursor: "pointer"
-                }}
-              >
-                {i + 1}
-              </button>
+      <div className="table-responsive">
+        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <thead>
+            <tr style={{ background: "#eee", textAlign: "left" }}>
+              {role !== "student" && <th style={{ padding: "12px" }}>Estudiante</th>}
+              <th style={{ padding: "12px" }}>Curso</th>
+              <th style={{ padding: "12px" }}>Fecha</th>
+              <th style={{ padding: "12px" }}>Estado</th>
+              <th style={{ padding: "12px" }}>Capítulo</th>
+            </tr>
+          </thead>
+          <tbody>
+            {currentRecords.map((a) => (
+              <tr key={a.id} style={{ borderBottom: "1px solid #ddd" }}>
+                {role !== "student" && (
+                  <td style={{ padding: "12px" }}>
+                    {students.find(s => s.id === a.student_id)?.name || `ID: ${a.student_id}`}
+                  </td>
+                )}
+                <td style={{ padding: "12px" }}>
+                  {courses.find(c => c.id === a.course_id)?.title || `ID: ${a.course_id}`}
+                </td>
+                <td style={{ padding: "12px" }}>{new Date(a.date).toLocaleDateString()}</td>
+                <td style={{ padding: "12px", color: (a.status === "Present" || a.status === "Presente") ? "green" : "red", fontWeight: "bold" }}>
+                  {a.status}
+                </td>
+                <td style={{ padding: "12px", color: "#666", fontStyle: "italic" }}>
+                  {a.topic || "—"}
+                </td>
+              </tr>
             ))}
-          </div>
-        </>
-      )}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="pagination">
+              {Array.from({ length: totalPages }, (_, i) => (
+                <button key={i + 1} onClick={() => setCurrentPage(i + 1)} className={currentPage === i + 1 ? "active" : ""}>
+                  {i + 1}
+                </button>
+              ))}
+            </div>
     </div>
   );
 }

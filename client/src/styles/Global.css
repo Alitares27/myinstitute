@@ -261,11 +261,11 @@ input:focus, select:focus {
   grid-column: 1 / -1; 
 }
 
-@media (min-width: 768px) {
+@media (min-width: 600px) {
   .grid-form button,
   .course-form button, 
   .attendance-page form button {
-      width: auto;
+      width: 100%;
       justify-self: start;
   }
 }

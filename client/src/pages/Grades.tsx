@@ -234,17 +234,13 @@ export default function Grades() {
       </table>
 
       {totalPages > 1 && (
-        <div style={{ marginTop: "15px", display: "flex", gap: "5px", justifyContent: "center" }}>
-          {Array.from({ length: totalPages }, (_, i) => (
-            <button
-              key={i + 1}
-              onClick={() => setCurrentPage(i + 1)}
-              style={{ padding: "5px 10px", background: currentPage === i + 1 ? "#333" : "#fff", color: currentPage === i + 1 ? "#fff" : "#000" }}
-            >
-              {i + 1}
-            </button>
-          ))}
-        </div>
+        <div className="pagination">
+              {Array.from({ length: totalPages }, (_, i) => (
+                <button key={i + 1} onClick={() => setCurrentPage(i + 1)} className={currentPage === i + 1 ? "active" : ""}>
+                  {i + 1}
+                </button>
+              ))}
+            </div>
       )}
     </div>
   );

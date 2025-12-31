@@ -10,7 +10,7 @@ router.post("/", verifyToken, async (req: AuthRequest, res: Response) => {
     if (!user) return res.status(401).json({ message: "Unauthorized" });
 
     const { role, id: userId } = user;
-    const { student_id, course_id, date, status } = req.body;
+    const { student_id, course_id, date, status, topic_id } = req.body;
 
     if (!course_id || !date || !status) {
       return res.status(400).json({ message: "Missing required fields" });
@@ -23,21 +23,26 @@ router.post("/", verifyToken, async (req: AuthRequest, res: Response) => {
     }
 
     const courseIdNum = Number(course_id);
+    const topicIdNum = topic_id ? Number(topic_id) : null;
+
     if (isNaN(courseIdNum)) {
       return res.status(400).json({ message: "Invalid course ID" });
     }
 
     const result = await pool.query(
-      `INSERT INTO attendance (student_id, course_id, date, status)
-       VALUES ($1, $2, $3, $4)
+      `INSERT INTO attendance (student_id, course_id, date, status, topic_id)
+       VALUES ($1, $2, $3, $4, $5)
        ON CONFLICT (student_id, course_id, date)
-       DO UPDATE SET status = EXCLUDED.status
-       RETURNING id, student_id, course_id, date, status`,
-      [targetStudentId, courseIdNum, date, status]
+       DO UPDATE SET 
+          status = EXCLUDED.status,
+          topic_id = EXCLUDED.topic_id
+       RETURNING id, student_id, course_id, date, status, topic_id`,
+      [targetStudentId, courseIdNum, date, status, topicIdNum]
     );
 
     res.status(201).json(result.rows[0]);
   } catch (err: any) {
+    console.error(err);
     res.status(500).json({ message: "Error recording attendance" });
   }
 });
@@ -52,27 +57,30 @@ router.get("/", verifyToken, async (req: AuthRequest, res: Response) => {
 
     if (role === "admin") {
       result = await pool.query(`
-        SELECT a.id, a.student_id, u.name AS student, a.course_id, c.title AS course, a.date, a.status
+        SELECT a.id, a.student_id, u.name AS student, a.course_id, c.title AS course, a.date, a.status, t.title AS topic
         FROM attendance a
         JOIN users u ON a.student_id = u.id
         JOIN courses c ON a.course_id = c.id
+        LEFT JOIN topics t ON a.topic_id = t.id
         ORDER BY a.date DESC
       `);
     } else if (role === "student") {
       result = await pool.query(
-        `SELECT a.id, a.student_id, a.course_id, c.title AS course, a.date, a.status
+        `SELECT a.id, a.student_id, a.course_id, c.title AS course, a.date, a.status, t.title AS topic
          FROM attendance a
          JOIN courses c ON a.course_id = c.id
+         LEFT JOIN topics t ON a.topic_id = t.id
          WHERE a.student_id = $1
          ORDER BY a.date DESC`,
         [userId]
       );
     } else if (role === "teacher") {
       result = await pool.query(
-        `SELECT a.id, a.student_id, u.name AS student, a.course_id, c.title AS course, a.date, a.status
+        `SELECT a.id, a.student_id, u.name AS student, a.course_id, c.title AS course, a.date, a.status, t.title AS topic
          FROM attendance a
          JOIN users u ON a.student_id = u.id
          JOIN courses c ON a.course_id = c.id
+         LEFT JOIN topics t ON a.topic_id = t.id
          WHERE c.teacher_id = $1
          ORDER BY a.date DESC`,
         [userId]

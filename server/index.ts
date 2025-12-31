@@ -11,6 +11,7 @@ import attendance from "./routes/attendance";
 import grades from "./routes/grades";    
 import auth from "./routes/auth";
 import dashboard from "./routes/dashboard";
+import topicRoutes from "./routes/topics";
 
 dotenv.config();
 
@@ -39,6 +40,7 @@ app.use("/api/attendance", attendance);
 app.use("/api/grades", grades);        
 app.use("/api", auth);
 app.use("/api", dashboard);
+app.use("/api/topics", topicRoutes);
 
 app.get("/health", (req, res) => {
   res.status(200).json({ status: "ok" });
