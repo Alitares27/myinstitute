@@ -115,13 +115,11 @@ export default function Grades() {
 
   return (
     <div className="grades-page">
-      <h2>📊 Calificaciones</h2>
-      
-      {error && <p style={{ color: "red" }}>{error}</p>}
+      <h1>📊 Calificaciones</h1>
 
       {role === "admin" && (
         <div className="form-container">
-          <h3>{form.id ? "✏️ Actualizar" : "➕ Calificar"}</h3>
+          <h2 style={{ padding: "10px 0" }}>{form.id ? "✏️ Actualizar" : "➕ Calificar"}</h2>
           <form onSubmit={handleSubmit}>
             <select
               value={form.student_id}
@@ -171,7 +169,7 @@ export default function Grades() {
         </div>
       )}
 
-      <div className="filters-section" >
+      <div className="filters-section" style={{ marginBottom: '1rem',display: 'flex', gap: '1rem', alignItems: 'center' }}>
         <strong>🔍 Filtrar:</strong>
         {role === "admin" && (
           <div>

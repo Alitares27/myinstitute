@@ -91,11 +91,11 @@ export default function Students() {
 
   return (
     <div className="students-page">
-      <h2>👨‍🎓 Estudiantes</h2>
-      <h3>{form.id ? "✏️ Actualizar" : "➕ Agregar"}</h3>
+      <h1>👨‍🎓 Estudiantes</h1>
+      <h2 style={{ padding: "10px 0" }}>{form.id ? "✏️ Actualizar" : "➕ Agregar"}</h2>
       {role === "admin" && (
-        <div className="form-card">
-          <form onSubmit={handleSubmit} className="grid-form">
+        <div >
+          <form onSubmit={handleSubmit} >
             <input
               placeholder="Nombre"
               value={form.name}

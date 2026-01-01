@@ -133,11 +133,11 @@ export default function Courses() {
 
   return (
     <div className="page-container">
-      <h2>📚 {role === "admin" ? "Administrar Cursos" : "Cursos Disponibles"}</h2>
-      {error && <p style={{ color: "red", padding: "10px" }}>⚠️ {error}</p>}
+      <h1>📚 {role === "admin" ? "Administrar Cursos" : "Cursos Disponibles"}</h1>
+      <h2 style={{ padding: "10px 0" }}>{form.id ? "✏️ Actualizar" : "➕ Agregar Curso"}</h2>
 
       {role === "admin" && (
-        <div className="form-section">
+        <div >
           <form onSubmit={handleSubmit}>
             <input placeholder="Nombre del Curso" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} required />
             <select value={form.teacher_id} onChange={(e) => setForm({ ...form, teacher_id: e.target.value })} required>
@@ -177,14 +177,14 @@ export default function Courses() {
 
       {selectedCourse && (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
-          <div style={{ backgroundColor: 'white', padding: '10px', borderRadius: '8px', width: '90%', maxWidth: '700px', maxHeight: '90vh', overflowY: 'auto' }}>
+          <div style={{ backgroundColor: 'white', padding: '15px', borderRadius: '8px', width: '90%', maxHeight: '90vh', overflowY: 'auto' }}>
             <h3>Temas: {selectedCourse.title}</h3>
 
             {role === "admin" && (
               <form onSubmit={handleTopicSubmit} style={{ display: 'flex', gap: '5px', marginBottom: '20px', backgroundColor: '#f0f4f8', padding: '10px', borderRadius: '5px' }}>
                 <input style={{ flex: 2 }} placeholder="Nuevo Tema" value={topicForm.title} onChange={e => setTopicForm({ ...topicForm, title: e.target.value })} required />
                 <input  type="number" placeholder="Orden" value={topicForm.order_index} onChange={e => setTopicForm({ ...topicForm, order_index: e.target.value })} required />
-                <button type="submit" style={{ color: 'white', border: 'none', borderRadius: '4px' }}>
+                <button type="submit" >
                   {topicForm.id ? "OK" : "＋"}
                 </button>
                 {topicForm.id && <button type="button" onClick={() => setTopicForm({ id: "", title: "", order_index: "" })}>X</button>}

@@ -74,9 +74,9 @@ export default function Enrollments() {
 
   return (
     <div className="enrollments-page">
-      <h2>📝 Matrículas</h2>
-      <h3>{form.id ? "✏️ Actualizar" : "➕ Matricular"}</h3>
-      
+      <h1>📝 Matrículas</h1>
+      <h2 style={{ padding: "10px 0" }}>{form.id ? "✏️ Actualizar" : "➕ Matricular"}</h2>
+
       {role === "admin" && (
         <form onSubmit={handleSubmit} className="enrollment-form">
           <select

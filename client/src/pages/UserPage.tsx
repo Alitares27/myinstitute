@@ -143,8 +143,8 @@ function UserPage() {
 
   return (
     <div className="user-page">
-      <h2>👤 Gestión de Perfil</h2>
-      <h3>{form.id ? `✏️ Editando: ${form.name}` : "➕ Agregar Nuevo Usuario"}</h3>
+      <h1>👤 Gestión de Perfil</h1>
+      <h2 style={{ padding: "10px 0" }}>{form.id ? `✏️ Editando: ${form.name}` : "➕ Agregar Nuevo Usuario"}</h2>
       <div className="form-card">
         
         <div className="grid-form">

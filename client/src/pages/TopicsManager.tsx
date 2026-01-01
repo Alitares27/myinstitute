@@ -85,10 +85,10 @@ export default function TopicsManager() {
 
       {selectedCourseId && (
         <>
-          <form onSubmit={handleSubmit} style={{ background: "#f4f4f4", padding: "15px", borderRadius: "5px" }}>
+          <form onSubmit={handleSubmit} >
             <h3>{editingId ? "Editar Tema" : "Nuevo Tema"}</h3>
             <input type="text" placeholder="Título del Capítulo" value={form.title} onChange={e => setForm({...form, title: e.target.value})} required />
-            <input type="number" placeholder="Orden" value={form.order_index} onChange={e => setForm({...form, order_index: Number(e.target.value)})} style={{ width: "60px", marginLeft: "10px" }} />
+            <input type="number" placeholder="Orden" value={form.order_index} onChange={e => setForm({...form, order_index: Number(e.target.value)})} />
             <br /><br />
             <textarea placeholder="Descripción" value={form.description} onChange={e => setForm({...form, description: e.target.value})} style={{ width: "100%", height: "60px" }} />
             <br />
