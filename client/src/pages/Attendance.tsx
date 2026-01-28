@@ -225,7 +225,7 @@ export default function Attendance() {
                   <td>{students.find(s => s.id === a.student_id)?.name || `ID: ${a.student_id}`}</td>
                 )}
                 <td>{courses.find(c => c.id === a.course_id)?.title || `ID: ${a.course_id}`}</td>
-                <td>{new Date(a.date).toLocaleDateString()}</td>
+                <td>{new Date(a.date).toLocaleDateString('es-AR')}</td>
                 <td style={{ color: (a.status === "Present" || a.status === "Presente") ? "var(--success)" : "var(--danger)", fontWeight: "bold" }}>
                   {a.status}
                 </td>
