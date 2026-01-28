@@ -3,6 +3,11 @@ import axios from "axios";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
+type SortConfig = {
+  key: string;
+  direction: "asc" | "desc";
+} | null;
+
 export default function Grades() {
   const [grades, setGrades] = useState<any[]>([]);
   const [students, setStudents] = useState<any[]>([]);
@@ -13,6 +18,7 @@ export default function Grades() {
   const [filterType, setFilterType] = useState("");
   const [currentPage, setCurrentPage] = useState<number>(1);
   const recordsPerPage = 5;
+  const [sortConfig, setSortConfig] = useState<SortConfig>(null);
 
   const [form, setForm] = useState({
     id: "",
@@ -46,7 +52,7 @@ export default function Grades() {
         setStudents(sRes.data);
         setCourses(cRes.data);
       }
-    } catch (err) {
+    } catch {
       setError("Error al sincronizar con el servidor");
     }
   };
@@ -59,16 +65,35 @@ export default function Grades() {
     });
   }, [grades, filterStudent, filterType]);
 
+  const sortedGrades = useMemo(() => {
+    if (!sortConfig) return filteredGrades;
+    return [...filteredGrades].sort((a, b) => {
+      const aVal = a[sortConfig.key];
+      const bVal = b[sortConfig.key];
+      if (aVal < bVal) return sortConfig.direction === "asc" ? -1 : 1;
+      if (aVal > bVal) return sortConfig.direction === "asc" ? 1 : -1;
+      return 0;
+    });
+  }, [filteredGrades, sortConfig]);
+
   useEffect(() => {
     setCurrentPage(1);
-  }, [filterStudent, filterType]);
+  }, [filterStudent, filterType, sortConfig]);
 
-  const totalPages = Math.ceil(filteredGrades.length / recordsPerPage);
+  const totalPages = Math.ceil(sortedGrades.length / recordsPerPage);
   const currentRecords = useMemo(() => {
     const lastIdx = currentPage * recordsPerPage;
     const firstIdx = lastIdx - recordsPerPage;
-    return filteredGrades.slice(firstIdx, lastIdx);
-  }, [filteredGrades, currentPage]);
+    return sortedGrades.slice(firstIdx, lastIdx);
+  }, [sortedGrades, currentPage]);
+
+  const requestSort = (key: string) => {
+    setSortConfig((prev) =>
+      prev && prev.key === key
+        ? { key, direction: prev.direction === "asc" ? "desc" : "asc" }
+        : { key, direction: "asc" }
+    );
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,10 +106,9 @@ export default function Grades() {
       } else {
         await axios.post(`${API_BASE_URL}/grades`, form, config);
       }
-
       setForm({ id: "", student_id: "", course_id: "", grade: "", grade_type: "examen" });
       fetchData();
-    } catch (err) {
+    } catch {
       setError("No se pudo procesar la operación.");
     }
   };
@@ -97,7 +121,7 @@ export default function Grades() {
       grade: record.grade.toString(),
       grade_type: record.grade_type,
     });
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleDelete = async (id: number) => {
@@ -119,40 +143,25 @@ export default function Grades() {
 
       {role === "admin" && (
         <div className="form-container">
-          <h2 style={{ padding: "10px 0" }}>{form.id ? "✏️ Actualizar" : "➕ Calificar"}</h2>
+          <h2>{form.id ? "✏️ Actualizar" : "➕ Calificar"}</h2>
           <form onSubmit={handleSubmit}>
-            <select
-              value={form.student_id}
-              onChange={(e) => setForm({ ...form, student_id: e.target.value })}
-              required
-            >
+            <select value={form.student_id} onChange={(e) => setForm({ ...form, student_id: e.target.value })} required>
               <option value="">-- Seleccionar Estudiante --</option>
-              {students.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+              {students.map((s) => (
+                <option key={s.id} value={s.id}>{s.name}</option>
+              ))}
             </select>
 
-            <select
-              value={form.course_id}
-              onChange={(e) => setForm({ ...form, course_id: e.target.value })}
-              required
-            >
+            <select value={form.course_id} onChange={(e) => setForm({ ...form, course_id: e.target.value })} required>
               <option value="">-- Seleccionar Curso --</option>
-              {courses.map((c) => <option key={c.id} value={c.id}>{c.title}</option>)}
+              {courses.map((c) => (
+                <option key={c.id} value={c.id}>{c.title}</option>
+              ))}
             </select>
 
-            <input
-              type="number"
-              step="0.1"
-              placeholder="Nota"
-              value={form.grade}
-              onChange={(e) => setForm({ ...form, grade: e.target.value })}
-              required
-              
-            />
+            <input type="number" step="0.1" value={form.grade} onChange={(e) => setForm({ ...form, grade: e.target.value })} required />
 
-            <select
-              value={form.grade_type}
-              onChange={(e) => setForm({ ...form, grade_type: e.target.value })}
-            >
+            <select value={form.grade_type} onChange={(e) => setForm({ ...form, grade_type: e.target.value })}>
               <option value="examen">Examen</option>
               <option value="Lectura">Lectura</option>
               <option value="proyecto">Proyecto</option>
@@ -169,41 +178,33 @@ export default function Grades() {
         </div>
       )}
 
-      <div className="filters-section" style={{ marginBottom: '1rem',display: 'flex', gap: '1rem', alignItems: 'center' }}>
-        <strong>🔍 Filtrar:</strong>
+      <div className="filters-section">
         {role === "admin" && (
-          <div>
-            <label>Estudiante: </label>
-            <select value={filterStudent} onChange={(e) => setFilterStudent(e.target.value)}>
-              <option value="">Todos</option>
-              {students.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-            </select>
-          </div>
-        )}
-        <div>
-          <label>Tipo: </label>
-          <select value={filterType} onChange={(e) => setFilterType(e.target.value)}>
-            <option value="">Todos</option>
-            <option value="examen">Examen</option>
-            <option value="Lectura">Lectura</option>
-            <option value="proyecto">Proyecto</option>
-            <option value="participacion">Participación</option>
+          <select value={filterStudent} onChange={(e) => setFilterStudent(e.target.value)}>
+            <option value="">Todos los estudiantes</option>
+            {students.map((s) => (
+              <option key={s.id} value={s.id}>{s.name}</option>
+            ))}
           </select>
-        </div>
-        {(filterStudent || filterType) && (
-          <button onClick={() => { setFilterStudent(""); setFilterType(""); }}>Limpiar</button>
         )}
+        <select value={filterType} onChange={(e) => setFilterType(e.target.value)}>
+          <option value="">Todos los tipos</option>
+          <option value="examen">Examen</option>
+          <option value="Lectura">Lectura</option>
+          <option value="proyecto">Proyecto</option>
+          <option value="participacion">Participación</option>
+        </select>
       </div>
 
-      <table >
+      <table>
         <thead>
-          <tr >
-            {role === "admin" && <th >Estudiante</th>}
-            <th >Curso</th>
-            <th >Nota</th>
-            <th >Tipo</th>
-            <th >Fecha</th>
-            {role === "admin" && <th >Acciones</th>}
+          <tr>
+            {role === "admin" && <th onClick={() => requestSort("student_name")}>Estudiante</th>}
+            <th onClick={() => requestSort("course_title")}>Curso</th>
+            <th onClick={() => requestSort("grade")}>Nota</th>
+            <th onClick={() => requestSort("grade_type")}>Tipo</th>
+            <th onClick={() => requestSort("created_at")}>Fecha</th>
+            {role === "admin" && <th>Acciones</th>}
           </tr>
         </thead>
         <tbody>
@@ -212,7 +213,7 @@ export default function Grades() {
               <tr key={g.id}>
                 {role === "admin" && <td>{g.student_name}</td>}
                 <td>{g.course_title}</td>
-                <td >{g.grade}</td>
+                <td>{g.grade}</td>
                 <td>{g.grade_type}</td>
                 <td>{new Date(g.created_at).toLocaleDateString()}</td>
                 {role === "admin" && (
@@ -233,13 +234,15 @@ export default function Grades() {
 
       {totalPages > 1 && (
         <div className="pagination">
-              {Array.from({ length: totalPages }, (_, i) => (
-                <button key={i + 1} onClick={() => setCurrentPage(i + 1)} className={currentPage === i + 1 ? "active" : ""}>
-                  {i + 1}
-                </button>
-              ))}
-            </div>
+          {Array.from({ length: totalPages }, (_, i) => (
+            <button key={i + 1} onClick={() => setCurrentPage(i + 1)} className={currentPage === i + 1 ? "active" : ""}>
+              {i + 1}
+            </button>
+          ))}
+        </div>
       )}
+
+      {error && <p>{error}</p>}
     </div>
   );
 }

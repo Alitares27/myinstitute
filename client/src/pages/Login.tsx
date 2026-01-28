@@ -89,7 +89,7 @@ export default function Login() {
                 className="btn-login"
                 disabled={loading}
               >
-                {loading ? "Verificando..." : "Ingresar"}
+                {loading ? "Iniciando..." : "Ingresar"}
               </button>
 
               <button

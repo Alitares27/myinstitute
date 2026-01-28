@@ -43,7 +43,7 @@ export default function Signup() {
     <Layout>
       <div className="auth-page-wrapper">
         <div className="auth-container card">
-          <h2>📝 Crear Cuenta</h2>
+          <h2>📝 Registrarse</h2>
           <p className="auth-subtitle">Registrate</p>
 
           <form onSubmit={handleSubmit} className="auth-form">
@@ -106,7 +106,7 @@ export default function Signup() {
 
             <div className="auth-buttons">
               <button type="submit" className="btn-login" disabled={loading}>
-                {loading ? "Registrando..." : "Registrar Cuenta"}
+                {loading ? "Registrando..." : "Registrarse"}
               </button>
               <button
                 type="button"

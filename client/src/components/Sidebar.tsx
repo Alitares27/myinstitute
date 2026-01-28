@@ -6,14 +6,15 @@ import {
   FaBookOpen,
   FaCalendarCheck,
   FaUser,
-  FaStar, 
+  FaStar,
+  FaSignOutAlt,
 } from "react-icons/fa";
 
 function Sidebar() {
   const navigate = useNavigate();
 
- const handleLogout = () => {
-    sessionStorage.clear(); 
+  const handleLogout = () => {
+    sessionStorage.clear();
     navigate("/");
   };
 
@@ -21,7 +22,8 @@ function Sidebar() {
     <div className="sidebar">
       <Link to="/dashboard" className="sidebar-logo">
         <span className="logo-icon">🎓</span>
-        <span className="logo-text">Institute</span>
+        <span className="logo-text">Institute </span>
+        <span className="logo-text"> Arroyo Seco</span>
       </Link>
 
       <nav>
@@ -74,7 +76,7 @@ function Sidebar() {
               <span>Usuarios</span>
             </Link>
           </li>
-          
+
           <li>
             <Link to="/grades" className="sidebar-link">
               <div className="icon-circle">
@@ -88,7 +90,8 @@ function Sidebar() {
 
       <div className="logout-section">
         <button onClick={handleLogout} className="logout-button">
-          Cerrar Sesión
+          <FaSignOutAlt className="logout-icon" />
+          <span className="logout-text">Salir</span>
         </button>
       </div>
     </div>

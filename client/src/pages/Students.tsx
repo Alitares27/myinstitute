@@ -3,6 +3,11 @@ import axios from "axios";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
+type SortConfig = {
+  key: string;
+  direction: "asc" | "desc";
+} | null;
+
 export default function Students() {
   const [students, setStudents] = useState<any[]>([]);
   const [form, setForm] = useState({ id: "", name: "", grade: "" });
@@ -10,6 +15,7 @@ export default function Students() {
   const [userId, setUserId] = useState<string>("");
   const [currentPage, setCurrentPage] = useState(1);
   const recordsPerPage = 5;
+  const [sortConfig, setSortConfig] = useState<SortConfig>(null);
 
   useEffect(() => {
     const token = sessionStorage.getItem("token");
@@ -31,40 +37,36 @@ export default function Students() {
 
     try {
       if (form.id) {
-        const res = await axios.put(`${API_BASE_URL}/students/${form.id}`,
-          { name: form.name, grade: form.grade }, config
+        const res = await axios.put(
+          `${API_BASE_URL}/students/${form.id}`,
+          { name: form.name, grade: form.grade },
+          config
         );
         setStudents(students.map((s) => (s.id === form.id ? res.data : s)));
-        alert("Estudiante actualizado");
       } else {
         const res = await axios.post(`${API_BASE_URL}/students`, form, config);
         setStudents([...students, res.data]);
       }
       setForm({ id: "", name: "", grade: "" });
-    } catch (error) {
+    } catch {
       alert("Error al procesar la solicitud");
     }
   };
 
   const handleEdit = (student: any) => {
-    setForm({
-      id: student.id,
-      name: student.name,
-      grade: student.grade
-    });
+    setForm({ id: student.id, name: student.name, grade: student.grade });
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleDelete = async (id: string) => {
     if (!window.confirm("¿Seguro que deseas eliminar este estudiante?")) return;
-
     try {
       const token = sessionStorage.getItem("token");
       await axios.delete(`${API_BASE_URL}/students/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setStudents(students.filter((s) => s.id !== id));
-    } catch (error) {
+    } catch {
       alert("Error al eliminar");
     }
   };
@@ -75,13 +77,24 @@ export default function Students() {
       : students;
   }, [students, role, userId]);
 
-  const totalPages = Math.ceil(filteredStudents.length / recordsPerPage);
+  const sortedStudents = useMemo(() => {
+    if (!sortConfig) return filteredStudents;
+    return [...filteredStudents].sort((a, b) => {
+      const aVal = a[sortConfig.key];
+      const bVal = b[sortConfig.key];
+      if (aVal < bVal) return sortConfig.direction === "asc" ? -1 : 1;
+      if (aVal > bVal) return sortConfig.direction === "asc" ? 1 : -1;
+      return 0;
+    });
+  }, [filteredStudents, sortConfig]);
+
+  const totalPages = Math.ceil(sortedStudents.length / recordsPerPage);
 
   const currentRecords = useMemo(() => {
     const lastIdx = currentPage * recordsPerPage;
     const firstIdx = lastIdx - recordsPerPage;
-    return filteredStudents.slice(firstIdx, lastIdx);
-  }, [filteredStudents, currentPage]);
+    return sortedStudents.slice(firstIdx, lastIdx);
+  }, [sortedStudents, currentPage]);
 
   useEffect(() => {
     if (currentPage > totalPages && totalPages > 0) {
@@ -89,45 +102,50 @@ export default function Students() {
     }
   }, [totalPages, currentPage]);
 
+  const requestSort = (key: string) => {
+    setSortConfig((prev) =>
+      prev && prev.key === key
+        ? { key, direction: prev.direction === "asc" ? "desc" : "asc" }
+        : { key, direction: "asc" }
+    );
+  };
+
   return (
     <div className="students-page">
       <h1>👨‍🎓 Estudiantes</h1>
-      <h2 style={{ padding: "10px 0" }}>{form.id ? "✏️ Actualizar" : "➕ Agregar"}</h2>
+      <h2>{form.id ? "✏️ Actualizar" : "➕ Agregar"}</h2>
+
       {role === "admin" && (
-        <div >
-          <form onSubmit={handleSubmit} >
-            <input
-              placeholder="Nombre"
-              value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-              required
-            />
-            <input
-              placeholder="Organización"
-              value={form.grade}
-              onChange={(e) => setForm({ ...form, grade: e.target.value })}
-              required
-            />
-            <button type="submit">
-              {form.id ? "Actualizar" : "Agregar"}
+        <form onSubmit={handleSubmit}>
+          <input
+            placeholder="Nombre"
+            value={form.name}
+            onChange={(e) => setForm({ ...form, name: e.target.value })}
+            required
+          />
+          <input
+            placeholder="Organización"
+            value={form.grade}
+            onChange={(e) => setForm({ ...form, grade: e.target.value })}
+            required
+          />
+          <button type="submit">{form.id ? "Actualizar" : "Agregar"}</button>
+          {form.id && (
+            <button type="button" onClick={() => setForm({ id: "", name: "", grade: "" })}>
+              Cancelar
             </button>
-            {form.id && (
-              <button type="button" className="cancel-button" onClick={() => setForm({ id: "", name: "", grade: "" })}>
-                Cancelar
-              </button>
-            )}
-          </form>
-        </div>
+          )}
+        </form>
       )}
 
       {role === "admin" ? (
         <table className="students-table">
           <thead>
             <tr>
-              <th>Nombre</th>
-              <th>Email</th>
-              <th>Teléfono</th>
-              <th>Organización</th>
+              <th onClick={() => requestSort("name")}>Nombre</th>
+              <th onClick={() => requestSort("email")}>Email</th>
+              <th onClick={() => requestSort("telefono")}>Teléfono</th>
+              <th onClick={() => requestSort("grade")}>Organización</th>
               <th>Acciones</th>
             </tr>
           </thead>
@@ -139,8 +157,8 @@ export default function Students() {
                 <td>{s.telefono}</td>
                 <td>{s.grade}</td>
                 <td>
-                  <button onClick={() => handleEdit(s)} className="edit-button">✏️</button>
-                  <button onClick={() => handleDelete(s.id)} className="delete-button">🗑️</button>
+                  <button onClick={() => handleEdit(s)}>✏️</button>
+                  <button onClick={() => handleDelete(s.id)}>🗑️</button>
                 </td>
               </tr>
             ))}

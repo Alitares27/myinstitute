@@ -10,6 +10,9 @@ interface User {
   specialty?: string;
 }
 
+type SortKey = "name" | "email" | "role";
+type SortOrder = "asc" | "desc";
+
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 function UserPage() {
@@ -19,6 +22,9 @@ function UserPage() {
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const recordsPerPage = 5;
+
+  const [sortKey, setSortKey] = useState<SortKey>("name");
+  const [sortOrder, setSortOrder] = useState<SortOrder>("asc");
 
   const [form, setForm] = useState({
     id: "",
@@ -54,11 +60,30 @@ function UserPage() {
 
   const totalPages = Math.ceil(users.length / recordsPerPage);
 
+  const sortedUsers = useMemo(() => {
+    return [...users].sort((a, b) => {
+      const aVal = a[sortKey].toString().toLowerCase();
+      const bVal = b[sortKey].toString().toLowerCase();
+      if (aVal < bVal) return sortOrder === "asc" ? -1 : 1;
+      if (aVal > bVal) return sortOrder === "asc" ? 1 : -1;
+      return 0;
+    });
+  }, [users, sortKey, sortOrder]);
+
   const currentRecords = useMemo(() => {
     const lastIdx = currentPage * recordsPerPage;
     const firstIdx = lastIdx - recordsPerPage;
-    return users.slice(firstIdx, lastIdx);
-  }, [users, currentPage]);
+    return sortedUsers.slice(firstIdx, lastIdx);
+  }, [sortedUsers, currentPage]);
+
+  const handleSort = (key: SortKey) => {
+    if (key === sortKey) {
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+    } else {
+      setSortKey(key);
+      setSortOrder("asc");
+    }
+  };
 
   const handleEditClick = (user: User) => {
     setForm({
@@ -105,25 +130,29 @@ function UserPage() {
         if (form.password) updateData.password = form.password;
 
         const res = await axios.put(`${API_BASE_URL}/users/${form.id}`, updateData, config);
-        
+
         if (Number(form.id) === currentUser?.id) {
           setCurrentUser(res.data);
         }
-        
+
         if (currentUser?.role === "admin") {
           setUsers(users.map((u) => (u.id === Number(form.id) ? res.data : u)));
         }
-        
+
         alert("Datos actualizados con éxito");
       } else {
-        const res = await axios.post(`${API_BASE_URL}/users`, {
-          name: form.name,
-          email: form.email,
-          password: form.password,
-          telefono: form.telefono,
-          role: form.role,
-          specialty: form.role === "teacher" ? form.specialty : null,
-        }, config);
+        const res = await axios.post(
+          `${API_BASE_URL}/users`,
+          {
+            name: form.name,
+            email: form.email,
+            password: form.password,
+            telefono: form.telefono,
+            role: form.role,
+            specialty: form.role === "teacher" ? form.specialty : null,
+          },
+          config
+        );
         setUsers([...users, res.data.user]);
         alert("Usuario creado con éxito");
       }
@@ -134,30 +163,41 @@ function UserPage() {
   };
 
   const resetForm = () => {
-    setForm({ id: "", name: "", email: "", password: "", telefono: "", role: "student", specialty: "" });
+    setForm({
+      id: "",
+      name: "",
+      email: "",
+      password: "",
+      telefono: "",
+      role: "student",
+      specialty: "",
+    });
   };
 
   if (loading) return <p>Cargando...</p>;
   if (error) return <p style={{ color: "red" }}>{error}</p>;
   if (!currentUser) return <p>No se encontró usuario</p>;
 
+  const arrow = (key: SortKey) =>
+    sortKey === key ? (sortOrder === "asc" ? " ▲" : " ▼") : "";
+
   return (
     <div className="user-page">
       <h1>👤 Gestión de Perfil</h1>
-      <h2 style={{ padding: "10px 0" }}>{form.id ? `✏️ Editando: ${form.name}` : "➕ Agregar Nuevo Usuario"}</h2>
+      <h2 style={{ padding: "10px 0" }}>
+        {form.id ? `✏️ Editando: ${form.name}` : "➕ Agregar Nuevo Usuario"}
+      </h2>
+
       <div className="form-card">
-        
         <div className="grid-form">
           <input placeholder="Nombre" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
           <input placeholder="Email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
-          
           <input
             placeholder={form.id ? "Nueva contraseña (opcional)" : "Contraseña"}
             type="password"
             value={form.password}
             onChange={(e) => setForm({ ...form, password: e.target.value })}
           />
-
           <input placeholder="Teléfono" value={form.telefono} onChange={(e) => setForm({ ...form, telefono: e.target.value })} />
 
           {currentUser.role === "admin" && (
@@ -173,9 +213,7 @@ function UserPage() {
           )}
 
           <div className="form-actions">
-            <button onClick={handleSave} className="btn-save">
-              {form.id ? "Actualizar" : "Agregar"}
-            </button>
+            <button onClick={handleSave} className="btn-save">{form.id ? "Actualizar" : "Agregar"}</button>
             {form.id && <button onClick={resetForm} className="btn-cancel">Cancelar</button>}
           </div>
         </div>
@@ -187,10 +225,16 @@ function UserPage() {
           <table>
             <thead>
               <tr>
-                <th>Nombre</th>
-                <th>Email</th>
+                <th onClick={() => handleSort("name")} style={{ cursor: "pointer" }}>
+                  Nombre{arrow("name")}
+                </th>
+                <th onClick={() => handleSort("email")} style={{ cursor: "pointer" }}>
+                  Email{arrow("email")}
+                </th>
                 <th>Teléfono</th>
-                <th>Rol</th>
+                <th onClick={() => handleSort("role")} style={{ cursor: "pointer" }}>
+                  Rol{arrow("role")}
+                </th>
                 <th>Acciones</th>
               </tr>
             </thead>
@@ -209,10 +253,15 @@ function UserPage() {
               ))}
             </tbody>
           </table>
+
           {totalPages > 1 && (
             <div className="pagination">
               {Array.from({ length: totalPages }, (_, i) => (
-                <button key={i + 1} onClick={() => setCurrentPage(i + 1)} className={currentPage === i + 1 ? "active" : ""}>
+                <button
+                  key={i + 1}
+                  onClick={() => setCurrentPage(i + 1)}
+                  className={currentPage === i + 1 ? "active" : ""}
+                >
                   {i + 1}
                 </button>
               ))}
@@ -226,7 +275,9 @@ function UserPage() {
             <p><strong>Nombre:</strong> {currentUser.name}</p>
             <p><strong>Email:</strong> {currentUser.email}</p>
             <p><strong>Teléfono:</strong> {currentUser.telefono || "No registrado"}</p>
-            <button onClick={handleProfileEdit} className="btn-edit-profile">Editar Mi Perfil</button>
+            <button onClick={handleProfileEdit} className="btn-edit-profile">
+              Editar Mi Perfil
+            </button>
           </div>
         )
       )}

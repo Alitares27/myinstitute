@@ -1,7 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import axios from "axios";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+
+type SortDirection = "asc" | "desc";
 
 export default function Enrollments() {
   const [enrollments, setEnrollments] = useState<any[]>([]);
@@ -10,6 +12,8 @@ export default function Enrollments() {
   const [form, setForm] = useState({ id: "", student_id: "", course_id: "" });
   const [role, setRole] = useState<string>("");
   const [userId, setUserId] = useState<string>("");
+
+  const [sortConfig, setSortConfig] = useState<{ key: string; direction: SortDirection } | null>(null);
 
   useEffect(() => {
     const token = sessionStorage.getItem("token");
@@ -25,6 +29,44 @@ export default function Enrollments() {
     axios.get(`${API_BASE_URL}/students`, config).then((res) => setStudents(res.data));
     axios.get(`${API_BASE_URL}/courses`, config).then((res) => setCourses(res.data));
   }, []);
+
+  const handleSort = (key: string) => {
+    setSortConfig((prev) => {
+      if (prev?.key === key) {
+        return { key, direction: prev.direction === "asc" ? "desc" : "asc" };
+      }
+      return { key, direction: "asc" };
+    });
+  };
+
+  const filteredEnrollments =
+    role === "student"
+      ? enrollments.filter((en) => en.student_id === userId)
+      : enrollments;
+
+  const sortedEnrollments = useMemo(() => {
+    if (!sortConfig) return filteredEnrollments;
+    const { key, direction } = sortConfig;
+
+    return [...filteredEnrollments].sort((a, b) => {
+      let aValue: any = a[key];
+      let bValue: any = b[key];
+
+      if (key === "student_id") {
+        aValue = students.find((s) => s.id === a.student_id)?.name || "";
+        bValue = students.find((s) => s.id === b.student_id)?.name || "";
+      }
+
+      if (key === "course_id") {
+        aValue = courses.find((c) => c.id === a.course_id)?.title || "";
+        bValue = courses.find((c) => c.id === b.course_id)?.title || "";
+      }
+
+      if (aValue < bValue) return direction === "asc" ? -1 : 1;
+      if (aValue > bValue) return direction === "asc" ? 1 : -1;
+      return 0;
+    });
+  }, [filteredEnrollments, sortConfig, students, courses]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,7 +86,7 @@ export default function Enrollments() {
         setEnrollments([...enrollments, res.data]);
       }
       setForm({ id: "", student_id: "", course_id: "" });
-    } catch (error) {
+    } catch {
       alert("Error al procesar la matrícula");
     }
   };
@@ -66,11 +108,6 @@ export default function Enrollments() {
     });
     setEnrollments(enrollments.filter((en) => en.id !== id));
   };
-
-  const filteredEnrollments =
-    role === "student"
-      ? enrollments.filter((en) => en.student_id === userId)
-      : enrollments;
 
   return (
     <div className="enrollments-page">
@@ -111,13 +148,17 @@ export default function Enrollments() {
         <table className="enrollments-table">
           <thead>
             <tr>
-              <th>Estudiante</th>
-              <th>Curso</th>
+              <th onClick={() => handleSort("student_id")} style={{ cursor: "pointer" }}>
+                Estudiante {sortConfig?.key === "student_id" && (sortConfig.direction === "asc" ? "▲" : "▼")}
+              </th>
+              <th onClick={() => handleSort("course_id")} style={{ cursor: "pointer" }}>
+                Curso {sortConfig?.key === "course_id" && (sortConfig.direction === "asc" ? "▲" : "▼")}
+              </th>
               <th>Acciones</th>
             </tr>
           </thead>
           <tbody>
-            {filteredEnrollments.map((en) => (
+            {sortedEnrollments.map((en) => (
               <tr key={en.id}>
                 <td>{students.find((s) => s.id === en.student_id)?.name || en.student_id}</td>
                 <td>{courses.find((c) => c.id === en.course_id)?.title || en.course_id}</td>
