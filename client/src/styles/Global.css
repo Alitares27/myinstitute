@@ -280,7 +280,7 @@ button:hover:not(:disabled) {
 }
 
 .logout-button:hover {
-  background-color: #c0392b; /* tono más oscuro del danger */
+  background-color: #c0392b;
   transform: translateY(-2px);
   box-shadow: 0 6px 15px rgba(0, 0, 0, 0.25);
 }
@@ -448,8 +448,6 @@ th {
   .sidebar-link span {
     display: none;
   }
-
-  
 }
 
 @media (max-width: 768px) {
@@ -476,5 +474,65 @@ th {
 
   .grid-form {
     grid-template-columns: 1fr;
+  }
+}
+
+/* =========================================
+   10. SIDEBAR MOBILE ICON NAV (OVERRIDES)
+   ========================================= */
+
+@media (max-width: 768px) {
+  .sidebar {
+    height: 64px;
+    min-width: 100%;
+    width: 100%;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-around;
+    padding: 0.5rem 0.75rem;
+    position: sticky;
+    bottom: 0;
+    top: auto;
+    z-index: 200;
+  }
+
+  .sidebar-logo {
+    display: none !important;
+  }
+
+  .sidebar ul {
+    display: flex !important;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-around;
+    width: 100%;
+    height: 100%;
+  }
+
+  .sidebar-link {
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 6px;
+    margin: 0;
+    gap: 4px;
+  }
+
+  .sidebar-link span {
+    display: none !important;
+  }
+
+  .icon-circle {
+    width: 40px;
+    height: 40px;
+  }
+
+  .logout-button,
+  .logout-section {
+    display: none !important;
+  }
+
+  main.content {
+    padding-bottom: 5rem;
   }
 }
