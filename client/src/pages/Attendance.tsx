@@ -253,7 +253,7 @@ export default function Attendance() {
                   <td>{students.find(s => s.id === a.student_id)?.name}</td>
                 )}
                 <td>{courses.find(c => c.id === a.course_id)?.title}</td>
-                <td>{new Date(a.date).toLocaleDateString("es-AR")}</td>
+                <td>{new Date(a.date).toLocaleDateString()}</td>
                 <td>{a.status}</td>
                 <td>{a.topic || "—"}</td>
               </tr>
