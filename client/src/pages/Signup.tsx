@@ -113,7 +113,7 @@ export default function Signup() {
                 className="btn-cancel"
                 onClick={() => navigate("/")}
               >
-                Cancelar
+                Volver
               </button>
             </div>
           </form>

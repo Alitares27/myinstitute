@@ -140,7 +140,6 @@ export default function Grades() {
   return (
     <div className="grades-page">
       <h1>📊 Calificaciones</h1>
-
       {role === "admin" && (
         <div className="form-container">
           <h2>{form.id ? "✏️ Actualizar" : "➕ Calificar"}</h2>

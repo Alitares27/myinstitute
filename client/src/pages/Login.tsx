@@ -97,7 +97,7 @@ export default function Login() {
                 className="btn-cancel"
                 onClick={() => navigate("/")}
               >
-                Volver al Inicio
+                Volver
               </button>
             </div>
           </form>

@@ -16,8 +16,6 @@ export default function Courses() {
   const [topics, setTopics] = useState<any[]>([]);
   const [loadingTopics, setLoadingTopics] = useState(false);
   const [topicForm, setTopicForm] = useState({ id: "", title: "", order_index: "" });
-
-  /* 🔽 ORDENAMIENTO */
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: SortDirection } | null>(null);
 
   useEffect(() => {
@@ -44,7 +42,6 @@ export default function Courses() {
     fetchCoursesData();
   }, []);
 
-  /* 🔁 Cambiar orden */
   const handleSort = (key: string) => {
     setSortConfig(prev => {
       if (prev?.key === key) {
@@ -54,7 +51,6 @@ export default function Courses() {
     });
   };
 
-  /* 📊 Cursos ordenados */
   const sortedCourses = useMemo(() => {
     if (!sortConfig) return courses;
     const { key, direction } = sortConfig;
@@ -160,8 +156,8 @@ export default function Courses() {
 
   return (
     <div className="page-container">
-      <h1>📚 {role === "admin" ? "Administrar Cursos" : "Cursos Disponibles"}</h1>
-
+      <h1>📚 Cursos</h1>
+      <h2> {role === "admin" ? "➕ Agregar" : "Disponibles"}</h2>
       {role === "admin" && (
         <form onSubmit={handleSubmit}>
           <input
@@ -231,7 +227,7 @@ export default function Courses() {
             backgroundColor: "white",
             padding: "15px",
             borderRadius: "8px",
-            width: "90%",
+            width: "65%",
             maxHeight: "90vh",
             overflowY: "auto"
           }}>

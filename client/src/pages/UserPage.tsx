@@ -185,7 +185,7 @@ function UserPage() {
     <div className="user-page">
       <h1>👤 Gestión de Perfil</h1>
       <h2 style={{ padding: "10px 0" }}>
-        {form.id ? `✏️ Editando: ${form.name}` : "➕ Agregar Nuevo Usuario"}
+        {form.id ? `✏️ Editando: ${form.name}` : "➕ Agregar"}
       </h2>
 
       <div className="form-card">

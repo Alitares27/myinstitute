@@ -93,7 +93,6 @@ export default function Teachers() {
     <div className="teachers-page">
       <h1>👨‍🏫 Maestros</h1>
       <h2>{form.id ? "✏️ Actualizar" : "➕ Agregar"}</h2>
-
       {role === "admin" && (
         <form onSubmit={handleSubmit} className="teacher-form">
           <input

@@ -17,9 +17,9 @@ export default function Home() {
       <div className="home-container">
         <section className="home-hero">
           <h1 className="home-title">
-            🏫 Bienvenido al <span>Instituto</span>
+            🏛️ Bienvenido al <span>Instituto</span>
           </h1>
-          
+
           <div className="auth-buttons">
             <button className="btn primary" onClick={() => navigate("/login")}>
               🔑 Iniciar Sesión
@@ -31,24 +31,52 @@ export default function Home() {
         </section>
 
         <section className="home-features">
-          <h2>✨ ¿Qué puedes aquí?</h2>
+          <h2>✨ ¿Qué puedes hacer aquí?</h2>
+
           <div className="features-grid">
-            <div className="feature-card">
+            <div
+              className="feature-card"
+              role="button"
+              tabIndex={0}
+              onClick={() => navigate("/courses")}
+              onKeyDown={(e) => e.key === "Enter" && navigate("/courses")}
+            >
               <div className="feature-icon">📚</div>
               <h3>Cursos</h3>
               <p>Gestiona programas académicos y materiales de estudio.</p>
             </div>
-            <div className="feature-card">
+
+            <div
+              className="feature-card"
+              role="button"
+              tabIndex={0}
+              onClick={() => navigate("/grades")}
+              onKeyDown={(e) => e.key === "Enter" && navigate("/grades")}
+            >
               <div className="feature-icon">📝</div>
               <h3>Calificaciones</h3>
               <p>Seguimiento detallado del progreso de los estudiantes.</p>
             </div>
-            <div className="feature-card">
+
+            <div
+              className="feature-card"
+              role="button"
+              tabIndex={0}
+              onClick={() => navigate("/teachers")}
+              onKeyDown={(e) => e.key === "Enter" && navigate("/teachers")}
+            >
               <div className="feature-icon">👩‍🏫</div>
               <h3>Profesores</h3>
               <p>Administra el cuerpo docente y sus asignaciones.</p>
             </div>
-            <div className="feature-card">
+
+            <div
+              className="feature-card"
+              role="button"
+              tabIndex={0}
+              onClick={() => navigate("/attendance")}
+              onKeyDown={(e) => e.key === "Enter" && navigate("/attendance")}
+            >
               <div className="feature-icon">📅</div>
               <h3>Asistencia</h3>
               <p>Control diario de presencialidad de forma digital.</p>

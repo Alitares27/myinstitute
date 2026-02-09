@@ -96,7 +96,7 @@ export default function TopicsManager() {
             {editingId && <button onClick={() => {setEditingId(null); setForm({title:"", description:"", order_index:0})}}>Cancelar</button>}
           </form>
 
-          <table style={{ width: "100%", marginTop: "20px", borderCollapse: "collapse" }} border={1}>
+          <table style={{ width: "70%", marginTop: "20px", borderCollapse: "collapse" }} border={1}>
             <thead>
               <tr style={{ background: "#eee" }}>
                 <th>Orden</th>

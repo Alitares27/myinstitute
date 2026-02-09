@@ -114,7 +114,6 @@ export default function Students() {
     <div className="students-page">
       <h1>👨‍🎓 Estudiantes</h1>
       <h2>{form.id ? "✏️ Actualizar" : "➕ Agregar"}</h2>
-
       {role === "admin" && (
         <form onSubmit={handleSubmit}>
           <input

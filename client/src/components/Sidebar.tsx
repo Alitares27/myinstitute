@@ -21,9 +21,8 @@ function Sidebar() {
   return (
     <div className="sidebar">
       <Link to="/dashboard" className="sidebar-logo">
-        <span className="logo-icon">🎓</span>
-        <span className="logo-text">Institute </span>
-        <span className="logo-text"> Arroyo Seco</span>
+        <span className="logo-icon">🏛️</span>
+        <span className="logo-text">Instituto</span>
       </Link>
 
       <nav>
