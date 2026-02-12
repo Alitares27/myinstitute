@@ -138,31 +138,38 @@ export default function Students() {
       )}
 
       {role === "admin" ? (
-        <table className="students-table">
-          <thead>
-            <tr>
-              <th onClick={() => requestSort("name")}>Nombre</th>
-              <th onClick={() => requestSort("email")}>Email</th>
-              <th onClick={() => requestSort("telefono")}>Teléfono</th>
-              <th onClick={() => requestSort("grade")}>Organización</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {currentRecords.map((s) => (
-              <tr key={s.id}>
-                <td>{s.name}</td>
-                <td>{s.email}</td>
-                <td>{s.telefono}</td>
-                <td>{s.grade}</td>
-                <td>
-                  <button onClick={() => handleEdit(s)}>✏️</button>
-                  <button onClick={() => handleDelete(s.id)}>🗑️</button>
-                </td>
+        <div style={{ overflowX: "auto", width: "100%" }}>
+          <table
+            className="students-table"
+            style={{ minWidth: "750px", borderCollapse: "collapse" }}
+          >
+            <thead>
+              <tr>
+                <th onClick={() => requestSort("name")}>Nombre</th>
+                <th onClick={() => requestSort("email")}>Email</th>
+                <th onClick={() => requestSort("telefono")}>Teléfono</th>
+                <th onClick={() => requestSort("grade")}>Organización</th>
+                <th>Acciones</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+
+            <tbody>
+              {currentRecords.map((s) => (
+                <tr key={s.id}>
+                  <td>{s.name}</td>
+                  <td>{s.email}</td>
+                  <td>{s.telefono}</td>
+                  <td>{s.grade}</td>
+                  <td>
+                    <button onClick={() => handleEdit(s)}>✏️</button>
+                    <button onClick={() => handleDelete(s.id)}>🗑️</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
       ) : (
         <div className="student-list">
           {currentRecords.map((s) => (

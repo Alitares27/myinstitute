@@ -112,29 +112,36 @@ export default function Teachers() {
       )}
 
       {role === "admin" ? (
-        <table className="teachers-table">
-          <thead>
-            <tr>
-              <th onClick={() => requestSort("name")}>Nombre</th>
-              <th onClick={() => requestSort("email")}>Email</th>
-              <th onClick={() => requestSort("specialty")}>Especialidad</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {sortedTeachers.map((t) => (
-              <tr key={t.id}>
-                <td>{t.name}</td>
-                <td>{t.email}</td>
-                <td>{t.specialty}</td>
-                <td>
-                  <button onClick={() => handleEdit(t)}>✏️</button>
-                  <button onClick={() => handleDelete(t.id)}>🗑️</button>
-                </td>
+        <div style={{ overflowX: "auto", width: "100%" }}>
+          <table
+            className="teachers-table"
+            style={{ minWidth: "650px", borderCollapse: "collapse" }}
+          >
+            <thead>
+              <tr>
+                <th onClick={() => requestSort("name")}>Nombre</th>
+                <th onClick={() => requestSort("email")}>Email</th>
+                <th onClick={() => requestSort("specialty")}>Especialidad</th>
+                <th>Acciones</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+
+            <tbody>
+              {sortedTeachers.map((t) => (
+                <tr key={t.id}>
+                  <td>{t.name}</td>
+                  <td>{t.email}</td>
+                  <td>{t.specialty}</td>
+                  <td>
+                    <button onClick={() => handleEdit(t)}>✏️</button>
+                    <button onClick={() => handleDelete(t.id)}>🗑️</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
       ) : (
         sortedTeachers.map((t) => (
           <div key={t.id} className="teacher-info">

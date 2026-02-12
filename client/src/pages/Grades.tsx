@@ -163,7 +163,6 @@ export default function Grades() {
             <select value={form.grade_type} onChange={(e) => setForm({ ...form, grade_type: e.target.value })}>
               <option value="examen">Examen</option>
               <option value="Lectura">Lectura</option>
-              <option value="proyecto">Proyecto</option>
               <option value="participacion">Participación</option>
             </select>
 
@@ -190,46 +189,51 @@ export default function Grades() {
           <option value="">Todos los tipos</option>
           <option value="examen">Examen</option>
           <option value="Lectura">Lectura</option>
-          <option value="proyecto">Proyecto</option>
           <option value="participacion">Participación</option>
         </select>
       </div>
 
-      <table>
-        <thead>
-          <tr>
-            {role === "admin" && <th onClick={() => requestSort("student_name")}>Estudiante</th>}
-            <th onClick={() => requestSort("course_title")}>Curso</th>
-            <th onClick={() => requestSort("grade")}>Nota</th>
-            <th onClick={() => requestSort("grade_type")}>Tipo</th>
-            <th onClick={() => requestSort("created_at")}>Fecha</th>
-            {role === "admin" && <th>Acciones</th>}
-          </tr>
-        </thead>
-        <tbody>
-          {currentRecords.length > 0 ? (
-            currentRecords.map((g) => (
-              <tr key={g.id}>
-                {role === "admin" && <td>{g.student_name}</td>}
-                <td>{g.course_title}</td>
-                <td>{g.grade}</td>
-                <td>{g.grade_type}</td>
-                <td>{new Date(g.created_at).toLocaleDateString()}</td>
-                {role === "admin" && (
-                  <td>
-                    <button onClick={() => handleEditClick(g)}>✏️</button>
-                    <button onClick={() => handleDelete(g.id)}>🗑️</button>
-                  </td>
-                )}
-              </tr>
-            ))
-          ) : (
+      <div style={{ overflowX: "auto", width: "100%" }}>
+        <table style={{ minWidth: "700px", borderCollapse: "collapse" }}>
+          <thead>
             <tr>
-              <td colSpan={6}>Sin registros.</td>
+              {role === "admin" && (
+                <th onClick={() => requestSort("student_name")}>Estudiante</th>
+              )}
+              <th onClick={() => requestSort("course_title")}>Curso</th>
+              <th onClick={() => requestSort("grade")}>Nota</th>
+              <th onClick={() => requestSort("grade_type")}>Tipo</th>
+              <th onClick={() => requestSort("created_at")}>Fecha</th>
+              {role === "admin" && <th>Acciones</th>}
             </tr>
-          )}
-        </tbody>
-      </table>
+          </thead>
+
+          <tbody>
+            {currentRecords.length > 0 ? (
+              currentRecords.map((g) => (
+                <tr key={g.id}>
+                  {role === "admin" && <td>{g.student_name}</td>}
+                  <td>{g.course_title}</td>
+                  <td>{g.grade}</td>
+                  <td>{g.grade_type}</td>
+                  <td>{new Date(g.created_at).toLocaleDateString()}</td>
+
+                  {role === "admin" && (
+                    <td>
+                      <button onClick={() => handleEditClick(g)}>✏️</button>
+                      <button onClick={() => handleDelete(g.id)}>🗑️</button>
+                    </td>
+                  )}
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={role === "admin" ? 6 : 4}>Sin registros.</td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
 
       {totalPages > 1 && (
         <div className="pagination">

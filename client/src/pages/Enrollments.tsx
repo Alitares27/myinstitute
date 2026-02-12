@@ -208,29 +208,37 @@ export default function Enrollments() {
         </select>
       </div>
 
-      <table className="enrollments-table">
-        <thead>
-          <tr>
-            <th onClick={() => handleSort("student_id")}>Estudiante</th>
-            <th onClick={() => handleSort("course_id")}>Curso</th>
-            {role === "admin" && <th>Acciones</th>}
-          </tr>
-        </thead>
-        <tbody>
-          {paginatedEnrollments.map((en) => (
-            <tr key={en.id}>
-              <td>{students.find((s) => s.id === en.student_id)?.name}</td>
-              <td>{courses.find((c) => c.id === en.course_id)?.title}</td>
-              {role === "admin" && (
-                <td>
-                  <button onClick={() => handleEdit(en)}>✏️</button>
-                  <button onClick={() => handleDelete(en.id)}>🗑️</button>
-                </td>
-              )}
+      <div style={{ overflowX: "auto", width: "100%" }}>
+        <table
+          className="enrollments-table"
+          style={{ minWidth: "500px", borderCollapse: "collapse" }}
+        >
+          <thead>
+            <tr>
+              <th onClick={() => handleSort("student_id")}>Estudiante</th>
+              <th onClick={() => handleSort("course_id")}>Curso</th>
+              {role === "admin" && <th>Acciones</th>}
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+
+          <tbody>
+            {paginatedEnrollments.map((en) => (
+              <tr key={en.id}>
+                <td>{students.find((s) => s.id === en.student_id)?.name}</td>
+                <td>{courses.find((c) => c.id === en.course_id)?.title}</td>
+
+                {role === "admin" && (
+                  <td>
+                    <button onClick={() => handleEdit(en)}>✏️</button>
+                    <button onClick={() => handleDelete(en.id)}>🗑️</button>
+                  </td>
+                )}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
 
       <div className="pagination">
         {Array.from({ length: totalPages }, (_, i) => (

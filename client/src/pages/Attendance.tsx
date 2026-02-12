@@ -175,7 +175,7 @@ export default function Attendance() {
             <option value="Absent">Ausente</option>
           </select>
 
-          <button>Guardar</button>
+          <button>Marcar</button>
         </form>
       )}
 
@@ -195,28 +195,35 @@ export default function Attendance() {
         )}
       </div>
 
-      <table>
-        <thead>
-          <tr>
-            {role !== "student" && <th onClick={() => handleSort("student_id")}>Estudiante</th>}
-            <th onClick={() => handleSort("course_id")}>Curso</th>
-            <th onClick={() => handleSort("date")}>Fecha</th>
-            <th onClick={() => handleSort("status")}>Estado</th>
-            <th>Capítulo</th>
-          </tr>
-        </thead>
-        <tbody>
-          {currentRecords.map(a => (
-            <tr key={a.id}>
-              {role !== "student" && <td>{students.find(s => s.id === a.student_id)?.name}</td>}
-              <td>{courses.find(c => c.id === a.course_id)?.title}</td>
-              <td>{new Date(a.date).toLocaleDateString()}</td>
-              <td>{a.status}</td>
-              <td>{a.topic || "—"}</td>
+      <div style={{ overflowX: "auto", width: "100%" }}>
+        <table style={{ minWidth: "600px", borderCollapse: "collapse" }}>
+          <thead>
+            <tr>
+              {role !== "student" && (
+                <th onClick={() => handleSort("student_id")}>Estudiante</th>
+              )}
+              <th onClick={() => handleSort("course_id")}>Curso</th>
+              <th onClick={() => handleSort("date")}>Fecha</th>
+              <th onClick={() => handleSort("status")}>Estado</th>
+              <th>Capítulo</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {currentRecords.map(a => (
+              <tr key={a.id}>
+                {role !== "student" && (
+                  <td>{students.find(s => s.id === a.student_id)?.name}</td>
+                )}
+                <td>{courses.find(c => c.id === a.course_id)?.title}</td>
+                <td>{new Date(a.date).toLocaleDateString()}</td>
+                <td>{a.status}</td>
+                <td>{a.topic || "—"}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
 
       <div className="pagination">
         {Array.from({ length: totalPages }, (_, i) => (

@@ -180,38 +180,72 @@ export default function Courses() {
         </form>
       )}
 
-      <table>
-        <thead>
-          <tr>
-            <th onClick={() => handleSort("title")} style={{ cursor: "pointer" }}>
-              Título {sortConfig?.key === "title" && (sortConfig.direction === "asc" ? "▲" : "▼")}
-            </th>
-            <th onClick={() => handleSort("teacher_name")} style={{ cursor: "pointer" }}>
-              Maestro {sortConfig?.key === "teacher_name" && (sortConfig.direction === "asc" ? "▲" : "▼")}
-            </th>
-            {role === "admin" && <th>Acciones</th>}
-          </tr>
-        </thead>
-        <tbody>
-          {sortedCourses.map(c => (
-            <tr key={c.id}>
-              <td
-                onClick={() => handleCourseClick(c)}
-                style={{ cursor: "pointer", fontWeight: "bold" }}
+      <div style={{ overflowX: "auto", width: "100%" }}>
+        <table style={{ minWidth: "500px", borderCollapse: "collapse" }}>
+          <thead>
+            <tr>
+              <th
+                onClick={() => handleSort("title")}
+                style={{ cursor: "pointer" }}
               >
-                {c.title}
-              </td>
-              <td>{c.teacher_name || "No asignado"}</td>
-              {role === "admin" && (
-                <td>
-                  <button onClick={() => setForm({ id: c.id, title: c.title, teacher_id: c.teacher_id || "" })}>✏️</button>
-                  <button onClick={() => handleDelete(c.id)} style={{ color: "red" }}>🗑️</button>
-                </td>
-              )}
+                Título{" "}
+                {sortConfig?.key === "title" &&
+                  (sortConfig.direction === "asc" ? "▲" : "▼")}
+              </th>
+
+              <th
+                onClick={() => handleSort("teacher_name")}
+                style={{ cursor: "pointer" }}
+              >
+                Maestro{" "}
+                {sortConfig?.key === "teacher_name" &&
+                  (sortConfig.direction === "asc" ? "▲" : "▼")}
+              </th>
+
+              {role === "admin" && <th>Acciones</th>}
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+
+          <tbody>
+            {sortedCourses.map(c => (
+              <tr key={c.id}>
+                <td
+                  onClick={() => handleCourseClick(c)}
+                  style={{ cursor: "pointer", fontWeight: "bold" }}
+                >
+                  {c.title}
+                </td>
+
+                <td>{c.teacher_name || "No asignado"}</td>
+
+                {role === "admin" && (
+                  <td>
+                    <button
+                      onClick={() =>
+                        setForm({
+                          id: c.id,
+                          title: c.title,
+                          teacher_id: c.teacher_id || ""
+                        })
+                      }
+                    >
+                      ✏️
+                    </button>
+
+                    <button
+                      onClick={() => handleDelete(c.id)}
+                      style={{ color: "red" }}
+                    >
+                      🗑️
+                    </button>
+                  </td>
+                )}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
 
       {selectedCourse && (
         <div style={{

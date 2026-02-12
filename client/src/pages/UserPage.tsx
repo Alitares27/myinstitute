@@ -222,37 +222,65 @@ function UserPage() {
       {currentUser.role === "admin" ? (
         <div className="admin-section">
           <h3>Lista de Usuarios</h3>
-          <table>
-            <thead>
-              <tr>
-                <th onClick={() => handleSort("name")} style={{ cursor: "pointer" }}>
-                  Nombre{arrow("name")}
-                </th>
-                <th onClick={() => handleSort("email")} style={{ cursor: "pointer" }}>
-                  Email{arrow("email")}
-                </th>
-                <th>Teléfono</th>
-                <th onClick={() => handleSort("role")} style={{ cursor: "pointer" }}>
-                  Rol{arrow("role")}
-                </th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {currentRecords.map((u) => (
-                <tr key={u.id}>
-                  <td>{u.name}</td>
-                  <td>{u.email}</td>
-                  <td>{u.telefono || "-"}</td>
-                  <td><span className={`badge-${u.role}`}>{u.role}</span></td>
-                  <td>
-                    <button onClick={() => handleEditClick(u)} className="edit-button">✏️</button>
-                    <button onClick={() => handleDelete(u.id)} className="delete-button">🗑️</button>
-                  </td>
+          <div style={{ overflowX: "auto", width: "100%" }}>
+            <table style={{ minWidth: "750px", borderCollapse: "collapse" }}>
+              <thead>
+                <tr>
+                  <th
+                    onClick={() => handleSort("name")}
+                    style={{ cursor: "pointer" }}
+                  >
+                    Nombre{arrow("name")}
+                  </th>
+
+                  <th
+                    onClick={() => handleSort("email")}
+                    style={{ cursor: "pointer" }}
+                  >
+                    Email{arrow("email")}
+                  </th>
+
+                  <th>Teléfono</th>
+
+                  <th
+                    onClick={() => handleSort("role")}
+                    style={{ cursor: "pointer" }}
+                  >
+                    Rol{arrow("role")}
+                  </th>
+
+                  <th>Acciones</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+
+              <tbody>
+                {currentRecords.map((u) => (
+                  <tr key={u.id}>
+                    <td>{u.name}</td>
+                    <td>{u.email}</td>
+                    <td>{u.telefono || "-"}</td>
+                    <td>
+                      <span className={`badge-${u.role}`}>{u.role}</span>
+                    </td>
+                    <td>
+                      <button
+                        onClick={() => handleEditClick(u)}
+                        className="edit-button"
+                      >
+                        ✏️
+                      </button>
+                      <button
+                        onClick={() => handleDelete(u.id)}
+                        className="delete-button"
+                      >
+                        🗑️
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
           {totalPages > 1 && (
             <div className="pagination">
