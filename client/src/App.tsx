@@ -13,8 +13,8 @@ import Grades from "./pages/Grades";
 import PrivateRoute from "./components/PrivateRoute";
 import Layout from "./components/Layout";
 import TempleDashboard from "./pages/Temples";
-import TempleTrips from "./pages/templeTrip";
-import TempleAttendance from "./pages/templeAttendance";
+import TempleTrips from "./pages/TempleTrip";
+import TempleAttendance from "./pages/TempleAttendance";
 
 
 function App() {
