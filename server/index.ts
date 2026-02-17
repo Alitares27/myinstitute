@@ -15,6 +15,7 @@ import topicRoutes from "./routes/topics";
 import templesRoutes from "./routes/temples";
 import templeTripsRoutes from "./routes/templeTrips";
 import tripReservationsRoutes from "./routes/tripReservations";
+
 dotenv.config();
 
 const app = express();
@@ -22,13 +23,15 @@ const app = express();
 app.use(cors({
   origin: [
     "http://localhost:5173",
-    "https://intitutoas-three.vercel.app"
+    "https://institutoas-three.vercel.app"
   ],
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
   allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true,
   optionsSuccessStatus: 200
 }));
+
+app.options('*', cors());
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -60,7 +63,9 @@ app.use(
   }
 );
 
-const PORT = process.env.PORT || 5000;
+app.use("*", (req, res) => {
+  res.status(404).json({ message: "Endpoint no encontrado" });
+});
 
 async function startServer() {
   try {
@@ -69,7 +74,9 @@ async function startServer() {
 
     const PORT = process.env.PORT || 5001;
     app.listen(PORT, () => {
-      console.log(`Servidor en puerto ${PORT}`);
+      console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
+      console.log(`📍 URL: http://localhost:${PORT}`);
+      console.log(`✅ CORS habilitado para institutoas-three.vercel.app`);
     });
   } catch (err) {
     console.error("❌ Error Crítico de DB:", err);

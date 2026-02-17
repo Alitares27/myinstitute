@@ -4,11 +4,9 @@ import { useNavigate } from "react-router-dom";
 export default function Temples() {
   const navigate = useNavigate();
 
-  // Verificar rol de administrador al cargar el componente
   useEffect(() => {
     const role = sessionStorage.getItem("role");
     
-    // Si no hay rol o no es admin, redirigir a inicio
     if (!role || role !== "admin") {
       navigate("/", { replace: true });
       return;
