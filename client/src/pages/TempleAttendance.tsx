@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 
 interface User {
     id: number;
@@ -27,10 +28,12 @@ interface Reservation {
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 export default function TripReservations() {
+    const navigate = useNavigate();
     const [users, setUsers] = useState<User[]>([]);
     const [trips, setTrips] = useState<Trip[]>([]);
     const [reservations, setReservations] = useState<Reservation[]>([]);
     const [editingId, setEditingId] = useState<number | null>(null);
+    const [role, setRole] = useState<string | null>(null);
     const [formData, setFormData] = useState({
         user_id: "",
         trip_id: "",
@@ -43,6 +46,16 @@ export default function TripReservations() {
     const [filterTripId, setFilterTripId] = useState<string>("");
     const [currentPage, setCurrentPage] = useState(1);
     const recordsPerPage = 5;
+
+    useEffect(() => {
+        const userRole = sessionStorage.getItem("role");
+        setRole(userRole);
+
+        if (!userRole || userRole !== "admin") {
+            navigate("/", { replace: true });
+            return;
+        }
+    }, [navigate]);
 
     const fetchUsers = async () => {
         const res = await fetch(`${API_BASE_URL}/users`, {
@@ -160,8 +173,8 @@ export default function TripReservations() {
 
     return (
         <div>
-            <h1 className="dashboard-subtitle">🚌 Reservas de Viajes</h1>
-
+            <h1 className="dashboard-subtitle">🚌 Reservar Viajes</h1>
+            <h2>  {role === "admin" ? "➕ Reservar" : "Disponibles"}</h2>
             <form onSubmit={handleSubmit} className="grid-form">
                 <div className="form-group">
                     <label htmlFor="user_id">Estudiante</label>
@@ -208,45 +221,45 @@ export default function TripReservations() {
                 </div>
             </form>
 
-            <div style={{ 
-    display: 'flex', 
-    alignItems: 'center', 
-    gap: '20px', 
-    backgroundColor: '#f9f9f9', 
-    padding: '10px 15px', 
-    borderRadius: '8px',
-    flexWrap: 'wrap' 
-}}>
-    <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-        <label htmlFor="filterTrip" >
-            Filtrar por viaje:
-        </label>
-        <select 
-            id="filterTrip" 
-            value={filterTripId} 
-            onChange={e => { setFilterTripId(e.target.value); setCurrentPage(1); }}
-            style={{
-                padding: '6px 10px',
-                borderRadius: '10px',
-                border: '1px solid #ccc',
-                outline: 'none'
-            }}
-        >
-            <option value="">Todos los viajes</option>
-            {trips.map(trip => (
-                <option key={trip.id} value={trip.id}>
-                    {trip.temple_name} - {new Date(trip.date).toLocaleDateString("es-AR")}
-                </option>
-            ))}
-        </select>
-    </div>
+            <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '20px',
+                backgroundColor: '#f9f9f9',
+                padding: '10px 15px',
+                borderRadius: '8px',
+                flexWrap: 'wrap'
+            }}>
+                <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <label htmlFor="filterTrip">
+                        Filtrar por viaje:
+                    </label>
+                    <select
+                        id="filterTrip"
+                        value={filterTripId}
+                        onChange={e => { setFilterTripId(e.target.value); setCurrentPage(1); }}
+                        style={{
+                            padding: '6px 10px',
+                            borderRadius: '10px',
+                            border: '1px solid #ccc',
+                            outline: 'none'
+                        }}
+                    >
+                        <option value="">Todos los viajes</option>
+                        {trips.map(trip => (
+                            <option key={trip.id} value={trip.id}>
+                                {trip.temple_name} - {new Date(trip.date).toLocaleDateString("es-AR")}
+                            </option>
+                        ))}
+                    </select>
+                </div>
 
-    {filterTripId && (
-        <p style={{ margin: 0, fontSize: '0.95rem', color: '#555', fontWeight: '500' }}>
-            📍 Miembros que asistieron: <strong>{filteredReservations.length}</strong>
-        </p>
-    )}
-</div>
+                {filterTripId && (
+                    <p style={{ margin: 0, fontSize: '0.95rem', color: '#555', fontWeight: '500' }}>
+                        📍 Miembros que asistieron: <strong>{filteredReservations.length}</strong>
+                    </p>
+                )}
+            </div>
 
             <div className="table-container">
                 <table>

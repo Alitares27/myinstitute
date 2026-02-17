@@ -23,6 +23,7 @@ export default function TempleTrip() {
     const [editingId, setEditingId] = useState<number | null>(null);
     const [currentPage, setCurrentPage] = useState(1);
     const tripsPerPage = 5;
+    const role = sessionStorage.getItem("role");
 
     const [formData, setFormData] = useState({
         temple_id: "",
@@ -157,7 +158,7 @@ export default function TempleTrip() {
     return (
         <div>
             <h1 className="dashboard-subtitle">🚌 Gestionar Viajes</h1>
-
+            <h2>{role === "admin" ? "➕ Registrar Viaje" : "Disponibles"}</h2>
             <form onSubmit={handleSubmit} className="grid-form">
                 <div className="form-group">
                     <label>Templo</label>
