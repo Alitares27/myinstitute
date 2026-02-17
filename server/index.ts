@@ -12,7 +12,9 @@ import grades from "./routes/grades";
 import auth from "./routes/auth";
 import dashboard from "./routes/dashboard";
 import topicRoutes from "./routes/topics";
-
+import templesRoutes from "./routes/temples";
+import templeTripsRoutes from "./routes/templeTrips";
+import tripReservationsRoutes from "./routes/tripReservations";
 dotenv.config();
 
 const app = express();
@@ -41,6 +43,9 @@ app.use("/api/grades", grades);
 app.use("/api", auth);
 app.use("/api", dashboard);
 app.use("/api/topics", topicRoutes);
+app.use("/api/temples", templesRoutes);
+app.use("/api/temple-trips", templeTripsRoutes);
+app.use("/api/trip-reservations", tripReservationsRoutes);
 
 app.get("/health", (req, res) => {
   res.status(200).json({ status: "ok" });

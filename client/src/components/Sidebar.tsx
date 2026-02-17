@@ -8,6 +8,7 @@ import {
   FaUser,
   FaStar,
   FaSignOutAlt,
+  FaSynagogue,
 } from "react-icons/fa";
 
 function Sidebar() {
@@ -21,9 +22,15 @@ function Sidebar() {
   return (
     <div className="sidebar">
       <Link to="/dashboard" className="sidebar-logo">
-        <span className="logo-icon">🏛️</span>
-        <span className="logo-text">Instituto</span>
-      </Link>
+    <img 
+        src="/church.PNG" 
+        alt="Logo" 
+        className="logo-icon" 
+        style={{ width: "100px", height: "100px", objectFit: "contain" }} 
+    />
+    <span className="logo-text">GestionAR</span>
+</Link>
+
 
       <nav>
         <ul>
@@ -67,14 +74,6 @@ function Sidebar() {
               <span>Asistencia</span>
             </Link>
           </li>
-          <li>
-            <Link to="/users" className="sidebar-link">
-              <div className="icon-circle">
-                <FaUser className="icon" />
-              </div>
-              <span>Usuarios</span>
-            </Link>
-          </li>
 
           <li>
             <Link to="/grades" className="sidebar-link">
@@ -82,6 +81,24 @@ function Sidebar() {
                 <FaStar className="icon" />
               </div>
               <span>Calificaciones</span>
+            </Link>
+          </li>
+
+          <li>
+            <Link to="/temples" className="sidebar-link">
+              <div className="icon-circle">
+                <FaSynagogue className="icon" />
+              </div>
+              <span>Templo</span>
+            </Link>
+          </li>
+
+          <li>
+            <Link to="/users" className="sidebar-link">
+              <div className="icon-circle">
+                <FaUser className="icon" />
+              </div>
+              <span>Usuarios</span>
             </Link>
           </li>
         </ul>
@@ -94,6 +111,8 @@ function Sidebar() {
         </button>
       </div>
     </div>
+
+
   );
 }
 

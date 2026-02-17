@@ -9,9 +9,13 @@ import Courses from "./pages/Courses";
 import Enrollments from "./pages/Enrollments";
 import Attendance from "./pages/Attendance";
 import UserPage from "./pages/UserPage";
-import Grades from "./pages/Grades"; 
+import Grades from "./pages/Grades";
 import PrivateRoute from "./components/PrivateRoute";
-import Layout from "./components/Layout"; 
+import Layout from "./components/Layout";
+import TempleDashboard from "./pages/Temples";
+import TempleTrips from "./pages/templeTrip";
+import TempleAttendance from "./pages/templeAttendance";
+
 
 function App() {
   return (
@@ -21,7 +25,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
 
-        
+
         <Route
           path="/dashboard"
           element={
@@ -102,6 +106,39 @@ function App() {
             </PrivateRoute>
           }
         />
+        <Route
+          path="/temples"
+          element={
+            <PrivateRoute>
+              <Layout>
+                <TempleDashboard />
+              </Layout>
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/templeTrip"
+          element={
+            <PrivateRoute>
+              <Layout>
+                <TempleTrips />
+              </Layout>
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/templeAttendance"
+          element={
+            <PrivateRoute>
+              <Layout>
+                <TempleAttendance />
+              </Layout>
+            </PrivateRoute>
+          }
+        />
+
       </Routes>
     </BrowserRouter>
   );

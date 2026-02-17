@@ -1,5 +1,5 @@
 import express, { Response } from "express";
-import bcrypt from "bcryptjs";
+import bcrypt from "bcryptjs"
 import { pool } from "../models/db";
 import { registerUser, loginUser } from "../controllers/users";
 import { verifyToken, isAdmin, AuthRequest } from "../middleware/auth";

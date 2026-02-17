@@ -17,7 +17,7 @@ export default function Home() {
       <div className="home-container">
         <section className="home-hero">
           <h1 className="home-title">
-            🏛️ Bienvenido al <span>Instituto</span>
+            🏛️ Bienvenido a <span>GestionAR</span>
           </h1>
 
           <div className="auth-buttons">
@@ -62,18 +62,6 @@ export default function Home() {
               className="feature-card"
               role="button"
               tabIndex={0}
-              onClick={() => navigate("/teachers")}
-              onKeyDown={(e) => e.key === "Enter" && navigate("/teachers")}
-            >
-              <div className="feature-icon">👩‍🏫</div>
-              <h3>Profesores</h3>
-              <p>Administra el cuerpo docente y sus asignaciones.</p>
-            </div>
-
-            <div
-              className="feature-card"
-              role="button"
-              tabIndex={0}
               onClick={() => navigate("/attendance")}
               onKeyDown={(e) => e.key === "Enter" && navigate("/attendance")}
             >
@@ -85,7 +73,7 @@ export default function Home() {
         </section>
 
         <footer className="home-footer">
-          <p>© {new Date().getFullYear()} Instituto.</p>
+          <p>© {new Date().getFullYear()} GestionAR.</p>
         </footer>
       </div>
     </Layout>

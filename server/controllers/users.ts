@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs"
 import jwt from "jsonwebtoken";
 import { pool } from "../models/db";
 import { AuthRequest } from "../middleware/auth";
@@ -51,15 +51,25 @@ export async function registerUser(req: Request, res: Response) {
 export async function loginUser(req: Request, res: Response) {
   try {
     const { email, password } = req.body;
+    const result = await pool.query(
+      "SELECT * FROM users WHERE email = $1",
+      [email]
+    );
 
-    const result = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
     const user = result.rows[0];
+
+    console.log("👤 Usuario encontrado:", user);
 
     if (!user) {
       return res.status(401).json({ message: "Credenciales inválidas" });
     }
 
+    console.log("🔒 Hash en DB:", user.password);
+
     const validPassword = await bcrypt.compare(password, user.password);
+
+    console.log("✅ Resultado bcrypt.compare:", validPassword);
+
     if (!validPassword) {
       return res.status(401).json({ message: "Credenciales inválidas" });
     }
@@ -76,9 +86,11 @@ export async function loginUser(req: Request, res: Response) {
 
     res.json({ token, user: safeUser });
   } catch (err: any) {
+    console.error("❌ Error en login:", err);
     res.status(500).json({ message: "Error al iniciar sesión" });
   }
 }
+
 
 export async function getProfile(req: AuthRequest, res: Response) {
   try {
@@ -140,3 +152,4 @@ export async function updateUser(req: AuthRequest, res: Response) {
     res.status(500).json({ message: "Error al actualizar usuario" });
   }
 }
+
