@@ -237,7 +237,7 @@ export default function TempleTrip() {
                             currentTrips.map(trip => (
                                 <tr key={trip.id}>
                                     <td>{trip.temple_name}</td>
-                                   <td>{new Date(trip.date).toISOString().split("T")[0]}</td>
+                                   <td>{trip.date?.split("T")[0]}</td>
                                     <td>{trip.status}</td>
                                     <td>${Number(trip.cost).toLocaleString()}</td>
                                     <td>
