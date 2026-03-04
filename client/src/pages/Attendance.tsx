@@ -215,7 +215,7 @@ export default function Attendance() {
                   <td>{students.find(s => s.id === a.student_id)?.name}</td>
                 )}
                 <td>{courses.find(c => c.id === a.course_id)?.title}</td>
-                <td>{new Date(a.date).toLocaleDateString()}</td>
+                <td>{new Date(a.date).toISOString().split("T")[0]}</td>
                 <td>{a.status}</td>
                 <td>{a.topic || "—"}</td>
               </tr>
