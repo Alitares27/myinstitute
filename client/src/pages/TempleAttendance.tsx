@@ -278,11 +278,11 @@ export default function TripReservations() {
                         {currentRecords.map(res => (
                             <tr key={res.id}>
                                 <td>{res.user_name}</td>
-                                <td>{new Date(res.trip_date).toLocaleDateString("es-AR")}</td>
-                                <td>{new Date(res.register_date).toLocaleDateString("es-AR")}</td>
+                                <td>{res.trip_date?.split("T")[0]}</td>
+                                <td>{res.register_date?.split("T")[0]}</td>
                                 <td>${Number(res.advance_payment).toLocaleString()}</td>
                                 <td>${Number(res.pending_payment).toLocaleString()}</td>
-                                <td>{res.due_date ? new Date(res.due_date).toLocaleDateString("es-AR") : "-"}</td>
+                                <td>{res.due_date ? res.due_date.split("T")[0] : "-"}</td>
                                 <td>
                                     <button onClick={() => handleEdit(res)}>✏️</button>
                                     <button onClick={() => handleDelete(res.id)}>🗑️</button>
