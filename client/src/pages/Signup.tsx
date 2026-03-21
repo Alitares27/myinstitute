@@ -1,4 +1,5 @@
 import { useState } from "react";
+import api from "../api";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import Layout from "../components/Layout";
@@ -102,7 +103,7 @@ export default function Signup() {
               </select>
             </div>
 
-            {error && <p className="error-message" style={{ color: "red" }}>{error}</p>}
+            {error && <p className="error-message extracted-style-4">{error}</p>}
 
             <div className="auth-buttons">
               <button type="submit" className="btn-login" disabled={loading}>
@@ -110,7 +111,7 @@ export default function Signup() {
               </button>
               <button
                 type="button"
-                className="btn-cancel"
+                className="btn secondary"
                 onClick={() => navigate("/")}
               >
                 Volver
@@ -123,7 +124,7 @@ export default function Signup() {
               ¿Ya tienes cuenta?{" "}
               <span
                 onClick={() => navigate("/login")}
-                style={{ color: "#007bff", cursor: "pointer", fontWeight: "bold" }}
+                className="extracted-style-5"
               >
                 Inicia sesión aquí
               </span>

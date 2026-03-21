@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { FaEdit, FaTrash } from "react-icons/fa";
 
 interface Temple {
     id: number;
@@ -14,7 +15,7 @@ interface Trip {
     cost: number;
 }
 
-const API_BASE_URL = import.meta.env.VITE_API_URL;
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 export default function TempleTrip() {
 
@@ -237,22 +238,21 @@ export default function TempleTrip() {
                             currentTrips.map(trip => (
                                 <tr key={trip.id}>
                                     <td>{trip.temple_name}</td>
-                                   <td>{trip.date?.split("T")[0]}</td>
-                                    <td>{trip.status}</td>
+                                    <td>{trip.date?.split("T")[0]}</td>
+                                    <td><span className="status-general">{trip.status}</span></td>
                                     <td>${Number(trip.cost).toLocaleString()}</td>
                                     <td>
                                         <button
                                             className="btn secondary"
                                             onClick={() => handleEdit(trip)}
                                         >
-                                            ✏️
+                                            <FaEdit />
                                         </button>
                                         <button
-                                            className="btn"
-                                            style={{ backgroundColor: "var(--danger)", color: "white" }}
+                                            className="btn extracted-style-25"
                                             onClick={() => handleDelete(trip.id)}
                                         >
-                                            🗑️
+                                            <FaTrash />
                                         </button>
                                     </td>
                                 </tr>
@@ -262,7 +262,7 @@ export default function TempleTrip() {
                 </table>
 
                 {totalPages > 1 && (
-                    <div style={{ marginTop: "20px", display: "flex", gap: "10px", alignItems: "center" }}>
+                    <div className="extracted-style-26">
                         <button
                             onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                             disabled={currentPage === 1}

@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
+import api from "../api";
 import axios from "axios";
 
 interface AttendanceRecord {
@@ -55,7 +56,7 @@ export default function Attendance() {
     const headers = { Authorization: `Bearer ${token}` };
 
     Promise.all([
-      axios.get(`${API_BASE_URL}/users/me`, { headers }),
+      Promise.resolve({ data: JSON.parse(sessionStorage.getItem("user") || "{}") }),
       axios.get(`${API_BASE_URL}/attendance`, { headers }),
       axios.get(`${API_BASE_URL}/students`, { headers }),
       axios.get(`${API_BASE_URL}/courses`, { headers }),
@@ -150,7 +151,7 @@ export default function Attendance() {
   return (
     <div className="attendance-page">
       <h1>📅 Control de Asistencia</h1>
-      <h2>{role === "admin" ? " ➕ Registrar" : "Revisar"}</h2>
+      <h2 className="dashboard-subtitle">{role === "admin" ? " ➕ Registrar" : "Revisar"}</h2>
       {(role === "admin" || role === "teacher") && (
         <form onSubmit={handleSubmit} className="grid-form">
           <select required value={form.student_id} onChange={e => setForm({ ...form, student_id: e.target.value })}>
@@ -175,7 +176,7 @@ export default function Attendance() {
             <option value="Absent">Ausente</option>
           </select>
 
-          <button>Marcar</button>
+          <button className="btn primary">Marcar</button>
         </form>
       )}
 
@@ -195,8 +196,8 @@ export default function Attendance() {
         )}
       </div>
 
-      <div style={{ overflowX: "auto", width: "100%" }}>
-        <table style={{ minWidth: "600px", borderCollapse: "collapse" }}>
+      <div className="table-container">
+        <table >
           <thead>
             <tr>
               {role !== "student" && (
@@ -216,7 +217,11 @@ export default function Attendance() {
                 )}
                 <td>{courses.find(c => c.id === a.course_id)?.title}</td>
                 <td>{new Date(a.date).toISOString().split("T")[0]}</td>
-                <td>{a.status}</td>
+                <td>
+                  <span className={a.status === "Present" ? "status-present" : "status-absent"}>
+                    {a.status === "Present" ? "Presente" : "Ausente"}
+                  </span>
+                </td>
                 <td>{a.topic || "—"}</td>
               </tr>
             ))}
@@ -225,17 +230,19 @@ export default function Attendance() {
       </div>
 
 
-      <div className="pagination">
-        {Array.from({ length: totalPages }, (_, i) => (
-          <button
-            key={i}
-            className={currentPage === i + 1 ? "active" : ""}
-            onClick={() => setCurrentPage(i + 1)}
+      {totalPages > 1 && (
+        <div className="pagination-dropdown">
+          <span>PÁGINA:</span>
+          <select
+            value={currentPage}
+            onChange={(e) => setCurrentPage(Number(e.target.value))}
           >
-            {i + 1}
-          </button>
-        ))}
-      </div>
+            {Array.from({ length: totalPages }, (_, i) => (
+              <option key={i + 1} value={i + 1}>{i + 1} de {totalPages}</option>
+            ))}
+          </select>
+        </div>
+      )}
     </div>
   );
 }

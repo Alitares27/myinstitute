@@ -11,21 +11,26 @@ function generateToken(id: number, role: string): string {
 }
 
 export async function registerUser(req: Request, res: Response) {
+  const client = await pool.connect();
   try {
     const { name, email, password, telefono, role, specialty } = req.body;
 
     if (!name || !email || !password || !role) {
+      client.release();
       return res.status(400).json({ message: "Campos requeridos faltantes" });
     }
 
-    const existing = await pool.query("SELECT id FROM users WHERE email = $1", [email]);
+    const existing = await client.query("SELECT id FROM users WHERE email = $1", [email]);
     if (existing.rows.length > 0) {
+      client.release();
       return res.status(400).json({ message: "El correo ya está registrado" });
     }
 
     const hash = await bcrypt.hash(password, 10);
 
-    const userResult = await pool.query(
+    await client.query("BEGIN");
+
+    const userResult = await client.query(
       "INSERT INTO users (name, email, password, telefono, role) VALUES ($1, $2, $3, $4, $5) RETURNING id, name, email, telefono, role",
       [name, email, hash, telefono, role]
     );
@@ -33,17 +38,23 @@ export async function registerUser(req: Request, res: Response) {
     const user = userResult.rows[0];
 
     if (role === "student") {
-      await pool.query("INSERT INTO students (user_id) VALUES ($1)", [user.id]);
+      await client.query("INSERT INTO students (user_id) VALUES ($1)", [user.id]);
     } else if (role === "teacher") {
-      await pool.query("INSERT INTO teachers (user_id, specialty) VALUES ($1, $2)", [
+      await client.query("INSERT INTO teachers (user_id, specialty) VALUES ($1, $2)", [
         user.id,
         specialty || "General",
       ]);
     }
 
+    await client.query("COMMIT");
+    client.release();
+
     const token = generateToken(user.id, user.role);
     res.status(201).json({ token, user });
-  } catch (err) {
+  } catch (err: any) {
+    await client.query("ROLLBACK");
+    client.release();
+    console.error("❌ Error en registerUser:", err);
     res.status(500).json({ message: "Error al registrar usuario" });
   }
 }

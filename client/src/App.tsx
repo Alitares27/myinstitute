@@ -15,6 +15,10 @@ import Layout from "./components/Layout";
 import TempleDashboard from "./pages/Temples";
 import TempleTrips from "./pages/TempleTrip";
 import TempleAttendance from "./pages/TempleAttendance";
+import Discursantes from "./pages/Discursantes";
+import Consejos from "./pages/Consejos";
+import Finanzas from "./pages/Finanzas";
+import Auditorias from "./pages/Auditorias";
 
 
 function App() {
@@ -134,6 +138,47 @@ function App() {
             <PrivateRoute>
               <Layout>
                 <TempleAttendance />
+              </Layout>
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/discursantes"
+          element={
+            <PrivateRoute>
+              <Layout>
+                <Discursantes />
+              </Layout>
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/consejos"
+          element={
+            <PrivateRoute>
+              <Layout>
+                <Consejos />
+              </Layout>
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/finanzas"
+          element={
+            <PrivateRoute>
+              <Layout>
+                <Finanzas />
+              </Layout>
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/auditorias"
+          element={
+            <PrivateRoute>
+              <Layout>
+                <Auditorias />
               </Layout>
             </PrivateRoute>
           }

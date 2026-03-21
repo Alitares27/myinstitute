@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import api from "../api";
 import axios from "axios";
 
 function Dashboard() {
@@ -31,10 +32,8 @@ function Dashboard() {
       headers: { Authorization: `Bearer ${token}` },
     };
 
-    axios
-      .get(`${API_BASE_URL}/users/me`, config)
-      .then((res) => setUser(res.data))
-      .catch(() => setError("Error al obtener datos del perfil"));
+    const sessionUser = sessionStorage.getItem("user");
+    if (sessionUser) setUser(JSON.parse(sessionUser));
 
     axios
       .get(`${API_BASE_URL}/dashboard-stats`, config)
@@ -47,7 +46,7 @@ function Dashboard() {
   if (error) {
     return (
       <div className="error-container">
-        <p style={{ color: "red", padding: "20px" }}>⚠️ {error}</p>
+        <p className="extracted-style-29">⚠️ {error}</p>
       </div>
     );
   }
@@ -55,7 +54,7 @@ function Dashboard() {
   return (
     <div className="dashboard-page">
       <h1 className="dashboard-title">
-        👋 Bienvenid@, {user?.name}
+        Bienvenid@, {user?.name}
       </h1>
 
       {user && (

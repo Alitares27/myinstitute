@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { FaEdit, FaTrash } from "react-icons/fa";
 
 interface User {
     id: number;
@@ -25,7 +26,7 @@ interface Reservation {
     due_date: string;
 }
 
-const API_BASE_URL = import.meta.env.VITE_API_URL;
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 export default function TripReservations() {
     const navigate = useNavigate();
@@ -221,16 +222,8 @@ export default function TripReservations() {
                 </div>
             </form>
 
-            <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '20px',
-                backgroundColor: '#f9f9f9',
-                padding: '10px 15px',
-                borderRadius: '8px',
-                flexWrap: 'wrap'
-            }}>
-                <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div className="grid-form extracted-style-2">
+                <div className="form-group extracted-style-8">
                     <label htmlFor="filterTrip">
                         Filtrar por viaje:
                     </label>
@@ -238,12 +231,7 @@ export default function TripReservations() {
                         id="filterTrip"
                         value={filterTripId}
                         onChange={e => { setFilterTripId(e.target.value); setCurrentPage(1); }}
-                        style={{
-                            padding: '6px 10px',
-                            borderRadius: '10px',
-                            border: '1px solid #ccc',
-                            outline: 'none'
-                        }}
+                        className="extracted-style-9"
                     >
                         <option value="">Todos los viajes</option>
                         {trips.map(trip => (
@@ -255,7 +243,7 @@ export default function TripReservations() {
                 </div>
 
                 {filterTripId && (
-                    <p style={{ margin: 0, fontSize: '0.95rem', color: '#555', fontWeight: '500' }}>
+                    <p className="extracted-style-10">
                         📍 Miembros que asistieron: <strong>{filteredReservations.length}</strong>
                     </p>
                 )}
@@ -284,8 +272,8 @@ export default function TripReservations() {
                                 <td>${Number(res.pending_payment).toLocaleString()}</td>
                                 <td>{res.due_date ? res.due_date.split("T")[0] : "-"}</td>
                                 <td>
-                                    <button onClick={() => handleEdit(res)}>✏️</button>
-                                    <button onClick={() => handleDelete(res.id)}>🗑️</button>
+                                    <button className="btn secondary extracted-style-4" onClick={() => handleEdit(res)}><FaEdit /></button>
+                                    <button className="btn secondary extracted-style-5" onClick={() => handleDelete(res.id)}><FaTrash /></button>
                                 </td>
                             </tr>
                         ))}
@@ -294,16 +282,16 @@ export default function TripReservations() {
             </div>
 
             {totalPages > 1 && (
-                <div className="pagination">
-                    {Array.from({ length: totalPages }, (_, i) => (
-                        <button
-                            key={i + 1}
-                            onClick={() => setCurrentPage(i + 1)}
-                            className={currentPage === i + 1 ? "active" : ""}
-                        >
-                            {i + 1}
-                        </button>
-                    ))}
+                <div className="pagination-dropdown">
+                    <span>PÁGINA:</span>
+                    <select
+                        value={currentPage}
+                        onChange={(e) => setCurrentPage(Number(e.target.value))}
+                    >
+                        {Array.from({ length: totalPages }, (_, i) => (
+                            <option key={i + 1} value={i + 1}>{i + 1} de {totalPages}</option>
+                        ))}
+                    </select>
                 </div>
             )}
         </div>

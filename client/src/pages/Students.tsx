@@ -1,4 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
+import api from "../api";
+import { FaEdit, FaTrash } from "react-icons/fa";
 import axios from "axios";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
@@ -22,7 +24,7 @@ export default function Students() {
     if (!token) return;
     const config = { headers: { Authorization: `Bearer ${token}` } };
 
-    axios.get(`${API_BASE_URL}/users/me`, config).then((res) => {
+    Promise.resolve({ data: JSON.parse(sessionStorage.getItem("user") || "{}") }).then((res) => {
       setRole(res.data.role);
       setUserId(res.data.id);
     });
@@ -113,7 +115,7 @@ export default function Students() {
   return (
     <div className="students-page">
       <h1>👨‍🎓 Estudiantes</h1>
-      <h2>{form.id ? "✏️ Actualizar" : "➕ Agregar"}</h2>
+      <h2 className="dashboard-subtitle">{form.id ? "<FaEdit /> Actualizar" : "➕ Agregar"}</h2>
       {role === "admin" && (
         <form onSubmit={handleSubmit}>
           <input
@@ -128,7 +130,7 @@ export default function Students() {
             onChange={(e) => setForm({ ...form, grade: e.target.value })}
             required
           />
-          <button type="submit">{form.id ? "Actualizar" : "Agregar"}</button>
+          <button type="submit" className="btn primary">{form.id ? "Actualizar" : "Agregar"}</button>
           {form.id && (
             <button type="button" onClick={() => setForm({ id: "", name: "", grade: "" })}>
               Cancelar
@@ -138,10 +140,9 @@ export default function Students() {
       )}
 
       {role === "admin" ? (
-        <div style={{ overflowX: "auto", width: "100%" }}>
+        <div className="table-container">
           <table
             className="students-table"
-            style={{ minWidth: "750px", borderCollapse: "collapse" }}
           >
             <thead>
               <tr>
@@ -161,8 +162,8 @@ export default function Students() {
                   <td>{s.telefono}</td>
                   <td>{s.grade}</td>
                   <td>
-                    <button onClick={() => handleEdit(s)}>✏️</button>
-                    <button onClick={() => handleDelete(s.id)}>🗑️</button>
+                    <button className="btn secondary extracted-style-4" onClick={() => handleEdit(s)}><FaEdit /></button>
+                    <button className="btn secondary extracted-style-5" onClick={() => handleDelete(s.id)}><FaTrash /></button>
                   </td>
                 </tr>
               ))}
@@ -183,16 +184,16 @@ export default function Students() {
       )}
 
       {totalPages > 1 && (
-        <div className="pagination">
-          {Array.from({ length: totalPages }, (_, i) => (
-            <button
-              key={i + 1}
-              onClick={() => setCurrentPage(i + 1)}
-              className={currentPage === i + 1 ? "active" : ""}
-            >
-              {i + 1}
-            </button>
-          ))}
+        <div className="pagination-dropdown">
+          <span>PÁGINA:</span>
+          <select
+            value={currentPage}
+            onChange={(e) => setCurrentPage(Number(e.target.value))}
+          >
+            {Array.from({ length: totalPages }, (_, i) => (
+              <option key={i + 1} value={i + 1}>{i + 1} de {totalPages}</option>
+            ))}
+          </select>
         </div>
       )}
     </div>

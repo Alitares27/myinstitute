@@ -6,7 +6,7 @@ export default function Temples() {
 
   useEffect(() => {
     const role = sessionStorage.getItem("role");
-    
+
     if (!role || role !== "admin") {
       navigate("/", { replace: true });
       return;
@@ -15,28 +15,9 @@ export default function Temples() {
 
   return (
     <div className="dashboard-container">
-      <h1 
-        className="dashboard-subtitle" 
-        style={{ 
-          fontSize: '3.5rem', 
-          textAlign: 'center', 
-          width: '100%',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: '20px' 
-        }}
+      <h1
+        className="dashboard-subtitle extracted-style-27"
       >
-        <img 
-          src="/temple.webp" 
-          alt="Icono Templo" 
-          style={{ 
-            width: '80px',  
-            height: '80px', 
-            objectFit: 'cover',
-            borderRadius: '8px' 
-          }} 
-        />
         Templo
       </h1>
 

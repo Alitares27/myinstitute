@@ -19,6 +19,7 @@ router.get("/", verifyToken, async (req: AuthRequest, res: Response) => {
     const result = await pool.query(query, params);
     res.json(result.rows);
   } catch (err) {
+    console.error("Error fetching topics:", err);
     res.status(500).json({ message: "Error al obtener temas" });
   }
 });

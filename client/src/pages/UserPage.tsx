@@ -1,4 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
+import api from "../api";
+import { FaEdit, FaTrash } from "react-icons/fa";
 import axios from "axios";
 
 interface User {
@@ -45,7 +47,7 @@ function UserPage() {
     if (!token) return;
     const config = { headers: { Authorization: `Bearer ${token}` } };
     try {
-      const meRes = await axios.get(`${API_BASE_URL}/users/me`, config);
+      const meRes = await Promise.resolve({ data: JSON.parse(sessionStorage.getItem("user") || "{}") });
       setCurrentUser(meRes.data);
       if (meRes.data.role === "admin") {
         const usersRes = await axios.get(`${API_BASE_URL}/users`, config);
@@ -175,7 +177,7 @@ function UserPage() {
   };
 
   if (loading) return <p>Cargando...</p>;
-  if (error) return <p style={{ color: "red" }}>{error}</p>;
+  if (error) return <p className="extracted-style-4">{error}</p>;
   if (!currentUser) return <p>No se encontró usuario</p>;
 
   const arrow = (key: SortKey) =>
@@ -184,8 +186,8 @@ function UserPage() {
   return (
     <div className="user-page">
       <h1>👤 Gestión de Perfil</h1>
-      <h2 style={{ padding: "10px 0" }}>
-        {form.id ? `✏️ Editando: ${form.name}` : "➕ Agregar"}
+      <h2 className="extracted-style-12">
+        {form.id ? `<FaEdit /> Editando: ${form.name}` : "➕ Agregar"}
       </h2>
 
       <div className="form-card">
@@ -213,8 +215,8 @@ function UserPage() {
           )}
 
           <div className="form-actions">
-            <button onClick={handleSave} className="btn-save">{form.id ? "Actualizar" : "Agregar"}</button>
-            {form.id && <button onClick={resetForm} className="btn-cancel">Cancelar</button>}
+            <button onClick={handleSave} className="btn primary">{form.id ? "Actualizar" : "Agregar"}</button>
+            {form.id && <button onClick={resetForm} className="btn secondary">Cancelar</button>}
           </div>
         </div>
       </div>
@@ -222,20 +224,20 @@ function UserPage() {
       {currentUser.role === "admin" ? (
         <div className="admin-section">
           <h3>Lista de Usuarios</h3>
-          <div style={{ overflowX: "auto", width: "100%" }}>
-            <table style={{ minWidth: "750px", borderCollapse: "collapse" }}>
+          <div className="table-container">
+            <table >
               <thead>
                 <tr>
                   <th
                     onClick={() => handleSort("name")}
-                    style={{ cursor: "pointer" }}
+                    className="extracted-style-13"
                   >
                     Nombre{arrow("name")}
                   </th>
 
                   <th
                     onClick={() => handleSort("email")}
-                    style={{ cursor: "pointer" }}
+                    className="extracted-style-13"
                   >
                     Email{arrow("email")}
                   </th>
@@ -244,7 +246,7 @@ function UserPage() {
 
                   <th
                     onClick={() => handleSort("role")}
-                    style={{ cursor: "pointer" }}
+                    className="extracted-style-13"
                   >
                     Rol{arrow("role")}
                   </th>
@@ -265,15 +267,15 @@ function UserPage() {
                     <td>
                       <button
                         onClick={() => handleEditClick(u)}
-                        className="edit-button"
+                        className="btn secondary extracted-style-4"
                       >
-                        ✏️
+                        <FaEdit />
                       </button>
                       <button
                         onClick={() => handleDelete(u.id)}
-                        className="delete-button"
+                        className="btn secondary extracted-style-4"
                       >
-                        🗑️
+                        <FaTrash />
                       </button>
                     </td>
                   </tr>
@@ -283,16 +285,16 @@ function UserPage() {
           </div>
 
           {totalPages > 1 && (
-            <div className="pagination">
-              {Array.from({ length: totalPages }, (_, i) => (
-                <button
-                  key={i + 1}
-                  onClick={() => setCurrentPage(i + 1)}
-                  className={currentPage === i + 1 ? "active" : ""}
-                >
-                  {i + 1}
-                </button>
-              ))}
+            <div className="pagination-dropdown">
+              <span>PÁGINA:</span>
+              <select
+                value={currentPage}
+                onChange={(e) => setCurrentPage(Number(e.target.value))}
+              >
+                {Array.from({ length: totalPages }, (_, i) => (
+                  <option key={i + 1} value={i + 1}>{i + 1} de {totalPages}</option>
+                ))}
+              </select>
             </div>
           )}
         </div>
@@ -303,7 +305,7 @@ function UserPage() {
             <p><strong>Nombre:</strong> {currentUser.name}</p>
             <p><strong>Email:</strong> {currentUser.email}</p>
             <p><strong>Teléfono:</strong> {currentUser.telefono || "No registrado"}</p>
-            <button onClick={handleProfileEdit} className="btn-edit-profile">
+            <button onClick={handleProfileEdit} className="btn secondary">
               Editar Mi Perfil
             </button>
           </div>

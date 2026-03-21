@@ -16,7 +16,15 @@ router.post("/", verifyToken, async (req: AuthRequest, res: Response) => {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
-    const targetStudentId = role === "student" ? userId : Number(student_id ?? 0);
+    let targetStudentId = Number(student_id ?? 0);
+
+    if (role === "student") {
+      const studentRes = await pool.query("SELECT id FROM students WHERE user_id = $1", [userId]);
+      if (studentRes.rows.length === 0) {
+        return res.status(404).json({ message: "Student record not found for user" });
+      }
+      targetStudentId = studentRes.rows[0].id;
+    }
 
     if (!targetStudentId || isNaN(targetStudentId)) {
       return res.status(400).json({ message: "Student ID required" });

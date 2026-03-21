@@ -1,4 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
+import api from "../api";
+import { FaEdit, FaTrash } from "react-icons/fa";
 import axios from "axios";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
@@ -38,7 +40,7 @@ export default function Grades() {
       if (!token) return;
       const config = { headers: { Authorization: `Bearer ${token}` } };
 
-      const meRes = await axios.get(`${API_BASE_URL}/users/me`, config);
+      const meRes = await Promise.resolve({ data: JSON.parse(sessionStorage.getItem("user") || "{}") });
       setRole(meRes.data.role);
 
       const gradesRes = await axios.get(`${API_BASE_URL}/grades`, config);
@@ -142,7 +144,7 @@ export default function Grades() {
       <h1>📊 Calificaciones</h1>
       {role === "admin" && (
         <div className="form-container">
-          <h2>{form.id ? "✏️ Actualizar" : "➕ Calificar"}</h2>
+          <h2 className="dashboard-subtitle">{form.id ? "<FaEdit /> Actualizar" : "➕ Calificar"}</h2>
           <form onSubmit={handleSubmit}>
             <select value={form.student_id} onChange={(e) => setForm({ ...form, student_id: e.target.value })} required>
               <option value="">-- Seleccionar Estudiante --</option>
@@ -166,7 +168,7 @@ export default function Grades() {
               <option value="participacion">Participación</option>
             </select>
 
-            <button type="submit">{form.id ? "Actualizar" : "Calificar"}</button>
+            <button type="submit" className="btn primary">{form.id ? "Actualizar" : "Calificar"}</button>
             {form.id && (
               <button type="button" onClick={() => setForm({ id: "", student_id: "", course_id: "", grade: "", grade_type: "examen" })}>
                 Cancelar
@@ -176,7 +178,7 @@ export default function Grades() {
         </div>
       )}
 
-      <div className="filters-section">
+      <div className="grid-form extracted-style-2">
         {role === "admin" && (
           <select value={filterStudent} onChange={(e) => setFilterStudent(e.target.value)}>
             <option value="">Todos los estudiantes</option>
@@ -193,8 +195,8 @@ export default function Grades() {
         </select>
       </div>
 
-      <div style={{ overflowX: "auto", width: "100%" }}>
-        <table style={{ minWidth: "700px", borderCollapse: "collapse" }}>
+      <div className="table-container">
+        <table >
           <thead>
             <tr>
               {role === "admin" && (
@@ -220,8 +222,8 @@ export default function Grades() {
 
                   {role === "admin" && (
                     <td>
-                      <button onClick={() => handleEditClick(g)}>✏️</button>
-                      <button onClick={() => handleDelete(g.id)}>🗑️</button>
+                      <button className="btn secondary extracted-style-4" onClick={() => handleEditClick(g)}><FaEdit /></button>
+                      <button className="btn secondary extracted-style-5" onClick={() => handleDelete(g.id)}><FaTrash /></button>
                     </td>
                   )}
                 </tr>
@@ -236,12 +238,16 @@ export default function Grades() {
       </div>
 
       {totalPages > 1 && (
-        <div className="pagination">
-          {Array.from({ length: totalPages }, (_, i) => (
-            <button key={i + 1} onClick={() => setCurrentPage(i + 1)} className={currentPage === i + 1 ? "active" : ""}>
-              {i + 1}
-            </button>
-          ))}
+        <div className="pagination-dropdown">
+          <span>PÁGINA:</span>
+          <select
+            value={currentPage}
+            onChange={(e) => setCurrentPage(Number(e.target.value))}
+          >
+            {Array.from({ length: totalPages }, (_, i) => (
+              <option key={i + 1} value={i + 1}>{i + 1} de {totalPages}</option>
+            ))}
+          </select>
         </div>
       )}
 

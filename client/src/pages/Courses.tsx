@@ -1,4 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
+import api from "../api";
+import { FaEdit, FaTrash } from "react-icons/fa";
 import axios from "axios";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
@@ -25,7 +27,7 @@ export default function Courses() {
         if (!token) return;
         const config = { headers: { Authorization: `Bearer ${token}` } };
 
-        const meRes = await axios.get(`${API_BASE_URL}/users/me`, config);
+        const meRes = await Promise.resolve({ data: JSON.parse(sessionStorage.getItem("user") || "{}") });
         setRole(meRes.data.role);
 
         const coursesRes = await axios.get(`${API_BASE_URL}/courses`, config);
@@ -157,7 +159,7 @@ export default function Courses() {
   return (
     <div className="page-container">
       <h1>📚 Cursos</h1>
-      <h2> {role === "admin" ? "➕ Agregar" : "Disponibles"}</h2>
+      <h2 className="dashboard-subtitle"> {role === "admin" ? "➕ Agregar" : "Disponibles"}</h2>
       {role === "admin" && (
         <form onSubmit={handleSubmit}>
           <input
@@ -176,17 +178,17 @@ export default function Courses() {
               <option key={t.id} value={t.id}>{t.name}</option>
             ))}
           </select>
-          <button type="submit">{form.id ? "Actualizar" : "Agregar"}</button>
+          <button type="submit" className="btn primary">{form.id ? "Actualizar" : "Agregar"}</button>
         </form>
       )}
 
-      <div style={{ overflowX: "auto", width: "100%" }}>
-        <table style={{ minWidth: "500px", borderCollapse: "collapse" }}>
+      <div className="table-container">
+        <table >
           <thead>
             <tr>
               <th
                 onClick={() => handleSort("title")}
-                style={{ cursor: "pointer" }}
+                className="extracted-style-13"
               >
                 Título{" "}
                 {sortConfig?.key === "title" &&
@@ -195,7 +197,7 @@ export default function Courses() {
 
               <th
                 onClick={() => handleSort("teacher_name")}
-                style={{ cursor: "pointer" }}
+                className="extracted-style-13"
               >
                 Maestro{" "}
                 {sortConfig?.key === "teacher_name" &&
@@ -211,7 +213,7 @@ export default function Courses() {
               <tr key={c.id}>
                 <td
                   onClick={() => handleCourseClick(c)}
-                  style={{ cursor: "pointer", fontWeight: "bold" }}
+                  className="extracted-style-20"
                 >
                   {c.title}
                 </td>
@@ -220,7 +222,7 @@ export default function Courses() {
 
                 {role === "admin" && (
                   <td>
-                    <button
+                    <button className="btn secondary extracted-style-4"
                       onClick={() =>
                         setForm({
                           id: c.id,
@@ -229,14 +231,14 @@ export default function Courses() {
                         })
                       }
                     >
-                      ✏️
+                      <FaEdit />
                     </button>
 
                     <button
                       onClick={() => handleDelete(c.id)}
-                      style={{ color: "red" }}
+                      className="btn secondary extracted-style-5"
                     >
-                      🗑️
+                      <FaTrash />
                     </button>
                   </td>
                 )}
@@ -248,32 +250,17 @@ export default function Courses() {
 
 
       {selectedCourse && (
-        <div style={{
-          position: "fixed",
-          inset: 0,
-          backgroundColor: "rgba(0,0,0,0.5)",
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          zIndex: 1000
-        }}>
-          <div style={{
-            backgroundColor: "white",
-            padding: "15px",
-            borderRadius: "8px",
-            width: "65%",
-            maxHeight: "90vh",
-            overflowY: "auto"
-          }}>
+        <div className="modal-overlay">
+          <div className="modal-content">
             <h3>Temas: {selectedCourse.title}</h3>
 
             {role === "admin" && (
-              <form onSubmit={handleTopicSubmit} style={{ display: "flex", gap: "5px", marginBottom: "15px" }}>
+              <form onSubmit={handleTopicSubmit} className="modal-form-row">
                 <input placeholder="Nuevo Tema" value={topicForm.title}
                   onChange={e => setTopicForm({ ...topicForm, title: e.target.value })} required />
                 <input type="number" placeholder="Orden" value={topicForm.order_index}
                   onChange={e => setTopicForm({ ...topicForm, order_index: e.target.value })} required />
-                <button type="submit">{topicForm.id ? "OK" : "＋"}</button>
+                <button type="submit" className="btn primary">{topicForm.id ? "OK" : "＋"}</button>
                 {topicForm.id && <button type="button" onClick={() => setTopicForm({ id: "", title: "", order_index: "" })}>X</button>}
               </form>
             )}
@@ -294,8 +281,8 @@ export default function Courses() {
                       <td>{t.title}</td>
                       {role === "admin" && (
                         <td>
-                          <button onClick={() => setTopicForm({ id: t.id, title: t.title, order_index: t.order_index })}>✏️</button>
-                          <button onClick={() => handleTopicDelete(t.id)} style={{ color: "red" }}>🗑️</button>
+                          <button className="btn secondary extracted-style-4" onClick={() => setTopicForm({ id: t.id, title: t.title, order_index: t.order_index })}><FaEdit /></button>
+                          <button className="btn secondary extracted-style-5" onClick={() => handleTopicDelete(t.id)}><FaTrash /></button>
                         </td>
                       )}
                     </tr>
@@ -304,7 +291,7 @@ export default function Courses() {
               </table>
             )}
 
-            <button onClick={() => setSelectedCourse(null)} style={{ marginTop: "15px" }}>
+            <button onClick={() => setSelectedCourse(null)} className="btn secondary extracted-style-5">
               Cerrar
             </button>
           </div>

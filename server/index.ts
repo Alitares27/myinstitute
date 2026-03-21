@@ -1,6 +1,8 @@
+import * as dotenv from "dotenv";
+dotenv.config();
+
 import express from "express";
 import cors from "cors";
-import dotenv from "dotenv";
 import { pool } from "./models/db";
 import users from "./routes/users";
 import students from "./routes/students";
@@ -16,7 +18,9 @@ import templesRoutes from "./routes/temples";
 import templeTripsRoutes from "./routes/templeTrips";
 import tripReservationsRoutes from "./routes/tripReservations";
 
-dotenv.config();
+import speakersRoutes from "./routes/speakers";
+import temasRoutes from "./routes/temas";
+
 
 const app = express();
 
@@ -50,8 +54,24 @@ app.use("/api/temples", templesRoutes);
 app.use("/api/temple-trips", templeTripsRoutes);
 app.use("/api/trip-reservations", tripReservationsRoutes);
 
+app.use("/api/speakers", speakersRoutes);      
+app.use("/api/temas", temasRoutes);
+
 app.get("/health", (req, res) => {
   res.status(200).json({ status: "ok" });
+});
+
+app.get("/test-topics", async (req, res) => {
+  try {
+    const result = await pool.query("SELECT * FROM topics ORDER BY course_id, order_index ASC");
+    res.json(result.rows);
+  } catch(e: any) {
+    res.json({ error: e.message });
+  }
+});
+
+app.use("*", (req, res) => {
+  res.status(404).json({ message: "Endpoint no encontrado" });
 });
 
 app.use(
@@ -62,10 +82,6 @@ app.use(
     });
   }
 );
-
-app.use("*", (req, res) => {
-  res.status(404).json({ message: "Endpoint no encontrado" });
-});
 
 async function startServer() {
   try {

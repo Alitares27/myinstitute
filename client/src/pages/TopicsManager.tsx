@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
+import api from "../api";
 import axios from "axios";
 
 interface Topic {
@@ -40,9 +41,9 @@ export default function TopicsManager() {
     setTopics(res.data);
   };
 
-  const filteredTopics = useMemo(() => 
-    topics.filter(t => t.course_id === Number(selectedCourseId)), 
-  [topics, selectedCourseId]);
+  const filteredTopics = useMemo(() =>
+    topics.filter(t => t.course_id === Number(selectedCourseId)),
+    [topics, selectedCourseId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -74,7 +75,7 @@ export default function TopicsManager() {
   return (
     <div>
       <h2>📚 Gestión de Temas del Manual</h2>
-      
+
       <div>
         <label>Seleccionar Curso: </label>
         <select value={selectedCourseId} onChange={(e) => setSelectedCourseId(e.target.value)}>
@@ -87,18 +88,18 @@ export default function TopicsManager() {
         <>
           <form onSubmit={handleSubmit} >
             <h3>{editingId ? "Editar Tema" : "Nuevo Tema"}</h3>
-            <input type="text" placeholder="Título del Capítulo" value={form.title} onChange={e => setForm({...form, title: e.target.value})} required />
-            <input type="number" placeholder="Orden" value={form.order_index} onChange={e => setForm({...form, order_index: Number(e.target.value)})} />
+            <input type="text" placeholder="Título del Capítulo" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} required />
+            <input type="number" placeholder="Orden" value={form.order_index} onChange={e => setForm({ ...form, order_index: Number(e.target.value) })} />
             <br /><br />
-            <textarea placeholder="Descripción" value={form.description} onChange={e => setForm({...form, description: e.target.value})} style={{ width: "100%", height: "60px" }} />
+            <textarea placeholder="Descripción" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} className="extracted-style-16" />
             <br />
-            <button type="submit">{editingId ? "Actualizar" : "Agregar"}</button>
-            {editingId && <button onClick={() => {setEditingId(null); setForm({title:"", description:"", order_index:0})}}>Cancelar</button>}
+            <button type="submit" className="btn primary">{editingId ? "Actualizar" : "Agregar"}</button>
+            {editingId && <button onClick={() => { setEditingId(null); setForm({ title: "", description: "", order_index: 0 }) }}>Cancelar</button>}
           </form>
 
-          <table style={{ width: "70%", marginTop: "20px", borderCollapse: "collapse" }} border={1}>
+          <table border={1}>
             <thead>
-              <tr style={{ background: "#eee" }}>
+              <tr className="extracted-style-18">
                 <th>Orden</th>
                 <th>Título</th>
                 <th>Acciones</th>
@@ -107,11 +108,11 @@ export default function TopicsManager() {
             <tbody>
               {filteredTopics.map(t => (
                 <tr key={t.id}>
-                  <td style={{ textAlign: "center" }}>{t.order_index}</td>
+                  <td className="extracted-style-19">{t.order_index}</td>
                   <td>{t.title}</td>
                   <td>
                     <button onClick={() => handleEdit(t)}>Editar</button>
-                    <button onClick={() => handleDelete(t.id)} style={{ color: "red" }}>Borrar</button>
+                    <button onClick={() => handleDelete(t.id)} className="extracted-style-4">Borrar</button>
                   </td>
                 </tr>
               ))}

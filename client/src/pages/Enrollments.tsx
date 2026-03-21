@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
+import api from "../api";
+import { FaEdit, FaTrash } from "react-icons/fa";
 import axios from "axios";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
@@ -37,7 +39,7 @@ export default function Enrollments() {
 
     const config = { headers: { Authorization: `Bearer ${token}` } };
 
-    axios.get(`${API_BASE_URL}/users/me`, config).then((res) => {
+    Promise.resolve({ data: JSON.parse(sessionStorage.getItem("user") || "{}") }).then((res) => {
       setRole(res.data.role);
       setUserId(res.data.id);
     });
@@ -149,7 +151,7 @@ export default function Enrollments() {
   return (
     <div className="enrollments-page">
       <h1>📝 Matrículas</h1>
-      <h2>{role === "admin" ? "➕ Matricular" : "Revisar"}</h2>
+      <h2 className="dashboard-subtitle">{role === "admin" ? "➕ Matricular" : "Revisar"}</h2>
       {role === "admin" && (
         <form onSubmit={handleSubmit} className="enrollment-form">
           <select
@@ -174,13 +176,13 @@ export default function Enrollments() {
             ))}
           </select>
 
-          <button type="submit">
+          <button type="submit" className="btn primary">
             {form.id ? "Actualizar" : "Matricular"}
           </button>
         </form>
       )}
 
-      <div style={{ display: "flex", gap: 10, marginBottom: 15 }}>
+      <div className="grid-form extracted-style-2">
         {role === "admin" && (
           <select
             value={studentFilter ?? ""}
@@ -208,10 +210,9 @@ export default function Enrollments() {
         </select>
       </div>
 
-      <div style={{ overflowX: "auto", width: "100%" }}>
+      <div className="table-container">
         <table
           className="enrollments-table"
-          style={{ minWidth: "500px", borderCollapse: "collapse" }}
         >
           <thead>
             <tr>
@@ -229,8 +230,8 @@ export default function Enrollments() {
 
                 {role === "admin" && (
                   <td>
-                    <button onClick={() => handleEdit(en)}>✏️</button>
-                    <button onClick={() => handleDelete(en.id)}>🗑️</button>
+                    <button className="btn secondary extracted-style-4" onClick={() => handleEdit(en)}><FaEdit /></button>
+                    <button className="btn secondary extracted-style-5" onClick={() => handleDelete(en.id)}><FaTrash /></button>
                   </td>
                 )}
               </tr>
@@ -240,17 +241,19 @@ export default function Enrollments() {
       </div>
 
 
-      <div className="pagination">
-        {Array.from({ length: totalPages }, (_, i) => (
-          <button
-            key={i}
-            className={currentPage === i + 1 ? "active" : ""}
-            onClick={() => setCurrentPage(i + 1)}
+      {totalPages > 1 && (
+        <div className="pagination-dropdown">
+          <span>PÁGINA:</span>
+          <select
+            value={currentPage}
+            onChange={(e) => setCurrentPage(Number(e.target.value))}
           >
-            {i + 1}
-          </button>
-        ))}
-      </div>
+            {Array.from({ length: totalPages }, (_, i) => (
+              <option key={i + 1} value={i + 1}>{i + 1} de {totalPages}</option>
+            ))}
+          </select>
+        </div>
+      )}
     </div>
   );
 }

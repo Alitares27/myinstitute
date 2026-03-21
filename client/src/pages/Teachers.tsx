@@ -1,4 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
+import api from "../api";
+import { FaEdit, FaTrash } from "react-icons/fa";
 import axios from "axios";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
@@ -20,7 +22,7 @@ export default function Teachers() {
     if (!token) return;
     const config = { headers: { Authorization: `Bearer ${token}` } };
 
-    axios.get(`${API_BASE_URL}/users/me`, config).then((res) => {
+    Promise.resolve({ data: JSON.parse(sessionStorage.getItem("user") || "{}") }).then((res) => {
       setRole(res.data.role);
       setUserId(res.data.id);
     });
@@ -92,7 +94,7 @@ export default function Teachers() {
   return (
     <div className="teachers-page">
       <h1>👨‍🏫 Maestros</h1>
-      <h2>{form.id ? "✏️ Actualizar" : "➕ Agregar"}</h2>
+      <h2 className="dashboard-subtitle">{form.id ? "<FaEdit /> Actualizar" : "➕ Agregar"}</h2>
       {role === "admin" && (
         <form onSubmit={handleSubmit} className="teacher-form">
           <input
@@ -107,15 +109,14 @@ export default function Teachers() {
             onChange={(e) => setForm({ ...form, specialty: e.target.value })}
             required
           />
-          <button type="submit">{form.id ? "Actualizar" : "Agregar"}</button>
+          <button type="submit" className="btn primary">{form.id ? "Actualizar" : "Agregar"}</button>
         </form>
       )}
 
       {role === "admin" ? (
-        <div style={{ overflowX: "auto", width: "100%" }}>
+        <div className="table-container">
           <table
             className="teachers-table"
-            style={{ minWidth: "650px", borderCollapse: "collapse" }}
           >
             <thead>
               <tr>
@@ -133,8 +134,8 @@ export default function Teachers() {
                   <td>{t.email}</td>
                   <td>{t.specialty}</td>
                   <td>
-                    <button onClick={() => handleEdit(t)}>✏️</button>
-                    <button onClick={() => handleDelete(t.id)}>🗑️</button>
+                    <button className="btn secondary extracted-style-4" onClick={() => handleEdit(t)}><FaEdit /></button>
+                    <button className="btn secondary extracted-style-5" onClick={() => handleDelete(t.id)}><FaTrash /></button>
                   </td>
                 </tr>
               ))}

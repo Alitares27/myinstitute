@@ -1,5 +1,6 @@
 /// <reference types="vite/client" />
 import { useState } from "react";
+import api from "../api";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import Layout from "../components/Layout";
@@ -21,7 +22,7 @@ export default function Login() {
       headers: {
         'Content-Type': 'application/json',
       },
-      withCredentials: false, 
+      withCredentials: false,
     };
 
     try {
@@ -37,8 +38,8 @@ export default function Login() {
 
       navigate("/dashboard");
     } catch (err: any) {
-      console.error("Login error:", err); 
-      
+      console.error("Login error:", err);
+
       if (err.code === 'ERR_NETWORK' || err.message.includes('Network Error')) {
         setError("No se pudo conectar con el servidor. Verifica que el backend esté activo.");
       } else if (err.response?.status === 0) {
@@ -109,7 +110,7 @@ export default function Login() {
 
               <button
                 type="button"
-                className="btn-cancel"
+                className="btn secondary"
                 onClick={() => navigate("/")}
                 disabled={loading}
               >
