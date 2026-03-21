@@ -13,7 +13,7 @@ router.get("/", verifyToken, async (_req: AuthRequest, res: Response) => {
       ORDER BY t.id ASC
     `);
     res.json(result.rows);
-  } catch (err) {
+  } catch (err: any) {
     console.error("Error fetching teachers:", err);
     res.status(500).json({ message: "Error fetching teachers" });
   }

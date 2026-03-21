@@ -27,6 +27,8 @@ import {
 
 function Sidebar() {
   const navigate = useNavigate();
+  const user = JSON.parse(sessionStorage.getItem("user") || "{}");
+  const role = user.role || "";
 
   const [isTeachingOpen, setIsTeachingOpen] = useState(false);
   const [isLeadershipOpen, setIsLeadershipOpen] = useState(false);
@@ -80,11 +82,9 @@ function Sidebar() {
               {isTeachingOpen && (
                 <ul className="submenu" style={{ paddingLeft: "20px", listStyle: "none" }}>
                   <li><Link to="/students" className="sidebar-link" onClick={() => setIsMenuOpen(false)}><div className="icon-circle"><FaUserGraduate className="icon" /></div><span>Estudiantes</span></Link></li>
-                  <li><Link to="/teachers" className="sidebar-link" onClick={() => setIsMenuOpen(false)}><div className="icon-circle"><FaChalkboardTeacher className="icon" /></div><span>Maestros</span></Link></li>
-                  <li><Link to="/enrollments" className="sidebar-link" onClick={() => setIsMenuOpen(false)}><div className="icon-circle"><FaClipboardList className="icon" /></div><span>Matrículas</span></Link></li>
-                  <li><Link to="/courses" className="sidebar-link" onClick={() => setIsMenuOpen(false)}><div className="icon-circle"><FaBookOpen className="icon" /></div><span>Cursos</span></Link></li>
-                  <li><Link to="/attendance" className="sidebar-link" onClick={() => setIsMenuOpen(false)}><div className="icon-circle"><FaCalendarCheck className="icon" /></div><span>Asistencia</span></Link></li>
-                  <li><Link to="/grades" className="sidebar-link" onClick={() => setIsMenuOpen(false)}><div className="icon-circle"><FaStar className="icon" /></div><span>Calificaciones</span></Link></li>
+                   <li><Link to="/enrollments" className="sidebar-link" onClick={() => setIsMenuOpen(false)}><div className="icon-circle"><FaClipboardList className="icon" /></div><span>Matrículas</span></Link></li>
+                   <li><Link to="/attendance" className="sidebar-link" onClick={() => setIsMenuOpen(false)}><div className="icon-circle"><FaCalendarCheck className="icon" /></div><span>Asistencia</span></Link></li>
+                   <li><Link to="/grades" className="sidebar-link" onClick={() => setIsMenuOpen(false)}><div className="icon-circle"><FaStar className="icon" /></div><span>Calificaciones</span></Link></li>
                 </ul>
               )}
             </li>
@@ -115,19 +115,23 @@ function Sidebar() {
               </Link>
             </li>
 
-            <li>
-              <div className="sidebar-link" onClick={() => setIsMaintenanceOpen(!isMaintenanceOpen)} style={{ cursor: "pointer" }}>
-                <div className="icon-circle"><FaTools className="icon" /></div>
-                <span>Mantenimiento</span>
-                <FaChevronDown style={getChevronStyle(isMaintenanceOpen)} />
-              </div>
+            {role === "admin" && (
+              <li>
+                <div className="sidebar-link" onClick={() => setIsMaintenanceOpen(!isMaintenanceOpen)} style={{ cursor: "pointer" }}>
+                  <div className="icon-circle"><FaTools className="icon" /></div>
+                  <span>Mantenimiento</span>
+                  <FaChevronDown style={getChevronStyle(isMaintenanceOpen)} />
+                </div>
 
-              {isMaintenanceOpen && (
-                <ul className="submenu" style={{ paddingLeft: "20px", listStyle: "none" }}>
-                  <li><Link to="/users" className="sidebar-link" onClick={() => setIsMenuOpen(false)}><div className="icon-circle"><FaUser className="icon" /></div><span>Usuarios</span></Link></li>
-                </ul>
-              )}
-            </li>
+                {isMaintenanceOpen && (
+                  <ul className="submenu" style={{ paddingLeft: "20px", listStyle: "none" }}>
+                    <li><Link to="/users" className="sidebar-link" onClick={() => setIsMenuOpen(false)}><div className="icon-circle"><FaUser className="icon" /></div><span>Usuarios</span></Link></li>
+                    <li><Link to="/teachers" className="sidebar-link" onClick={() => setIsMenuOpen(false)}><div className="icon-circle"><FaChalkboardTeacher className="icon" /></div><span>Maestros</span></Link></li>
+                    <li><Link to="/courses" className="sidebar-link" onClick={() => setIsMenuOpen(false)}><div className="icon-circle"><FaBookOpen className="icon" /></div><span>Cursos</span></Link></li>
+                  </ul>
+                )}
+              </li>
+            )}
 
           </ul>
         </nav>

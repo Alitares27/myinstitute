@@ -34,7 +34,7 @@
 
   --bg-body: #1a202c;
   --bg-surface: #2d3748;
-  --bg-sidebar: #171923; /* Un azul muy oscuro/negro para el sidebar oscuro */
+  --bg-sidebar: #171923;
 
   --text-main: #edf2f7;
   --text-muted: #a0aec0;
@@ -581,48 +581,11 @@ th {
 /* =========================================
    9. RESPONSIVE
    ========================================= */
-@media (max-width: 1024px) {
-  :root {
-    --sidebar-width: 80px;
-  }
-
-  .logo-text,
-  .sidebar-link span {
-    display: none;
-  }
-}
-
-@media (max-width: 768px) {
-  .app-layout {
-    flex-direction: column;
-  }
-
-  .sidebar {
-    width: 100%;
-    height: auto;
-    flex-direction: row;
-    position: sticky;
-    padding: 10px;
-  }
-
-  .sidebar ul,
-  .logout-section {
-    display: none;
-  }
-
-  main.content {
-    padding: 1rem;
-  }
-
-  .grid-form {
-    grid-template-columns: 1fr;
-  }
-}
 
 /* =========================================
    10. SIDEBAR MOBILE ICON NAV (OVERRIDES)
    ========================================= */
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   .app-layout {
     flex-direction: column;
   }
@@ -707,6 +670,7 @@ th {
       opacity: 0;
       transform: translateY(-10px);
     }
+
     to {
       opacity: 1;
       transform: translateY(0);
@@ -738,7 +702,6 @@ th {
     font-weight: 600;
   }
 
-  /* Ocultar iconos en móvil */
   .icon-circle,
   .icon,
   .icon-circle i,
