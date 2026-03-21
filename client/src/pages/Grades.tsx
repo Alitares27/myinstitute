@@ -200,12 +200,37 @@ export default function Grades() {
           <thead>
             <tr>
               {role === "admin" && (
-                <th onClick={() => requestSort("student_name")}>Estudiante</th>
+                <th onClick={() => requestSort("student_name")} className="sortable-header">
+                  Estudiante
+                  <span className="sort-icon">
+                    {sortConfig?.key === "student_name" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
+                  </span>
+                </th>
               )}
-              <th onClick={() => requestSort("course_title")}>Curso</th>
-              <th onClick={() => requestSort("grade")}>Nota</th>
-              <th onClick={() => requestSort("grade_type")}>Tipo</th>
-              <th onClick={() => requestSort("created_at")}>Fecha</th>
+              <th onClick={() => requestSort("course_title")} className="sortable-header">
+                Curso
+                <span className="sort-icon">
+                  {sortConfig?.key === "course_title" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
+                </span>
+              </th>
+              <th onClick={() => requestSort("grade")} className="sortable-header">
+                Nota
+                <span className="sort-icon">
+                  {sortConfig?.key === "grade" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
+                </span>
+              </th>
+              <th onClick={() => requestSort("grade_type")} className="sortable-header">
+                Tipo
+                <span className="sort-icon">
+                  {sortConfig?.key === "grade_type" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
+                </span>
+              </th>
+              <th onClick={() => requestSort("created_at")} className="sortable-header">
+                Fecha
+                <span className="sort-icon">
+                  {sortConfig?.key === "created_at" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
+                </span>
+              </th>
               {role === "admin" && <th>Acciones</th>}
             </tr>
           </thead>

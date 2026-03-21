@@ -34,6 +34,16 @@ export default function Speakers() {
   const [currentPage, setCurrentPage] = useState(1);
   const recordsPerPage = 6;
 
+  const [sortConfig, setSortConfig] = useState<{ key: string; direction: "asc" | "desc" } | null>(null);
+
+  const handleSort = (key: string) => {
+    setSortConfig(prev =>
+      prev?.key === key
+        ? { key, direction: prev.direction === "asc" ? "desc" : "asc" }
+        : { key, direction: "asc" }
+    );
+  };
+
   const [form, setForm] = useState({
     member_id: "",
     tema_id: "",
@@ -71,11 +81,33 @@ export default function Speakers() {
     });
   }, [speakers, memberFilter, dateFilter]);
 
-  const totalPages = Math.ceil(filteredSpeakers.length / recordsPerPage);
+  const sortedSpeakers = useMemo(() => {
+    if (!sortConfig) return filteredSpeakers;
+    return [...filteredSpeakers].sort((a, b) => {
+      let aVal: any = a[sortConfig.key as keyof SpeakerRecord];
+      let bVal: any = b[sortConfig.key as keyof SpeakerRecord];
+
+      if (sortConfig.key === "date") {
+        aVal = new Date(aVal).getTime();
+        bVal = new Date(bVal).getTime();
+      }
+
+      if (sortConfig.key === "member_id") {
+        aVal = (a.member_name || members.find(m => m.id === a.member_id)?.name || "").toLowerCase();
+        bVal = (b.member_name || members.find(m => m.id === b.member_id)?.name || "").toLowerCase();
+      }
+
+      if (aVal < bVal) return sortConfig.direction === "asc" ? -1 : 1;
+      if (aVal > bVal) return sortConfig.direction === "asc" ? 1 : -1;
+      return 0;
+    });
+  }, [filteredSpeakers, sortConfig, members]);
+
+  const totalPages = Math.ceil(sortedSpeakers.length / recordsPerPage);
   const currentRecords = useMemo(() => {
     const start = (currentPage - 1) * recordsPerPage;
-    return filteredSpeakers.slice(start, start + recordsPerPage);
-  }, [filteredSpeakers, currentPage]);
+    return sortedSpeakers.slice(start, start + recordsPerPage);
+  }, [sortedSpeakers, currentPage]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -241,9 +273,24 @@ export default function Speakers() {
         <table>
           <thead>
             <tr>
-              <th>Miembro / Fecha</th>
-              <th>Estado</th>
-              <th>Tema / Discurso</th>
+              <th onClick={() => handleSort("member_id")} className="sortable-header">
+                Miembro / Fecha
+                <span className="sort-icon">
+                  {sortConfig?.key === "member_id" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
+                </span>
+              </th>
+              <th onClick={() => handleSort("completed")} className="sortable-header">
+                Estado
+                <span className="sort-icon">
+                  {sortConfig?.key === "completed" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
+                </span>
+              </th>
+              <th onClick={() => handleSort("topic")} className="sortable-header">
+                Tema / Discurso
+                <span className="sort-icon">
+                  {sortConfig?.key === "topic" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
+                </span>
+              </th>
               {role === "admin" && <th>Acciones</th>}
             </tr>
           </thead>

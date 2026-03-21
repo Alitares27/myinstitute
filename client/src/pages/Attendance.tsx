@@ -201,11 +201,31 @@ export default function Attendance() {
           <thead>
             <tr>
               {role !== "student" && (
-                <th onClick={() => handleSort("student_id")}>Estudiante</th>
+                <th onClick={() => handleSort("student_id")} className="sortable-header">
+                  Estudiante
+                  <span className="sort-icon">
+                    {sortConfig?.key === "student_id" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
+                  </span>
+                </th>
               )}
-              <th onClick={() => handleSort("course_id")}>Curso</th>
-              <th onClick={() => handleSort("date")}>Fecha</th>
-              <th onClick={() => handleSort("status")}>Estado</th>
+              <th onClick={() => handleSort("course_id")} className="sortable-header">
+                Curso
+                <span className="sort-icon">
+                  {sortConfig?.key === "course_id" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
+                </span>
+              </th>
+              <th onClick={() => handleSort("date")} className="sortable-header">
+                Fecha
+                <span className="sort-icon">
+                  {sortConfig?.key === "date" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
+                </span>
+              </th>
+              <th onClick={() => handleSort("status")} className="sortable-header">
+                Estado
+                <span className="sort-icon">
+                  {sortConfig?.key === "status" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
+                </span>
+              </th>
               <th>Capítulo</th>
             </tr>
           </thead>

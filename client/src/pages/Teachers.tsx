@@ -120,9 +120,24 @@ export default function Teachers() {
           >
             <thead>
               <tr>
-                <th onClick={() => requestSort("name")}>Nombre</th>
-                <th onClick={() => requestSort("email")}>Email</th>
-                <th onClick={() => requestSort("specialty")}>Especialidad</th>
+                <th onClick={() => requestSort("name")} className="sortable-header">
+                  Nombre
+                  <span className="sort-icon">
+                    {sortConfig?.key === "name" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
+                  </span>
+                </th>
+                <th onClick={() => requestSort("email")} className="sortable-header">
+                  Email
+                  <span className="sort-icon">
+                    {sortConfig?.key === "email" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
+                  </span>
+                </th>
+                <th onClick={() => requestSort("specialty")} className="sortable-header">
+                  Especialidad
+                  <span className="sort-icon">
+                    {sortConfig?.key === "specialty" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
+                  </span>
+                </th>
                 <th>Acciones</th>
               </tr>
             </thead>

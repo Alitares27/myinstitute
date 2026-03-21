@@ -186,22 +186,18 @@ export default function Courses() {
         <table >
           <thead>
             <tr>
-              <th
-                onClick={() => handleSort("title")}
-                className="extracted-style-13"
-              >
-                Título{" "}
-                {sortConfig?.key === "title" &&
-                  (sortConfig.direction === "asc" ? "▲" : "▼")}
+              <th onClick={() => handleSort("title")} className="sortable-header">
+                Título
+                <span className="sort-icon">
+                  {sortConfig?.key === "title" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
+                </span>
               </th>
 
-              <th
-                onClick={() => handleSort("teacher_name")}
-                className="extracted-style-13"
-              >
-                Maestro{" "}
-                {sortConfig?.key === "teacher_name" &&
-                  (sortConfig.direction === "asc" ? "▲" : "▼")}
+              <th onClick={() => handleSort("teacher_name")} className="sortable-header">
+                Maestro
+                <span className="sort-icon">
+                  {sortConfig?.key === "teacher_name" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
+                </span>
               </th>
 
               {role === "admin" && <th>Acciones</th>}

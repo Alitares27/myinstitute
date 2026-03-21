@@ -216,8 +216,18 @@ export default function Enrollments() {
         >
           <thead>
             <tr>
-              <th onClick={() => handleSort("student_id")}>Estudiante</th>
-              <th onClick={() => handleSort("course_id")}>Curso</th>
+              <th onClick={() => handleSort("student_id")} className="sortable-header">
+                Estudiante
+                <span className="sort-icon">
+                  {sortConfig?.key === "student_id" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
+                </span>
+              </th>
+              <th onClick={() => handleSort("course_id")} className="sortable-header">
+                Curso
+                <span className="sort-icon">
+                  {sortConfig?.key === "course_id" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
+                </span>
+              </th>
               {role === "admin" && <th>Acciones</th>}
             </tr>
           </thead>

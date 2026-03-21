@@ -228,27 +228,27 @@ function UserPage() {
             <table >
               <thead>
                 <tr>
-                  <th
-                    onClick={() => handleSort("name")}
-                    className="extracted-style-13"
-                  >
-                    Nombre{arrow("name")}
+                  <th onClick={() => handleSort("name")} className="sortable-header">
+                    Nombre
+                    <span className="sort-icon">
+                      {sortKey === "name" ? (sortOrder === "asc" ? "▲" : "▼") : "↕"}
+                    </span>
                   </th>
 
-                  <th
-                    onClick={() => handleSort("email")}
-                    className="extracted-style-13"
-                  >
-                    Email{arrow("email")}
+                  <th onClick={() => handleSort("email")} className="sortable-header">
+                    Email
+                    <span className="sort-icon">
+                      {sortKey === "email" ? (sortOrder === "asc" ? "▲" : "▼") : "↕"}
+                    </span>
                   </th>
 
                   <th>Teléfono</th>
 
-                  <th
-                    onClick={() => handleSort("role")}
-                    className="extracted-style-13"
-                  >
-                    Rol{arrow("role")}
+                  <th onClick={() => handleSort("role")} className="sortable-header">
+                    Rol
+                    <span className="sort-icon">
+                      {sortKey === "role" ? (sortOrder === "asc" ? "▲" : "▼") : "↕"}
+                    </span>
                   </th>
 
                   <th>Acciones</th>

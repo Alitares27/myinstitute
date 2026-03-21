@@ -48,6 +48,16 @@ export default function TripReservations() {
     const [currentPage, setCurrentPage] = useState(1);
     const recordsPerPage = 5;
 
+    const [sortConfig, setSortConfig] = useState<{ key: string; direction: "asc" | "desc" } | null>(null);
+
+    const handleSort = (key: string) => {
+        setSortConfig(prev =>
+            prev?.key === key
+                ? { key, direction: prev.direction === "asc" ? "desc" : "asc" }
+                : { key, direction: "asc" }
+        );
+    };
+
     useEffect(() => {
         const userRole = sessionStorage.getItem("role");
         setRole(userRole);
@@ -158,13 +168,24 @@ export default function TripReservations() {
             : reservations;
     }, [reservations, filterTripId]);
 
-    const totalPages = Math.ceil(filteredReservations.length / recordsPerPage);
+    const sortedReservations = useMemo(() => {
+        if (!sortConfig) return filteredReservations;
+        return [...filteredReservations].sort((a, b) => {
+            const aVal = a[sortConfig.key as keyof Reservation];
+            const bVal = b[sortConfig.key as keyof Reservation];
+            if (aVal < bVal) return sortConfig.direction === "asc" ? -1 : 1;
+            if (aVal > bVal) return sortConfig.direction === "asc" ? 1 : -1;
+            return 0;
+        });
+    }, [filteredReservations, sortConfig]);
+
+    const totalPages = Math.ceil(sortedReservations.length / recordsPerPage);
 
     const currentRecords = useMemo(() => {
         const lastIdx = currentPage * recordsPerPage;
         const firstIdx = lastIdx - recordsPerPage;
-        return filteredReservations.slice(firstIdx, lastIdx);
-    }, [filteredReservations, currentPage]);
+        return sortedReservations.slice(firstIdx, lastIdx);
+    }, [sortedReservations, currentPage]);
 
     useEffect(() => {
         if (currentPage > totalPages && totalPages > 0) {
@@ -253,12 +274,42 @@ export default function TripReservations() {
                 <table>
                     <thead>
                         <tr>
-                            <th>Miembro</th>
-                            <th>Viaje</th>
-                            <th>Registro</th>
-                            <th>Adelanto</th>
-                            <th>Pendiente</th>
-                            <th>Vencimiento</th>
+                            <th onClick={() => handleSort("user_name")} className="sortable-header">
+                                Miembro
+                                <span className="sort-icon">
+                                    {sortConfig?.key === "user_name" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
+                                </span>
+                            </th>
+                            <th onClick={() => handleSort("trip_date")} className="sortable-header">
+                                Viaje
+                                <span className="sort-icon">
+                                    {sortConfig?.key === "trip_date" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
+                                </span>
+                            </th>
+                            <th onClick={() => handleSort("register_date")} className="sortable-header">
+                                Registro
+                                <span className="sort-icon">
+                                    {sortConfig?.key === "register_date" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
+                                </span>
+                            </th>
+                            <th onClick={() => handleSort("advance_payment")} className="sortable-header">
+                                Adelanto
+                                <span className="sort-icon">
+                                    {sortConfig?.key === "advance_payment" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
+                                </span>
+                            </th>
+                            <th onClick={() => handleSort("pending_payment")} className="sortable-header">
+                                Pendiente
+                                <span className="sort-icon">
+                                    {sortConfig?.key === "pending_payment" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
+                                </span>
+                            </th>
+                            <th onClick={() => handleSort("due_date")} className="sortable-header">
+                                Vencimiento
+                                <span className="sort-icon">
+                                    {sortConfig?.key === "due_date" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
+                                </span>
+                            </th>
                             <th>Acciones</th>
                         </tr>
                     </thead>

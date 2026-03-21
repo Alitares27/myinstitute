@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { FaEdit, FaTrash } from "react-icons/fa";
 
 interface Temple {
@@ -33,10 +33,31 @@ export default function TempleTrip() {
         cost: ""
     });
 
+    const [sortConfig, setSortConfig] = useState<{ key: string; direction: "asc" | "desc" } | null>(null);
+
+    const handleSort = (key: string) => {
+        setSortConfig(prev =>
+            prev?.key === key
+                ? { key, direction: prev.direction === "asc" ? "desc" : "asc" }
+                : { key, direction: "asc" }
+        );
+    };
+
+    const sortedTrips = useMemo(() => {
+        if (!sortConfig) return trips;
+        return [...trips].sort((a, b) => {
+            const aVal = a[sortConfig.key as keyof Trip];
+            const bVal = b[sortConfig.key as keyof Trip];
+            if (aVal < bVal) return sortConfig.direction === "asc" ? -1 : 1;
+            if (aVal > bVal) return sortConfig.direction === "asc" ? 1 : -1;
+            return 0;
+        });
+    }, [trips, sortConfig]);
+
     const indexOfLastTrip = currentPage * tripsPerPage;
     const indexOfFirstTrip = indexOfLastTrip - tripsPerPage;
-    const currentTrips = trips.slice(indexOfFirstTrip, indexOfLastTrip);
-    const totalPages = Math.ceil(trips.length / tripsPerPage);
+    const currentTrips = sortedTrips.slice(indexOfFirstTrip, indexOfLastTrip);
+    const totalPages = Math.ceil(sortedTrips.length / tripsPerPage);
 
     useEffect(() => {
         if (currentPage > totalPages && totalPages > 0) {
@@ -222,10 +243,30 @@ export default function TempleTrip() {
                 <table>
                     <thead>
                         <tr>
-                            <th>Templo</th>
-                            <th>Fecha</th>
-                            <th>Estado</th>
-                            <th>Costo</th>
+                            <th onClick={() => handleSort("temple_name")} className="sortable-header">
+                                Templo
+                                <span className="sort-icon">
+                                    {sortConfig?.key === "temple_name" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
+                                </span>
+                            </th>
+                            <th onClick={() => handleSort("date")} className="sortable-header">
+                                Fecha
+                                <span className="sort-icon">
+                                    {sortConfig?.key === "date" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
+                                </span>
+                            </th>
+                            <th onClick={() => handleSort("status")} className="sortable-header">
+                                Estado
+                                <span className="sort-icon">
+                                    {sortConfig?.key === "status" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
+                                </span>
+                            </th>
+                            <th onClick={() => handleSort("cost")} className="sortable-header">
+                                Costo
+                                <span className="sort-icon">
+                                    {sortConfig?.key === "cost" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
+                                </span>
+                            </th>
                             <th>Acciones</th>
                         </tr>
                     </thead>

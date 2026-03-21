@@ -426,6 +426,29 @@ th {
   text-transform: uppercase;
 }
 
+.sortable-header {
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s ease;
+  position: relative;
+  white-space: nowrap;
+}
+
+.sortable-header:hover {
+  background-color: var(--bg-surface) !important;
+  color: var(--primary);
+}
+
+.sort-icon {
+  margin-left: 8px;
+  font-size: 0.8rem;
+  opacity: 0.6;
+}
+
+.sortable-header:hover .sort-icon {
+  opacity: 1;
+}
+
 .sidebar-logo {
   display: flex;
   flex-direction: column;
