@@ -19,6 +19,8 @@ import Discursantes from "./pages/Discursantes";
 import Consejos from "./pages/Consejos";
 import Finanzas from "./pages/Finanzas";
 import Auditorias from "./pages/Auditorias";
+import TemasManagement from "./pages/TemasManagement";
+import TemplosMaintenance from "./pages/TemplosMaintenance";
 
 
 function App() {
@@ -179,6 +181,27 @@ function App() {
             <PrivateRoute>
               <Layout>
                 <Auditorias />
+              </Layout>
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/temas-management"
+          element={
+            <PrivateRoute>
+              <Layout>
+                <TemasManagement />
+              </Layout>
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/templos-management"
+          element={
+            <PrivateRoute>
+              <Layout>
+                <TemplosMaintenance />
               </Layout>
             </PrivateRoute>
           }

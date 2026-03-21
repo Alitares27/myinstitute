@@ -128,6 +128,8 @@ function Sidebar() {
                     <li><Link to="/users" className="sidebar-link" onClick={() => setIsMenuOpen(false)}><div className="icon-circle"><FaUser className="icon" /></div><span>Usuarios</span></Link></li>
                     <li><Link to="/teachers" className="sidebar-link" onClick={() => setIsMenuOpen(false)}><div className="icon-circle"><FaChalkboardTeacher className="icon" /></div><span>Maestros</span></Link></li>
                     <li><Link to="/courses" className="sidebar-link" onClick={() => setIsMenuOpen(false)}><div className="icon-circle"><FaBookOpen className="icon" /></div><span>Cursos</span></Link></li>
+                    <li><Link to="/temas-management" className="sidebar-link" onClick={() => setIsMenuOpen(false)}><div className="icon-circle"><FaMicrophone className="icon" /></div><span>Temas</span></Link></li>
+                    <li><Link to="/templos-management" className="sidebar-link" onClick={() => setIsMenuOpen(false)}><div className="icon-circle"><FaSynagogue className="icon" /></div><span>Templos</span></Link></li>
                   </ul>
                 )}
               </li>

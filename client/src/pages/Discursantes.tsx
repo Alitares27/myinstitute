@@ -260,7 +260,6 @@ export default function Speakers() {
 
       <h2 className="dashboard-subtitle">Historial de Discursos</h2>
 
-      {/* FILTROS */}
       <div className="grid-form extracted-style-2">
         <select value={memberFilter} onChange={e => { setMemberFilter(e.target.value); setCurrentPage(1); }}>
           <option value="">Todos los miembros</option>
@@ -345,7 +344,6 @@ export default function Speakers() {
         </table>
       </div>
 
-      {/* PAGINACIÓN */}
       {totalPages > 1 && (
         <div className="pagination-dropdown">
           <span className="extracted-style-8">PÁGINA:</span>
