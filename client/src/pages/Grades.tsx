@@ -160,7 +160,7 @@ export default function Grades() {
               ))}
             </select>
 
-            <input type="number" step="0.1" value={form.grade} onChange={(e) => setForm({ ...form, grade: e.target.value })} required />
+            <input type="number" step="0.1" placeholder="Calificación" value={form.grade} onChange={(e) => setForm({ ...form, grade: e.target.value })} required />
 
             <select value={form.grade_type} onChange={(e) => setForm({ ...form, grade_type: e.target.value })}>
               <option value="examen">Examen</option>

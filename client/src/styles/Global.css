@@ -24,12 +24,33 @@
   --radius: 10px;
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
   --shadow-md: 0 10px 25px rgba(0, 0, 0, 0.05);
+  --transition-speed: 0.3s;
+}
+
+[data-theme="dark"] {
+  --primary: #3182ce;
+  --primary-hover: #2b6cb0;
+  --secondary: #24b498;
+
+  --bg-body: #1a202c;
+  --bg-surface: #2d3748;
+  --bg-sidebar: #171923; /* Un azul muy oscuro/negro para el sidebar oscuro */
+
+  --text-main: #edf2f7;
+  --text-muted: #a0aec0;
+  --text-light: #ffffff;
+
+  --border-color: #4a5568;
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 10px 25px rgba(0, 0, 0, 0.4);
 }
 
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+  transition: background-color var(--transition-speed) ease, border-color var(--transition-speed) ease, color var(--transition-speed) ease, box-shadow var(--transition-speed) ease;
 }
 
 body {
@@ -106,7 +127,7 @@ main.content {
 }
 
 .feature-card {
-  background: white;
+  background: var(--bg-surface);
   padding: 2.5rem;
   border-radius: 20px;
   text-align: center;
@@ -135,10 +156,10 @@ main.content {
 .auth-container.card {
   width: 100%;
   max-width: 400px;
-  background: white;
+  background: var(--bg-surface);
   padding: 3rem;
   border-radius: 24px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
 }
 
 footer {
@@ -235,10 +256,10 @@ form {
   display: grid !important;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 1.5rem;
-  background: white;
-  padding: 1rem;
+  background: var(--bg-surface);
+  padding: 2rem;
   border-radius: var(--radius);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-md);
   border: 1px solid var(--border-color);
   margin-bottom: 2rem;
   align-items: end;
@@ -263,17 +284,18 @@ textarea {
   padding: 0.8rem 1.2rem;
   border: 1px solid var(--border-color);
   border-radius: 8px;
-  background-color: #f8fafc;
+  background-color: var(--bg-surface);
   font-size: 1rem;
+  color: var(--text-main);
   transition: all 0.2s ease;
 }
 
 input:focus,
 select:focus {
   outline: none;
-  background-color: #fff;
+  background-color: var(--bg-surface);
   border-color: var(--primary);
-  box-shadow: 0 0 0 4px rgba(0, 97, 132, 0.1);
+  box-shadow: 0 0 0 4px rgba(0, 97, 132, 0.2);
 }
 
 /* =========================================
@@ -311,7 +333,7 @@ button,
 
 .btn.secondary,
 .btn-cancel {
-  background-color: white;
+  background-color: var(--bg-surface);
   color: var(--primary);
   border: 1px solid var(--primary);
 }
@@ -366,7 +388,7 @@ button:hover:not(:disabled) {
   overflow-x: auto;
   display: block;
   margin-bottom: 2rem;
-  background: white;
+  background: var(--bg-surface);
   border-radius: var(--radius);
   box-shadow: var(--shadow-sm);
   overflow-x: auto;
@@ -377,17 +399,27 @@ table {
   width: 100%;
   border-collapse: collapse;
   min-width: 800px;
+  background-color: var(--bg-surface);
+  color: var(--text-main);
+}
+
+tr:hover td {
+  background-color: rgba(255, 255, 255, 0.03);
+}
+
+[data-theme="dark"] tr:hover td {
+  background-color: rgba(255, 255, 255, 0.05);
 }
 
 th,
 td {
   padding: 1.2rem;
   text-align: left;
-  border-bottom: 1px solid #edf2f7;
+  border-bottom: 1px solid var(--border-color);
 }
 
 th {
-  background: #f8fafc;
+  background: var(--bg-body);
   font-weight: 700;
   color: var(--text-muted);
   font-size: 0.75rem;
@@ -452,9 +484,37 @@ th {
 
 .sidebar-header {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   width: 100%;
+  gap: 15px;
+  margin-bottom: 2rem;
+}
+
+.sidebar-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.theme-toggle {
+  background: rgba(255, 255, 255, 0.08);
+  border: none;
+  color: white;
+  padding: 10px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 1.2rem;
+  transition: all 0.3s ease;
+}
+
+.theme-toggle:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: rotate(15deg) scale(1.1);
 }
 
 .sidebar-content {
@@ -500,8 +560,8 @@ th {
 }
 
 .pagination button:hover:not(.active):not(:disabled) {
-  background-color: #f8fafc;
-  border-color: var(--primary);
+  background-color: var(--bg-surface);
+  border: 2px solid var(--primary);
   color: var(--primary);
   transform: translateY(-2px);
 }
@@ -606,6 +666,13 @@ th {
     font-size: 1.2rem !important;
   }
 
+  .sidebar-actions {
+    display: flex !important;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .theme-toggle,
   .menu-toggle {
     display: flex !important;
     background: rgba(255, 255, 255, 0.1);
@@ -613,11 +680,12 @@ th {
     color: white;
     padding: 10px;
     border-radius: 8px;
-    font-size: 1.5rem;
+    font-size: 1.4rem;
     cursor: pointer;
     transition: background 0.2s;
   }
 
+  .theme-toggle:hover,
   .menu-toggle:hover {
     background: rgba(255, 255, 255, 0.2);
   }
@@ -804,6 +872,7 @@ th {
   font-weight: 600;
   cursor: pointer;
   outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .pagination-dropdown select:focus {

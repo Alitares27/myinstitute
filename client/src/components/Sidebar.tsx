@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useTheme } from "../context/ThemeContext";
 import {
   FaUserGraduate,
   FaChalkboardTeacher,
@@ -19,7 +20,9 @@ import {
   FaMoneyBillWave,
   FaFileInvoice,
   FaBars,
-  FaTimes
+  FaTimes,
+  FaSun,
+  FaMoon
 } from "react-icons/fa";
 
 function Sidebar() {
@@ -29,6 +32,7 @@ function Sidebar() {
   const [isLeadershipOpen, setIsLeadershipOpen] = useState(false);
   const [isMaintenanceOpen, setIsMaintenanceOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { theme, toggleTheme } = useTheme();
 
   const handleLogout = () => {
     sessionStorage.clear();
@@ -53,9 +57,14 @@ function Sidebar() {
           />
           <span className="logo-text">GestionAR</span>
         </Link>
-        <button className="menu-toggle" onClick={() => setIsMenuOpen(!isMenuOpen)}>
-          {isMenuOpen ? <FaTimes /> : <FaBars />}
-        </button>
+        <div className="sidebar-actions">
+          <button className="theme-toggle" onClick={toggleTheme} title="Cambiar tema">
+            {theme === "light" ? <FaMoon /> : <FaSun />}
+          </button>
+          <button className="menu-toggle" onClick={() => setIsMenuOpen(!isMenuOpen)}>
+            {isMenuOpen ? <FaTimes /> : <FaBars />}
+          </button>
+        </div>
       </div>
 
       <div className="sidebar-content">

@@ -243,13 +243,13 @@ export default function TempleTrip() {
                                     <td>${Number(trip.cost).toLocaleString()}</td>
                                     <td>
                                         <button
-                                            className="btn secondary"
+                                            className="btn secondary extracted-style-4"
                                             onClick={() => handleEdit(trip)}
                                         >
                                             <FaEdit />
                                         </button>
                                         <button
-                                            className="btn extracted-style-25"
+                                            className="btn secondary extracted-style-5"
                                             onClick={() => handleDelete(trip.id)}
                                         >
                                             <FaTrash />
