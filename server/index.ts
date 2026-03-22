@@ -28,7 +28,7 @@ app.use(cors({
   origin: [
     "http://localhost:5173",
     "http://localhost:5174",
-    "https://institutoas-three.vercel.app"
+    "https://gestionar-three.vercel.app"
   ],
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
   allowedHeaders: ["Content-Type", "Authorization"],
@@ -54,7 +54,6 @@ app.use("/api/topics", topicRoutes);
 app.use("/api/temples", templesRoutes);
 app.use("/api/temple-trips", templeTripsRoutes);
 app.use("/api/trip-reservations", tripReservationsRoutes);
-
 app.use("/api/speakers", speakersRoutes);      
 app.use("/api/temas", temasRoutes);
 
