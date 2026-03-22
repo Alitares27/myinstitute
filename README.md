@@ -1,4 +1,4 @@
-# 📚 MyInstitute
+# 📚 GestionAR
 
 Plataforma académica para gestión de estudiantes, cursos, asistencia y calificaciones.
 
