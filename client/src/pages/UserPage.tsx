@@ -22,6 +22,9 @@ function UserPage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const [searchTerm, setSearchTerm] = useState("");
+
   const [currentPage, setCurrentPage] = useState(1);
   const recordsPerPage = 5;
 
@@ -60,17 +63,24 @@ function UserPage() {
     }
   };
 
-  const totalPages = Math.ceil(users.length / recordsPerPage);
+  const filteredUsers = useMemo(() => {
+    if (!searchTerm) return users;
+    return users.filter((u) =>
+      u.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [users, searchTerm]);
+
+  const totalPages = Math.ceil(filteredUsers.length / recordsPerPage);
 
   const sortedUsers = useMemo(() => {
-    return [...users].sort((a, b) => {
-      const aVal = a[sortKey].toString().toLowerCase();
-      const bVal = b[sortKey].toString().toLowerCase();
+    return [...filteredUsers].sort((a, b) => {
+      const aVal = a[sortKey]?.toString().toLowerCase() || "";
+      const bVal = b[sortKey]?.toString().toLowerCase() || "";
       if (aVal < bVal) return sortOrder === "asc" ? -1 : 1;
       if (aVal > bVal) return sortOrder === "asc" ? 1 : -1;
       return 0;
     });
-  }, [users, sortKey, sortOrder]);
+  }, [filteredUsers, sortKey, sortOrder]);
 
   const currentRecords = useMemo(() => {
     const lastIdx = currentPage * recordsPerPage;
@@ -176,12 +186,14 @@ function UserPage() {
     });
   };
 
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+    setCurrentPage(1);
+  };
+
   if (loading) return <p>Cargando...</p>;
   if (error) return <p className="extracted-style-4">{error}</p>;
   if (!currentUser) return <p>No se encontró usuario</p>;
-
-  const arrow = (key: SortKey) =>
-    sortKey === key ? (sortOrder === "asc" ? " ▲" : " ▼") : "";
 
   return (
     <div className="user-page">
@@ -224,8 +236,26 @@ function UserPage() {
       {currentUser.role === "admin" ? (
         <div className="admin-section">
           <h3>Lista de Usuarios</h3>
+
+          {/* Nuevo Buscador */}
+          <div className="search-container" style={{ marginBottom: "15px" }}>
+            <input
+              type="text"
+              placeholder="🔍 Buscar por nombre..."
+              value={searchTerm}
+              onChange={handleSearchChange}
+              style={{
+                padding: "8px 12px",
+                width: "100%",
+                maxWidth: "300px",
+                borderRadius: "4px",
+                border: "1px solid #ccc"
+              }}
+            />
+          </div>
+
           <div className="table-container">
-            <table >
+            <table>
               <thead>
                 <tr>
                   <th onClick={() => handleSort("name")} className="sortable-header">
@@ -256,30 +286,38 @@ function UserPage() {
               </thead>
 
               <tbody>
-                {currentRecords.map((u) => (
-                  <tr key={u.id}>
-                    <td>{u.name}</td>
-                    <td>{u.email}</td>
-                    <td>{u.telefono || "-"}</td>
-                    <td>
-                      <span className={`badge-${u.role}`}>{u.role}</span>
-                    </td>
-                    <td>
-                      <button
-                        onClick={() => handleEditClick(u)}
-                        className="btn secondary extracted-style-4"
-                      >
-                        <FaEdit />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(u.id)}
-                        className="btn secondary extracted-style-4"
-                      >
-                        <FaTrash />
-                      </button>
+                {currentRecords.length > 0 ? (
+                  currentRecords.map((u) => (
+                    <tr key={u.id}>
+                      <td>{u.name}</td>
+                      <td>{u.email}</td>
+                      <td>{u.telefono || "-"}</td>
+                      <td>
+                        <span className={`badge-${u.role}`}>{u.role}</span>
+                      </td>
+                      <td>
+                        <button
+                          onClick={() => handleEditClick(u)}
+                          className="btn secondary extracted-style-4"
+                        >
+                          <FaEdit />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(u.id)}
+                          className="btn secondary extracted-style-4"
+                        >
+                          <FaTrash />
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={5} style={{ textAlign: "center", padding: "20px" }}>
+                      No se encontraron usuarios.
                     </td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
           </div>
