@@ -1,8 +1,8 @@
-# 📚 MyInstitute
+# 📚 GestionAR
 
 Plataforma académica para gestión de estudiantes, cursos, asistencia y calificaciones.
 
-MyInstitute es una aplicación web diseñada para instituciones educativas que necesitan administrar estudiantes, cursos, asistencia, notas y roles de usuario (admin, profesor, estudiante).
+GestionAR es una aplicación web diseñada para instituciones educativas que necesitan administrar estudiantes, cursos, asistencia, notas y roles de usuario (admin, profesor, estudiante).
 Incluye un frontend moderno (React + Vite) y un backend con Express + PostgreSQL.
 
 ---
