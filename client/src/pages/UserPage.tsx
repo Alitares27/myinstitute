@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import api from "../api";
-import { FaEdit, FaTrash } from "react-icons/fa";
+import { FaEdit, FaTrash, FaSearch } from "react-icons/fa";
 import axios from "axios";
 
 interface User {
@@ -10,6 +10,7 @@ interface User {
   role: "admin" | "student" | "teacher";
   telefono?: string;
   specialty?: string;
+  grade?: string;
 }
 
 type SortKey = "name" | "email" | "role";
@@ -22,12 +23,10 @@ function UserPage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  const [searchTerm, setSearchTerm] = useState("");
-
   const [currentPage, setCurrentPage] = useState(1);
   const recordsPerPage = 5;
 
+  const [searchTerm, setSearchTerm] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("name");
   const [sortOrder, setSortOrder] = useState<SortOrder>("asc");
 
@@ -39,6 +38,7 @@ function UserPage() {
     telefono: "",
     role: "student" as "admin" | "student" | "teacher",
     specialty: "",
+    grade: "",
   });
 
   useEffect(() => {
@@ -64,18 +64,15 @@ function UserPage() {
   };
 
   const filteredUsers = useMemo(() => {
-    if (!searchTerm) return users;
     return users.filter((u) =>
       u.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
   }, [users, searchTerm]);
 
-  const totalPages = Math.ceil(filteredUsers.length / recordsPerPage);
-
   const sortedUsers = useMemo(() => {
     return [...filteredUsers].sort((a, b) => {
-      const aVal = a[sortKey]?.toString().toLowerCase() || "";
-      const bVal = b[sortKey]?.toString().toLowerCase() || "";
+      const aVal = (a[sortKey] || "").toString().toLowerCase();
+      const bVal = (b[sortKey] || "").toString().toLowerCase();
       if (aVal < bVal) return sortOrder === "asc" ? -1 : 1;
       if (aVal > bVal) return sortOrder === "asc" ? 1 : -1;
       return 0;
@@ -87,6 +84,8 @@ function UserPage() {
     const firstIdx = lastIdx - recordsPerPage;
     return sortedUsers.slice(firstIdx, lastIdx);
   }, [sortedUsers, currentPage]);
+
+  const totalPages = Math.ceil(filteredUsers.length / recordsPerPage);
 
   const handleSort = (key: SortKey) => {
     if (key === sortKey) {
@@ -106,13 +105,9 @@ function UserPage() {
       telefono: user.telefono || "",
       role: user.role,
       specialty: user.specialty || "",
+      grade: user.grade || "",
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
-  const handleProfileEdit = () => {
-    if (!currentUser) return;
-    handleEditClick(currentUser);
   };
 
   const handleDelete = async (id: number) => {
@@ -133,38 +128,12 @@ function UserPage() {
     const config = { headers: { Authorization: `Bearer ${token}` } };
     try {
       if (form.id) {
-        const updateData: any = {
-          name: form.name,
-          email: form.email,
-          telefono: form.telefono,
-          role: form.role,
-        };
-        if (form.password) updateData.password = form.password;
-
-        const res = await axios.put(`${API_BASE_URL}/users/${form.id}`, updateData, config);
-
-        if (Number(form.id) === currentUser?.id) {
-          setCurrentUser(res.data);
-        }
-
-        if (currentUser?.role === "admin") {
-          setUsers(users.map((u) => (u.id === Number(form.id) ? res.data : u)));
-        }
-
+        const res = await axios.put(`${API_BASE_URL}/users/${form.id}`, form, config);
+        if (Number(form.id) === currentUser?.id) setCurrentUser(res.data);
+        setUsers(users.map((u) => (u.id === Number(form.id) ? res.data : u)));
         alert("Datos actualizados con éxito");
       } else {
-        const res = await axios.post(
-          `${API_BASE_URL}/users`,
-          {
-            name: form.name,
-            email: form.email,
-            password: form.password,
-            telefono: form.telefono,
-            role: form.role,
-            specialty: form.role === "teacher" ? form.specialty : null,
-          },
-          config
-        );
+        const res = await axios.post(`${API_BASE_URL}/users`, form, config);
         setUsers([...users, res.data.user]);
         alert("Usuario creado con éxito");
       }
@@ -175,20 +144,7 @@ function UserPage() {
   };
 
   const resetForm = () => {
-    setForm({
-      id: "",
-      name: "",
-      email: "",
-      password: "",
-      telefono: "",
-      role: "student",
-      specialty: "",
-    });
-  };
-
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
-    setCurrentPage(1);
+    setForm({ id: "", name: "", email: "", password: "", telefono: "", role: "student", specialty: "", grade: "" });
   };
 
   if (loading) return <p>Cargando...</p>;
@@ -198,8 +154,8 @@ function UserPage() {
   return (
     <div className="user-page">
       <h1>👤 Gestión de Perfil</h1>
-      <h2 className="extracted-style-12">
-        {form.id ? `<FaEdit /> Editando: ${form.name}` : "➕ Agregar"}
+      <h2 className="dashboard-subtitle">
+        {form.id ? <><FaEdit /> Editando: {form.name}</> : "➕ Agregar"}
       </h2>
 
       <div className="form-card">
@@ -226,6 +182,10 @@ function UserPage() {
             <input placeholder="Especialidad" value={form.specialty} onChange={(e) => setForm({ ...form, specialty: e.target.value })} />
           )}
 
+          {form.role === "student" && currentUser.role === "admin" && (
+            <input placeholder="Organización" value={form.grade} onChange={(e) => setForm({ ...form, grade: e.target.value })} />
+          )}
+
           <div className="form-actions">
             <button onClick={handleSave} className="btn primary">{form.id ? "Actualizar" : "Agregar"}</button>
             {form.id && <button onClick={resetForm} className="btn secondary">Cancelar</button>}
@@ -237,20 +197,14 @@ function UserPage() {
         <div className="admin-section">
           <h3>Lista de Usuarios</h3>
 
-          {/* Nuevo Buscador */}
-          <div className="search-container" style={{ marginBottom: "15px" }}>
+          <div className="search-container" style={{ marginBottom: "15px", display: "flex", alignItems: "center", gap: "10px" }}>
+            <FaSearch />
             <input
               type="text"
-              placeholder="🔍 Buscar por nombre..."
+              placeholder="Buscar por nombre..."
               value={searchTerm}
-              onChange={handleSearchChange}
-              style={{
-                padding: "8px 12px",
-                width: "100%",
-                maxWidth: "300px",
-                borderRadius: "4px",
-                border: "1px solid #ccc"
-              }}
+              onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+              style={{ padding: "5px", borderRadius: "4px", border: "1px solid #ccc", width: "100%", maxWidth: "300px" }}
             />
           </div>
 
@@ -260,64 +214,39 @@ function UserPage() {
                 <tr>
                   <th onClick={() => handleSort("name")} className="sortable-header">
                     Nombre
-                    <span className="sort-icon">
-                      {sortKey === "name" ? (sortOrder === "asc" ? "▲" : "▼") : "↕"}
-                    </span>
+                    <span className="sort-icon">{sortKey === "name" ? (sortOrder === "asc" ? "▲" : "▼") : "↕"}</span>
                   </th>
-
                   <th onClick={() => handleSort("email")} className="sortable-header">
                     Email
-                    <span className="sort-icon">
-                      {sortKey === "email" ? (sortOrder === "asc" ? "▲" : "▼") : "↕"}
-                    </span>
+                    <span className="sort-icon">{sortKey === "email" ? (sortOrder === "asc" ? "▲" : "▼") : "↕"}</span>
                   </th>
-
                   <th>Teléfono</th>
-
                   <th onClick={() => handleSort("role")} className="sortable-header">
                     Rol
-                    <span className="sort-icon">
-                      {sortKey === "role" ? (sortOrder === "asc" ? "▲" : "▼") : "↕"}
-                    </span>
+                    <span className="sort-icon">{sortKey === "role" ? (sortOrder === "asc" ? "▲" : "▼") : "↕"}</span>
                   </th>
-
+                  <th>Organización</th>
                   <th>Acciones</th>
                 </tr>
               </thead>
-
               <tbody>
-                {currentRecords.length > 0 ? (
-                  currentRecords.map((u) => (
-                    <tr key={u.id}>
-                      <td>{u.name}</td>
-                      <td>{u.email}</td>
-                      <td>{u.telefono || "-"}</td>
-                      <td>
-                        <span className={`badge-${u.role}`}>{u.role}</span>
-                      </td>
-                      <td>
-                        <button
-                          onClick={() => handleEditClick(u)}
-                          className="btn secondary extracted-style-4"
-                        >
-                          <FaEdit />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(u.id)}
-                          className="btn secondary extracted-style-4"
-                        >
-                          <FaTrash />
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={5} style={{ textAlign: "center", padding: "20px" }}>
-                      No se encontraron usuarios.
+                {currentRecords.map((u) => (
+                  <tr key={u.id}>
+                    <td>{u.name}</td>
+                    <td>{u.email}</td>
+                    <td>{u.telefono || "-"}</td>
+                    <td><span className={`badge-${u.role}`}>{u.role}</span></td>
+                    <td>{u.specialty || u.grade || "-"}</td>
+                    <td>
+                      <button onClick={() => handleEditClick(u)} className="btn secondary extracted-style-4">
+                        <FaEdit />
+                      </button>
+                      <button onClick={() => handleDelete(u.id)} className="btn secondary extracted-style-4">
+                        <FaTrash />
+                      </button>
                     </td>
                   </tr>
-                )}
+                ))}
               </tbody>
             </table>
           </div>
@@ -343,7 +272,7 @@ function UserPage() {
             <p><strong>Nombre:</strong> {currentUser.name}</p>
             <p><strong>Email:</strong> {currentUser.email}</p>
             <p><strong>Teléfono:</strong> {currentUser.telefono || "No registrado"}</p>
-            <button onClick={handleProfileEdit} className="btn secondary">
+            <button onClick={() => handleEditClick(currentUser)} className="btn secondary">
               Editar Mi Perfil
             </button>
           </div>
