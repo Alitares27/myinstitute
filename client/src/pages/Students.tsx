@@ -73,22 +73,16 @@ export default function Students() {
     }
   };
 
-  const filteredStudents = useMemo(() => {
-    return role === "student"
-      ? students.filter((s) => s.user_id === userId)
-      : students;
-  }, [students, role, userId]);
-
   const sortedStudents = useMemo(() => {
-    if (!sortConfig) return filteredStudents;
-    return [...filteredStudents].sort((a, b) => {
+    if (!sortConfig) return students;
+    return [...students].sort((a, b) => {
       const aVal = a[sortConfig.key];
       const bVal = b[sortConfig.key];
       if (aVal < bVal) return sortConfig.direction === "asc" ? -1 : 1;
       if (aVal > bVal) return sortConfig.direction === "asc" ? 1 : -1;
       return 0;
     });
-  }, [filteredStudents, sortConfig]);
+  }, [students, sortConfig]);
 
   const totalPages = Math.ceil(sortedStudents.length / recordsPerPage);
 
@@ -115,9 +109,10 @@ export default function Students() {
   return (
     <div className="students-page">
       <h1>👨‍🎓 Estudiantes</h1>
-      <h2 className="dashboard-subtitle">{form.id ? "<FaEdit /> Actualizar" : "➕ Agregar"}</h2>
       {role === "admin" && (
-        <form onSubmit={handleSubmit}>
+        <>
+          <h2 className="dashboard-subtitle">{form.id ? "<FaEdit /> Actualizar" : "➕ Agregar"}</h2>
+          <form onSubmit={handleSubmit}>
           <input
             placeholder="Nombre"
             value={form.name}
@@ -137,9 +132,9 @@ export default function Students() {
             </button>
           )}
         </form>
+        </>
       )}
 
-      {role === "admin" ? (
         <div className="table-container">
           <table
             className="students-table"
@@ -170,7 +165,7 @@ export default function Students() {
                     {sortConfig?.key === "grade" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
                   </span>
                 </th>
-                <th>Acciones</th>
+                {role === "admin" && <th>Acciones</th>}
               </tr>
             </thead>
 
@@ -181,27 +176,17 @@ export default function Students() {
                   <td>{s.email}</td>
                   <td>{s.telefono}</td>
                   <td>{s.grade}</td>
-                  <td>
-                    <button className="btn secondary extracted-style-4" onClick={() => handleEdit(s)}><FaEdit /></button>
-                    <button className="btn secondary extracted-style-5" onClick={() => handleDelete(s.id)}><FaTrash /></button>
-                  </td>
+                  {role === "admin" && (
+                    <td>
+                      <button className="btn secondary extracted-style-4" onClick={() => handleEdit(s)}><FaEdit /></button>
+                      <button className="btn secondary extracted-style-5" onClick={() => handleDelete(s.id)}><FaTrash /></button>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-
-      ) : (
-        <div className="student-list">
-          {currentRecords.map((s) => (
-            <div key={s.id} className="student-info">
-              <p><strong>Nombre:</strong> {s.name}</p>
-              <p><strong>Organización:</strong> {s.grade}</p>
-              <p><strong>Email:</strong> {s.email}</p>
-            </div>
-          ))}
-        </div>
-      )}
 
       {totalPages > 1 && (
         <div className="pagination-dropdown">

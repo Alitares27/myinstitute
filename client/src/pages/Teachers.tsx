@@ -66,22 +66,16 @@ export default function Teachers() {
     setTeachers(teachers.filter((t) => t.id !== id));
   };
 
-  const filteredTeachers = useMemo(() => {
-    return role === "teacher"
-      ? teachers.filter((t) => t.user_id === userId)
-      : teachers;
-  }, [teachers, role, userId]);
-
   const sortedTeachers = useMemo(() => {
-    if (!sortConfig) return filteredTeachers;
-    return [...filteredTeachers].sort((a, b) => {
+    if (!sortConfig) return teachers;
+    return [...teachers].sort((a, b) => {
       const aVal = a[sortConfig.key];
       const bVal = b[sortConfig.key];
       if (aVal < bVal) return sortConfig.direction === "asc" ? -1 : 1;
       if (aVal > bVal) return sortConfig.direction === "asc" ? 1 : -1;
       return 0;
     });
-  }, [filteredTeachers, sortConfig]);
+  }, [teachers, sortConfig]);
 
   const requestSort = (key: string) => {
     setSortConfig((prev) =>
@@ -113,7 +107,6 @@ export default function Teachers() {
         </form>
       )}
 
-      {role === "admin" ? (
         <div className="table-container">
           <table
             className="teachers-table"
@@ -138,7 +131,7 @@ export default function Teachers() {
                     {sortConfig?.key === "specialty" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
                   </span>
                 </th>
-                <th>Acciones</th>
+                {role === "admin" && <th>Acciones</th>}
               </tr>
             </thead>
 
@@ -148,25 +141,17 @@ export default function Teachers() {
                   <td>{t.name}</td>
                   <td>{t.email}</td>
                   <td>{t.specialty}</td>
-                  <td>
-                    <button className="btn secondary extracted-style-4" onClick={() => handleEdit(t)}><FaEdit /></button>
-                    <button className="btn secondary extracted-style-5" onClick={() => handleDelete(t.id)}><FaTrash /></button>
-                  </td>
+                  {role === "admin" && (
+                    <td>
+                      <button className="btn secondary extracted-style-4" onClick={() => handleEdit(t)}><FaEdit /></button>
+                      <button className="btn secondary extracted-style-5" onClick={() => handleDelete(t.id)}><FaTrash /></button>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-
-      ) : (
-        sortedTeachers.map((t) => (
-          <div key={t.id} className="teacher-info">
-            <p><strong>Nombre:</strong> {t.name}</p>
-            <p><strong>Email:</strong> {t.email}</p>
-            <p><strong>Especialidad:</strong> {t.specialty}</p>
-          </div>
-        ))
-      )}
     </div>
   );
 }

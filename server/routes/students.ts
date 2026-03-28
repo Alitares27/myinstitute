@@ -6,12 +6,31 @@ const router = express.Router();
 
 router.get("/", verifyToken, async (req: AuthRequest, res: Response) => {
   try {
-    const result = await pool.query(`
-      SELECT s.id, s.grade, u.id AS user_id, u.name, u.email, u.telefono, u.role
+    const role = req.user?.role;
+    const userId = req.user?.id;
+    let query = `
+      SELECT DISTINCT s.id, s.grade, u.id AS user_id, u.name, u.email, u.telefono, u.role
       FROM students s
       JOIN users u ON s.user_id = u.id
-      ORDER BY u.name ASC
-    `);
+    `;
+    let values: any[] = [];
+
+    if (role === "teacher") {
+      query += `
+        JOIN enrollments e ON e.student_id = s.id
+        JOIN courses c ON c.id = e.course_id
+        JOIN teachers t ON t.id = c.teacher_id
+        WHERE t.user_id = $1
+      `;
+      values.push(userId);
+    } else if (role === "student") {
+      query += ` WHERE s.user_id = $1 `;
+      values.push(userId);
+    }
+
+    query += ` ORDER BY u.name ASC`;
+
+    const result = await pool.query(query, values);
     res.json(result.rows);
   } catch (err) {
     res.status(500).json({ message: "Error al obtener estudiantes" });

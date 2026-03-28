@@ -1,21 +1,23 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "../api";
 import axios from "axios";
+import "../styles/Dashboard.css";
 
 function Dashboard() {
   const navigate = useNavigate();
 
-  const [stats, setStats] = useState({
+  const [stats, setStats] = useState<any>({
     students: 0,
     teachers: 0,
     courses: 0,
     enrollments: 0,
     attendanceRate: "0%",
+    averageGrade: 0,
   });
 
   const [user, setUser] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const API_BASE_URL =
     import.meta.env.VITE_API_URL || "http://localhost:5000/api";
@@ -25,6 +27,7 @@ function Dashboard() {
 
     if (!token) {
       setError("No hay una sesión activa. Por favor, inicia sesión.");
+      setLoading(false);
       return;
     }
 
@@ -37,110 +40,219 @@ function Dashboard() {
 
     axios
       .get(`${API_BASE_URL}/dashboard-stats`, config)
-      .then((res) => setStats(res.data))
-      .catch((err) =>
-        console.error("Error cargando estadísticas:", err)
-      );
+      .then((res) => {
+        setStats(res.data);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("Error cargando estadísticas:", err);
+        setError("Error al cargar las estadísticas. Reintente más tarde.");
+        setLoading(false);
+      });
   }, [API_BASE_URL]);
+
+  if (loading) {
+    return <div className="loading-container">Cargando dashboard...</div>;
+  }
 
   if (error) {
     return (
-      <div className="error-container">
+      <div className="error-container" style={{ padding: '2rem', textAlign: 'center' }}>
         <p className="extracted-style-29">⚠️ {error}</p>
+        <button onClick={() => navigate("/login")} className="btn primary">Ir al Login</button>
       </div>
     );
   }
 
+  const renderAdminStats = () => (
+    <div className="stats-grid">
+      <div className="stat-card">
+        <div className="stat-icon">🎓</div>
+        <div className="stat-value">{stats.students}</div>
+        <div className="stat-label">Estudiantes</div>
+      </div>
+      <div className="stat-card">
+        <div className="stat-icon">👩‍🏫</div>
+        <div className="stat-value">{stats.teachers}</div>
+        <div className="stat-label">Maestros</div>
+      </div>
+      <div className="stat-card">
+        <div className="stat-icon">📚</div>
+        <div className="stat-value">{stats.courses}</div>
+        <div className="stat-label">Cursos</div>
+      </div>
+      <div className="stat-card">
+        <div className="stat-icon">📅</div>
+        <div className="stat-value">{stats.attendanceRate}</div>
+        <div className="stat-label">Asistencia General</div>
+      </div>
+    </div>
+  );
+
+  const renderTeacherStats = () => (
+    <div className="stats-grid">
+      <div className="stat-card">
+        <div className="stat-icon">👨‍🎓</div>
+        <div className="stat-value">{stats.students}</div>
+        <div className="stat-label">Mis Estudiantes</div>
+      </div>
+      <div className="stat-card">
+        <div className="stat-icon">📖</div>
+        <div className="stat-value">{stats.courses}</div>
+        <div className="stat-label">Mis Cursos</div>
+      </div>
+      <div className="stat-card">
+        <div className="stat-icon">📈</div>
+        <div className="stat-value">{stats.attendanceRate}</div>
+        <div className="stat-label">Asistencia Promedio</div>
+      </div>
+    </div>
+  );
+
+  const renderStudentStats = () => (
+    <div className="stats-grid">
+      <div className="stat-card">
+        <div className="stat-icon">📘</div>
+        <div className="stat-value">{stats.courses}</div>
+        <div className="stat-label">Cursos Inscritos</div>
+      </div>
+      <div className="stat-card">
+        <div className="stat-icon">⭐</div>
+        <div className="stat-value">{stats.averageGrade}</div>
+        <div className="stat-label">Promedio General</div>
+      </div>
+      <div className="stat-card">
+        <div className="stat-icon">✅</div>
+        <div className="stat-value">{stats.attendanceRate}</div>
+        <div className="stat-label">Mi Asistencia</div>
+      </div>
+    </div>
+  );
+
+  const renderShortcuts = () => {
+    if (user?.role === "admin") {
+      return (
+        <div className="shortcuts-grid">
+          <div className="shortcut-card" onClick={() => navigate("/students")}>
+            <div className="shortcut-icon-bg">🎓</div>
+            <div className="shortcut-info">
+              <h3>Estudiantes</h3>
+              <p>Gestionar alumnos y registros</p>
+            </div>
+          </div>
+          <div className="shortcut-card" onClick={() => navigate("/teachers")}>
+            <div className="shortcut-icon-bg">👩‍🏫</div>
+            <div className="shortcut-info">
+              <h3>Maestros</h3>
+              <p>Administrar personal docente</p>
+            </div>
+          </div>
+          <div className="shortcut-card" onClick={() => navigate("/courses")}>
+            <div className="shortcut-icon-bg">📚</div>
+            <div className="shortcut-info">
+              <h3>Cursos</h3>
+              <p>Configurar oferta académica</p>
+            </div>
+          </div>
+          <div className="shortcut-card" onClick={() => navigate("/users")}>
+            <div className="shortcut-icon-bg">⚙️</div>
+            <div className="shortcut-info">
+              <h3>Usuarios</h3>
+              <p>Control de acceso al sistema</p>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (user?.role === "teacher") {
+      return (
+        <div className="shortcuts-grid">
+          <div className="shortcut-card" onClick={() => navigate("/attendance")}>
+            <div className="shortcut-icon-bg">📝</div>
+            <div className="shortcut-info">
+              <h3>Tomar Asistencia</h3>
+              <p>Registrar alumnos presentes hoy</p>
+            </div>
+          </div>
+          <div className="shortcut-card" onClick={() => navigate("/grades")}>
+            <div className="shortcut-icon-bg">📊</div>
+            <div className="shortcut-info">
+              <h3>Calificaciones</h3>
+              <p>Subir y editar notas</p>
+            </div>
+          </div>
+          <div className="shortcut-card" onClick={() => navigate("/courses")}>
+            <div className="shortcut-icon-bg">📚</div>
+            <div className="shortcut-info">
+              <h3>Ver mis Cursos</h3>
+              <p>Detalle de mis materias</p>
+            </div>
+          </div>
+          <div className="shortcut-card" onClick={() => navigate("/students")}>
+            <div className="shortcut-icon-bg">👤</div>
+            <div className="shortcut-info">
+              <h3>Lista de Alumnos</h3>
+              <p>Consultar estudiantes asignados</p>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="shortcuts-grid">
+        <div className="shortcut-card" onClick={() => navigate("/courses")}>
+          <div className="shortcut-icon-bg">📖</div>
+          <div className="shortcut-info">
+            <h3>Mis Cursos</h3>
+            <p>Ver mis clases y horarios</p>
+          </div>
+        </div>
+        <div className="shortcut-card" onClick={() => navigate("/grades")}>
+          <div className="shortcut-icon-bg">⭐</div>
+          <div className="shortcut-info">
+            <h3>Mis Notas</h3>
+            <p>Reporte de calificaciones</p>
+          </div>
+        </div>
+        <div className="shortcut-card" onClick={() => navigate("/attendance")}>
+          <div className="shortcut-icon-bg">📅</div>
+          <div className="shortcut-info">
+            <h3>Mi Asistencia</h3>
+            <p>Resumen de faltas y presencia</p>
+          </div>
+        </div>
+        <div className="shortcut-card" onClick={() => navigate("/users")}>
+          <div className="shortcut-icon-bg">👤</div>
+          <div className="shortcut-info">
+            <h3>Mi Perfil</h3>
+            <p>Datos personales y configuración</p>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="dashboard-page">
-      <h1 className="dashboard-title">
-        Bienvenid@, {user?.name}
-      </h1>
-
-      {user && (
+      <div className="dashboard-header">
+        <span className="role-badge">{user?.role}</span>
+        <h1 className="dashboard-title">Hola, {user?.name}</h1>
         <p className="dashboard-subtitle">
-          Has iniciado sesión como <strong>{user.role}</strong>.
+          Bienvenido de nuevo. Aquí tienes un resumen de lo que está sucediendo en tu cuenta hoy.
         </p>
-      )}
+      </div>
 
-      <p className="dashboard-subtitle">
-        Aquí encontrarás un resumen general y accesos rápidos del sistema.
-      </p>
+      {user?.role === "admin" && renderAdminStats()}
+      {user?.role === "teacher" && renderTeacherStats()}
+      {user?.role === "student" && renderStudentStats()}
 
-      <div className="cards">
-        <div
-          className="card clickable"
-          onClick={() => navigate("/students")}
-        >
-          <div className="card-icon">🎓</div>
-          <h2>Estudiantes</h2>
-          <p>{stats.students}</p>
-        </div>
-
-        <div
-          className="card clickable"
-          onClick={() => navigate("/teachers")}
-        >
-          <div className="card-icon">👩‍🏫</div>
-          <h2>Maestros</h2>
-          <p>{stats.teachers}</p>
-        </div>
-
-        <div
-          className="card clickable"
-          onClick={() => navigate("/courses")}
-        >
-          <div className="card-icon">📚</div>
-          <h2>Cursos</h2>
-          <p>{stats.courses}</p>
-        </div>
-
-        <div
-          className="card clickable"
-          onClick={() => navigate("/enrollments")}
-        >
-          <div className="card-icon">📝</div>
-          <h2>Matrículas</h2>
-          <p>{stats.enrollments}</p>
-        </div>
-
-        <div
-          className="card clickable"
-          onClick={() => navigate("/attendance")}
-        >
-          <div className="card-icon">📅</div>
-          <h2>Asistencia</h2>
-          <p>{stats.attendanceRate}</p>
-        </div>
-
-        <div
-          className="card clickable"
-          onClick={() => navigate("/grades")}
-        >
-          <div className="card-icon">📊</div>
-          <h2>Calificaciones</h2>
-          <p>Ver reportes</p>
-        </div>
-
-        <div
-          className="card clickable"
-          onClick={() => navigate("/users")}
-        >
-          <div className="card-icon">👤</div>
-          <h2>Mi Perfil</h2>
-          <p>Configuración</p>
-        </div>
-
-        {user?.role === "admin" && (
-          <div
-            className="card clickable"
-            onClick={() => navigate("/users")}
-          >
-            <div className="card-icon">⚙️</div>
-            <h2>Usuarios</h2>
-            <p>Administración</p>
-          </div>
-        )}
+      <div className="shortcuts-section">
+        <h2 className="section-title">
+          <span>🚀</span> Accesos Rápidos
+        </h2>
+        {renderShortcuts()}
       </div>
     </div>
   );

@@ -151,7 +151,9 @@ export default function Attendance() {
   return (
     <div className="attendance-page">
       <h1>📅 Control de Asistencia</h1>
-      <h2 className="dashboard-subtitle">{role === "admin" ? " ➕ Registrar" : "Revisar"}</h2>
+      <h2 className="dashboard-subtitle">
+        {(role === "admin" || role === "teacher") ? " ➕ Registrar" : "Revisar"}
+      </h2>
       {(role === "admin" || role === "teacher") && (
         <form onSubmit={handleSubmit} className="grid-form">
           <select required value={form.student_id} onChange={e => setForm({ ...form, student_id: e.target.value })}>

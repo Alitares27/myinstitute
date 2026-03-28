@@ -4,14 +4,33 @@ import { verifyToken, isAdmin, AuthRequest } from "../middleware/auth";
 
 const router = express.Router();
 
-router.get("/", verifyToken, async (_req: AuthRequest, res: Response) => {
+router.get("/", verifyToken, async (req: AuthRequest, res: Response) => {
   try {
-    const result = await pool.query(`
-      SELECT t.id, t.specialty, t.created_at, u.id AS user_id, u.name, u.email, u.telefono, u.role
+    const role = req.user?.role;
+    const userId = req.user?.id;
+    let query = `
+      SELECT DISTINCT t.id, t.specialty, t.created_at, u.id AS user_id, u.name, u.email, u.telefono, u.role
       FROM teachers t
       JOIN users u ON t.user_id = u.id
-      ORDER BY t.id ASC
-    `);
+    `;
+    let values: any[] = [];
+
+    if (role === "student") {
+      query += `
+        JOIN courses c ON c.teacher_id = t.id
+        JOIN enrollments e ON e.course_id = c.id
+        JOIN students s ON s.id = e.student_id
+        WHERE s.user_id = $1
+      `;
+      values.push(userId);
+    } else if (role === "teacher") {
+      query += ` WHERE t.user_id = $1 `;
+      values.push(userId);
+    }
+
+    query += ` ORDER BY u.name ASC`;
+
+    const result = await pool.query(query, values);
     res.json(result.rows);
   } catch (err: any) {
     console.error("Error fetching teachers:", err);

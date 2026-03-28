@@ -23,8 +23,10 @@ router.get("/:id/topics", verifyToken, async (req: AuthRequest, res: Response) =
 
 router.get("/", verifyToken, async (req: AuthRequest, res: Response) => {
   try {
-    const result = await pool.query(`
-      SELECT 
+    const role = req.user?.role;
+    const userId = req.user?.id;
+    let query = `
+      SELECT DISTINCT
         c.id, 
         c.title, 
         c.description, 
@@ -33,8 +35,24 @@ router.get("/", verifyToken, async (req: AuthRequest, res: Response) => {
       FROM courses c
       LEFT JOIN teachers t ON c.teacher_id = t.id
       LEFT JOIN users u ON t.user_id = u.id
-      ORDER BY c.id ASC
-    `);
+    `;
+    let values: any[] = [];
+
+    if (role === "teacher") {
+      query += ` WHERE t.user_id = $1 `;
+      values.push(userId);
+    } else if (role === "student") {
+      query += `
+        JOIN enrollments e ON e.course_id = c.id
+        JOIN students s ON s.id = e.student_id
+        WHERE s.user_id = $1
+      `;
+      values.push(userId);
+    }
+
+    query += ` ORDER BY c.id ASC`;
+
+    const result = await pool.query(query, values);
     res.json(result.rows);
   } catch (err) {
     console.error("❌ Error fetching courses:", err);

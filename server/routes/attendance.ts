@@ -37,6 +37,16 @@ router.post("/", verifyToken, async (req: AuthRequest, res: Response) => {
       return res.status(400).json({ message: "Invalid course ID" });
     }
 
+    if (role === "teacher") {
+      const courseCheck = await pool.query(
+        "SELECT id FROM courses WHERE id = $1 AND teacher_id = (SELECT id FROM teachers WHERE user_id = $2)",
+        [courseIdNum, userId]
+      );
+      if (courseCheck.rows.length === 0) {
+        return res.status(403).json({ message: "No tienes permiso para registrar asistencia en este curso." });
+      }
+    }
+
     const result = await pool.query(
       `INSERT INTO attendance (student_id, course_id, date, status, topic_id)
        VALUES ($1, $2, $3, $4, $5)
@@ -67,7 +77,8 @@ router.get("/", verifyToken, async (req: AuthRequest, res: Response) => {
       result = await pool.query(`
         SELECT a.id, a.student_id, u.name AS student, a.course_id, c.title AS course, a.date, a.status, t.title AS topic
         FROM attendance a
-        JOIN users u ON a.student_id = u.id
+        JOIN students s ON a.student_id = s.id
+        JOIN users u ON s.user_id = u.id
         JOIN courses c ON a.course_id = c.id
         LEFT JOIN topics t ON a.topic_id = t.id
         ORDER BY a.date DESC
@@ -76,9 +87,10 @@ router.get("/", verifyToken, async (req: AuthRequest, res: Response) => {
       result = await pool.query(
         `SELECT a.id, a.student_id, a.course_id, c.title AS course, a.date, a.status, t.title AS topic
          FROM attendance a
+         JOIN students s ON a.student_id = s.id
          JOIN courses c ON a.course_id = c.id
          LEFT JOIN topics t ON a.topic_id = t.id
-         WHERE a.student_id = $1
+         WHERE s.user_id = $1
          ORDER BY a.date DESC`,
         [userId]
       );
@@ -86,10 +98,12 @@ router.get("/", verifyToken, async (req: AuthRequest, res: Response) => {
       result = await pool.query(
         `SELECT a.id, a.student_id, u.name AS student, a.course_id, c.title AS course, a.date, a.status, t.title AS topic
          FROM attendance a
-         JOIN users u ON a.student_id = u.id
+         JOIN students s ON a.student_id = s.id
+         JOIN users u ON s.user_id = u.id
          JOIN courses c ON a.course_id = c.id
+         JOIN teachers th ON c.teacher_id = th.id
          LEFT JOIN topics t ON a.topic_id = t.id
-         WHERE c.teacher_id = $1
+         WHERE th.user_id = $1
          ORDER BY a.date DESC`,
         [userId]
       );
