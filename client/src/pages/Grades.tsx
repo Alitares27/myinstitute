@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo } from "react";
 import api from "../api";
 import { FaEdit, FaTrash } from "react-icons/fa";
 import axios from "axios";
+import { formatDate } from "../utils/dateUtils";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
@@ -243,7 +244,7 @@ export default function Grades() {
                   <td>{g.course_title}</td>
                   <td>{g.grade}</td>
                   <td>{g.grade_type}</td>
-                  <td>{new Date(g.created_at).toLocaleDateString()}</td>
+                  <td>{formatDate(g.created_at)}</td>
 
                   {role === "admin" && (
                     <td>

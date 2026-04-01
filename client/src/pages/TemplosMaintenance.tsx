@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaEdit, FaTrash } from "react-icons/fa";
 import axios from "axios";
+import { formatDate, toYMD } from "../utils/dateUtils";
 
 interface Templo {
   id: number;
@@ -96,7 +97,7 @@ export default function TemplosMaintenance() {
       city: t.city || "",
       province: t.province || "",
       address: t.address || "",
-      dedicated_date: t.dedicated_date ? t.dedicated_date.split("T")[0] : "",
+      dedicated_date: toYMD(t.dedicated_date),
       status: t.status || "operating"
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -356,7 +357,7 @@ export default function TemplosMaintenance() {
                 <div style={{ display: "flex", justifyContent: "space-between" }}>
                   <span style={{ color: "var(--text-muted)", fontSize: "0.85rem", fontWeight: 600 }}>DEDICADO</span>
                   <span style={{ color: "var(--text-main)" }}>
-                    {new Date(selectedTemplo.dedicated_date).toLocaleDateString("es-AR", { day: "2-digit", month: "long", year: "numeric" })}
+                    {formatDate(selectedTemplo.dedicated_date, { day: "2-digit", month: "long", year: "numeric" })}
                   </span>
                 </div>
               )}

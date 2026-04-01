@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import api from "../api";
 import axios from "axios";
+import { formatDate, toYMD } from "../utils/dateUtils";
 
 interface AttendanceRecord {
   id: number;
@@ -32,7 +33,7 @@ export default function Attendance() {
     student_id: "",
     course_id: "",
     topic_id: "",
-    date: new Date().toISOString().split("T")[0],
+    date: toYMD(new Date().toISOString()),
     status: "Present",
   });
 
@@ -84,8 +85,7 @@ export default function Attendance() {
       if (studentFilter && a.student_id !== Number(studentFilter)) return false;
       if (courseFilter && a.course_id !== Number(courseFilter)) return false;
       if (dateFilter) {
-        const d = new Date(a.date).toISOString().split("T")[0];
-        if (d !== dateFilter) return false;
+        if (toYMD(a.date) !== dateFilter) return false;
       }
       return true;
     });
@@ -238,7 +238,7 @@ export default function Attendance() {
                   <td>{students.find(s => s.id === a.student_id)?.name}</td>
                 )}
                 <td>{courses.find(c => c.id === a.course_id)?.title}</td>
-                <td>{new Date(a.date).toISOString().split("T")[0]}</td>
+                <td>{formatDate(a.date)}</td>
                 <td>
                   <span className={a.status === "Present" ? "status-present" : "status-absent"}>
                     {a.status === "Present" ? "Presente" : "Ausente"}

@@ -9,6 +9,7 @@ router.get("/", async (req, res) => {
       SELECT 
         s.id, 
         s.member_id, 
+        s.tema_id,
         u.name AS member_name, 
         t.title AS topic, 
         s.speech_title, 

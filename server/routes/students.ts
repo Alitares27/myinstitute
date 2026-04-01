@@ -37,10 +37,52 @@ router.get("/", verifyToken, async (req: AuthRequest, res: Response) => {
   }
 });
 
+router.post("/", verifyToken, isAdmin, async (req: AuthRequest, res: Response) => {
+  const { user_id, grade } = req.body;
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+
+    const userRes = await client.query("SELECT id, role FROM users WHERE id = $1", [user_id]);
+    if (userRes.rows.length === 0) {
+      await client.query("ROLLBACK");
+      client.release();
+      return res.status(404).json({ message: "Usuario no encontrado" });
+    }
+
+    const existing = await client.query("SELECT id FROM students WHERE user_id = $1", [user_id]);
+    if (existing.rows.length > 0) {
+      await client.query("ROLLBACK");
+      client.release();
+      return res.status(400).json({ message: "Este usuario ya está registrado como estudiante" });
+    }
+
+    await client.query("INSERT INTO students (user_id, grade) VALUES ($1, $2)", [user_id, grade]);
+
+    if (userRes.rows[0].role !== "student") {
+      await client.query("UPDATE users SET role = 'student' WHERE id = $1", [user_id]);
+    }
+
+    const completeRes = await client.query(`
+      SELECT s.id, s.grade, u.id AS user_id, u.name, u.email, u.telefono, u.role
+      FROM students s JOIN users u ON s.user_id = u.id WHERE s.user_id = $1`, [user_id]
+    );
+
+    await client.query("COMMIT");
+    client.release();
+    res.status(201).json(completeRes.rows[0]);
+  } catch (err) {
+    await client.query("ROLLBACK");
+    client.release();
+    console.error("❌ Error adding student:", err);
+    res.status(500).json({ message: "Error al añadir estudiante" });
+  }
+});
+
 router.put("/:id", verifyToken, isAdmin, async (req: AuthRequest, res: Response) => {
-  const { id } = req.params; 
+  const { id } = req.params;
   const { name, grade } = req.body;
-  
+
   const client = await pool.connect();
   try {
     await client.query("BEGIN");

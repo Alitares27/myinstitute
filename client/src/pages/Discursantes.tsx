@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import api from "../api";
 import { FaPlus, FaCheckCircle, FaClock, FaEdit, FaTrash, FaSave, FaTimes } from "react-icons/fa";
+import { formatDate, toYMD } from "../utils/dateUtils";
 
 interface SpeakerRecord {
   id: number;
@@ -76,7 +77,7 @@ export default function Speakers() {
   const filteredSpeakers = useMemo(() => {
     return speakers.filter(s => {
       const matchMember = memberFilter ? s.member_id === Number(memberFilter) : true;
-      const matchDate = dateFilter ? new Date(s.date).toISOString().split("T")[0] === dateFilter : true;
+      const matchDate = dateFilter ? toYMD(s.date) === dateFilter : true;
       return matchMember && matchDate;
     });
   }, [speakers, memberFilter, dateFilter]);
@@ -141,17 +142,12 @@ export default function Speakers() {
 
   const handleEdit = (s: SpeakerRecord) => {
     setEditingId(s.id);
-    let validatedDate = new Date().toISOString().split("T")[0];
-    if (s.date) {
-      const d = new Date(s.date);
-      if (!isNaN(d.getTime())) validatedDate = d.toISOString().split("T")[0];
-    }
     setForm({
       member_id: String(s.member_id),
       tema_id: String(s.tema_id),
       speech_title: s.speech_title || "",
       time: String(s.time || 10),
-      date: validatedDate,
+      date: toYMD(s.date),
       completed: s.completed || "No",
     });
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -184,7 +180,7 @@ export default function Speakers() {
       recentSpeeches.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
       const mostRecent = recentSpeeches[0];
       const daysAgo = Math.floor((today.getTime() - new Date(mostRecent.date).getTime()) / (1000 * 3600 * 24));
-      return `⚠️ Atención: Este miembro discursó hace ${daysAgo} días (${new Date(mostRecent.date).toLocaleDateString('es-ES')}).`;
+      return `⚠️ Atención: Este miembro discursó hace ${daysAgo} días (${formatDate(mostRecent.date, { weekday: 'short', day: 'numeric', month: 'short' })}).`;
     }
     return null;
   }, [form.member_id, speakers]);
@@ -201,7 +197,7 @@ export default function Speakers() {
               <label>Miembro</label>
               <select required value={form.member_id} onChange={e => setForm({ ...form, member_id: e.target.value })}>
                 <option value="">Seleccionar Miembro...</option>
-                {members.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+                {members.map(m => <option key={m.id} value={String(m.id)}>{m.name}</option>)}
               </select>
               {recentSpeechWarning && (
                 <div className="extracted-style-29" style={{ marginTop: '10px', fontSize: '0.85rem', padding: '10px' }}>
@@ -214,7 +210,7 @@ export default function Speakers() {
               <label>Tema</label>
               <select required value={form.tema_id} onChange={e => setForm({ ...form, tema_id: e.target.value })}>
                 <option value="">Seleccionar Tema...</option>
-                {allTemas.map(t => <option key={t.id} value={t.id}>{t.title}</option>)}
+                {allTemas.map(t => <option key={t.id} value={String(t.id)}>{t.title}</option>)}
               </select>
             </div>
 
@@ -238,8 +234,8 @@ export default function Speakers() {
               <div className="form-group">
                 <label>Estado</label>
                 <select value={form.completed} onChange={e => setForm({ ...form, completed: e.target.value })}>
-                  <option value="No">Pendiente</option>
-                  <option value="Si">Cumplido</option>
+                  <option value="No">No</option>
+                  <option value="Si">Si</option>
                 </select>
               </div>
             )}
@@ -263,7 +259,7 @@ export default function Speakers() {
       <div className="grid-form extracted-style-2">
         <select value={memberFilter} onChange={e => { setMemberFilter(e.target.value); setCurrentPage(1); }}>
           <option value="">Todos los miembros</option>
-          {members.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+          {members.map(m => <option key={m.id} value={String(m.id)}>{m.name}</option>)}
         </select>
         <input type="date" value={dateFilter} onChange={e => { setDateFilter(e.target.value); setCurrentPage(1); }} />
       </div>
@@ -301,12 +297,7 @@ export default function Speakers() {
                     {s.member_name || members.find(m => m.id === s.member_id)?.name}
                   </div>
                   <div className="text-muted-sm">
-                    {(() => {
-                      const d = new Date(s.date);
-                      return !isNaN(d.getTime())
-                        ? d.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' })
-                        : "Sin fecha";
-                    })()}
+                    {formatDate(s.date, { weekday: 'short', day: 'numeric', month: 'short' })}
                   </div>
                 </td>
                 <td>

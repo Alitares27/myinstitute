@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { FaEdit, FaTrash } from "react-icons/fa";
+import { formatDate, toYMD } from "../utils/dateUtils";
 
 interface Temple {
     id: number;
@@ -155,7 +156,7 @@ export default function TempleTrip() {
     const handleEdit = (trip: Trip) => {
         setFormData({
             temple_id: trip.temple_id.toString(),
-            date: trip.date,
+            date: toYMD(trip.date),
             status: trip.status,
             cost: trip.cost.toString()
         });
@@ -279,7 +280,7 @@ export default function TempleTrip() {
                             currentTrips.map(trip => (
                                 <tr key={trip.id}>
                                     <td>{trip.temple_name}</td>
-                                    <td>{trip.date?.split("T")[0]}</td>
+                                    <td>{formatDate(trip.date)}</td>
                                     <td><span className="status-general">{trip.status}</span></td>
                                     <td>${Number(trip.cost).toLocaleString()}</td>
                                     <td>

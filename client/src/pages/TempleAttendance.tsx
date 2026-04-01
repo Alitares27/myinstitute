@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaEdit, FaTrash } from "react-icons/fa";
+import { formatDate, toYMD } from "../utils/dateUtils";
 
 interface User {
     id: number;
@@ -146,10 +147,10 @@ export default function TripReservations() {
         setFormData({
             user_id: res.user_id.toString(),
             trip_id: res.trip_id.toString(),
-            register_date: res.register_date,
+            register_date: toYMD(res.register_date),
             advance_payment: res.advance_payment.toString(),
             pending_payment: res.pending_payment.toString(),
-            due_date: res.due_date || ""
+            due_date: toYMD(res.due_date)
         });
         setEditingId(res.id);
     };
@@ -212,7 +213,7 @@ export default function TripReservations() {
                         <option value="">Viaje</option>
                         {trips.map(trip => (
                             <option key={trip.id} value={trip.id}>
-                                {trip.temple_name} - {new Date(trip.date).toLocaleDateString("es-AR")}
+                                {trip.temple_name} - {formatDate(trip.date)}
                             </option>
                         ))}
                     </select>
@@ -257,7 +258,7 @@ export default function TripReservations() {
                         <option value="">Todos los viajes</option>
                         {trips.map(trip => (
                             <option key={trip.id} value={trip.id}>
-                                {trip.temple_name} - {new Date(trip.date).toLocaleDateString("es-AR")}
+                                {trip.temple_name} - {formatDate(trip.date)}
                             </option>
                         ))}
                     </select>
@@ -317,11 +318,11 @@ export default function TripReservations() {
                         {currentRecords.map(res => (
                             <tr key={res.id}>
                                 <td>{res.user_name}</td>
-                                <td>{res.trip_date?.split("T")[0]}</td>
-                                <td>{res.register_date?.split("T")[0]}</td>
+                                <td>{formatDate(res.trip_date)}</td>
+                                <td>{formatDate(res.register_date)}</td>
                                 <td>${Number(res.advance_payment).toLocaleString()}</td>
                                 <td>${Number(res.pending_payment).toLocaleString()}</td>
-                                <td>{res.due_date ? res.due_date.split("T")[0] : "-"}</td>
+                                <td>{formatDate(res.due_date)}</td>
                                 <td>
                                     <button className="btn secondary extracted-style-4" onClick={() => handleEdit(res)}><FaEdit /></button>
                                     <button className="btn secondary extracted-style-5" onClick={() => handleDelete(res.id)}><FaTrash /></button>

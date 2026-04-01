@@ -12,7 +12,8 @@ type SortConfig = {
 
 export default function Students() {
   const [students, setStudents] = useState<any[]>([]);
-  const [form, setForm] = useState({ id: "", name: "", grade: "" });
+  const [users, setUsers] = useState<any[]>([]);
+  const [form, setForm] = useState({ id: "", user_id: "", name: "", grade: "" });
   const [role, setRole] = useState<string>("");
   const [userId, setUserId] = useState<string>("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -30,7 +31,12 @@ export default function Students() {
     });
 
     axios.get(`${API_BASE_URL}/students`, config).then((res) => setStudents(res.data));
+    axios.get(`${API_BASE_URL}/users`, config).then((res) => setUsers(res.data));
   }, []);
+
+  const availableUsers = useMemo(() => {
+    return users.filter(u => !students.some(s => s.user_id === u.id));
+  }, [users, students]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,17 +52,17 @@ export default function Students() {
         );
         setStudents(students.map((s) => (s.id === form.id ? res.data : s)));
       } else {
-        const res = await axios.post(`${API_BASE_URL}/students`, form, config);
+        const res = await axios.post(`${API_BASE_URL}/students`, { user_id: form.user_id, grade: form.grade }, config);
         setStudents([...students, res.data]);
       }
-      setForm({ id: "", name: "", grade: "" });
+      setForm({ id: "", user_id: "", name: "", grade: "" });
     } catch {
       alert("Error al procesar la solicitud");
     }
   };
 
   const handleEdit = (student: any) => {
-    setForm({ id: student.id, name: student.name, grade: student.grade });
+    setForm({ id: student.id, user_id: student.user_id.toString(), name: student.name, grade: student.grade });
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -113,12 +119,27 @@ export default function Students() {
         <>
           <h2 className="dashboard-subtitle">{form.id ? "<FaEdit /> Actualizar" : "➕ Agregar"}</h2>
           <form onSubmit={handleSubmit}>
-          <input
-            placeholder="Nombre"
-            value={form.name}
-            onChange={(e) => setForm({ ...form, name: e.target.value })}
-            required
-          />
+          {form.id ? (
+            <input
+              value={form.name}
+              readOnly
+              className="read-only-input"
+              style={{ background: "#f0f0f0", cursor: "not-allowed" }}
+            />
+          ) : (
+            <select
+              value={form.user_id}
+              onChange={(e) => setForm({ ...form, user_id: e.target.value })}
+              required
+            >
+              <option value="">Seleccionar Usuario...</option>
+              {availableUsers.map((u) => (
+                <option key={u.id} value={u.id}>
+                  {u.name}
+                </option>
+              ))}
+            </select>
+          )}
           <input
             placeholder="Organización"
             value={form.grade}
@@ -127,7 +148,7 @@ export default function Students() {
           />
           <button type="submit" className="btn primary">{form.id ? "Actualizar" : "Agregar"}</button>
           {form.id && (
-            <button type="button" onClick={() => setForm({ id: "", name: "", grade: "" })}>
+            <button type="button" onClick={() => setForm({ id: "", user_id: "", name: "", grade: "" })}>
               Cancelar
             </button>
           )}
