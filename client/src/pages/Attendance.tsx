@@ -146,6 +146,97 @@ export default function Attendance() {
     }
   };
 
+  const handlePrintAttendanceReport = () => {
+    const presentRecords = attendance.filter(a => a.status === "Present");
+
+    const countsByCourse = presentRecords.reduce((acc, a) => {
+      if (!acc[a.course_id]) acc[a.course_id] = {};
+      acc[a.course_id][a.student_id] = (acc[a.course_id][a.student_id] || 0) + 1;
+      return acc;
+    }, {} as Record<number, Record<number, number>>);
+
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    const currentDateStr = new Date().toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' });
+
+    let html = `
+        <html>
+        <head>
+            <title>Reporte de Asistencia por Curso</title>
+            <style>
+                body { font-family: Arial, sans-serif; padding: 20px; color: #333; }
+                h1 { text-align: center; color: #222; margin-bottom: 5px; }
+                .date-header { text-align: center; color: #666; margin-bottom: 30px; font-style: italic; }
+                h2 { margin-top: 30px; border-bottom: 2px solid #ccc; padding-bottom: 5px; color: #444; }
+                table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+                th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+                th { background-color: #f9f9f9; font-weight: bold; }
+                .center { text-align: center; }
+            </style>
+        </head>
+        <body>
+            <h1>Reporte de Asistencias Acumuladas</h1>
+            <div class="date-header">Generado hasta la fecha: ${currentDateStr}</div>
+    `;
+
+    const relevantCourses = courseFilter ? courses.filter(c => c.id === Number(courseFilter)) : courses;
+
+    let hasData = false;
+    relevantCourses.forEach(course => {
+      const courseCounts = countsByCourse[course.id];
+      if (!courseCounts || Object.keys(courseCounts).length === 0) return;
+      hasData = true;
+
+      html += `<h2>Curso: ${course.title}</h2>`;
+      html += `
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nombre del Alumno</th>
+                        <th class="center">Cantidad de Asistencias</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+
+      const courseStudents = Object.keys(courseCounts).map(Number).sort((a, b) => {
+        const nameA = students.find(s => s.id === a)?.name || "";
+        const nameB = students.find(s => s.id === b)?.name || "";
+        return nameA.localeCompare(nameB);
+      });
+
+      courseStudents.forEach(studentId => {
+        const studentName = students.find(s => s.id === studentId)?.name || "Desconocido";
+        const count = courseCounts[studentId];
+        html += `
+                <tr>
+                    <td>${studentName}</td>
+                    <td class="center">${count}</td>
+                </tr>
+            `;
+      });
+      html += `</tbody></table>`;
+    });
+
+    if (!hasData) {
+      html += `<p style="text-align: center; color: #666; margin-top: 40px;">No hay asistencias registradas para mostrar.</p>`;
+    }
+
+    html += `
+        </body>
+        </html>
+    `;
+
+    printWindow.document.write(html);
+    printWindow.document.close();
+    printWindow.focus();
+
+    setTimeout(() => {
+      printWindow.print();
+    }, 200);
+  };
+
   if (error) return <div className="error">⚠️ {error}</div>;
 
   return (
@@ -182,19 +273,25 @@ export default function Attendance() {
         </form>
       )}
 
-      <div className="grid-form">
-        <input type="date" value={dateFilter} onChange={e => setDateFilter(e.target.value)} />
+      <div className="grid-form" style={{ display: "flex", flexWrap: "wrap", gap: "10px", alignItems: "center" }}>
+        <input type="date" value={dateFilter} onChange={e => setDateFilter(e.target.value)} style={{ flex: 1, minWidth: "150px" }} />
 
-        <select value={courseFilter} onChange={e => setCourseFilter(e.target.value)}>
+        <select value={courseFilter} onChange={e => setCourseFilter(e.target.value)} style={{ flex: 1, minWidth: "150px" }}>
           <option value="">Todos los cursos</option>
           {courses.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
         </select>
 
         {role !== "student" && (
-          <select value={studentFilter} onChange={e => setStudentFilter(e.target.value)}>
+          <select value={studentFilter} onChange={e => setStudentFilter(e.target.value)} style={{ flex: 1, minWidth: "150px" }}>
             <option value="">Todos los estudiantes</option>
             {students.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
           </select>
+        )}
+
+        {(role === "admin" || role === "teacher") && (
+          <button type="button" onClick={handlePrintAttendanceReport} className="btn secondary" style={{ margin: 0, display: "flex", alignItems: "center", gap: "8px", whiteSpace: "nowrap" }}>
+            🖨️ Imprimir Reporte
+          </button>
         )}
       </div>
 

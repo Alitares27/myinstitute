@@ -46,7 +46,7 @@ export default function Temples() {
         >
           <div className="card-icon">📅</div>
           <h2>Asistencia</h2>
-          <p>Control</p>
+          <p>Reservar</p>
         </div>
       </div>
     </div>

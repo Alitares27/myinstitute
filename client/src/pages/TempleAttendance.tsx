@@ -13,6 +13,7 @@ interface Trip {
     temple_name: string;
     date: string;
     cost: number;
+    status?: string;
 }
 
 interface Reservation {
@@ -100,7 +101,22 @@ export default function TripReservations() {
     }, []);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
+        const { name, value } = e.target;
+        const updated = { ...formData, [name]: value };
+
+        const tripId = name === "trip_id" ? value : updated.trip_id;
+        const advance = name === "advance_payment" ? value : updated.advance_payment;
+        const selectedTrip = trips.find(t => t.id === Number(tripId));
+
+        if (selectedTrip) {
+            const cost = Number(selectedTrip.cost);
+            const adv = Number(advance) || 0;
+            updated.pending_payment = String(Math.max(0, cost - adv));
+        } else if (!tripId) {
+            updated.pending_payment = "";
+        }
+
+        setFormData(updated);
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -194,6 +210,17 @@ export default function TripReservations() {
         }
     }, [totalPages, currentPage]);
 
+    const availableTripsForReservation = useMemo(() => {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        return trips.filter(trip => {
+            const s = (trip.status || "").toLowerCase();
+            const tripDate = new Date(trip.date);
+            return s === "programado" && tripDate >= today;
+        });
+    }, [trips]);
+
     const handlePrintReport = () => {
         const tripCounts = reservations.reduce((acc, r) => {
             acc[r.user_id] = (acc[r.user_id] || 0) + 1;
@@ -268,7 +295,7 @@ export default function TripReservations() {
         printWindow.document.write(html);
         printWindow.document.close();
         printWindow.focus();
-        
+
         setTimeout(() => {
             printWindow.print();
         }, 200);
@@ -291,9 +318,9 @@ export default function TripReservations() {
                     <label htmlFor="trip_id">Viaje</label>
                     <select id="trip_id" name="trip_id" value={formData.trip_id} onChange={handleChange} required>
                         <option value="">Viaje</option>
-                        {trips.map(trip => (
+                        {availableTripsForReservation.map(trip => (
                             <option key={trip.id} value={trip.id}>
-                                {trip.temple_name} - {formatDate(trip.date)}
+                                {formatDate(trip.date)}
                             </option>
                         ))}
                     </select>
@@ -311,7 +338,18 @@ export default function TripReservations() {
 
                 <div className="form-group">
                     <label htmlFor="pending_payment">Monto Pendiente</label>
-                    <input id="pending_payment" type="number" name="pending_payment" value={formData.pending_payment} readOnly />
+                    <input
+                        id="pending_payment"
+                        type="text"
+                        name="pending_payment"
+                        value={
+                            formData.pending_payment !== ""
+                                ? `$${Number(formData.pending_payment).toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                                : ""
+                        }
+                        readOnly
+                        style={{ background: "var(--bg-body, #f5f5f5)", cursor: "not-allowed", opacity: 0.8 }}
+                    />
                 </div>
 
                 <div className="form-group">
@@ -324,18 +362,18 @@ export default function TripReservations() {
                 </div>
             </form>
 
-            <div className="grid-form extracted-style-2">
-                <div className="form-group extracted-style-8">
-                    <label htmlFor="filterTrip">
+            <div className="grid-form extracted-style-2" style={{ display: "flex", flexWrap: "wrap", gap: "15px", alignItems: "center" }}>
+                <div className="form-group extracted-style-8" style={{ flexWrap: "wrap" }}>
+                    <label htmlFor="filterTrip" style={{ whiteSpace: "nowrap" }}>
                         Filtrar por viaje:
                     </label>
-                    <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                    <div style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap" }}>
                         <select
                             id="filterTrip"
                             value={filterTripId}
                             onChange={e => { setFilterTripId(e.target.value); setCurrentPage(1); }}
                             className="extracted-style-9"
-                            style={{ flex: 1 }}
+                            style={{ flex: 1, minWidth: "200px" }}
                         >
                             <option value="">Todos los viajes</option>
                             {trips.map(trip => (
@@ -351,8 +389,8 @@ export default function TripReservations() {
                 </div>
 
                 {filterTripId && (
-                    <p className="extracted-style-10">
-                        📍 Miembros que asistieron: <strong>{filteredReservations.length}</strong>
+                    <p className="extracted-style-10" style={{ whiteSpace: "nowrap" }}>
+                        📍 Miembros que asisten: <strong>{filteredReservations.length}</strong>
                     </p>
                 )}
             </div>

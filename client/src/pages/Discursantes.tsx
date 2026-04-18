@@ -180,10 +180,31 @@ export default function Speakers() {
       recentSpeeches.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
       const mostRecent = recentSpeeches[0];
       const daysAgo = Math.floor((today.getTime() - new Date(mostRecent.date).getTime()) / (1000 * 3600 * 24));
-      return `⚠️ Atención: Este miembro discursó hace ${daysAgo} días (${formatDate(mostRecent.date, { weekday: 'short', day: 'numeric', month: 'short' })}).`;
+      return `⚠️ Alerta: Este miembro discursó hace ${daysAgo} días (${formatDate(mostRecent.date, { weekday: 'short', day: 'numeric', month: 'short' })}).`;
     }
     return null;
   }, [form.member_id, speakers]);
+
+  const recentTopicWarning = useMemo(() => {
+    if (!form.tema_id) return null;
+    const temaIdNum = Number(form.tema_id);
+
+    const pastTopics = speakers.filter(s => s.tema_id === temaIdNum && s.id !== editingId);
+
+    if (pastTopics.length > 0) {
+      pastTopics.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      const mostRecent = pastTopics[0];
+      const today = new Date();
+      const daysAgo = Math.floor((today.getTime() - new Date(mostRecent.date).getTime()) / (1000 * 3600 * 24));
+
+      const timeStr = daysAgo >= 0
+        ? `hace ${daysAgo} días`
+        : `está programado para dentro de ${Math.abs(daysAgo)} días`;
+
+      return `⚠️ Alerta: Este tema ya fue elegido. Se asignó o programó ${timeStr} (${formatDate(mostRecent.date, { weekday: 'short', day: 'numeric', month: 'short' })}).`;
+    }
+    return null;
+  }, [form.tema_id, speakers, editingId]);
 
   return (
     <div className="dashboard-container">
@@ -212,6 +233,11 @@ export default function Speakers() {
                 <option value="">Seleccionar Tema...</option>
                 {allTemas.map(t => <option key={t.id} value={String(t.id)}>{t.title}</option>)}
               </select>
+              {recentTopicWarning && (
+                <div className="extracted-style-29" style={{ marginTop: '10px', fontSize: '0.85rem', padding: '10px' }}>
+                  {recentTopicWarning}
+                </div>
+              )}
             </div>
 
             <div className="form-group">
