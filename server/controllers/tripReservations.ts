@@ -74,7 +74,7 @@ export const updateReservation = async (req: Request, res: Response) => {
     } = req.body;
 
     const tripResult = await pool.query(
-      "SELECT cost FROM temples WHERE id = $1",
+      "SELECT cost FROM temple_trips WHERE id = $1",
       [trip_id]
     );
 

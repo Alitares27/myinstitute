@@ -194,6 +194,86 @@ export default function TripReservations() {
         }
     }, [totalPages, currentPage]);
 
+    const handlePrintReport = () => {
+        const tripCounts = reservations.reduce((acc, r) => {
+            acc[r.user_id] = (acc[r.user_id] || 0) + 1;
+            return acc;
+        }, {} as Record<number, number>);
+
+        const groupedByDate = filteredReservations.reduce((acc, r) => {
+            const dateStr = formatDate(r.trip_date);
+            if (!acc[dateStr]) acc[dateStr] = [];
+            acc[dateStr].push(r);
+            return acc;
+        }, {} as Record<string, Reservation[]>);
+
+        const printWindow = window.open('', '_blank');
+        if (!printWindow) return;
+
+        let html = `
+            <html>
+            <head>
+                <title>Reporte de Viajes</title>
+                <style>
+                    body { font-family: Arial, sans-serif; padding: 20px; color: #333; }
+                    h1 { text-align: center; color: #222; }
+                    h2 { margin-top: 30px; border-bottom: 2px solid #ccc; padding-bottom: 5px; color: #444; }
+                    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+                    th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+                    th { background-color: #f9f9f9; font-weight: bold; }
+                    .center { text-align: center; }
+                    .right { text-align: right; }
+                </style>
+            </head>
+            <body>
+                <h1>Reporte de Asistencia a Viajes del Templo</h1>
+        `;
+
+        const sortedDates = Object.keys(groupedByDate).sort((a, b) => {
+            return new Date(a).getTime() - new Date(b).getTime();
+        });
+
+        sortedDates.forEach(date => {
+            html += `<h2>Fecha: ${date}</h2>`;
+            html += `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Nombre del Miembro</th>
+                            <th class="right">Adelanto</th>
+                            <th class="right">Pendiente</th>
+                            <th class="center">Total Viajes Realizados</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            groupedByDate[date].forEach(res => {
+                html += `
+                    <tr>
+                        <td>${res.user_name}</td>
+                        <td class="right">$${Number(res.advance_payment).toLocaleString()}</td>
+                        <td class="right">$${Number(res.pending_payment).toLocaleString()}</td>
+                        <td class="center">${tripCounts[res.user_id] || 1}</td>
+                    </tr>
+                `;
+            });
+            html += `</tbody></table>`;
+        });
+
+        html += `
+            </body>
+            </html>
+        `;
+
+        printWindow.document.write(html);
+        printWindow.document.close();
+        printWindow.focus();
+        
+        setTimeout(() => {
+            printWindow.print();
+        }, 200);
+    };
+
     return (
         <div>
             <h1 className="dashboard-subtitle">🚌 Reservar Viajes</h1>
@@ -249,19 +329,25 @@ export default function TripReservations() {
                     <label htmlFor="filterTrip">
                         Filtrar por viaje:
                     </label>
-                    <select
-                        id="filterTrip"
-                        value={filterTripId}
-                        onChange={e => { setFilterTripId(e.target.value); setCurrentPage(1); }}
-                        className="extracted-style-9"
-                    >
-                        <option value="">Todos los viajes</option>
-                        {trips.map(trip => (
-                            <option key={trip.id} value={trip.id}>
-                                {trip.temple_name} - {formatDate(trip.date)}
-                            </option>
-                        ))}
-                    </select>
+                    <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                        <select
+                            id="filterTrip"
+                            value={filterTripId}
+                            onChange={e => { setFilterTripId(e.target.value); setCurrentPage(1); }}
+                            className="extracted-style-9"
+                            style={{ flex: 1 }}
+                        >
+                            <option value="">Todos los viajes</option>
+                            {trips.map(trip => (
+                                <option key={trip.id} value={trip.id}>
+                                    {trip.temple_name} - {formatDate(trip.date)}
+                                </option>
+                            ))}
+                        </select>
+                        <button type="button" onClick={handlePrintReport} className="btn secondary" style={{ margin: 0, display: "flex", alignItems: "center", gap: "8px", whiteSpace: "nowrap" }}>
+                            🖨️ Imprimir Reporte
+                        </button>
+                    </div>
                 </div>
 
                 {filterTripId && (
