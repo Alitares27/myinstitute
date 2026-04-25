@@ -8,6 +8,7 @@ export const getReservations = async (_req: Request, res: Response) => {
         tr.id,
         tr.user_id,
         u.name AS user_name,
+        u.document AS user_document,
         tr.trip_id,
         t.name AS temple_name,
         tp.trip_date,

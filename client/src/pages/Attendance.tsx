@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo } from "react";
 import api from "../api";
 import axios from "axios";
 import { formatDate, toYMD } from "../utils/dateUtils";
+import { openPrintWindow } from "../utils/reportUtils";
 
 interface AttendanceRecord {
   id: number;
@@ -155,32 +156,11 @@ export default function Attendance() {
       return acc;
     }, {} as Record<number, Record<number, number>>);
 
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) return;
-
-    const currentDateStr = new Date().toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' });
-
-    let html = `
-        <html>
-        <head>
-            <title>Reporte de Asistencia por Curso</title>
-            <style>
-                body { font-family: Arial, sans-serif; padding: 20px; color: #333; }
-                h1 { text-align: center; color: #222; margin-bottom: 5px; }
-                .date-header { text-align: center; color: #666; margin-bottom: 30px; font-style: italic; }
-                h2 { margin-top: 30px; border-bottom: 2px solid #ccc; padding-bottom: 5px; color: #444; }
-                table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-                th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
-                th { background-color: #f9f9f9; font-weight: bold; }
-                .center { text-align: center; }
-            </style>
-        </head>
-        <body>
-            <h1>Reporte de Asistencias Acumuladas</h1>
-            <div class="date-header">Generado hasta la fecha: ${currentDateStr}</div>
-    `;
+    let body = ``;
 
     const relevantCourses = courseFilter ? courses.filter(c => c.id === Number(courseFilter)) : courses;
+
+    const allUniqueStudentIds = new Set<number>();
 
     let hasData = false;
     relevantCourses.forEach(course => {
@@ -188,8 +168,14 @@ export default function Attendance() {
       if (!courseCounts || Object.keys(courseCounts).length === 0) return;
       hasData = true;
 
-      html += `<h2>Curso: ${course.title}</h2>`;
-      html += `
+      const courseStudents = Object.keys(courseCounts).map(Number).sort((a, b) => {
+        const nameA = students.find(s => s.id === a)?.name || "";
+        const nameB = students.find(s => s.id === b)?.name || "";
+        return nameA.localeCompare(nameB);
+      });
+
+      courseStudents.forEach(id => allUniqueStudentIds.add(id));
+      body += `
             <table>
                 <thead>
                     <tr>
@@ -200,41 +186,35 @@ export default function Attendance() {
                 <tbody>
         `;
 
-      const courseStudents = Object.keys(courseCounts).map(Number).sort((a, b) => {
-        const nameA = students.find(s => s.id === a)?.name || "";
-        const nameB = students.find(s => s.id === b)?.name || "";
-        return nameA.localeCompare(nameB);
-      });
-
       courseStudents.forEach(studentId => {
         const studentName = students.find(s => s.id === studentId)?.name || "Desconocido";
         const count = courseCounts[studentId];
-        html += `
+        body += `
                 <tr>
                     <td>${studentName}</td>
                     <td class="center">${count}</td>
                 </tr>
             `;
       });
-      html += `</tbody></table>`;
     });
 
-    if (!hasData) {
-      html += `<p style="text-align: center; color: #666; margin-top: 40px;">No hay asistencias registradas para mostrar.</p>`;
+    if (hasData) {
+      body += `
+        <div class="summary-box">
+          🎓 Total general de estudiantes con asistencia: ${allUniqueStudentIds.size}
+        </div>
+      `;
+    } else {
+      body += `<p style="text-align: center; color: #666; margin-top: 10px;">No hay asistencias registradas para mostrar.</p>`;
     }
 
-    html += `
-        </body>
-        </html>
-    `;
-
-    printWindow.document.write(html);
-    printWindow.document.close();
-    printWindow.focus();
-
-    setTimeout(() => {
-      printWindow.print();
-    }, 200);
+    openPrintWindow(
+      "Reporte de Asistencias Acumuladas",
+      courseFilter
+        ? `Curso: ${courses.find(c => c.id === Number(courseFilter))?.title || ""}`
+        : "Todos los cursos",
+      body
+    );
   };
 
   if (error) return <div className="error">⚠️ {error}</div>;

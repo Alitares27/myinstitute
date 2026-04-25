@@ -13,7 +13,7 @@ function generateToken(id: number, role: string): string {
 export async function registerUser(req: Request, res: Response) {
   const client = await pool.connect();
   try {
-    const { name, email, password, telefono, role, specialty } = req.body;
+    const { name, email, password, telefono, role, specialty, document } = req.body;
 
     if (!name || !email || !password || !role) {
       client.release();
@@ -26,13 +26,21 @@ export async function registerUser(req: Request, res: Response) {
       return res.status(400).json({ message: "El correo ya está registrado" });
     }
 
+    if (document) {
+      const existingDoc = await client.query("SELECT id FROM users WHERE document = $1", [document]);
+      if (existingDoc.rows.length > 0) {
+        client.release();
+        return res.status(400).json({ message: "El número de documento ya está registrado" });
+      }
+    }
+
     const hash = await bcrypt.hash(password, 10);
 
     await client.query("BEGIN");
 
     const userResult = await client.query(
-      "INSERT INTO users (name, email, password, telefono, role) VALUES ($1, $2, $3, $4, $5) RETURNING id, name, email, telefono, role",
-      [name, email, hash, telefono, role]
+      "INSERT INTO users (name, email, password, telefono, role, document) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, name, email, telefono, role, document",
+      [name, email, hash, telefono, role, document || null]
     );
 
     const user = userResult.rows[0];
@@ -93,6 +101,7 @@ export async function loginUser(req: Request, res: Response) {
       email: user.email,
       telefono: user.telefono,
       role: user.role,
+      document: user.document,
     };
 
     res.json({ token, user: safeUser });
@@ -107,7 +116,7 @@ export async function getProfile(req: AuthRequest, res: Response) {
   try {
     const userId = req.user?.id;
     const result = await pool.query(
-      "SELECT id, name, email, telefono, role FROM users WHERE id = $1",
+      "SELECT id, name, email, telefono, role, document FROM users WHERE id = $1",
       [userId]
     );
 
@@ -124,7 +133,7 @@ export async function getProfile(req: AuthRequest, res: Response) {
 export async function updateUser(req: AuthRequest, res: Response) {
   try {
     const { id } = req.params;
-    const { name, email, password, telefono, role } = req.body;
+    const { name, email, password, telefono, role, document } = req.body;
     const authenticatedUser = req.user;
 
     if (!authenticatedUser) {
@@ -140,8 +149,15 @@ export async function updateUser(req: AuthRequest, res: Response) {
       return res.status(404).json({ message: "Usuario no encontrado" });
     }
 
-    let query = "UPDATE users SET name = $1, email = $2, telefono = $3";
-    const values: any[] = [name, email, telefono];
+    if (document) {
+      const existingDoc = await pool.query("SELECT id FROM users WHERE document = $1 AND id != $2", [document, id]);
+      if (existingDoc.rows.length > 0) {
+        return res.status(400).json({ message: "El número de documento ya está registrado" });
+      }
+    }
+
+    let query = "UPDATE users SET name = $1, email = $2, telefono = $3, document = $4";
+    const values: any[] = [name, email, telefono, document || null];
 
     if (authenticatedUser.role === "admin" && role) {
       query += `, role = $${values.length + 1}`;
@@ -154,7 +170,7 @@ export async function updateUser(req: AuthRequest, res: Response) {
       values.push(hash);
     }
 
-    query += ` WHERE id = $${values.length + 1} RETURNING id, name, email, telefono, role`;
+    query += ` WHERE id = $${values.length + 1} RETURNING id, name, email, telefono, role, document`;
     values.push(id);
 
     const result = await pool.query(query, values);

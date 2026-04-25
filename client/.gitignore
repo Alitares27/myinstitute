@@ -24,6 +24,7 @@ public/build/
 .temp/
 parcel-cache/
 .parcel-cache/
+.helpers/
 
 # Environment variables
 .env

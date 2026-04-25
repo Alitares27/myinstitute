@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
-import { FaEdit, FaTrash, FaSearch, FaUserAlt, FaPhoneAlt, FaEnvelope, FaLock } from "react-icons/fa";
+import { FaEdit, FaTrash, FaSearch, FaIdCard } from "react-icons/fa";
 import axios from "axios";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
@@ -22,7 +22,8 @@ function UserPage() {
     telefono: "",
     role: "student",
     specialty: "",
-    grade: ""
+    grade: "",
+    document: ""
   });
 
   useEffect(() => {
@@ -98,13 +99,14 @@ function UserPage() {
       telefono: u.telefono || "",
       role: u.role,
       specialty: u.specialty || "",
-      grade: u.grade || ""
+      grade: u.grade || "",
+      document: u.document ? u.document.toString() : ""
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const resetForm = () => {
-    setForm({ id: "", name: "", email: "", password: "", telefono: "", role: "student", specialty: "", grade: "" });
+    setForm({ id: "", name: "", email: "", password: "", telefono: "", role: "student", specialty: "", grade: "", document: "" });
   };
 
   if (loading) return <div className="loading">Cargando...</div>;
@@ -130,6 +132,15 @@ function UserPage() {
           </div>
           <div className="input-group">
             <input placeholder="Teléfono" value={form.telefono} onChange={e => setForm({ ...form, telefono: e.target.value })} />
+          </div>
+          <div className="input-group">
+            <input
+              type="number"
+              placeholder="Número de Documento"
+              value={form.document}
+              onChange={e => setForm({ ...form, document: e.target.value })}
+              min="0"
+            />
           </div>
 
           <select value={form.role} onChange={e => setForm({ ...form, role: e.target.value })}>
@@ -173,6 +184,7 @@ function UserPage() {
                 <tr>
                   <th>Nombre</th>
                   <th>Email</th>
+                  <th>Documento</th>
                   <th>Llamamiento</th>
                   <th>Organización</th>
                   <th>Acciones</th>
@@ -183,6 +195,11 @@ function UserPage() {
                   <tr key={u.id}>
                     <td>{u.name}</td>
                     <td>{u.email}</td>
+                    <td>
+                      {u.document
+                        ? <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><FaIdCard />{u.document}</span>
+                        : <span style={{ color: 'var(--text-muted, #888)' }}>-</span>}
+                    </td>
                     <td>
                       <span className={`badge-${u.role}`}>
                         {u.role === "student" ? "Miembro" : "Líder"}

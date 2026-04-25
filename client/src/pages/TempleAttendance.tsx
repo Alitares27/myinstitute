@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaEdit, FaTrash } from "react-icons/fa";
 import { formatDate, toYMD } from "../utils/dateUtils";
+import { openPrintWindow } from "../utils/reportUtils";
 
 interface User {
     id: number;
@@ -20,6 +21,7 @@ interface Reservation {
     id: number;
     user_id: number;
     user_name: string;
+    user_document?: number | null;
     trip_id: number;
     trip_date: string;
     register_date: string;
@@ -123,7 +125,7 @@ export default function TripReservations() {
         e.preventDefault();
         const selectedTrip = trips.find(trip => trip.id === Number(formData.trip_id));
         if (selectedTrip && Number(formData.advance_payment) > selectedTrip.cost) {
-            alert("El adelanto no puede ser mayor que el costo del viaje");
+            alert("El pago no puede ser mayor que el costo del viaje");
             return;
         }
 
@@ -234,71 +236,63 @@ export default function TripReservations() {
             return acc;
         }, {} as Record<string, Reservation[]>);
 
-        const printWindow = window.open('', '_blank');
-        if (!printWindow) return;
+        const sortedDates = Object.keys(groupedByDate).sort((a, b) =>
+            new Date(a).getTime() - new Date(b).getTime()
+        );
 
-        let html = `
-            <html>
-            <head>
-                <title>Reporte de Viajes</title>
-                <style>
-                    body { font-family: Arial, sans-serif; padding: 20px; color: #333; }
-                    h1 { text-align: center; color: #222; }
-                    h2 { margin-top: 30px; border-bottom: 2px solid #ccc; padding-bottom: 5px; color: #444; }
-                    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-                    th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
-                    th { background-color: #f9f9f9; font-weight: bold; }
-                    .center { text-align: center; }
-                    .right { text-align: right; }
-                </style>
-            </head>
-            <body>
-                <h1>Reporte de Asistencia a Viajes del Templo</h1>
-        `;
+        const totalUniqueMembers = new Set(filteredReservations.map(r => r.user_id)).size;
 
-        const sortedDates = Object.keys(groupedByDate).sort((a, b) => {
-            return new Date(a).getTime() - new Date(b).getTime();
-        });
+        let body = "";
 
         sortedDates.forEach(date => {
-            html += `<h2>Fecha: ${date}</h2>`;
-            html += `
+            const dateGroup = groupedByDate[date];
+            const membersInDate = dateGroup.length;
+
+            body += `<h2>Fecha: ${date}</h2>`;
+            body += `
                 <table>
                     <thead>
                         <tr>
-                            <th>Nombre del Miembro</th>
-                            <th class="right">Adelanto</th>
+                            <th>Miembro</th>
+                            <th>Documento</th>
+                            <th class="right">Pagado</th>
                             <th class="right">Pendiente</th>
-                            <th class="center">Total Viajes Realizados</th>
+                            <th class="center">Viajes Realizados (Total)</th>
                         </tr>
                     </thead>
                     <tbody>
             `;
-            groupedByDate[date].forEach(res => {
-                html += `
+            dateGroup.forEach(res => {
+                body += `
                     <tr>
                         <td>${res.user_name}</td>
+                        <td>${res.user_document ?? '-'}</td>
                         <td class="right">$${Number(res.advance_payment).toLocaleString()}</td>
                         <td class="right">$${Number(res.pending_payment).toLocaleString()}</td>
                         <td class="center">${tripCounts[res.user_id] || 1}</td>
                     </tr>
                 `;
             });
-            html += `</tbody></table>`;
+            body += `
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="5">Total de miembros que participan: ${membersInDate}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            `;
         });
 
-        html += `
-            </body>
-            </html>
-        `;
+        const filterLabel = filterTripId
+            ? trips.find(t => t.id === Number(filterTripId))?.temple_name || ""
+            : "Todos los viajes";
 
-        printWindow.document.write(html);
-        printWindow.document.close();
-        printWindow.focus();
-
-        setTimeout(() => {
-            printWindow.print();
-        }, 200);
+        openPrintWindow(
+            "Reporte de Asistencia a Viajes del Templo",
+            `${filterLabel}`,
+            body
+        );
     };
 
     return (
@@ -332,8 +326,8 @@ export default function TripReservations() {
                 </div>
 
                 <div className="form-group">
-                    <label htmlFor="advance_payment">Adelanto</label>
-                    <input id="advance_payment" type="number" name="advance_payment" placeholder="Ingrese adelanto" value={formData.advance_payment} onChange={handleChange} min="0" />
+                    <label htmlFor="advance_payment">Pago</label>
+                    <input id="advance_payment" type="number" name="advance_payment" placeholder="Ingrese Pago" value={formData.advance_payment} onChange={handleChange} min="0" />
                 </div>
 
                 <div className="form-group">
@@ -418,7 +412,7 @@ export default function TripReservations() {
                                 </span>
                             </th>
                             <th onClick={() => handleSort("advance_payment")} className="sortable-header">
-                                Adelanto
+                                Pago
                                 <span className="sort-icon">
                                     {sortConfig?.key === "advance_payment" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
                                 </span>

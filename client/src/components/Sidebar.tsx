@@ -52,7 +52,7 @@ function Sidebar() {
       <div className="sidebar-header">
         <Link to="/dashboard" className="sidebar-logo" onClick={() => setIsMenuOpen(false)}>
           <img
-            src="/church.PNG"
+            src="/temple.webp"
             alt="Logo"
             className="logo-icon"
             style={{ width: "40px", height: "40px", objectFit: "contain" }}
@@ -82,9 +82,9 @@ function Sidebar() {
               {isTeachingOpen && (
                 <ul className="submenu" style={{ paddingLeft: "20px", listStyle: "none" }}>
                   <li><Link to="/students" className="sidebar-link" onClick={() => setIsMenuOpen(false)}><div className="icon-circle"><FaUserGraduate className="icon" /></div><span>Estudiantes</span></Link></li>
-                   <li><Link to="/enrollments" className="sidebar-link" onClick={() => setIsMenuOpen(false)}><div className="icon-circle"><FaClipboardList className="icon" /></div><span>Matrículas</span></Link></li>
-                   <li><Link to="/attendance" className="sidebar-link" onClick={() => setIsMenuOpen(false)}><div className="icon-circle"><FaCalendarCheck className="icon" /></div><span>Asistencia</span></Link></li>
-                   <li><Link to="/grades" className="sidebar-link" onClick={() => setIsMenuOpen(false)}><div className="icon-circle"><FaStar className="icon" /></div><span>Calificaciones</span></Link></li>
+                  <li><Link to="/enrollments" className="sidebar-link" onClick={() => setIsMenuOpen(false)}><div className="icon-circle"><FaClipboardList className="icon" /></div><span>Matrículas</span></Link></li>
+                  <li><Link to="/attendance" className="sidebar-link" onClick={() => setIsMenuOpen(false)}><div className="icon-circle"><FaCalendarCheck className="icon" /></div><span>Asistencia</span></Link></li>
+                  <li><Link to="/grades" className="sidebar-link" onClick={() => setIsMenuOpen(false)}><div className="icon-circle"><FaStar className="icon" /></div><span>Calificaciones</span></Link></li>
                 </ul>
               )}
             </li>
