@@ -133,25 +133,18 @@ function Dashboard() {
     if (user?.role === "admin") {
       return (
         <div className="shortcuts-grid">
-          <div className="shortcut-card" onClick={() => navigate("/students")}>
-            <div className="shortcut-icon-bg">🎓</div>
+          <div className="shortcut-card" onClick={() => navigate("/discursantes")}>
+            <div className="shortcut-icon-bg">🎤</div>
             <div className="shortcut-info">
-              <h3>Estudiantes</h3>
-              <p>Gestionar alumnos y registros</p>
+              <h3>Discursantes</h3>
+              <p>Gestionar oradores y discursos</p>
             </div>
           </div>
-          <div className="shortcut-card" onClick={() => navigate("/teachers")}>
-            <div className="shortcut-icon-bg">👩‍🏫</div>
+          <div className="shortcut-card" onClick={() => navigate("/templeAttendance")}>
+            <div className="shortcut-icon-bg">🏛️</div>
             <div className="shortcut-info">
-              <h3>Maestros</h3>
-              <p>Administrar personal docente</p>
-            </div>
-          </div>
-          <div className="shortcut-card" onClick={() => navigate("/courses")}>
-            <div className="shortcut-icon-bg">📚</div>
-            <div className="shortcut-info">
-              <h3>Cursos</h3>
-              <p>Configurar oferta académica</p>
+              <h3>Templo</h3>
+              <p>Reservas y viajes al templo</p>
             </div>
           </div>
           <div className="shortcut-card" onClick={() => navigate("/users")}>

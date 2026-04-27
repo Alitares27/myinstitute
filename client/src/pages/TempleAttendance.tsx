@@ -32,6 +32,14 @@ interface Reservation {
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
+const getTodayYMD = () => {
+    const today = new Date();
+    const y = today.getFullYear();
+    const m = String(today.getMonth() + 1).padStart(2, "0");
+    const d = String(today.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+};
+
 export default function TripReservations() {
     const navigate = useNavigate();
     const [users, setUsers] = useState<User[]>([]);
@@ -42,7 +50,7 @@ export default function TripReservations() {
     const [formData, setFormData] = useState({
         user_id: "",
         trip_id: "",
-        register_date: "",
+        register_date: getTodayYMD(),
         advance_payment: "",
         pending_payment: "",
         due_date: ""
@@ -114,8 +122,13 @@ export default function TripReservations() {
             const cost = Number(selectedTrip.cost);
             const adv = Number(advance) || 0;
             updated.pending_payment = String(Math.max(0, cost - adv));
+            if (name === "trip_id") {
+                const tripDateRaw = selectedTrip.date;
+                updated.due_date = tripDateRaw ? tripDateRaw.substring(0, 10) : "";
+            }
         } else if (!tripId) {
             updated.pending_payment = "";
+            if (name === "trip_id") updated.due_date = "";
         }
 
         setFormData(updated);
@@ -127,6 +140,18 @@ export default function TripReservations() {
         if (selectedTrip && Number(formData.advance_payment) > selectedTrip.cost) {
             alert("El pago no puede ser mayor que el costo del viaje");
             return;
+        }
+
+        if (!editingId) {
+            const duplicate = reservations.find(
+                r => r.user_id === Number(formData.user_id) && r.trip_id === Number(formData.trip_id)
+            );
+            if (duplicate) {
+                const memberName = users.find(u => u.id === Number(formData.user_id))?.name || "Este miembro";
+                const tripDate = selectedTrip ? selectedTrip.date.substring(0, 10) : "";
+                alert(`⚠️ ${memberName} ya tiene una reserva para el viaje del ${tripDate}.`);
+                return;
+            }
         }
 
         if (editingId) {
@@ -153,7 +178,7 @@ export default function TripReservations() {
         setFormData({
             user_id: "",
             trip_id: "",
-            register_date: "",
+            register_date: getTodayYMD(),
             advance_payment: "",
             pending_payment: "",
             due_date: ""
@@ -322,7 +347,14 @@ export default function TripReservations() {
 
                 <div className="form-group">
                     <label htmlFor="register_date">Fecha de Registro</label>
-                    <input id="register_date" type="date" name="register_date" value={formData.register_date} onChange={handleChange} required />
+                    <input
+                        id="register_date"
+                        type="date"
+                        name="register_date"
+                        value={formData.register_date}
+                        readOnly
+                        style={{ background: "var(--bg-body, #f5f5f5)", cursor: "not-allowed", opacity: 0.8 }}
+                    />
                 </div>
 
                 <div className="form-group">
@@ -348,7 +380,14 @@ export default function TripReservations() {
 
                 <div className="form-group">
                     <label htmlFor="due_date">Fecha de Vencimiento</label>
-                    <input id="due_date" type="date" name="due_date" value={formData.due_date} onChange={handleChange} />
+                    <input
+                        id="due_date"
+                        type="date"
+                        name="due_date"
+                        value={formData.due_date}
+                        readOnly
+                        style={{ background: "var(--bg-body, #f5f5f5)", cursor: "not-allowed", opacity: 0.8 }}
+                    />
                 </div>
 
                 <div className="form-group full-width">
@@ -367,12 +406,12 @@ export default function TripReservations() {
                             value={filterTripId}
                             onChange={e => { setFilterTripId(e.target.value); setCurrentPage(1); }}
                             className="extracted-style-9"
-                            style={{ flex: 1, minWidth: "200px" }}
+
                         >
                             <option value="">Todos los viajes</option>
                             {trips.map(trip => (
                                 <option key={trip.id} value={trip.id}>
-                                    {trip.temple_name} - {formatDate(trip.date)}
+                                    {formatDate(trip.date)}
                                 </option>
                             ))}
                         </select>
