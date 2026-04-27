@@ -57,6 +57,7 @@ export default function TripReservations() {
     });
 
     const [filterTripId, setFilterTripId] = useState<string>("");
+    const [filterUserId, setFilterUserId] = useState<string>("");
     const [currentPage, setCurrentPage] = useState(1);
     const recordsPerPage = 5;
 
@@ -206,11 +207,17 @@ export default function TripReservations() {
         fetchReservations();
     };
 
+    const membersWithReservations = useMemo(() => {
+        const uniqueIds = new Set(reservations.map(r => r.user_id));
+        return users.filter(u => uniqueIds.has(u.id));
+    }, [reservations, users]);
+
     const filteredReservations = useMemo(() => {
-        return filterTripId
-            ? reservations.filter(r => r.trip_id === Number(filterTripId))
-            : reservations;
-    }, [reservations, filterTripId]);
+        let result = reservations;
+        if (filterTripId) result = result.filter(r => r.trip_id === Number(filterTripId));
+        if (filterUserId) result = result.filter(r => r.user_id === Number(filterUserId));
+        return result;
+    }, [reservations, filterTripId, filterUserId]);
 
     const sortedReservations = useMemo(() => {
         if (!sortConfig) return filteredReservations;
@@ -395,35 +402,62 @@ export default function TripReservations() {
                 </div>
             </form>
 
-            <div className="grid-form extracted-style-2" style={{ display: "flex", flexWrap: "wrap", gap: "15px", alignItems: "center" }}>
-                <div className="form-group extracted-style-8" style={{ flexWrap: "wrap" }}>
-                    <label htmlFor="filterTrip" style={{ whiteSpace: "nowrap" }}>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "16px", alignItems: "flex-end", padding: "12px 0" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: "4px", minWidth: "180px" }}>
+                    <label htmlFor="filterTrip" style={{ fontSize: "0.8rem", fontWeight: 600, whiteSpace: "nowrap" }}>
                         Filtrar por viaje:
                     </label>
-                    <div style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap" }}>
-                        <select
-                            id="filterTrip"
-                            value={filterTripId}
-                            onChange={e => { setFilterTripId(e.target.value); setCurrentPage(1); }}
-                            className="extracted-style-9"
-
-                        >
-                            <option value="">Todos los viajes</option>
-                            {trips.map(trip => (
-                                <option key={trip.id} value={trip.id}>
-                                    {formatDate(trip.date)}
-                                </option>
-                            ))}
-                        </select>
-                        <button type="button" onClick={handlePrintReport} className="btn secondary" style={{ margin: 0, display: "flex", alignItems: "center", gap: "8px", whiteSpace: "nowrap" }}>
-                            🖨️ Imprimir Reporte
-                        </button>
-                    </div>
+                    <select
+                        id="filterTrip"
+                        value={filterTripId}
+                        onChange={e => { setFilterTripId(e.target.value); setCurrentPage(1); }}
+                        className="extracted-style-9"
+                        style={{ margin: 0 }}
+                    >
+                        <option value="">Todos los viajes</option>
+                        {trips.map(trip => (
+                            <option key={trip.id} value={trip.id}>
+                                {formatDate(trip.date)}
+                            </option>
+                        ))}
+                    </select>
                 </div>
 
-                {filterTripId && (
-                    <p className="extracted-style-10" style={{ whiteSpace: "nowrap" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: "4px", minWidth: "180px" }}>
+                    <label htmlFor="filterMember" style={{ fontSize: "0.8rem", fontWeight: 600, whiteSpace: "nowrap" }}>
+                        Filtrar por miembro:
+                    </label>
+                    <select
+                        id="filterMember"
+                        value={filterUserId}
+                        onChange={e => { setFilterUserId(e.target.value); setCurrentPage(1); }}
+                        className="extracted-style-9"
+                        style={{ margin: 0 }}
+                    >
+                        <option value="">Todos los miembros</option>
+                        {membersWithReservations.map(u => (
+                            <option key={u.id} value={u.id}>{u.name}</option>
+                        ))}
+                    </select>
+                </div>
+
+                <button
+                    type="button"
+                    onClick={handlePrintReport}
+                    className="btn secondary"
+                    style={{ margin: 0, display: "flex", alignItems: "center", gap: "8px", whiteSpace: "nowrap", alignSelf: "flex-end" }}
+                >
+                    🖨️ Imprimir
+                </button>
+
+                {filterTripId && !filterUserId && (
+                    <p className="extracted-style-10" style={{ whiteSpace: "nowrap", alignSelf: "flex-end", margin: 0 }}>
                         📍 Miembros que asisten: <strong>{filteredReservations.length}</strong>
+                    </p>
+                )}
+                {filterUserId && (
+                    <p className="extracted-style-10" style={{ whiteSpace: "nowrap", alignSelf: "flex-end", margin: 0 }}>
+                        🧳 Viajes registrados: <strong>{filteredReservations.length}</strong>
                     </p>
                 )}
             </div>
