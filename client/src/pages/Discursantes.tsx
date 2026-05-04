@@ -185,6 +185,10 @@ export default function Speakers() {
     return null;
   }, [form.member_id, speakers]);
 
+  useEffect(() => {
+    if (recentSpeechWarning) alert(recentSpeechWarning);
+  }, [recentSpeechWarning]);
+
   const recentTopicWarning = useMemo(() => {
     if (!form.tema_id) return null;
     const temaIdNum = Number(form.tema_id);
@@ -201,10 +205,14 @@ export default function Speakers() {
         ? `hace ${daysAgo} días`
         : `está programado para dentro de ${Math.abs(daysAgo)} días`;
 
-      return `⚠️ Alerta: Este tema ya fue elegido. Se asignó o programó ${timeStr} (${formatDate(mostRecent.date, { weekday: 'short', day: 'numeric', month: 'short' })}).`;
+      return `⚠️ Alerta: Este tema ya fue elegido. ${timeStr} (${formatDate(mostRecent.date, { weekday: 'short', day: 'numeric', month: 'short' })}).`;
     }
     return null;
   }, [form.tema_id, speakers, editingId]);
+
+  useEffect(() => {
+    if (recentTopicWarning) alert(recentTopicWarning);
+  }, [recentTopicWarning]);
 
   return (
     <div className="dashboard-container">
@@ -220,11 +228,6 @@ export default function Speakers() {
                 <option value="">Seleccionar Miembro...</option>
                 {members.map(m => <option key={m.id} value={String(m.id)}>{m.name}</option>)}
               </select>
-              {recentSpeechWarning && (
-                <div className="extracted-style-29" style={{ marginTop: '10px', fontSize: '0.85rem', padding: '10px' }}>
-                  {recentSpeechWarning}
-                </div>
-              )}
             </div>
 
             <div className="form-group">
@@ -233,11 +236,6 @@ export default function Speakers() {
                 <option value="">Seleccionar Tema...</option>
                 {allTemas.map(t => <option key={t.id} value={String(t.id)}>{t.title}</option>)}
               </select>
-              {recentTopicWarning && (
-                <div className="extracted-style-29" style={{ marginTop: '10px', fontSize: '0.85rem', padding: '10px' }}>
-                  {recentTopicWarning}
-                </div>
-              )}
             </div>
 
             <div className="form-group">
@@ -266,14 +264,12 @@ export default function Speakers() {
               </div>
             )}
 
-            <div className="extracted-style-1">
+            <div className="form-group full-width">
               <button type="submit" className="btn primary">
                 {editingId ? <><FaSave /> Guardar</> : <><FaPlus /> Asignar</>}
               </button>
-              {editingId && (
-                <button type="button" className="btn secondary" onClick={() => { setEditingId(null); setForm({ ...form, member_id: "", tema_id: "", speech_title: "" }); }}>
-                  <FaTimes />
-                </button>
+              {(editingId || form.member_id || form.tema_id || form.speech_title) && (
+                <button type="button" className="btn cancel-btn" onClick={() => { setEditingId(null); setForm({ member_id: "", tema_id: "", speech_title: "", time: "10", date: new Date().toISOString().split("T")[0], completed: "No" }); }} title="Cancelar" aria-label="Cancelar">✕</button>
               )}
             </div>
           </form>

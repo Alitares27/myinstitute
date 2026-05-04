@@ -120,7 +120,7 @@ function UserPage() {
       </h2>
 
       <div className="form-card">
-        <div className="grid-form">
+        <div className="grid-form minimal-form">
           <div className="input-group">
             <input placeholder="Nombre Completo" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
           </div>
@@ -156,9 +156,11 @@ function UserPage() {
             <input placeholder="Organización" value={form.grade} onChange={e => setForm({ ...form, grade: e.target.value })} />
           )}
 
-          <div className="form-actions">
+          <div className="form-group full-width">
             <button onClick={handleSave} className="btn primary">{form.id ? "Guardar" : "Agregar"}</button>
-            {form.id && <button onClick={resetForm} className="btn secondary">Cancelar</button>}
+            {(form.id || form.name || form.email) && (
+              <button type="button" onClick={resetForm} className="btn cancel-btn" title="Cancelar" aria-label="Cancelar">✕</button>
+            )}
           </div>
         </div>
       </div>

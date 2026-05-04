@@ -176,9 +176,14 @@ export default function Enrollments() {
             ))}
           </select>
 
-          <button type="submit" className="btn primary">
-            {form.id ? "Actualizar" : "Matricular"}
-          </button>
+          <div className="form-group full-width">
+            <button type="submit" className="btn primary">
+              {form.id ? "Actualizar" : "Matricular"}
+            </button>
+            {(form.id || form.student_id || form.course_id) && (
+              <button type="button" onClick={() => setForm({ id: "", student_id: "", course_id: "" })} className="btn cancel-btn" title="Cancelar" aria-label="Cancelar">✕</button>
+            )}
+          </div>
         </form>
       )}
 

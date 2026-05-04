@@ -124,14 +124,14 @@ export default function TemasManagement() {
           onChange={e => setForm({ ...form, title: e.target.value })}
           required
         />
-        <button type="submit" className="btn primary">
-          {form.id ? "Actualizar" : "Agregar"}
-        </button>
-        {form.id && (
-          <button type="button" className="btn secondary" onClick={() => setForm({ id: "", title: "" })}>
-            Cancelar
+        <div className="form-group full-width">
+          <button type="submit" className="btn primary">
+            {form.id ? "Actualizar" : "Agregar"}
           </button>
-        )}
+          {(form.id || form.title) && (
+            <button type="button" className="btn cancel-btn" onClick={() => setForm({ id: "", title: "" })} title="Cancelar" aria-label="Cancelar">✕</button>
+          )}
+        </div>
       </form>
 
       <div className="grid-form" style={{ marginBottom: "1rem" }}>

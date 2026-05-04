@@ -93,8 +93,12 @@ export default function TopicsManager() {
             <br /><br />
             <textarea placeholder="Descripción" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} className="extracted-style-16" />
             <br />
-            <button type="submit" className="btn primary">{editingId ? "Actualizar" : "Agregar"}</button>
-            {editingId && <button onClick={() => { setEditingId(null); setForm({ title: "", description: "", order_index: 0 }) }}>Cancelar</button>}
+            <div className="form-group full-width">
+              <button type="submit" className="btn primary">{editingId ? "Actualizar" : "Agregar"}</button>
+              {(editingId || form.title) && (
+                <button type="button" onClick={() => { setEditingId(null); setForm({ title: "", description: "", order_index: 0 }) }} className="btn cancel-btn" title="Cancelar" aria-label="Cancelar">✕</button>
+              )}
+            </div>
           </form>
 
           <table border={1}>

@@ -249,7 +249,12 @@ export default function Attendance() {
             <option value="Absent">Ausente</option>
           </select>
 
-          <button className="btn primary">Marcar</button>
+          <div className="form-group full-width">
+            <button className="btn primary">Marcar</button>
+            {(form.student_id || form.topic_id) && (
+              <button type="button" onClick={() => setForm({ ...form, student_id: "", topic_id: "" })} className="btn cancel-btn" title="Cancelar" aria-label="Cancelar">✕</button>
+            )}
+          </div>
         </form>
       )}
 

@@ -235,9 +235,14 @@ export default function TempleTrip() {
                     />
                 </div>
 
-                <button type="submit" className="btn primary">
-                    {editingId ? "Actualizar" : "Registrar"}
-                </button>
+                <div className="form-group full-width">
+                    <button type="submit" className="btn primary">
+                        {editingId ? "Actualizar" : "Registrar"}
+                    </button>
+                    {(editingId !== null || formData.temple_id || formData.date || formData.cost) && (
+                        <button type="button" onClick={() => { setEditingId(null); setFormData({ temple_id: "", date: "", status: "programado", cost: "" }); }} className="btn cancel-btn" title="Cancelar" aria-label="Cancelar">✕</button>
+                    )}
+                </div>
             </form>
 
             <div className="table-container">

@@ -146,12 +146,12 @@ export default function Students() {
             onChange={(e) => setForm({ ...form, grade: e.target.value })}
             required
           />
-          <button type="submit" className="btn primary">{form.id ? "Actualizar" : "Agregar"}</button>
-          {form.id && (
-            <button type="button" onClick={() => setForm({ id: "", user_id: "", name: "", grade: "" })}>
-              Cancelar
-            </button>
-          )}
+          <div className="form-group full-width">
+            <button type="submit" className="btn primary">{form.id ? "Actualizar" : "Agregar"}</button>
+            {(form.id || form.user_id || form.grade) && (
+              <button type="button" onClick={() => setForm({ id: "", user_id: "", name: "", grade: "" })} className="btn cancel-btn" title="Cancelar" aria-label="Cancelar">✕</button>
+            )}
+          </div>
         </form>
         </>
       )}

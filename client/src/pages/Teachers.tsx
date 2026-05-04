@@ -12,7 +12,8 @@ type SortConfig = {
 
 export default function Teachers() {
   const [teachers, setTeachers] = useState<any[]>([]);
-  const [form, setForm] = useState({ id: "", user_id: "", specialty: "" });
+  const [users, setUsers] = useState<any[]>([]);
+  const [form, setForm] = useState({ id: "", user_id: "", name: "", specialty: "" });
   const [role, setRole] = useState<string>("");
   const [userId, setUserId] = useState<string>("");
   const [sortConfig, setSortConfig] = useState<SortConfig>(null);
@@ -28,7 +29,13 @@ export default function Teachers() {
     });
 
     axios.get(`${API_BASE_URL}/teachers`, config).then((res) => setTeachers(res.data));
+    axios.get(`${API_BASE_URL}/users`, config).then((res) => setUsers(res.data));
   }, []);
+
+  const availableUsers = useMemo(() => {
+    const teacherUserIds = new Set(teachers.map((t: any) => Number(t.user_id)));
+    return users.filter((u: any) => !teacherUserIds.has(Number(u.id)));
+  }, [users, teachers]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,11 +58,12 @@ export default function Teachers() {
       setTeachers([...teachers, res.data]);
     }
 
-    setForm({ id: "", user_id: "", specialty: "" });
+    setForm({ id: "", user_id: "", name: "", specialty: "" });
   };
 
   const handleEdit = (teacher: any) => {
-    setForm({ id: teacher.id, user_id: teacher.user_id, specialty: teacher.specialty });
+    setForm({ id: teacher.id, user_id: teacher.user_id, name: teacher.name || "", specialty: teacher.specialty });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleDelete = async (id: string) => {
@@ -91,19 +99,36 @@ export default function Teachers() {
       <h2 className="dashboard-subtitle">{form.id ? "<FaEdit /> Actualizar" : "➕ Agregar"}</h2>
       {role === "admin" && (
         <form onSubmit={handleSubmit} className="teacher-form">
-          <input
-            placeholder="ID Usuario"
-            value={form.user_id}
-            onChange={(e) => setForm({ ...form, user_id: e.target.value })}
-            required
-          />
+          {form.id ? (
+            <input
+              value={form.name}
+              readOnly
+              style={{ background: "var(--bg-body, #f5f5f5)", cursor: "not-allowed", opacity: 0.8 }}
+            />
+          ) : (
+            <select
+              value={form.user_id}
+              onChange={(e) => setForm({ ...form, user_id: e.target.value })}
+              required
+            >
+              <option value="">Seleccionar Miembro...</option>
+              {availableUsers.map((u: any) => (
+                <option key={u.id} value={u.id}>{u.name}</option>
+              ))}
+            </select>
+          )}
           <input
             placeholder="Especialidad"
             value={form.specialty}
             onChange={(e) => setForm({ ...form, specialty: e.target.value })}
             required
           />
-          <button type="submit" className="btn primary">{form.id ? "Actualizar" : "Agregar"}</button>
+          <div className="form-group full-width">
+            <button type="submit" className="btn primary">{form.id ? "Actualizar" : "Agregar"}</button>
+            {(form.id || form.user_id || form.specialty) && (
+              <button type="button" onClick={() => setForm({ id: "", user_id: "", name: "", specialty: "" })} className="btn cancel-btn" title="Cancelar" aria-label="Cancelar">✕</button>
+            )}
+          </div>
         </form>
       )}
 

@@ -414,7 +414,7 @@ export default function TripReservations() {
                     />
                 </div>
 
-                <div className="form-group full-width" style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                <div className="form-group full-width">
                     <button type="submit" className="btn primary">{editingId ? "Actualizar" : "Reservar"}</button>
                     {isFormDirty && (
                         <button

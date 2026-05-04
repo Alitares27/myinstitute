@@ -169,13 +169,12 @@ export default function Grades() {
               <option value="participacion">Participación</option>
             </select>
 
-            <button type="submit" className="btn primary">{form.id ? "Actualizar" : "Calificar"}</button>
-            {form.id && (
-              <button type="button" onClick={() => setForm({ id: "", student_id: "", course_id: "", grade: "", grade_type: "examen" })}>
-                Cancelar
-              </button>
-            )}
-          </form>
+            <div className="form-group full-width">
+              <button type="submit" className="btn primary">{form.id ? "Actualizar" : "Calificar"}</button>
+              {(form.id || form.student_id || form.course_id || form.grade) && (
+                <button type="button" onClick={() => setForm({ id: "", student_id: "", course_id: "", grade: "", grade_type: "examen" })} className="btn cancel-btn" title="Cancelar" aria-label="Cancelar">✕</button>
+              )}
+            </div>          </form>
         </div>
       )}
 

@@ -178,7 +178,12 @@ export default function Courses() {
               <option key={t.id} value={t.id}>{t.name}</option>
             ))}
           </select>
-          <button type="submit" className="btn primary">{form.id ? "Actualizar" : "Agregar"}</button>
+          <div className="form-group full-width">
+            <button type="submit" className="btn primary">{form.id ? "Actualizar" : "Agregar"}</button>
+            {(form.id || form.title || form.teacher_id) && (
+              <button type="button" onClick={() => setForm({ id: "", title: "", teacher_id: "" })} className="btn cancel-btn" title="Cancelar" aria-label="Cancelar">✕</button>
+            )}
+          </div>
         </form>
       )}
 

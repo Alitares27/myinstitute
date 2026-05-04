@@ -199,15 +199,14 @@ export default function TemplosMaintenance() {
             onChange={e => setForm({ ...form, dedicated_date: e.target.value })}
           />
         </div>
-        <button type="submit" className="btn primary">
-          {form.id ? "Actualizar" : "Agregar"}
-        </button>
-        {form.id && (
-          <button type="button" className="btn secondary" onClick={() => setForm({ id: "", name: "", city: "", province: "", address: "", dedicated_date: "", status: "operating" })}>
-            Cancelar
+        <div className="form-group full-width">
+          <button type="submit" className="btn primary">
+            {form.id ? "Actualizar" : "Agregar"}
           </button>
-        )}
-      </form>
+          {(form.id || form.name || form.city || form.province) && (
+            <button type="button" className="btn cancel-btn" onClick={() => setForm({ id: "", name: "", city: "", province: "", address: "", dedicated_date: "", status: "operating" })} title="Cancelar" aria-label="Cancelar">✕</button>
+          )}
+        </div>      </form>
 
       <div className="grid-form" style={{ marginBottom: "1rem" }}>
         <input
