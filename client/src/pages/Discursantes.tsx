@@ -74,6 +74,11 @@ export default function Speakers() {
       .catch(() => setError("Error al conectar con el servidor"));
   }, []);
 
+  const membersWithSpeeches = useMemo(() => {
+    const speakerIds = new Set(speakers.map(s => s.member_id));
+    return members.filter(m => speakerIds.has(m.id));
+  }, [members, speakers]);
+
   const filteredSpeakers = useMemo(() => {
     return speakers.filter(s => {
       const matchMember = memberFilter ? s.member_id === Number(memberFilter) : true;
@@ -280,8 +285,8 @@ export default function Speakers() {
 
       <div className="grid-form extracted-style-2">
         <select value={memberFilter} onChange={e => { setMemberFilter(e.target.value); setCurrentPage(1); }}>
-          <option value="">Todos los miembros</option>
-          {members.map(m => <option key={m.id} value={String(m.id)}>{m.name}</option>)}
+          <option value="">Todos los miembros ({membersWithSpeeches.length})</option>
+          {membersWithSpeeches.map(m => <option key={m.id} value={String(m.id)}>{m.name}</option>)}
         </select>
         <input type="date" value={dateFilter} onChange={e => { setDateFilter(e.target.value); setCurrentPage(1); }} />
       </div>
