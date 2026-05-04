@@ -199,6 +199,23 @@ export default function TripReservations() {
         setEditingId(res.id);
     };
 
+    const handleCancel = () => {
+        setEditingId(null);
+        setFormData({
+            user_id: "",
+            trip_id: "",
+            register_date: getTodayYMD(),
+            advance_payment: "",
+            pending_payment: "",
+            due_date: ""
+        });
+    };
+
+    const isFormDirty = editingId !== null ||
+        formData.user_id !== "" ||
+        formData.trip_id !== "" ||
+        formData.advance_payment !== "";
+
     const handleDelete = async (id: number) => {
         await fetch(`${API_BASE_URL}/trip-reservations/${id}`, {
             method: "DELETE",
@@ -333,7 +350,7 @@ export default function TripReservations() {
             <h2>  {role === "admin" ? "➕ Reservar" : "Disponibles"}</h2>
             <form onSubmit={handleSubmit} className="grid-form">
                 <div className="form-group">
-                    <label htmlFor="user_id">Estudiante</label>
+                    <label htmlFor="user_id">Miembro</label>
                     <select id="user_id" name="user_id" value={formData.user_id} onChange={handleChange} required>
                         <option value="">Miembro</option>
                         {users.map(user => <option key={user.id} value={user.id}>{user.name}</option>)}
@@ -397,8 +414,19 @@ export default function TripReservations() {
                     />
                 </div>
 
-                <div className="form-group full-width">
-                    <button type="submit" className="btn primary">{editingId ? "Actualizar" : "Registrar"}</button>
+                <div className="form-group full-width" style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                    <button type="submit" className="btn primary">{editingId ? "Actualizar" : "Reservar"}</button>
+                    {isFormDirty && (
+                        <button
+                            type="button"
+                            onClick={handleCancel}
+                            className="btn cancel-btn"
+                            title="Cancelar"
+                            aria-label="Cancelar"
+                        >
+                            ✕
+                        </button>
+                    )}
                 </div>
             </form>
 
