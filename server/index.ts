@@ -17,6 +17,7 @@ import topicRoutes from "./routes/topics";
 import templesRoutes from "./routes/temples";
 import templeTripsRoutes from "./routes/templeTrips";
 import tripReservationsRoutes from "./routes/tripReservations";
+import templeAmortizationsRoutes from "./routes/templeAmortizations";
 
 import speakersRoutes from "./routes/speakers";
 import temasRoutes from "./routes/temas";
@@ -54,6 +55,7 @@ app.use("/api/topics", topicRoutes);
 app.use("/api/temples", templesRoutes);
 app.use("/api/temple-trips", templeTripsRoutes);
 app.use("/api/trip-reservations", tripReservationsRoutes);
+app.use("/api/temple-amortizations", templeAmortizationsRoutes);
 app.use("/api/speakers", speakersRoutes);      
 app.use("/api/temas", temasRoutes);
 

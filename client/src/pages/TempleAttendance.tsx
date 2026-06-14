@@ -56,6 +56,16 @@ export default function TripReservations() {
         due_date: ""
     });
 
+    const [showPaymentModal, setShowPaymentModal] = useState(false);
+    const [paymentError, setPaymentError] = useState<string>("");
+    const [isSubmittingPayment, setIsSubmittingPayment] = useState(false);
+    const [paymentForm, setPaymentForm] = useState({
+        trip_id: "",
+        attendance_id: "",
+        payment_amount: "",
+        payment_date: getTodayYMD()
+    });
+
     const [filterTripId, setFilterTripId] = useState<string>("");
     const [filterUserId, setFilterUserId] = useState<string>("");
     const [currentPage, setCurrentPage] = useState(1);
@@ -221,6 +231,84 @@ export default function TripReservations() {
             method: "DELETE",
             headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` }
         });
+        fetchReservations();
+    };
+
+    const selectedReservationForPayment = reservations.find(
+        r => r.id === Number(paymentForm.attendance_id)
+    );
+
+    const availableReservationsForSelectedTrip = useMemo(() => {
+        if (!paymentForm.trip_id) return [];
+        return reservations.filter(r => r.trip_id === Number(paymentForm.trip_id) && Number(r.pending_payment) > 0);
+    }, [paymentForm.trip_id, reservations]);
+
+    const handleOpenPaymentModal = () => {
+        setPaymentError("");
+        setPaymentForm({
+            trip_id: "",
+            attendance_id: "",
+            payment_amount: "",
+            payment_date: getTodayYMD()
+        });
+        setShowPaymentModal(true);
+    };
+
+    const handleClosePaymentModal = () => {
+        setShowPaymentModal(false);
+        setPaymentError("");
+    };
+
+    const handlePaymentChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        const { name, value } = e.target;
+        setPaymentForm(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handlePaymentSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setPaymentError("");
+
+        if (!paymentForm.attendance_id) {
+            setPaymentError("Selecciona una reserva para el pago");
+            return;
+        }
+
+        const amount = Number(paymentForm.payment_amount);
+        if (Number.isNaN(amount) || amount <= 0) {
+            setPaymentError("Ingresa un monto válido mayor a cero");
+            return;
+        }
+
+        const pending = selectedReservationForPayment ? Number(selectedReservationForPayment.pending_payment) : 0;
+        if (amount > pending) {
+            setPaymentError("El pago no puede ser mayor al monto pendiente");
+            return;
+        }
+
+        setIsSubmittingPayment(true);
+
+        const res = await fetch(`${API_BASE_URL}/temple-amortizations`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${sessionStorage.getItem("token")}`
+            },
+            body: JSON.stringify({
+                attendance_id: Number(paymentForm.attendance_id),
+                payment_amount: amount,
+                payment_date: paymentForm.payment_date
+            })
+        });
+
+        setIsSubmittingPayment(false);
+
+        if (!res.ok) {
+            const errorData = await res.json().catch(() => null);
+            setPaymentError(errorData?.message || "Error al registrar el pago");
+            return;
+        }
+
+        handleClosePaymentModal();
         fetchReservations();
     };
 
@@ -478,6 +566,15 @@ export default function TripReservations() {
                     🖨️ Imprimir
                 </button>
 
+                <button
+                    type="button"
+                    onClick={handleOpenPaymentModal}
+                    className="btn primary"
+                    style={{ margin: 0, display: "flex", alignItems: "center", gap: "8px", whiteSpace: "nowrap", alignSelf: "flex-end" }}
+                >
+                    ➕ Agregar pago
+                </button>
+
                 {filterTripId && !filterUserId && (
                     <p className="extracted-style-10" style={{ whiteSpace: "nowrap", alignSelf: "flex-end", margin: 0 }}>
                         📍 Miembros que asisten: <strong>{filteredReservations.length}</strong>
@@ -489,6 +586,89 @@ export default function TripReservations() {
                     </p>
                 )}
             </div>
+
+            {showPaymentModal && (
+                <div className="modal-overlay">
+                    <div className="modal-content">
+                        <h2>Pago de Adelanto</h2>
+                        <form onSubmit={handlePaymentSubmit} className="grid-form">
+                            <div className="form-group">
+                                <label htmlFor="trip_id_payment">Viaje</label>
+                                <select id="trip_id_payment" name="trip_id" value={paymentForm.trip_id} onChange={handlePaymentChange} required>
+                                    <option value="">Seleccionar viaje</option>
+                                    {trips.map(trip => (
+                                        <option key={trip.id} value={trip.id}>
+                                            {formatDate(trip.date)}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            {paymentForm.trip_id && (
+                                <div className="form-group">
+                                    <label htmlFor="attendance_id">Miembro</label>
+                                    <select id="attendance_id" name="attendance_id" value={paymentForm.attendance_id} onChange={handlePaymentChange} required>
+                                        <option value="">Seleccionar miembro</option>
+                                        {availableReservationsForSelectedTrip.map(res => (
+                                            <option key={res.id} value={res.id}>
+                                                {res.user_name} — Pendiente ${Number(res.pending_payment).toLocaleString()}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
+
+                            {selectedReservationForPayment && (
+                                <div className="form-group full-width">
+                                    <p><strong>Reserva:</strong></p>
+                                    <p>Miembro: <strong>{selectedReservationForPayment.user_name}</strong></p>
+                                    <p>Viaje: <strong>{formatDate(selectedReservationForPayment.trip_date)}</strong></p>
+                                    <p>Pagado: <strong>${Number(selectedReservationForPayment.advance_payment).toLocaleString()}</strong></p>
+                                    <p>Saldo: <strong>${Number(selectedReservationForPayment.pending_payment).toLocaleString()}</strong></p>
+                                </div>
+                            )}
+
+                            <div className="form-group">
+                                <label htmlFor="payment_amount">Monto de Pago</label>
+                                <input
+                                    id="payment_amount"
+                                    name="payment_amount"
+                                    type="number"
+                                    min="0.01"
+                                    step="0.01"
+                                    value={paymentForm.payment_amount}
+                                    onChange={handlePaymentChange}
+                                    placeholder="Ingrese el monto a pagar"
+                                    required
+                                />
+                            </div>
+
+                            <div className="form-group">
+                                <label htmlFor="payment_date">Fecha de Pago</label>
+                                <input
+                                    id="payment_date"
+                                    name="payment_date"
+                                    type="date"
+                                    value={paymentForm.payment_date}
+                                    readOnly
+                                    style={{ background: "var(--bg-body, #f5f5f5)", cursor: "not-allowed", opacity: 0.8 }}
+                                />
+                            </div>
+
+                            {paymentError && (
+                                <p style={{ color: "var(--danger)", marginBottom: "16px" }}>{paymentError}</p>
+                            )}
+
+                            <div className="form-group full-width">
+                                <button type="submit" className="btn primary" disabled={isSubmittingPayment || !selectedReservationForPayment}>
+                                    {isSubmittingPayment ? "Pagando..." : "Pagar"}
+                                </button>
+                                <button type="button" onClick={handleClosePaymentModal} className="btn cancel-btn">Cancelar</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
 
             <div className="table-container">
                 <table>
