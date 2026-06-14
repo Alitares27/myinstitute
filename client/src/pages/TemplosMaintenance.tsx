@@ -28,7 +28,7 @@ const getStatusLabel = (status: string) => {
 const getStatusClass = (status: string) => {
   switch (status) {
     case "operating": return "status-present";
-    case "announced": return "status-general";
+    case "announced": return "status-absent";
     case "under_construction": return "status-absent";
     case "renovation": return "status-absent";
     default: return "status-general";

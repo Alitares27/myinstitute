@@ -572,7 +572,7 @@ export default function TripReservations() {
                     className="btn primary"
                     style={{ margin: 0, display: "flex", alignItems: "center", gap: "8px", whiteSpace: "nowrap", alignSelf: "flex-end" }}
                 >
-                    ➕ Agregar pago
+                    Pagar
                 </button>
 
                 {filterTripId && !filterUserId && (

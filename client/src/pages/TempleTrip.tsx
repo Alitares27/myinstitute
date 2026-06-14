@@ -24,7 +24,7 @@ export default function TempleTrip() {
     const [trips, setTrips] = useState<Trip[]>([]);
     const [editingId, setEditingId] = useState<number | null>(null);
     const [currentPage, setCurrentPage] = useState(1);
-    const tripsPerPage = 5;
+    const recordsPerPage = 5;
     const role = sessionStorage.getItem("role");
 
     const [formData, setFormData] = useState({
@@ -55,16 +55,19 @@ export default function TempleTrip() {
         });
     }, [trips, sortConfig]);
 
-    const indexOfLastTrip = currentPage * tripsPerPage;
-    const indexOfFirstTrip = indexOfLastTrip - tripsPerPage;
-    const currentTrips = sortedTrips.slice(indexOfFirstTrip, indexOfLastTrip);
-    const totalPages = Math.ceil(sortedTrips.length / tripsPerPage);
+    const totalPages = Math.ceil(sortedTrips.length / recordsPerPage);
+
+    const currentTrips = useMemo(() => {
+        const lastIdx = currentPage * recordsPerPage;
+        const firstIdx = lastIdx - recordsPerPage;
+        return sortedTrips.slice(firstIdx, lastIdx);
+    }, [sortedTrips, currentPage]);
 
     useEffect(() => {
         if (currentPage > totalPages && totalPages > 0) {
             setCurrentPage(totalPages);
         }
-    }, [trips]);
+    }, [totalPages, currentPage]);
 
     const fetchTemples = async () => {
         try {
@@ -309,24 +312,16 @@ export default function TempleTrip() {
                 </table>
 
                 {totalPages > 1 && (
-                    <div className="extracted-style-26">
-                        <button
-                            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                            disabled={currentPage === 1}
+                    <div className="pagination-dropdown">
+                        <span>PAGINA:</span>
+                        <select
+                            value={currentPage}
+                            onChange={(e) => setCurrentPage(Number(e.target.value))}
                         >
-                            ⬅ Anterior
-                        </button>
-
-                        <span>
-                            Página {currentPage} de {totalPages}
-                        </span>
-
-                        <button
-                            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                            disabled={currentPage === totalPages}
-                        >
-                            Siguiente ➡
-                        </button>
+                            {Array.from({ length: totalPages }, (_, i) => (
+                                <option key={i + 1} value={i + 1}>{i + 1} de {totalPages}</option>
+                            ))}
+                        </select>
                     </div>
                 )}
             </div>
