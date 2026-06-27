@@ -324,6 +324,17 @@ export default function TripReservations() {
         return result;
     }, [reservations, filterTripId, filterUserId]);
 
+    const reservationTotals = useMemo(() => {
+        return filteredReservations.reduce(
+            (totals, reservation) => {
+                totals.totalPaid += Number(reservation.advance_payment) || 0;
+                totals.totalPending += Number(reservation.pending_payment) || 0;
+                return totals;
+            },
+            { totalPaid: 0, totalPending: 0 }
+        );
+    }, [filteredReservations]);
+
     const sortedReservations = useMemo(() => {
         if (!sortConfig) return filteredReservations;
         return [...filteredReservations].sort((a, b) => {
@@ -563,7 +574,7 @@ export default function TripReservations() {
                     className="btn secondary"
                     style={{ margin: 0, display: "flex", alignItems: "center", gap: "8px", whiteSpace: "nowrap", alignSelf: "flex-end" }}
                 >
-                    🖨️ Imprimir
+                    Imprimir
                 </button>
 
                 <button
@@ -576,9 +587,17 @@ export default function TripReservations() {
                 </button>
 
                 {filterTripId && !filterUserId && (
-                    <p className="extracted-style-10" style={{ whiteSpace: "nowrap", alignSelf: "flex-end", margin: 0 }}>
-                        📍 Miembros que asisten: <strong>{filteredReservations.length}</strong>
-                    </p>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: "12px", alignSelf: "flex-end", margin: 0 }}>
+                        <p className="extracted-style-10" style={{ whiteSpace: "nowrap", margin: 0 }}>
+                            Asisten: <strong>{filteredReservations.length}</strong> Miembros
+                        </p>
+                        <p className="extracted-style-10" style={{ whiteSpace: "nowrap", margin: 0 }}>
+                            Pagado: <strong>${reservationTotals.totalPaid.toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
+                        </p>
+                        <p className="extracted-style-10" style={{ whiteSpace: "nowrap", margin: 0 }}>
+                            Pendiente: <strong>${reservationTotals.totalPending.toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
+                        </p>
+                    </div>
                 )}
                 {filterUserId && (
                     <p className="extracted-style-10" style={{ whiteSpace: "nowrap", alignSelf: "flex-end", margin: 0 }}>
