@@ -69,7 +69,7 @@ function Dashboard() {
       <div className="stat-card">
         <div className="stat-icon">🎓</div>
         <div className="stat-value">{stats.students}</div>
-        <div className="stat-label">Estudiantes</div>
+        <div className="stat-label">Miembros</div>
       </div>
       <div className="stat-card">
         <div className="stat-icon">👩‍🏫</div>

@@ -81,7 +81,7 @@ function Sidebar() {
 
               {isTeachingOpen && (
                 <ul className="submenu" style={{ paddingLeft: "20px", listStyle: "none" }}>
-                  <li><Link to="/students" className="sidebar-link" onClick={() => setIsMenuOpen(false)}><div className="icon-circle"><FaUserGraduate className="icon" /></div><span>Estudiantes</span></Link></li>
+                  <li><Link to="/students" className="sidebar-link" onClick={() => setIsMenuOpen(false)}><div className="icon-circle"><FaUserGraduate className="icon" /></div><span>Miembros</span></Link></li>
                   <li><Link to="/enrollments" className="sidebar-link" onClick={() => setIsMenuOpen(false)}><div className="icon-circle"><FaClipboardList className="icon" /></div><span>Matrículas</span></Link></li>
                   <li><Link to="/attendance" className="sidebar-link" onClick={() => setIsMenuOpen(false)}><div className="icon-circle"><FaCalendarCheck className="icon" /></div><span>Asistencia</span></Link></li>
                   <li><Link to="/grades" className="sidebar-link" onClick={() => setIsMenuOpen(false)}><div className="icon-circle"><FaStar className="icon" /></div><span>Calificaciones</span></Link></li>

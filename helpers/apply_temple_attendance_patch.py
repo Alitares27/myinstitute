@@ -131,7 +131,7 @@ old_button = '''                <button
                     className="btn secondary"
                     style={{ margin: 0, display: "flex", alignItems: "center", gap: "8px", whiteSpace: "nowrap", alignSelf: "flex-end" }}
                 >
-                    🖨️ Imprimir
+                Imprimir
                 </button>
 
                 {filterTripId && !filterUserId && (
@@ -142,7 +142,7 @@ new_button = '''                <button
                     className="btn secondary"
                     style={{ margin: 0, display: "flex", alignItems: "center", gap: "8px", whiteSpace: "nowrap", alignSelf: "flex-end" }}
                 >
-                    🖨️ Imprimir
+                    Imprimir
                 </button>
 
                 <button

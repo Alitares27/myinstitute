@@ -395,6 +395,11 @@ export default function TripReservations() {
         sortedDates.forEach(date => {
             const dateGroup = groupedByDate[date];
             const membersInDate = dateGroup.length;
+            const sortedMembers = [...dateGroup].sort((a, b) => {
+                const nameA = (a.user_name || a.user_document || "").toString().toLowerCase();
+                const nameB = (b.user_name || b.user_document || "").toString().toLowerCase();
+                return nameA.localeCompare(nameB, "es", { sensitivity: "base" });
+            });
 
             body += `<h2>Fecha: ${date}</h2>`;
             body += `
@@ -405,19 +410,19 @@ export default function TripReservations() {
                             <th>Documento</th>
                             <th class="right">Pagado</th>
                             <th class="right">Pendiente</th>
-                            <th class="center">Viajes Realizados (Total)</th>
+                           
                         </tr>
                     </thead>
                     <tbody>
             `;
-            dateGroup.forEach(res => {
+            sortedMembers.forEach(res => {
                 body += `
                     <tr>
                         <td>${res.user_name}</td>
                         <td>${res.user_document ?? '-'}</td>
                         <td class="right">$${Number(res.advance_payment).toLocaleString()}</td>
                         <td class="right">$${Number(res.pending_payment).toLocaleString()}</td>
-                        <td class="center">${tripCounts[res.user_id] || 1}</td>
+                        
                     </tr>
                 `;
             });

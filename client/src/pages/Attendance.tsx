@@ -275,7 +275,7 @@ export default function Attendance() {
 
         {(role === "admin" || role === "teacher") && (
           <button type="button" onClick={handlePrintAttendanceReport} className="btn secondary" style={{ margin: 0, display: "flex", alignItems: "center", gap: "8px", whiteSpace: "nowrap" }}>
-            🖨️ Imprimir Reporte
+            Imprimir
           </button>
         )}
       </div>
