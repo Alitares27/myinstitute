@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo } from "react";
 import api from "../api";
 import { FaEdit, FaTrash } from "react-icons/fa";
 import axios from "axios";
+import { Skeleton } from "../components/Skeleton";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
@@ -266,7 +267,7 @@ export default function Courses() {
               </form>
             )}
 
-            {loadingTopics ? <p>Cargando...</p> : (
+            {loadingTopics ? <Skeleton height="1rem" /> : (
               <table>
                 <thead>
                   <tr>

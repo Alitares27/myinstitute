@@ -80,7 +80,7 @@ new_handlers = '''    const handleDelete = async (id: number) => {
         setPaymentError("");
 
         if (!paymentForm.attendance_id) {
-            setPaymentError("Selecciona una reserva para el pago");
+            setPaymentError("Elige una reserva para el pago");
             return;
         }
 
@@ -170,7 +170,7 @@ new_modal = '''            </div>
                             <div className="form-group">
                                 <label htmlFor="attendance_id">Reserva</label>
                                 <select id="attendance_id" name="attendance_id" value={paymentForm.attendance_id} onChange={handlePaymentChange} required>
-                                    <option value="">Seleccionar reserva</option>
+                                    <option value="">Elegir reserva</option>
                                     {reservations.map(res => (
                                         <option key={res.id} value={res.id}>
                                             {res.user_name} — {formatDate(res.trip_date)} — Pendiente ${Number(res.pending_payment).toLocaleString()}

@@ -273,6 +273,47 @@ form {
   border: 1.5px solid var(--border-color);
 }
 
+.trip-form {
+  width: fit-content;
+  max-width: 100%;
+  grid-template-columns: repeat(auto-fit, minmax(170px, max-content));
+  justify-content: start;
+  align-items: end;
+}
+
+.trip-form .form-group {
+  min-width: 170px;
+  max-width: 100%;
+}
+
+.trip-form .form-group.full-width {
+  width: fit-content;
+  flex-wrap: wrap;
+}
+
+.trip-form input,
+.trip-form select {
+  width: min(220px, 100%);
+}
+
+@media (max-width: 768px) {
+  .trip-form {
+    width: 100%;
+    grid-template-columns: 1fr;
+  }
+
+  .trip-form .form-group,
+  .trip-form .form-group.full-width {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .trip-form input,
+  .trip-form select {
+    width: 100%;
+  }
+}
+
 .form-group {
   display: flex;
   flex-direction: column;

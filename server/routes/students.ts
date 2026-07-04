@@ -45,12 +45,12 @@ router.post("/", verifyToken, isAdmin, async (req: AuthRequest, res: Response) =
 
     const userRes = await client.query("SELECT id, role FROM users WHERE id = $1", [user_id]);
     if (userRes.rows.length === 0) {
-      return res.status(404).json({ message: "Usuario no encontrado" });
+      return res.status(404).json({ message: "Miembro no encontrado" });
     }
 
     const existing = await client.query("SELECT id FROM students WHERE user_id = $1", [user_id]);
     if (existing.rows.length > 0) {
-      return res.status(400).json({ message: "Este usuario ya está registrado como estudiante" });
+      return res.status(400).json({ message: "Este miembro ya está registrado como estudiante" });
     }
 
     await client.query("INSERT INTO students (user_id, grade) VALUES ($1, $2)", [user_id, grade]);

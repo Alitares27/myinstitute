@@ -47,7 +47,7 @@ export default function TopicsManager() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedCourseId) return alert("Selecciona un curso primero");
+    if (!selectedCourseId) return alert("Elije un curso primero");
 
     try {
       if (editingId) {
@@ -77,9 +77,9 @@ export default function TopicsManager() {
       <h2>📚 Gestión de Temas del Manual</h2>
 
       <div>
-        <label>Seleccionar Curso: </label>
+        <label>Elegir Curso: </label>
         <select value={selectedCourseId} onChange={(e) => setSelectedCourseId(e.target.value)}>
-          <option value="">-- Seleccione un curso --</option>
+          <option value="">Elegir curso</option>
           {courses.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
         </select>
       </div>

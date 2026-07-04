@@ -73,11 +73,11 @@ function Sidebar() {
         <nav>
           <ul>
             <li>
-              <div className="sidebar-link" onClick={() => setIsTeachingOpen(!isTeachingOpen)} style={{ cursor: "pointer" }}>
+              <button type="button" className="sidebar-link button-link" onClick={() => setIsTeachingOpen(!isTeachingOpen)} aria-expanded={isTeachingOpen} style={{ cursor: "pointer" }}>
                 <div className="icon-circle"><FaGraduationCap className="icon" /></div>
                 <span>Enseñanza</span>
                 <FaChevronDown style={getChevronStyle(isTeachingOpen)} />
-              </div>
+              </button>
 
               {isTeachingOpen && (
                 <ul className="submenu" style={{ paddingLeft: "20px", listStyle: "none" }}>
@@ -90,11 +90,11 @@ function Sidebar() {
             </li>
 
             <li>
-              <div className="sidebar-link" onClick={() => setIsLeadershipOpen(!isLeadershipOpen)} style={{ cursor: "pointer" }}>
+              <button type="button" className="sidebar-link button-link" onClick={() => setIsLeadershipOpen(!isLeadershipOpen)} aria-expanded={isLeadershipOpen} style={{ cursor: "pointer" }}>
                 <div className="icon-circle"><FaUserTie className="icon" /></div>
                 <span>Liderazgo</span>
                 <FaChevronDown style={getChevronStyle(isLeadershipOpen)} />
-              </div>
+              </button>
 
               {isLeadershipOpen && (
                 <ul className="submenu" style={{ paddingLeft: "20px", listStyle: "none" }}>
@@ -117,15 +117,15 @@ function Sidebar() {
 
             {role === "admin" && (
               <li>
-                <div className="sidebar-link" onClick={() => setIsMaintenanceOpen(!isMaintenanceOpen)} style={{ cursor: "pointer" }}>
+                <button type="button" className="sidebar-link button-link" onClick={() => setIsMaintenanceOpen(!isMaintenanceOpen)} aria-expanded={isMaintenanceOpen} style={{ cursor: "pointer" }}>
                   <div className="icon-circle"><FaTools className="icon" /></div>
                   <span>Mantenimiento</span>
                   <FaChevronDown style={getChevronStyle(isMaintenanceOpen)} />
-                </div>
+                </button>
 
                 {isMaintenanceOpen && (
                   <ul className="submenu" style={{ paddingLeft: "20px", listStyle: "none" }}>
-                    <li><Link to="/users" className="sidebar-link" onClick={() => setIsMenuOpen(false)}><div className="icon-circle"><FaUser className="icon" /></div><span>Usuarios</span></Link></li>
+                    <li><Link to="/users" className="sidebar-link" onClick={() => setIsMenuOpen(false)}><div className="icon-circle"><FaUser className="icon" /></div><span>Miembros</span></Link></li>
                     <li><Link to="/teachers" className="sidebar-link" onClick={() => setIsMenuOpen(false)}><div className="icon-circle"><FaChalkboardTeacher className="icon" /></div><span>Maestros</span></Link></li>
                     <li><Link to="/courses" className="sidebar-link" onClick={() => setIsMenuOpen(false)}><div className="icon-circle"><FaBookOpen className="icon" /></div><span>Cursos</span></Link></li>
                     <li><Link to="/temas-management" className="sidebar-link" onClick={() => setIsMenuOpen(false)}><div className="icon-circle"><FaMicrophone className="icon" /></div><span>Temas</span></Link></li>

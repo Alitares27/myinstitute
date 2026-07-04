@@ -15,10 +15,10 @@ router.get("/me", verifyToken, async (req: AuthRequest, res: Response) => {
       "SELECT id, name, email, telefono, role, document FROM users WHERE id = $1",
       [req.user?.id]
     );
-    if (result.rows.length === 0) return res.status(404).json({ message: "Usuario no encontrado" });
+    if (result.rows.length === 0) return res.status(404).json({ message: "Miembro no encontrado" });
     res.json(result.rows[0]);
   } catch {
-    res.status(500).json({ message: "Error obteniendo usuario" });
+    res.status(500).json({ message: "Error obteniendo miembro" });
   }
 });
 
@@ -100,7 +100,7 @@ router.put("/:id", verifyToken, isAdmin, async (req: AuthRequest, res: Response)
     res.json(result.rows[0]);
   } catch (err) {
     await client.query("ROLLBACK");
-    console.error("Error actualizando usuario:", err);
+    console.error("Error actualizando miembro:", err);
     res.status(500).json({ message: "Error actualizando" });
   } finally {
     client.release();
@@ -110,7 +110,7 @@ router.put("/:id", verifyToken, isAdmin, async (req: AuthRequest, res: Response)
 router.delete("/:id", verifyToken, isAdmin, async (req: AuthRequest, res: Response) => {
   try {
     await pool.query("DELETE FROM users WHERE id = $1", [req.params.id]);
-    res.json({ message: "Usuario eliminado" });
+    res.json({ message: "Miembro eliminado" });
   } catch {
     res.status(500).json({ message: "Error eliminando" });
   }

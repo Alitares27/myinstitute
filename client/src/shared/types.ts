@@ -1,18 +1,19 @@
 export interface Trip {
-  id: string;
-  name: string;
-  date: string; 
-  status: TripStatus;
+  id: number;
+  name?: string;
+  date: string;
+  status?: TripStatus;
   cost: number;
 }
 
 export interface Reservation {
-  id?: string;
-  memberId: string;
-  tripId: string;
-  advance: number; 
-  cost: number; 
-  pendingPayment: number; 
-  registrationDate: string;
-  dueDate: string;
+  id: number;
+  user_id: number;
+  trip_id: number;
+  user_name?: string;
+  trip_date?: string;
+  register_date?: string;
+  advance_payment: number;
+  pending_payment: number;
+  due_date?: string;
 }

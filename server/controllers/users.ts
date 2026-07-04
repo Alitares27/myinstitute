@@ -62,7 +62,7 @@ export async function registerUser(req: Request, res: Response) {
       console.error("❌ Error running rollback in registerUser:", rollbackErr);
     }
     console.error("❌ Error en registerUser:", err);
-    return res.status(500).json({ message: "Error al registrar usuario" });
+    return res.status(500).json({ message: "Error al registrar miembro" });
   } finally {
     client.release();
   }
@@ -78,7 +78,7 @@ export async function loginUser(req: Request, res: Response) {
 
     const user = result.rows[0];
 
-    console.log("👤 Usuario encontrado:", user);
+    console.log("👤 Miembro encontrado:", user);
 
     if (!user) {
       return res.status(401).json({ message: "Credenciales inválidas" });
@@ -122,7 +122,7 @@ export async function getProfile(req: AuthRequest, res: Response) {
     );
 
     if (result.rows.length === 0) {
-      return res.status(404).json({ message: "Usuario no encontrado" });
+      return res.status(404).json({ message: "Miembro no encontrado" });
     }
 
     res.json(result.rows[0]);
@@ -147,7 +147,7 @@ export async function updateUser(req: AuthRequest, res: Response) {
 
     const userExist = await pool.query("SELECT * FROM users WHERE id = $1", [id]);
     if (userExist.rows.length === 0) {
-      return res.status(404).json({ message: "Usuario no encontrado" });
+      return res.status(404).json({ message: "Miembro no encontrado" });
     }
 
     if (document) {
@@ -177,7 +177,7 @@ export async function updateUser(req: AuthRequest, res: Response) {
     const result = await pool.query(query, values);
     res.json(result.rows[0]);
   } catch (err) {
-    res.status(500).json({ message: "Error al actualizar usuario" });
+    res.status(500).json({ message: "Error al actualizar miembro" });
   }
 }
 

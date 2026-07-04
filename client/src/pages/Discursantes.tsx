@@ -225,12 +225,12 @@ export default function Speakers() {
 
       {role === "admin" && (
         <section>
-          <h2 className="dashboard-subtitle">{editingId ? "<FaEdit /> Actualizar" : "➕ Asignar"}</h2>
+         <h2 className="dashboard-subtitle">{editingId ? <><FaEdit /> Actualizar</> : <><FaPlus /> Asignar</>}</h2>
           <form className="grid-form" onSubmit={handleSubmit}>
             <div className="form-group">
               <label>Miembro</label>
               <select required value={form.member_id} onChange={e => setForm({ ...form, member_id: e.target.value })}>
-                <option value="">Seleccionar Miembro...</option>
+                <option value="">Elegir Miembro</option>
                 {members.map(m => <option key={m.id} value={String(m.id)}>{m.name}</option>)}
               </select>
             </div>
@@ -238,7 +238,7 @@ export default function Speakers() {
             <div className="form-group">
               <label>Tema</label>
               <select required value={form.tema_id} onChange={e => setForm({ ...form, tema_id: e.target.value })}>
-                <option value="">Seleccionar Tema...</option>
+                <option value="">Elegir Tema</option>
                 {allTemas.map(t => <option key={t.id} value={String(t.id)}>{t.title}</option>)}
               </select>
             </div>

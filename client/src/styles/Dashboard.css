@@ -157,7 +157,41 @@
 .shortcut-card:hover .shortcut-info h3,
 .shortcut-card:hover .shortcut-info p {
   color: white;
+} 
+
+/* Dashboard loading skeleton */
+.dashboard-skeleton {
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
+
+.skeleton-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+
+/* Skeleton placeholders */
+.skeleton-card, .skeleton-shortcut {
+  background-color: #e0e0e0;
+  border-radius: 4px;
+  animation: shimmer 1.5s infinite linear;
+  background-image: linear-gradient(90deg, #e0e0e0 0%, #f0f0f0 50%, #e0e0e0 100%);
+  background-size: 200% 100%;
+  overflow: hidden;
+}
+
+.skeleton-card {
+  height: 4rem;
+}
+
+.skeleton-shortcut {
+  height: 6rem;
+}
+
+
 
 .shortcut-icon-bg {
   width: 60px;

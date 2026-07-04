@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import "../styles/Dashboard.css";
+import { Skeleton } from "../components/Skeleton";
 
 function Dashboard() {
   const navigate = useNavigate();
@@ -51,9 +52,24 @@ function Dashboard() {
       });
   }, [API_BASE_URL]);
 
-  if (loading) {
-    return <div className="loading-container">Cargando dashboard...</div>;
-  }
+      <div className="dashboard-skeleton">
+      {/* Stats placeholders */}
+      <div className="skeleton-grid stats-skeleton">
+        <div className="skeleton-card"></div>
+        <div className="skeleton-card"></div>
+        <div className="skeleton-card"></div>
+        <div className="skeleton-card"></div>
+      </div>
+      {/* Shortcuts placeholders */}
+      <div className="skeleton-grid shortcuts-skeleton">
+        <div className="skeleton-shortcut"></div>
+        <div className="skeleton-shortcut"></div>
+        <div className="skeleton-shortcut"></div>
+        <div className="skeleton-shortcut"></div>
+        <div className="skeleton-shortcut"></div>
+        <div className="skeleton-shortcut"></div>
+      </div>
+    </div>
 
   if (error) {
     return (
@@ -150,7 +166,7 @@ function Dashboard() {
           <div className="shortcut-card" onClick={() => navigate("/users")}>
             <div className="shortcut-icon-bg">⚙️</div>
             <div className="shortcut-info">
-              <h3>Usuarios</h3>
+              <h3>Miembros</h3>
               <p>Control de acceso al sistema</p>
             </div>
           </div>
@@ -172,7 +188,7 @@ function Dashboard() {
             <div className="shortcut-icon-bg">📊</div>
             <div className="shortcut-info">
               <h3>Calificaciones</h3>
-              <p>Subir y editar notas</p>
+              <Skeleton height="1rem" />
             </div>
           </div>
           <div className="shortcut-card" onClick={() => navigate("/courses")}>

@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import api from "../api";
-import { FaEdit, FaTrash } from "react-icons/fa";
+import { FaEdit, FaPlus, FaTrash } from "react-icons/fa";
 import axios from "axios";
 import { formatDate } from "../utils/dateUtils";
 
@@ -145,17 +145,17 @@ export default function Grades() {
       <h1>📊 Calificaciones</h1>
       {role === "admin" && (
         <div className="form-container">
-          <h2 className="dashboard-subtitle">{form.id ? "<FaEdit /> Actualizar" : "➕ Calificar"}</h2>
+          <h2 className="dashboard-subtitle">{form.id ? <><FaEdit /> Actualizar</> : <><FaPlus /> Calificar</>}</h2>
           <form onSubmit={handleSubmit}>
             <select value={form.student_id} onChange={(e) => setForm({ ...form, student_id: e.target.value })} required>
-              <option value="">-- Seleccionar Estudiante --</option>
+              <option value="">Elegir Estudiante </option>
               {students.map((s) => (
                 <option key={s.id} value={s.id}>{s.name}</option>
               ))}
             </select>
 
             <select value={form.course_id} onChange={(e) => setForm({ ...form, course_id: e.target.value })} required>
-              <option value="">-- Seleccionar Curso --</option>
+              <option value="">Elegir Curso</option>
               {courses.map((c) => (
                 <option key={c.id} value={c.id}>{c.title}</option>
               ))}

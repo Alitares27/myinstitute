@@ -185,7 +185,7 @@ export default function TempleTrip() {
         <div>
             <h1 className="dashboard-subtitle">🚌 Gestionar Viajes</h1>
             <h2>{role === "admin" ? "➕ Registrar Viaje" : "Disponibles"}</h2>
-            <form onSubmit={handleSubmit} className="grid-form">
+            <form onSubmit={handleSubmit} className="grid-form trip-form">
                 <div className="form-group">
                     <label>Templo</label>
                     <select
@@ -194,7 +194,7 @@ export default function TempleTrip() {
                         onChange={handleChange}
                         required
                     >
-                        <option value="">Seleccione un templo</option>
+                        <option value="">Elegir templo</option>
                         {temples.map(temple => (
                             <option key={temple.id} value={temple.id}>
                                 {temple.name}

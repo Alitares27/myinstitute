@@ -1,11 +1,11 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { FaEdit, FaTrash } from "react-icons/fa";
+import { FaEdit, FaPlus, FaTrash } from "react-icons/fa";
 import { formatDate, toYMD } from "../utils/dateUtils";
 import { openPrintWindow } from "../utils/reportUtils";
 import api from "../api";
 import { TripStatus } from "../shared/constants";
-import { Trip, Reservation } from "../shared/types";
+import { Trip } from "../shared/types";
 import useAvailableTrips from "../hooks/useAvailableTrips";
 
 interface User {
@@ -13,7 +13,7 @@ interface User {
     name: string;
 }
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+const API_BASE_URL = (import.meta as any).env?.VITE_API_URL ?? "http://localhost:5000/api";
 
 const getTodayYMD = () => {
     const today = new Date();
@@ -27,7 +27,7 @@ export default function TripReservations() {
     const navigate = useNavigate();
     const [users, setUsers] = useState<User[]>([]);
     const [trips, setTrips] = useState<Trip[]>([]);
-    const [reservations, setReservations] = useState<Reservation[]>([]);
+    const [reservations, setReservations] = useState<any[]>([]);
     const [editingId, setEditingId] = useState<number | null>(null);
     const [role, setRole] = useState<string | null>(null);
     const [formData, setFormData] = useState({
@@ -170,7 +170,7 @@ export default function TripReservations() {
         fetchReservations();
     };
 
-    const handleEdit = (res: Reservation) => {
+    const handleEdit = (res: any) => {
         setFormData({
             user_id: res.user_id.toString(),
             trip_id: res.trip_id.toString(),
@@ -269,6 +269,16 @@ export default function TripReservations() {
         return users.filter(u => uniqueIds.has(u.id));
     }, [reservations, users]);
 
+    const availableMembersForSelectedTrip = useMemo(() => {
+        if (!formData.trip_id) return users;
+        const reservedUserIds = new Set(
+            reservations
+                .filter(r => r.trip_id === Number(formData.trip_id))
+                .map(r => r.user_id)
+        );
+        return users.filter(u => !reservedUserIds.has(u.id));
+    }, [reservations, users, formData.trip_id]);
+
     const filteredReservations = useMemo(() => {
         let result = reservations;
         if (filterTripId) result = result.filter(r => r.trip_id === Number(filterTripId));
@@ -290,8 +300,8 @@ export default function TripReservations() {
     const sortedReservations = useMemo(() => {
         if (!sortConfig) return filteredReservations;
         return [...filteredReservations].sort((a, b) => {
-            const aVal = a[sortConfig.key as keyof Reservation];
-            const bVal = b[sortConfig.key as keyof Reservation];
+            const aVal = (a as any)[sortConfig.key as string];
+            const bVal = (b as any)[sortConfig.key as string];
             if (aVal < bVal) return sortConfig.direction === "asc" ? -1 : 1;
             if (aVal > bVal) return sortConfig.direction === "asc" ? 1 : -1;
             return 0;
@@ -315,18 +325,16 @@ export default function TripReservations() {
     useEffect(() => {
         if (filterTripId || filterUserId) {
             setShowSummary(true);
-            const timer = setTimeout(() => setShowSummary(false), 8000);
-            return () => clearTimeout(timer);
         }
     }, [filterTripId, filterUserId]);
 
     const handlePrintReport = () => {
-        const groupedByDate = filteredReservations.reduce((acc, r) => {
+        const groupedByDate = filteredReservations.reduce((acc: Record<string, any[]>, r: any) => {
             const dateStr = formatDate(r.trip_date);
             if (!acc[dateStr]) acc[dateStr] = [];
             acc[dateStr].push(r);
             return acc;
-        }, {} as Record<string, Reservation[]>);
+        }, {} as Record<string, any[]>);
 
         const sortedDates = Object.keys(groupedByDate).sort((a, b) =>
             new Date(a).getTime() - new Date(b).getTime()
@@ -350,23 +358,22 @@ export default function TripReservations() {
     return (
         <div>
             <h1>🚌 Reservar Viajes</h1>
+            <h2 className="dashboard-subtitle">{editingId ? <><FaEdit /> Actualizar</> : <><FaPlus /> Asignar</>}</h2>
             <form onSubmit={handleSubmit}>
-                <select name="user_id" value={formData.user_id} onChange={handleChange} required>
-                    <option value="">Seleccionar Miembro</option>
-                    {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
-                </select>
                 <select name="trip_id" value={formData.trip_id} onChange={handleChange} required>
-                    <option value="">Seleccionar Viaje</option>
+                    <option value="">Elegir Viaje</option>
                     {availableTripsForReservation.map(t => <option key={t.id} value={t.id}>{formatDate(t.date)}</option>)}
                 </select>
-                <input type="number" name="advance_payment" placeholder="Pago" value={formData.advance_payment} onChange={handleChange} />
-                <button type="submit">{editingId ? "Actualizar" : "Reservar"}</button>
+                <select name="user_id" value={formData.user_id} onChange={handleChange} required>
+                    <option value="">Elegir Miembro</option>
+                    {availableMembersForSelectedTrip.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+                </select>
+                <input type="number" name="advance_payment" placeholder="Adelanto" value={formData.advance_payment} onChange={handleChange} />
+                <button type="submit" className="btn primary">{editingId ? "Actualizar" : "Reservar"}</button>
                 {isFormDirty && <button type="button" onClick={handleCancel}>✕</button>}
             </form>
 
-            <button onClick={handleOpenPaymentModal}>Pagar</button>
-
-<div className="filters" style={{ marginTop: "16px", display: "flex", gap: "12px", alignItems: "center" }}>
+<div className="filters" style={{ margin: "16px", display: "flex", gap: "12px", alignItems: "center" }}>
   <select value={filterTripId} onChange={e => setFilterTripId(e.target.value)} className="filter-select">
     <option value="">Todos los viajes</option>
     {trips.map(t => (
@@ -383,11 +390,13 @@ export default function TripReservations() {
       </option>
     ))}
   </select>
-  <button onClick={handlePrintReport} className="btn primary">Imprimir Reporte</button>
+  <button className="btn primary" onClick={handleOpenPaymentModal}>Pagar</button>
+  <button onClick={handlePrintReport} className="btn primary">Imprimir</button>
 </div>
 
 {showSummary && (
-        <div className="summary-modal" style={{position:'fixed', top:'20%', left:'50%', transform:'translateX(-50%)', background:'var(--bg-body, #fff)', padding:'16px', border:'1px solid #ccc', borderRadius:'8px', zIndex:1000, boxShadow:'0 4px 6px rgba(0,0,0,0.1)'}}>
+        <div className="summary-modal" style={{position:'fixed', top:'30px', right:'10px', background:'var(--bg-body, #fff)', padding:'16px', border:'1px solid #ccc', borderRadius:'8px', zIndex:1000, boxShadow:'0 4px 6px rgba(0,0,0,0.1)', minWidth:'300px'}}>
+          <button onClick={() => setShowSummary(false)} style={{position:'absolute', top:'40px', right:'10px', background:'none', border:'none', fontSize:'20px', cursor:'pointer', color:'var(--text-color, #50c5f7)'}}>✕</button>
           <p>{filteredReservations.length} reserva(s){filterTripId ? ` para el viaje ${formatDate(trips.find(t => t.id === Number(filterTripId))?.date)}` : ""}{filterUserId ? ` del miembro ${users.find(u => u.id === Number(filterUserId))?.name}` : ""}.</p>
           <p>Total pagado: ${reservationTotals.totalPaid.toLocaleString()}</p>
           <p>Total pendiente: ${reservationTotals.totalPending.toLocaleString()}</p>
@@ -401,7 +410,7 @@ export default function TripReservations() {
                         <h2>Pago de Adelanto</h2>
                         <form onSubmit={handlePaymentSubmit}>
                              <select name="trip_id" value={paymentForm.trip_id} onChange={handlePaymentChange} required>
-                                 <option value="">Seleccionar viaje</option>
+                                 <option value="">Elegir viaje</option>
                                  {availableTripsForReservation.map(trip => (
                                      <option key={trip.id} value={trip.id}>{formatDate(trip.date)}</option>
                                  ))}
@@ -409,7 +418,7 @@ export default function TripReservations() {
                              {paymentForm.trip_id && (
                                  <div className="form-group">
                                      <select name="attendance_id" value={paymentForm.attendance_id} onChange={handlePaymentChange} required>
-                                         <option value="">Seleccionar miembro</option>
+                                         <option value="">Elegir miembro</option>
                                          {availableReservationsForSelectedTrip.map(res => (
                                              <option key={res.id} value={res.id}>{res.user_name}</option>
                                          ))}

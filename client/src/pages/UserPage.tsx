@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
-import { FaEdit, FaTrash, FaSearch, FaIdCard } from "react-icons/fa";
+import { FaEdit, FaTrash, FaSearch, FaIdCard, FaPlus } from "react-icons/fa";
 import axios from "axios";
+import { Skeleton } from "../components/Skeleton";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
@@ -67,11 +68,11 @@ function UserPage() {
       if (form.id) {
         const res = await axios.put(`${API_BASE_URL}/users/${form.id}`, form, config);
         setUsers(users.map(u => u.id === Number(form.id) ? { ...u, ...res.data } : u));
-        alert("Usuario actualizado correctamente");
+        alert("Miembro actualizado correctamente");
       } else {
         const res = await axios.post(`${API_BASE_URL}/users`, form, config);
         setUsers([...users, res.data.user]);
-        alert("Usuario creado con éxito");
+        alert("Miembro creado con éxito");
       }
       resetForm();
     } catch (err: any) {
@@ -80,7 +81,7 @@ function UserPage() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!window.confirm("¿Confirmas la eliminación de este usuario?")) return;
+    if (!window.confirm("¿Confirmas la eliminación de este miembro?")) return;
     const token = sessionStorage.getItem("token");
     try {
       await axios.delete(`${API_BASE_URL}/users/${id}`, { headers: { Authorization: `Bearer ${token}` } });
@@ -109,14 +110,14 @@ function UserPage() {
     setForm({ id: "", name: "", email: "", password: "", telefono: "", role: "student", specialty: "", grade: "", document: "" });
   };
 
-  if (loading) return <div className="loading">Cargando...</div>;
+  if (loading) return <Skeleton height="2rem" />;
 
   return (
     <div className="user-page">
-      <h1>👤 Gestión de Usuarios</h1>
+      <h1>👤 Gestión de Miembros</h1>
 
       <h2 className="dashboard-subtitle">
-        {form.id ? <><FaEdit /> Editar Usuario</> : "➕ Registrar Usuario"}
+        {form.id ? <><FaEdit /> Editar Miembro</> : <><FaPlus /> Registrar Miembro</>}
       </h2>
 
       <div className="form-card">
@@ -167,7 +168,7 @@ function UserPage() {
 
       {currentUser?.role === "admin" && (
         <div className="admin-section">
-          <h3>Lista de Usuarios</h3>
+          <h3>Lista de Miembros</h3>
 
           <div className="search-bar" style={{ display: 'flex', alignItems: 'center', margin: '15px 0', gap: '10px' }}>
             <FaSearch />

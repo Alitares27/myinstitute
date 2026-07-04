@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import api from "../api";
-import { FaEdit, FaTrash } from "react-icons/fa";
+import { FaEdit, FaPlus, FaTrash } from "react-icons/fa";
 import axios from "axios";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
@@ -117,7 +117,7 @@ export default function Students() {
       <h1>👨‍🎓 Estudiantes</h1>
       {role === "admin" && (
         <>
-          <h2 className="dashboard-subtitle">{form.id ? "<FaEdit /> Actualizar" : "➕ Agregar"}</h2>
+          <h2 className="dashboard-subtitle">{form.id ? <><FaEdit /> Actualizar</> : <><FaPlus /> Agregar</>}</h2>
           <form onSubmit={handleSubmit}>
           {form.id ? (
             <input
@@ -132,7 +132,7 @@ export default function Students() {
               onChange={(e) => setForm({ ...form, user_id: e.target.value })}
               required
             >
-              <option value="">Seleccionar Usuario...</option>
+              <option value="">Elegir Miembro</option>
               {availableUsers.map((u) => (
                 <option key={u.id} value={u.id}>
                   {u.name}

@@ -105,7 +105,7 @@ export default function Login() {
                 className="btn-login"
                 disabled={loading}
               >
-                {loading ? "⏳ Iniciando..." : "🚀 Ingresar"}
+                {loading ? "Iniciando..." : "Ingresar"}
               </button>
 
               <button
