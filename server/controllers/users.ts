@@ -16,20 +16,17 @@ export async function registerUser(req: Request, res: Response) {
     const { name, email, password, telefono, role, specialty, document } = req.body;
 
     if (!name || !email || !password || !role) {
-      client.release();
       return res.status(400).json({ message: "Campos requeridos faltantes" });
     }
 
     const existing = await client.query("SELECT id FROM users WHERE email = $1", [email]);
     if (existing.rows.length > 0) {
-      client.release();
       return res.status(400).json({ message: "El correo ya está registrado" });
     }
 
     if (document) {
       const existingDoc = await client.query("SELECT id FROM users WHERE document = $1", [document]);
       if (existingDoc.rows.length > 0) {
-        client.release();
         return res.status(400).json({ message: "El número de documento ya está registrado" });
       }
     }
@@ -55,15 +52,19 @@ export async function registerUser(req: Request, res: Response) {
     }
 
     await client.query("COMMIT");
-    client.release();
 
     const token = generateToken(user.id, user.role);
-    res.status(201).json({ token, user });
+    return res.status(201).json({ token, user });
   } catch (err: any) {
-    await client.query("ROLLBACK");
-    client.release();
+    try {
+      await client.query("ROLLBACK");
+    } catch (rollbackErr) {
+      console.error("❌ Error running rollback in registerUser:", rollbackErr);
+    }
     console.error("❌ Error en registerUser:", err);
-    res.status(500).json({ message: "Error al registrar usuario" });
+    return res.status(500).json({ message: "Error al registrar usuario" });
+  } finally {
+    client.release();
   }
 }
 

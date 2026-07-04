@@ -45,15 +45,11 @@ router.post("/", verifyToken, isAdmin, async (req: AuthRequest, res: Response) =
 
     const userRes = await client.query("SELECT id, role FROM users WHERE id = $1", [user_id]);
     if (userRes.rows.length === 0) {
-      await client.query("ROLLBACK");
-      client.release();
       return res.status(404).json({ message: "Usuario no encontrado" });
     }
 
     const existing = await client.query("SELECT id FROM students WHERE user_id = $1", [user_id]);
     if (existing.rows.length > 0) {
-      await client.query("ROLLBACK");
-      client.release();
       return res.status(400).json({ message: "Este usuario ya está registrado como estudiante" });
     }
 
@@ -69,13 +65,17 @@ router.post("/", verifyToken, isAdmin, async (req: AuthRequest, res: Response) =
     );
 
     await client.query("COMMIT");
-    client.release();
-    res.status(201).json(completeRes.rows[0]);
+    return res.status(201).json(completeRes.rows[0]);
   } catch (err) {
-    await client.query("ROLLBACK");
-    client.release();
+    try {
+      await client.query("ROLLBACK");
+    } catch (rollbackErr) {
+      console.error("❌ Error running rollback in student POST:", rollbackErr);
+    }
     console.error("❌ Error adding student:", err);
-    res.status(500).json({ message: "Error al añadir estudiante" });
+    return res.status(500).json({ message: "Error al añadir estudiante" });
+  } finally {
+    client.release();
   }
 });
 
@@ -93,8 +93,6 @@ router.put("/:id", verifyToken, isAdmin, async (req: AuthRequest, res: Response)
     );
 
     if (studentRes.rows.length === 0) {
-      await client.query("ROLLBACK");
-      client.release();
       return res.status(404).json({ message: "Estudiante no encontrado" });
     }
 
@@ -108,14 +106,17 @@ router.put("/:id", verifyToken, isAdmin, async (req: AuthRequest, res: Response)
     );
 
     await client.query("COMMIT");
-    client.release();
-
-    res.json(updated.rows[0]);
+    return res.json(updated.rows[0]);
   } catch (err: any) {
-    await client.query("ROLLBACK");
-    client.release();
+    try {
+      await client.query("ROLLBACK");
+    } catch (rollbackErr) {
+      console.error("❌ Error running rollback in student PUT:", rollbackErr);
+    }
     console.error("❌ Error updating student:", err);
-    res.status(500).json({ message: "Error al actualizar" });
+    return res.status(500).json({ message: "Error al actualizar" });
+  } finally {
+    client.release();
   }
 });
 

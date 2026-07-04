@@ -1,33 +1,16 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaEdit, FaTrash } from "react-icons/fa";
 import { formatDate, toYMD } from "../utils/dateUtils";
 import { openPrintWindow } from "../utils/reportUtils";
+import api from "../api";
+import { TripStatus } from "../shared/constants";
+import { Trip, Reservation } from "../shared/types";
+import useAvailableTrips from "../hooks/useAvailableTrips";
 
 interface User {
     id: number;
     name: string;
-}
-
-interface Trip {
-    id: number;
-    temple_name: string;
-    date: string;
-    cost: number;
-    status?: string;
-}
-
-interface Reservation {
-    id: number;
-    user_id: number;
-    user_name: string;
-    user_document?: number | null;
-    trip_id: number;
-    trip_date: string;
-    register_date: string;
-    advance_payment: number;
-    pending_payment: number;
-    due_date: string;
 }
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
@@ -69,6 +52,7 @@ export default function TripReservations() {
     const [filterTripId, setFilterTripId] = useState<string>("");
     const [filterUserId, setFilterUserId] = useState<string>("");
     const [currentPage, setCurrentPage] = useState(1);
+    const [showSummary, setShowSummary] = useState(false);
     const recordsPerPage = 5;
 
     const [sortConfig, setSortConfig] = useState<{ key: string; direction: "asc" | "desc" } | null>(null);
@@ -92,26 +76,17 @@ export default function TripReservations() {
     }, [navigate]);
 
     const fetchUsers = async () => {
-        const res = await fetch(`${API_BASE_URL}/users`, {
-            headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` }
-        });
-        const data = await res.json();
+        const { data } = await api.get('/users');
         setUsers(data);
     };
 
     const fetchTrips = async () => {
-        const res = await fetch(`${API_BASE_URL}/temple-trips`, {
-            headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` }
-        });
-        const data = await res.json();
+        const { data } = await api.get('/temple-trips');
         setTrips(data);
     };
 
     const fetchReservations = async () => {
-        const res = await fetch(`${API_BASE_URL}/trip-reservations`, {
-            headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` }
-        });
-        const data = await res.json();
+        const { data } = await api.get('/trip-reservations');
         setReservations(data);
     };
 
@@ -166,23 +141,21 @@ export default function TripReservations() {
         }
 
         if (editingId) {
-            await fetch(`${API_BASE_URL}/trip-reservations/${editingId}`, {
-                method: "PUT",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${sessionStorage.getItem("token")}`
-                },
-                body: JSON.stringify(formData)
-            });
+            await api.put(`/trip-reservations/${editingId}`, {
+                ...formData,
+                user_id: Number(formData.user_id),
+                trip_id: Number(formData.trip_id),
+                advance_payment: Number(formData.advance_payment),
+                pending_payment: Number(formData.pending_payment)
+            }).catch(err => { console.error(err); alert('Error al actualizar la reserva'); });
         } else {
-            await fetch(`${API_BASE_URL}/trip-reservations`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${sessionStorage.getItem("token")}`
-                },
-                body: JSON.stringify(formData)
-            });
+            await api.post(`/trip-reservations`, {
+                ...formData,
+                user_id: Number(formData.user_id),
+                trip_id: Number(formData.trip_id),
+                advance_payment: Number(formData.advance_payment),
+                pending_payment: Number(formData.pending_payment)
+            }).catch(err => { console.error(err); alert('Error al crear la reserva'); });
         }
 
         setEditingId(null);
@@ -227,12 +200,12 @@ export default function TripReservations() {
         formData.advance_payment !== "";
 
     const handleDelete = async (id: number) => {
-        await fetch(`${API_BASE_URL}/trip-reservations/${id}`, {
-            method: "DELETE",
-            headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` }
-        });
+        await api.delete(`/trip-reservations/${id}`)
+                .catch(err => { console.error(err); alert('Error al eliminar la reserva'); });
         fetchReservations();
     };
+
+    const availableTripsForReservation = useAvailableTrips(trips);
 
     const selectedReservationForPayment = reservations.find(
         r => r.id === Number(paymentForm.attendance_id)
@@ -249,7 +222,7 @@ export default function TripReservations() {
             trip_id: "",
             attendance_id: "",
             payment_amount: "",
-            payment_date: getTodayYMD()
+            payment_date: ""
         });
         setShowPaymentModal(true);
     };
@@ -268,48 +241,27 @@ export default function TripReservations() {
         e.preventDefault();
         setPaymentError("");
 
-        if (!paymentForm.attendance_id) {
-            setPaymentError("Selecciona una reserva para el pago");
-            return;
-        }
-
         const amount = Number(paymentForm.payment_amount);
         if (Number.isNaN(amount) || amount <= 0) {
             setPaymentError("Ingresa un monto válido mayor a cero");
             return;
         }
 
-        const pending = selectedReservationForPayment ? Number(selectedReservationForPayment.pending_payment) : 0;
-        if (amount > pending) {
-            setPaymentError("El pago no puede ser mayor al monto pendiente");
-            return;
-        }
-
         setIsSubmittingPayment(true);
 
-        const res = await fetch(`${API_BASE_URL}/temple-amortizations`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${sessionStorage.getItem("token")}`
-            },
-            body: JSON.stringify({
+        try {
+            await api.post(`/temple-amortizations`, {
                 attendance_id: Number(paymentForm.attendance_id),
                 payment_amount: amount,
                 payment_date: paymentForm.payment_date
-            })
-        });
-
-        setIsSubmittingPayment(false);
-
-        if (!res.ok) {
-            const errorData = await res.json().catch(() => null);
-            setPaymentError(errorData?.message || "Error al registrar el pago");
-            return;
+            });
+            handleClosePaymentModal();
+            fetchReservations();
+        } catch (err: any) {
+            setPaymentError(err.response?.data?.message || "Error al registrar el pago");
+        } finally {
+            setIsSubmittingPayment(false);
         }
-
-        handleClosePaymentModal();
-        fetchReservations();
     };
 
     const membersWithReservations = useMemo(() => {
@@ -360,23 +312,15 @@ export default function TripReservations() {
         }
     }, [totalPages, currentPage]);
 
-    const availableTripsForReservation = useMemo(() => {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
-        return trips.filter(trip => {
-            const s = (trip.status || "").toLowerCase();
-            const tripDate = new Date(trip.date);
-            return s === "programado" && tripDate >= today;
-        });
-    }, [trips]);
+    useEffect(() => {
+        if (filterTripId || filterUserId) {
+            setShowSummary(true);
+            const timer = setTimeout(() => setShowSummary(false), 8000);
+            return () => clearTimeout(timer);
+        }
+    }, [filterTripId, filterUserId]);
 
     const handlePrintReport = () => {
-        const tripCounts = reservations.reduce((acc, r) => {
-            acc[r.user_id] = (acc[r.user_id] || 0) + 1;
-            return acc;
-        }, {} as Record<number, number>);
-
         const groupedByDate = filteredReservations.reduce((acc, r) => {
             const dateStr = formatDate(r.trip_date);
             if (!acc[dateStr]) acc[dateStr] = [];
@@ -388,258 +332,89 @@ export default function TripReservations() {
             new Date(a).getTime() - new Date(b).getTime()
         );
 
-        const totalUniqueMembers = new Set(filteredReservations.map(r => r.user_id)).size;
-
         let body = "";
-
         sortedDates.forEach(date => {
             const dateGroup = groupedByDate[date];
-            const membersInDate = dateGroup.length;
-            const sortedMembers = [...dateGroup].sort((a, b) => {
-                const nameA = (a.user_name || a.user_document || "").toString().toLowerCase();
-                const nameB = (b.user_name || b.user_document || "").toString().toLowerCase();
-                return nameA.localeCompare(nameB, "es", { sensitivity: "base" });
-            });
+            const sortedMembers = [...dateGroup].sort((a, b) => (a.user_name || "").localeCompare(b.user_name || ""));
 
-            body += `<h2>Fecha: ${date}</h2>`;
-            body += `
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Miembro</th>
-                            <th>Documento</th>
-                            <th class="right">Pagado</th>
-                            <th class="right">Pendiente</th>
-                           
-                        </tr>
-                    </thead>
-                    <tbody>
-            `;
+            body += `<h2>Fecha: ${date}</h2><table><thead><tr><th>Miembro</th><th>Pagado</th><th>Pendiente</th></tr></thead><tbody>`;
             sortedMembers.forEach(res => {
-                body += `
-                    <tr>
-                        <td>${res.user_name}</td>
-                        <td>${res.user_document ?? '-'}</td>
-                        <td class="right">$${Number(res.advance_payment).toLocaleString()}</td>
-                        <td class="right">$${Number(res.pending_payment).toLocaleString()}</td>
-                        
-                    </tr>
-                `;
+                body += `<tr><td>${res.user_name}</td><td>$${Number(res.advance_payment).toLocaleString()}</td><td>$${Number(res.pending_payment).toLocaleString()}</td></tr>`;
             });
-            body += `
-                    </tbody>
-                    <tfoot>
-                        <tr>
-                            <td colspan="5">Total de miembros que participan: ${membersInDate}</td>
-                        </tr>
-                    </tfoot>
-                </table>
-            `;
+            body += `</tbody></table>`;
         });
 
-        const filterLabel = filterTripId
-            ? trips.find(t => t.id === Number(filterTripId))?.temple_name || ""
-            : "Todos los viajes";
-
-        openPrintWindow(
-            "Reporte de Asistencia a Viajes del Templo",
-            `${filterLabel}`,
-            body
-        );
+        openPrintWindow("Reporte", "Viajes", body);
     };
 
     return (
         <div>
-            <h1 className="dashboard-subtitle">🚌 Reservar Viajes</h1>
-            <h2>  {role === "admin" ? "➕ Reservar" : "Disponibles"}</h2>
-            <form onSubmit={handleSubmit} className="grid-form">
-                <div className="form-group">
-                    <label htmlFor="user_id">Miembro</label>
-                    <select id="user_id" name="user_id" value={formData.user_id} onChange={handleChange} required>
-                        <option value="">Miembro</option>
-                        {users.map(user => <option key={user.id} value={user.id}>{user.name}</option>)}
-                    </select>
-                </div>
-
-                <div className="form-group">
-                    <label htmlFor="trip_id">Viaje</label>
-                    <select id="trip_id" name="trip_id" value={formData.trip_id} onChange={handleChange} required>
-                        <option value="">Viaje</option>
-                        {availableTripsForReservation.map(trip => (
-                            <option key={trip.id} value={trip.id}>
-                                {formatDate(trip.date)}
-                            </option>
-                        ))}
-                    </select>
-                </div>
-
-                <div className="form-group">
-                    <label htmlFor="register_date">Fecha de Registro</label>
-                    <input
-                        id="register_date"
-                        type="date"
-                        name="register_date"
-                        value={formData.register_date}
-                        readOnly
-                        style={{ background: "var(--bg-body, #f5f5f5)", cursor: "not-allowed", opacity: 0.8 }}
-                    />
-                </div>
-
-                <div className="form-group">
-                    <label htmlFor="advance_payment">Pago</label>
-                    <input id="advance_payment" type="number" name="advance_payment" placeholder="Ingrese Pago" value={formData.advance_payment} onChange={handleChange} min="0" />
-                </div>
-
-                <div className="form-group">
-                    <label htmlFor="pending_payment">Monto Pendiente</label>
-                    <input
-                        id="pending_payment"
-                        type="text"
-                        name="pending_payment"
-                        value={
-                            formData.pending_payment !== ""
-                                ? `$${Number(formData.pending_payment).toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                                : ""
-                        }
-                        readOnly
-                        style={{ background: "var(--bg-body, #f5f5f5)", cursor: "not-allowed", opacity: 0.8 }}
-                    />
-                </div>
-
-                <div className="form-group">
-                    <label htmlFor="due_date">Fecha de Vencimiento</label>
-                    <input
-                        id="due_date"
-                        type="date"
-                        name="due_date"
-                        value={formData.due_date}
-                        readOnly
-                        style={{ background: "var(--bg-body, #f5f5f5)", cursor: "not-allowed", opacity: 0.8 }}
-                    />
-                </div>
-
-                <div className="form-group full-width">
-                    <button type="submit" className="btn primary">{editingId ? "Actualizar" : "Reservar"}</button>
-                    {isFormDirty && (
-                        <button
-                            type="button"
-                            onClick={handleCancel}
-                            className="btn cancel-btn"
-                            title="Cancelar"
-                            aria-label="Cancelar"
-                        >
-                            ✕
-                        </button>
-                    )}
-                </div>
+            <h1>🚌 Reservar Viajes</h1>
+            <form onSubmit={handleSubmit}>
+                <select name="user_id" value={formData.user_id} onChange={handleChange} required>
+                    <option value="">Seleccionar Miembro</option>
+                    {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+                </select>
+                <select name="trip_id" value={formData.trip_id} onChange={handleChange} required>
+                    <option value="">Seleccionar Viaje</option>
+                    {availableTripsForReservation.map(t => <option key={t.id} value={t.id}>{formatDate(t.date)}</option>)}
+                </select>
+                <input type="number" name="advance_payment" placeholder="Pago" value={formData.advance_payment} onChange={handleChange} />
+                <button type="submit">{editingId ? "Actualizar" : "Reservar"}</button>
+                {isFormDirty && <button type="button" onClick={handleCancel}>✕</button>}
             </form>
 
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "16px", alignItems: "flex-end", padding: "12px 0" }}>
-                <div style={{ display: "flex", flexDirection: "column", gap: "4px", minWidth: "180px" }}>
-                    <label htmlFor="filterTrip" style={{ fontSize: "0.8rem", fontWeight: 600, whiteSpace: "nowrap" }}>
-                        Filtrar por viaje:
-                    </label>
-                    <select
-                        id="filterTrip"
-                        value={filterTripId}
-                        onChange={e => { setFilterTripId(e.target.value); setCurrentPage(1); }}
-                        className="extracted-style-9"
-                        style={{ margin: 0 }}
-                    >
-                        <option value="">Todos los viajes</option>
-                        {trips.map(trip => (
-                            <option key={trip.id} value={trip.id}>
-                                {formatDate(trip.date)}
-                            </option>
-                        ))}
-                    </select>
-                </div>
+            <button onClick={handleOpenPaymentModal}>Pagar</button>
 
-                <div style={{ display: "flex", flexDirection: "column", gap: "4px", minWidth: "180px" }}>
-                    <label htmlFor="filterMember" style={{ fontSize: "0.8rem", fontWeight: 600, whiteSpace: "nowrap" }}>
-                        Filtrar por miembro:
-                    </label>
-                    <select
-                        id="filterMember"
-                        value={filterUserId}
-                        onChange={e => { setFilterUserId(e.target.value); setCurrentPage(1); }}
-                        className="extracted-style-9"
-                        style={{ margin: 0 }}
-                    >
-                        <option value="">Todos los miembros</option>
-                        {membersWithReservations.map(u => (
-                            <option key={u.id} value={u.id}>{u.name}</option>
-                        ))}
-                    </select>
-                </div>
+<div className="filters" style={{ marginTop: "16px", display: "flex", gap: "12px", alignItems: "center" }}>
+  <select value={filterTripId} onChange={e => setFilterTripId(e.target.value)} className="filter-select">
+    <option value="">Todos los viajes</option>
+    {trips.map(t => (
+      <option key={t.id} value={t.id}>
+        {formatDate(t.date)}
+      </option>
+    ))}
+  </select>
+  <select value={filterUserId} onChange={e => setFilterUserId(e.target.value)} className="filter-select">
+    <option value="">Todos los miembros</option>
+    {users.map(u => (
+      <option key={u.id} value={u.id}>
+        {u.name}
+      </option>
+    ))}
+  </select>
+  <button onClick={handlePrintReport} className="btn primary">Imprimir Reporte</button>
+</div>
 
-                <button
-                    type="button"
-                    onClick={handlePrintReport}
-                    className="btn secondary"
-                    style={{ margin: 0, display: "flex", alignItems: "center", gap: "8px", whiteSpace: "nowrap", alignSelf: "flex-end" }}
-                >
-                    Imprimir
-                </button>
+{showSummary && (
+        <div className="summary-modal" style={{position:'fixed', top:'20%', left:'50%', transform:'translateX(-50%)', background:'var(--bg-body, #fff)', padding:'16px', border:'1px solid #ccc', borderRadius:'8px', zIndex:1000, boxShadow:'0 4px 6px rgba(0,0,0,0.1)'}}>
+          <p>{filteredReservations.length} reserva(s){filterTripId ? ` para el viaje ${formatDate(trips.find(t => t.id === Number(filterTripId))?.date)}` : ""}{filterUserId ? ` del miembro ${users.find(u => u.id === Number(filterUserId))?.name}` : ""}.</p>
+          <p>Total pagado: ${reservationTotals.totalPaid.toLocaleString()}</p>
+          <p>Total pendiente: ${reservationTotals.totalPending.toLocaleString()}</p>
+        </div>
+      )}
 
-                <button
-                    type="button"
-                    onClick={handleOpenPaymentModal}
-                    className="btn primary"
-                    style={{ margin: 0, display: "flex", alignItems: "center", gap: "8px", whiteSpace: "nowrap", alignSelf: "flex-end" }}
-                >
-                    Pagar
-                </button>
-
-                {filterTripId && !filterUserId && (
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: "12px", alignSelf: "flex-end", margin: 0 }}>
-                        <p className="extracted-style-10" style={{ whiteSpace: "nowrap", margin: 0 }}>
-                            Asisten: <strong>{filteredReservations.length}</strong> Miembros
-                        </p>
-                        <p className="extracted-style-10" style={{ whiteSpace: "nowrap", margin: 0 }}>
-                            Pagado: <strong>${reservationTotals.totalPaid.toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
-                        </p>
-                        <p className="extracted-style-10" style={{ whiteSpace: "nowrap", margin: 0 }}>
-                            Pendiente: <strong>${reservationTotals.totalPending.toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
-                        </p>
-                    </div>
-                )}
-                {filterUserId && (
-                    <p className="extracted-style-10" style={{ whiteSpace: "nowrap", alignSelf: "flex-end", margin: 0 }}>
-                        🧳 Viajes registrados: <strong>{filteredReservations.length}</strong>
-                    </p>
-                )}
-            </div>
 
             {showPaymentModal && (
                 <div className="modal-overlay">
                     <div className="modal-content">
                         <h2>Pago de Adelanto</h2>
-                        <form onSubmit={handlePaymentSubmit} className="grid-form">
-                            <div className="form-group">
-                                <label htmlFor="trip_id_payment">Viaje</label>
-                                <select id="trip_id_payment" name="trip_id" value={paymentForm.trip_id} onChange={handlePaymentChange} required>
-                                    <option value="">Seleccionar viaje</option>
-                                    {trips.map(trip => (
-                                        <option key={trip.id} value={trip.id}>
-                                            {formatDate(trip.date)}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            {paymentForm.trip_id && (
-                                <div className="form-group">
-                                    <label htmlFor="attendance_id">Miembro</label>
-                                    <select id="attendance_id" name="attendance_id" value={paymentForm.attendance_id} onChange={handlePaymentChange} required>
-                                        <option value="">Seleccionar miembro</option>
-                                        {availableReservationsForSelectedTrip.map(res => (
-                                            <option key={res.id} value={res.id}>
-                                                {res.user_name} — Pendiente ${Number(res.pending_payment).toLocaleString()}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
+                        <form onSubmit={handlePaymentSubmit}>
+                             <select name="trip_id" value={paymentForm.trip_id} onChange={handlePaymentChange} required>
+                                 <option value="">Seleccionar viaje</option>
+                                 {availableTripsForReservation.map(trip => (
+                                     <option key={trip.id} value={trip.id}>{formatDate(trip.date)}</option>
+                                 ))}
+                             </select>
+                             {paymentForm.trip_id && (
+                                 <div className="form-group">
+                                     <select name="attendance_id" value={paymentForm.attendance_id} onChange={handlePaymentChange} required>
+                                         <option value="">Seleccionar miembro</option>
+                                         {availableReservationsForSelectedTrip.map(res => (
+                                             <option key={res.id} value={res.id}>{res.user_name}</option>
+                                         ))}
+                                     </select>
+                                 </div>
                             )}
 
                             {selectedReservationForPayment && (
