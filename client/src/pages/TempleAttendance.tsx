@@ -201,7 +201,7 @@ export default function TripReservations() {
 
     const handleDelete = async (id: number) => {
         await api.delete(`/trip-reservations/${id}`)
-                .catch(err => { console.error(err); alert('Error al eliminar la reserva'); });
+            .catch(err => { console.error(err); alert('Error al eliminar la reserva'); });
         fetchReservations();
     };
 
@@ -345,14 +345,14 @@ export default function TripReservations() {
             const dateGroup = groupedByDate[date];
             const sortedMembers = [...dateGroup].sort((a, b) => (a.user_name || "").localeCompare(b.user_name || ""));
 
-            body += `<h2>Fecha: ${date}</h2><table><thead><tr><th>Miembro</th><th>Pagado</th><th>Pendiente</th></tr></thead><tbody>`;
+            body += `<h2>Fecha de Viaje: ${date}</h2><table><thead><tr><th>Miembro</th><th>Pagado</th><th>Pendiente</th></tr></thead><tbody>`;
             sortedMembers.forEach(res => {
                 body += `<tr><td>${res.user_name}</td><td>$${Number(res.advance_payment).toLocaleString()}</td><td>$${Number(res.pending_payment).toLocaleString()}</td></tr>`;
             });
             body += `</tbody></table>`;
         });
 
-        openPrintWindow("Reporte", "Viajes", body);
+        openPrintWindow("Reporte de Viajes al Templo", "Rama Arroyo Seco", body);
     };
 
     return (
@@ -373,35 +373,35 @@ export default function TripReservations() {
                 {isFormDirty && <button type="button" onClick={handleCancel}>✕</button>}
             </form>
 
-<div className="filters" style={{ margin: "16px", display: "flex", gap: "12px", alignItems: "center" }}>
-  <select value={filterTripId} onChange={e => setFilterTripId(e.target.value)} className="filter-select">
-    <option value="">Todos los viajes</option>
-    {trips.map(t => (
-      <option key={t.id} value={t.id}>
-        {formatDate(t.date)}
-      </option>
-    ))}
-  </select>
-  <select value={filterUserId} onChange={e => setFilterUserId(e.target.value)} className="filter-select">
-    <option value="">Todos los miembros</option>
-    {users.map(u => (
-      <option key={u.id} value={u.id}>
-        {u.name}
-      </option>
-    ))}
-  </select>
-  <button className="btn primary" onClick={handleOpenPaymentModal}>Pagar</button>
-  <button onClick={handlePrintReport} className="btn primary">Imprimir</button>
-</div>
+            <div className="filters" style={{ margin: "16px", display: "flex", gap: "12px", alignItems: "center" }}>
+                <select value={filterTripId} onChange={e => setFilterTripId(e.target.value)} className="filter-select">
+                    <option value="">Todos los viajes</option>
+                    {trips.map(t => (
+                        <option key={t.id} value={t.id}>
+                            {formatDate(t.date)}
+                        </option>
+                    ))}
+                </select>
+                <select value={filterUserId} onChange={e => setFilterUserId(e.target.value)} className="filter-select">
+                    <option value="">Todos los miembros</option>
+                    {users.map(u => (
+                        <option key={u.id} value={u.id}>
+                            {u.name}
+                        </option>
+                    ))}
+                </select>
+                <button className="btn primary" onClick={handleOpenPaymentModal}>Pagar</button>
+                <button onClick={handlePrintReport} className="btn primary">Imprimir</button>
+            </div>
 
-{showSummary && (
-        <div className="summary-modal" style={{position:'fixed', top:'30px', right:'10px', background:'var(--bg-body, #fff)', padding:'16px', border:'1px solid #ccc', borderRadius:'8px', zIndex:1000, boxShadow:'0 4px 6px rgba(0,0,0,0.1)', minWidth:'300px'}}>
-          <button onClick={() => setShowSummary(false)} style={{position:'absolute', top:'40px', right:'10px', background:'none', border:'none', fontSize:'20px', cursor:'pointer', color:'var(--text-color, #50c5f7)'}}>✕</button>
-          <p>{filteredReservations.length} reserva(s){filterTripId ? ` para el viaje ${formatDate(trips.find(t => t.id === Number(filterTripId))?.date)}` : ""}{filterUserId ? ` del miembro ${users.find(u => u.id === Number(filterUserId))?.name}` : ""}.</p>
-          <p>Total pagado: ${reservationTotals.totalPaid.toLocaleString()}</p>
-          <p>Total pendiente: ${reservationTotals.totalPending.toLocaleString()}</p>
-        </div>
-      )}
+            {showSummary && (
+                <div className="summary-modal" style={{ position: 'fixed', top: '30px', right: '10px', background: 'var(--bg-body, #fff)', padding: '16px', border: '1px solid #ccc', borderRadius: '8px', zIndex: 1000, boxShadow: '0 4px 6px rgba(0,0,0,0.1)', minWidth: '300px' }}>
+                    <button onClick={() => setShowSummary(false)} style={{ position: 'absolute', top: '40px', right: '10px', background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', color: 'var(--text-color, #50c5f7)' }}>✕</button>
+                    <p><strong>{filteredReservations.length} reserva(s)</strong> {filterTripId ? ` para el viaje ${formatDate(trips.find(t => t.id === Number(filterTripId))?.date)}` : ""}{filterUserId ? ` del miembro ${users.find(u => u.id === Number(filterUserId))?.name}` : ""}.</p>
+                    <p>Pagado: <strong>${reservationTotals.totalPaid.toLocaleString()}</strong></p>
+                    <p>Pendiente: <strong>${reservationTotals.totalPending.toLocaleString()}</strong></p>
+                </div>
+            )}
 
 
             {showPaymentModal && (
@@ -409,30 +409,28 @@ export default function TripReservations() {
                     <div className="modal-content">
                         <h2>Pago de Adelanto</h2>
                         <form onSubmit={handlePaymentSubmit}>
-                             <select name="trip_id" value={paymentForm.trip_id} onChange={handlePaymentChange} required>
-                                 <option value="">Elegir viaje</option>
-                                 {availableTripsForReservation.map(trip => (
-                                     <option key={trip.id} value={trip.id}>{formatDate(trip.date)}</option>
-                                 ))}
-                             </select>
-                             {paymentForm.trip_id && (
-                                 <div className="form-group">
-                                     <select name="attendance_id" value={paymentForm.attendance_id} onChange={handlePaymentChange} required>
-                                         <option value="">Elegir miembro</option>
-                                         {availableReservationsForSelectedTrip.map(res => (
-                                             <option key={res.id} value={res.id}>{res.user_name}</option>
-                                         ))}
-                                     </select>
-                                 </div>
+                            <select name="trip_id" value={paymentForm.trip_id} onChange={handlePaymentChange} required>
+                                <option value="">Elegir viaje</option>
+                                {availableTripsForReservation.map(trip => (
+                                    <option key={trip.id} value={trip.id}>{formatDate(trip.date)}</option>
+                                ))}
+                            </select>
+                            {paymentForm.trip_id && (
+                                <div className="form-group">
+                                    <select name="attendance_id" value={paymentForm.attendance_id} onChange={handlePaymentChange} required>
+                                        <option value="">Elegir miembro</option>
+                                        {availableReservationsForSelectedTrip.map(res => (
+                                            <option key={res.id} value={res.id}>{res.user_name}</option>
+                                        ))}
+                                    </select>
+                                </div>
                             )}
 
                             {selectedReservationForPayment && (
                                 <div className="form-group full-width">
-                                    <p><strong>Reserva:</strong></p>
-                                    <p>Miembro: <strong>{selectedReservationForPayment.user_name}</strong></p>
-                                    <p>Viaje: <strong>{formatDate(selectedReservationForPayment.trip_date)}</strong></p>
-                                    <p>Pagado: <strong>${Number(selectedReservationForPayment.advance_payment).toLocaleString()}</strong></p>
-                                    <p>Saldo: <strong>${Number(selectedReservationForPayment.pending_payment).toLocaleString()}</strong></p>
+                                    <p>| <strong>{selectedReservationForPayment.user_name}</strong>    |</p>
+                                    <p>| Pagado: <strong>${Number(selectedReservationForPayment.advance_payment).toLocaleString()}</strong> |</p>
+                                    <p>| Saldo: <strong>${Number(selectedReservationForPayment.pending_payment).toLocaleString()}</strong> |</p>
                                 </div>
                             )}
 
