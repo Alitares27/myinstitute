@@ -3,10 +3,7 @@ import api from "../api";
 import { IoCreateOutline, IoTrashOutline } from "react-icons/io5";
 import { FiBookOpen } from "react-icons/fi";
 import { TbPlus } from "react-icons/tb";
-import axios from "axios";
 import { Skeleton } from "../components/Skeleton";
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 type SortDirection = "asc" | "desc";
 
@@ -27,18 +24,14 @@ export default function Courses() {
   useEffect(() => {
     const fetchCoursesData = async () => {
       try {
-        const token = sessionStorage.getItem("token");
-        if (!token) return;
-        const config = { headers: { Authorization: `Bearer ${token}` } };
-
         const meRes = await Promise.resolve({ data: JSON.parse(sessionStorage.getItem("user") || "{}") });
         setRole(meRes.data.role);
 
-        const coursesRes = await axios.get(`${API_BASE_URL}/courses`, config);
+        const coursesRes = await api.get("/courses");
         setCourses(coursesRes.data);
 
         if (meRes.data.role === "admin") {
-          const teachersRes = await axios.get(`${API_BASE_URL}/teachers`, config);
+          const teachersRes = await api.get("/teachers");
           setTeachers(teachersRes.data);
         }
       } catch {
@@ -81,10 +74,7 @@ export default function Courses() {
   const loadTopics = async (courseId: string) => {
     setLoadingTopics(true);
     try {
-      const token = sessionStorage.getItem("token");
-      const res = await axios.get(`${API_BASE_URL}/courses/${courseId}/topics`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await api.get(`/courses/${courseId}/topics`);
       setTopics(res.data);
     } catch {
       setTopics([]);
@@ -95,14 +85,12 @@ export default function Courses() {
 
   const handleTopicSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const token = sessionStorage.getItem("token");
-    const config = { headers: { Authorization: `Bearer ${token}` } };
 
     try {
       if (topicForm.id) {
-        await axios.put(`${API_BASE_URL}/topics/${topicForm.id}`, topicForm, config);
+        await api.put(`/topics/${topicForm.id}`, topicForm);
       } else {
-        await axios.post(`${API_BASE_URL}/topics`, { ...topicForm, course_id: selectedCourse.id }, config);
+        await api.post(`/topics`, { ...topicForm, course_id: selectedCourse.id });
       }
       setTopicForm({ id: "", title: "", order_index: "" });
       loadTopics(selectedCourse.id);
@@ -114,10 +102,7 @@ export default function Courses() {
   const handleTopicDelete = async (id: string) => {
     if (!window.confirm("¿Eliminar este tema?")) return;
     try {
-      const token = sessionStorage.getItem("token");
-      await axios.delete(`${API_BASE_URL}/topics/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await api.delete(`/topics/${id}`);
       loadTopics(selectedCourse.id);
     } catch {
       alert("Error al eliminar");
@@ -127,16 +112,14 @@ export default function Courses() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const token = sessionStorage.getItem("token");
-    const config = { headers: { Authorization: `Bearer ${token}` } };
 
     try {
       if (form.id) {
-        await axios.put(`${API_BASE_URL}/courses/${form.id}`, form, config);
+        await api.put(`/courses/${form.id}`, form);
       } else {
-        await axios.post(`${API_BASE_URL}/courses`, form, config);
+        await api.post(`/courses`, form);
       }
-      const updated = await axios.get(`${API_BASE_URL}/courses`, config);
+      const updated = await api.get("/courses");
       setCourses(updated.data);
       setForm({ id: "", title: "", teacher_id: "" });
       alert("Operación exitosa");
@@ -150,10 +133,7 @@ export default function Courses() {
   const handleDelete = async (id: string) => {
     if (!window.confirm("¿Estás seguro de eliminar este curso?")) return;
     try {
-      const token = sessionStorage.getItem("token");
-      await axios.delete(`${API_BASE_URL}/courses/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await api.delete(`/courses/${id}`);
       setCourses(courses.filter(c => c.id !== id));
     } catch {
       setError("No se pudo eliminar el curso.");
@@ -257,6 +237,7 @@ export default function Courses() {
                           teacher_id: c.teacher_id || ""
                         })
                       }
+                      aria-label="Editar"
                     >
                       <IoCreateOutline />
                     </button>
@@ -264,6 +245,7 @@ export default function Courses() {
                     <button
                       onClick={() => handleDelete(c.id)}
                       className="btn secondary extracted-style-5"
+                      aria-label="Eliminar"
                     >
                       <IoTrashOutline />
                     </button>
@@ -279,6 +261,7 @@ export default function Courses() {
       {selectedCourse && (
         <div className="modal-overlay">
           <div className="modal-content">
+            <button className="modal-close" onClick={() => setSelectedCourse(null)} title="Cerrar" />
             <h3>Temas: {selectedCourse.title}</h3>
 
             {role === "admin" && (
@@ -308,8 +291,8 @@ export default function Courses() {
                       <td>{t.title}</td>
                       {role === "admin" && (
                         <td>
-                          <button className="btn secondary extracted-style-4" onClick={() => setTopicForm({ id: t.id, title: t.title, order_index: t.order_index })}><IoCreateOutline /></button>
-                          <button className="btn secondary extracted-style-5" onClick={() => handleTopicDelete(t.id)}><IoTrashOutline /></button>
+                          <button className="btn secondary extracted-style-4" onClick={() => setTopicForm({ id: t.id, title: t.title, order_index: t.order_index })} aria-label="Editar"><IoCreateOutline /></button>
+                          <button className="btn secondary extracted-style-5" onClick={() => handleTopicDelete(t.id)} aria-label="Eliminar"><IoTrashOutline /></button>
                         </td>
                       )}
                     </tr>
@@ -317,10 +300,6 @@ export default function Courses() {
                 </tbody>
               </table>
             )}
-
-            <button onClick={() => setSelectedCourse(null)} className="btn secondary extracted-style-5">
-              Cerrar
-            </button>
           </div>
         </div>
       )}

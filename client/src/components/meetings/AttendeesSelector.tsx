@@ -44,8 +44,7 @@ export default function AttendeesSelector({
         try {
             const data = await getUsers();
             setUsers(data);
-        } catch (error) {
-            console.error("Error cargando usuarios:", error);
+        } catch {
         } finally {
             setLoading(false);
         }
@@ -85,7 +84,6 @@ export default function AttendeesSelector({
 
     return (
         <div className="attendees-selector" ref={dropdownRef}>
-            <h3>Participantes</h3>
 
             {users.length === 0 ? (
                 <p>No hay usuarios registrados.</p>
@@ -145,9 +143,6 @@ export default function AttendeesSelector({
                                                     {isSelected ? <TbCheck /> : ""}
                                                 </span>
                                                 <span>{user.name}</span>
-                                                <small className="attendee-option-role">
-                                                    ({user.role})
-                                                </small>
                                             </div>
                                         );
                                     })

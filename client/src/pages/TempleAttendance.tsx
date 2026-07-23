@@ -150,7 +150,7 @@ export default function TripReservations() {
                 trip_id: Number(formData.trip_id),
                 advance_payment: Number(formData.advance_payment),
                 pending_payment: Number(formData.pending_payment)
-            }).catch(err => { console.error(err); alert('Error al actualizar la reserva'); });
+            }).catch(() => { alert('Error al actualizar la reserva'); });
         } else {
             await api.post(`/trip-reservations`, {
                 ...formData,
@@ -158,7 +158,7 @@ export default function TripReservations() {
                 trip_id: Number(formData.trip_id),
                 advance_payment: Number(formData.advance_payment),
                 pending_payment: Number(formData.pending_payment)
-            }).catch(err => { console.error(err); alert('Error al crear la reserva'); });
+            }).catch(() => { alert('Error al crear la reserva'); });
         }
 
         setEditingId(null);
@@ -204,7 +204,7 @@ export default function TripReservations() {
 
     const handleDelete = async (id: number) => {
         await api.delete(`/trip-reservations/${id}`)
-            .catch(err => { console.error(err); alert('Error al eliminar la reserva'); });
+            .catch(() => { alert('Error al eliminar la reserva'); });
         fetchReservations();
     };
 
@@ -442,11 +442,13 @@ export default function TripReservations() {
             </div>
 
             {showSummary && (
-                <div className="summary-modal" style={{ position: 'fixed', top: '30px', right: '10px', background: 'var(--bg-body, #fff)', padding: '16px', border: '1px solid #ccc', borderRadius: '8px', zIndex: 1000, boxShadow: '0 4px 6px rgba(0,0,0,0.1)', minWidth: '300px' }}>
-                    <button onClick={() => setShowSummary(false)} style={{ position: 'absolute', top: '40px', right: '10px', background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', color: 'var(--text-color, #50c5f7)' }}>✕</button>
-                    <p><strong>{filteredReservations.length} reserva(s)</strong> {filterTripId ? ` para el viaje ${formatDate(trips.find(t => t.id === Number(filterTripId))?.date)}` : ""}{filterUserId ? ` del miembro ${users.find(u => u.id === Number(filterUserId))?.name}` : ""}.</p>
-                    <p>Pagado: <strong>${reservationTotals.totalPaid.toLocaleString()}</strong></p>
-                    <p>Pendiente: <strong>${reservationTotals.totalPending.toLocaleString()}</strong></p>
+                <div className="modal-overlay" style={{ zIndex: 1000 }} onClick={() => setShowSummary(false)}>
+                    <div className="modal-content" style={{ maxWidth: '360px' }} onClick={(e) => e.stopPropagation()}>
+                        <button className="modal-close" onClick={() => setShowSummary(false)} title="Cerrar" />
+                        <p style={{ marginTop: '8px' }}><strong>{filteredReservations.length} reserva(s)</strong> {filterTripId ? ` para el viaje ${formatDate(trips.find(t => t.id === Number(filterTripId))?.date)}` : ""}{filterUserId ? ` del miembro ${users.find(u => u.id === Number(filterUserId))?.name}` : ""}.</p>
+                        <p>Pagado: <strong>${reservationTotals.totalPaid.toLocaleString()}</strong></p>
+                        <p>Pendiente: <strong>${reservationTotals.totalPending.toLocaleString()}</strong></p>
+                    </div>
                 </div>
             )}
 
@@ -454,6 +456,7 @@ export default function TripReservations() {
             {showPaymentModal && (
                 <div className="modal-overlay">
                     <div className="modal-content">
+                        <button className="modal-close" onClick={handleClosePaymentModal} title="Cerrar" />
                         <h2>Pago de Adelanto</h2>
                         <form onSubmit={handlePaymentSubmit}>
                             <select name="trip_id" value={paymentForm.trip_id} onChange={handlePaymentChange} required>
@@ -576,8 +579,8 @@ export default function TripReservations() {
                                 <td>${Number(res.pending_payment).toLocaleString()}</td>
                                 <td>{formatDate(res.due_date)}</td>
                                 <td>
-                                    <button className="btn secondary extracted-style-4" onClick={() => handleEdit(res)}><IoCreateOutline /></button>
-                                    <button className="btn secondary extracted-style-5" onClick={() => handleDelete(res.id)}><IoTrashOutline /></button>
+                                    <button className="btn secondary extracted-style-4" onClick={() => handleEdit(res)} aria-label="Editar"><IoCreateOutline /></button>
+                                    <button className="btn secondary extracted-style-5" onClick={() => handleDelete(res.id)} aria-label="Eliminar"><IoTrashOutline /></button>
                                 </td>
                             </tr>
                         ))}

@@ -1,9 +1,10 @@
 import { Router } from "express";
 import { pool } from "../models/db";
+import { verifyToken, AuthRequest } from "../middleware/auth";
 
 const router = Router();
 
-router.get("/", async (req, res) => {
+router.get("/", verifyToken, async (req: AuthRequest, res) => {
   try {
     const query = `
       SELECT 
@@ -29,7 +30,7 @@ router.get("/", async (req, res) => {
   }
 });
 
-router.post("/", async (req, res) => {
+router.post("/", verifyToken, async (req: AuthRequest, res) => {
   const { member_id, tema_id, speech_title, time, date } = req.body;
   try {
     const query = `
@@ -54,7 +55,7 @@ router.post("/", async (req, res) => {
   }
 });
 
-router.put("/:id", async (req, res) => {
+router.put("/:id", verifyToken, async (req: AuthRequest, res) => {
   const { id } = req.params;
   const { member_id, tema_id, speech_title, time, date, completed } = req.body;
 
@@ -97,7 +98,7 @@ router.put("/:id", async (req, res) => {
   }
 });
 
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", verifyToken, async (req: AuthRequest, res) => {
   const { id } = req.params;
   try {
     await pool.query("DELETE FROM speakers WHERE id = $1", [id]);

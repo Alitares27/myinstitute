@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import api from "../api";
 import { FaPlus } from "react-icons/fa";
 import { IoCreateOutline, IoTrashOutline, IoCheckmarkCircleOutline, IoTimeOutline, IoSaveOutline } from "react-icons/io5";
@@ -23,8 +23,6 @@ interface SpeakerRecord {
 interface Member { id: number; name: string; }
 interface Tema { id: number; title: string; }
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
-
 export default function Speakers() {
   const [speakers, setSpeakers] = useState<SpeakerRecord[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
@@ -41,6 +39,11 @@ export default function Speakers() {
 
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: "asc" | "desc" } | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const [speechWarning, setSpeechWarning] = useState<string | null>(null);
+  const [topicWarning, setTopicWarning] = useState<string | null>(null);
+  const speechTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const topicTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleSort = (key: string) => {
     setSortConfig(prev =>
@@ -62,13 +65,12 @@ export default function Speakers() {
   useEffect(() => {
     const token = sessionStorage.getItem("token");
     if (!token) return;
-    const headers = { Authorization: `Bearer ${token}` };
 
     Promise.all([
       Promise.resolve({ data: JSON.parse(sessionStorage.getItem("user") || "{}") }),
-      api.get(`${API_BASE_URL}/speakers`),
-      api.get(`${API_BASE_URL}/students`),
-      api.get(`${API_BASE_URL}/temas`),
+      api.get("/speakers"),
+      api.get("/students"),
+      api.get("/temas"),
     ])
       .then(([userRes, spkRes, memRes, temasRes]) => {
         setRole(userRes.data.role);
@@ -123,9 +125,6 @@ export default function Speakers() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const token = sessionStorage.getItem("token");
-    const headers = { Authorization: `Bearer ${token}` };
-
     try {
       if (editingId) {
         const res = await api.put(`/speakers/${editingId}`, form);
@@ -146,7 +145,7 @@ export default function Speakers() {
         }, ...prev]);
       }
       setForm({ member_id: "", tema_id: "", speech_title: "", time: "10", date: new Date().toISOString().split("T")[0], completed: "No" });
-    } catch (err) {
+    } catch {
       alert("Error al procesar la solicitud.");
     }
   };
@@ -172,8 +171,9 @@ export default function Speakers() {
     } catch { alert("Error al eliminar"); }
   };
 
-  const recentSpeechWarning = useMemo(() => {
-    if (!form.member_id) return null;
+  useEffect(() => {
+    if (speechTimerRef.current) clearTimeout(speechTimerRef.current);
+    if (!form.member_id) { setSpeechWarning(null); return; }
     const memberIdNum = Number(form.member_id);
     const today = new Date();
     const sixtyDaysAgo = new Date();
@@ -189,17 +189,18 @@ export default function Speakers() {
       recentSpeeches.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
       const mostRecent = recentSpeeches[0];
       const daysAgo = Math.floor((today.getTime() - new Date(mostRecent.date).getTime()) / (1000 * 3600 * 24));
-      return `Alerta: Este miembro discursó hace ${daysAgo} días (${formatDate(mostRecent.date, { weekday: 'short', day: 'numeric', month: 'short' })}).`;
+      const msg = `Alerta: Este miembro discursó hace ${daysAgo} días (${formatDate(mostRecent.date, { weekday: 'short', day: 'numeric', month: 'short' })}).`;
+      setSpeechWarning(msg);
+      speechTimerRef.current = setTimeout(() => setSpeechWarning(null), 5000);
+    } else {
+      setSpeechWarning(null);
     }
-    return null;
+    return () => { if (speechTimerRef.current) clearTimeout(speechTimerRef.current); };
   }, [form.member_id, speakers]);
 
   useEffect(() => {
-    if (recentSpeechWarning) alert(recentSpeechWarning);
-  }, [recentSpeechWarning]);
-
-  const recentTopicWarning = useMemo(() => {
-    if (!form.tema_id) return null;
+    if (topicTimerRef.current) clearTimeout(topicTimerRef.current);
+    if (!form.tema_id) { setTopicWarning(null); return; }
     const temaIdNum = Number(form.tema_id);
 
     const pastTopics = speakers.filter(s => s.tema_id === temaIdNum && s.id !== editingId);
@@ -214,14 +215,14 @@ export default function Speakers() {
         ? `hace ${daysAgo} días`
         : `está programado para dentro de ${Math.abs(daysAgo)} días`;
 
-      return `Alerta: Este tema ya fue elegido. ${timeStr} (${formatDate(mostRecent.date, { weekday: 'short', day: 'numeric', month: 'short' })}).`;
+      const msg = `Alerta: Este tema ya fue elegido. ${timeStr} (${formatDate(mostRecent.date, { weekday: 'short', day: 'numeric', month: 'short' })}).`;
+      setTopicWarning(msg);
+      topicTimerRef.current = setTimeout(() => setTopicWarning(null), 5000);
+    } else {
+      setTopicWarning(null);
     }
-    return null;
+    return () => { if (topicTimerRef.current) clearTimeout(topicTimerRef.current); };
   }, [form.tema_id, speakers, editingId]);
-
-  useEffect(() => {
-    if (recentTopicWarning) alert(recentTopicWarning);
-  }, [recentTopicWarning]);
 
   if (loading) {
     return (
@@ -259,12 +260,23 @@ export default function Speakers() {
     <div className="dashboard-container">
       <h1><span className="page-title-icon"><FiMic /></span> Control de Discursantes</h1>
 
+      {(speechWarning || topicWarning) && (
+        <div className="warning-toast-container">
+          {speechWarning && (
+            <div className="warning-toast"><TbAlertTriangle /> {speechWarning}</div>
+          )}
+          {topicWarning && (
+            <div className="warning-toast"><TbAlertTriangle /> {topicWarning}</div>
+          )}
+        </div>
+      )}
+
       {role === "admin" && (
         <section>
           <h2 className="dashboard-subtitle">{editingId ? <><IoCreateOutline /> Actualizar</> : <><FaPlus /> Asignar</>}</h2>
           <form className="grid-form" onSubmit={handleSubmit}>
             <div className="form-group">
-              <label>Miembro</label>
+              
               <select required value={form.member_id} onChange={e => setForm({ ...form, member_id: e.target.value })}>
                 <option value="">Elegir Miembro</option>
                 {members.map(m => <option key={m.id} value={String(m.id)}>{m.name}</option>)}
@@ -272,7 +284,7 @@ export default function Speakers() {
             </div>
 
             <div className="form-group">
-              <label>Tema</label>
+             
               <select required value={form.tema_id} onChange={e => setForm({ ...form, tema_id: e.target.value })}>
                 <option value="">Elegir Tema</option>
                 {allTemas.map(t => <option key={t.id} value={String(t.id)}>{t.title}</option>)}
@@ -280,17 +292,15 @@ export default function Speakers() {
             </div>
 
             <div className="form-group">
-              <label>Discurso</label>
+              
               <input type="text" placeholder="Ej. El valor de la perseverancia" value={form.speech_title} onChange={e => setForm({ ...form, speech_title: e.target.value })} required />
             </div>
 
             <div className="form-group">
 
-              <label>Tiempo</label>
-              <input type="number" value={form.time} onChange={e => setForm({ ...form, time: e.target.value })} />
+              <input type="number" placeholder="Ingresa tiempo"  value={form.time} onChange={e => setForm({ ...form, time: e.target.value })} />
             </div>
             <div className="form-group">
-              <label>Fecha</label>
               <input type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} />
             </div>
 
@@ -379,10 +389,10 @@ export default function Speakers() {
                 </td>
                 {role === "admin" && (
                   <td>
-                    <button className="btn secondary extracted-style-4" onClick={() => handleEdit(s)}>
+                    <button className="btn secondary extracted-style-4" onClick={() => handleEdit(s)} aria-label="Editar">
                       <IoCreateOutline />
                     </button>
-                    <button className="btn secondary extracted-style-5" onClick={() => handleDelete(s.id)}>
+                    <button className="btn secondary extracted-style-5" onClick={() => handleDelete(s.id)} aria-label="Eliminar">
                       <IoTrashOutline />
                     </button>
                   </td>

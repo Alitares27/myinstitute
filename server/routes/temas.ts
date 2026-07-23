@@ -1,6 +1,6 @@
 import { Router, Request, Response } from "express";
 import { pool } from "../models/db";
-import { verifyToken, AuthRequest } from "../middleware/auth";
+import { verifyToken, isAdmin, AuthRequest } from "../middleware/auth";
 
 const router = Router();
 
@@ -13,7 +13,7 @@ router.get("/", verifyToken, async (req: AuthRequest, res: Response) => {
   }
 });
 
-router.post("/", verifyToken, async (req: AuthRequest, res: Response) => {
+router.post("/", verifyToken, isAdmin, async (req: AuthRequest, res: Response) => {
   try {
     const { title } = req.body;
     if (!title) return res.status(400).json({ message: "El título es requerido" });
@@ -27,7 +27,7 @@ router.post("/", verifyToken, async (req: AuthRequest, res: Response) => {
   }
 });
 
-router.put("/:id", verifyToken, async (req: AuthRequest, res: Response) => {
+router.put("/:id", verifyToken, isAdmin, async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     const { title } = req.body;
@@ -43,7 +43,7 @@ router.put("/:id", verifyToken, async (req: AuthRequest, res: Response) => {
   }
 });
 
-router.delete("/:id", verifyToken, async (req: AuthRequest, res: Response) => {
+router.delete("/:id", verifyToken, isAdmin, async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     const result = await pool.query("DELETE FROM temas WHERE id = $1 RETURNING *", [id]);

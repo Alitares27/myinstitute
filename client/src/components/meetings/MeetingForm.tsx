@@ -17,7 +17,7 @@ const emptyMeeting: MeetingRequest = {
     end_time: "",
     topics: "",
     notes: "",
-    status: "scheduled",
+    status: "",
     attendees: [] as AttendeeRequest[],
 };
 
@@ -57,6 +57,11 @@ export default function MeetingForm({
 
         if (meeting.topics.trim() === "") {
             alert("Debe ingresar los temas tratados.");
+            return;
+        }
+
+        if (!meeting.status) {
+            alert("Seleccione un estado.");
             return;
         }
 
@@ -198,10 +203,9 @@ export default function MeetingForm({
 
                 <div className="form-group">
 
-                    <label>Estado</label>
-
                     <select
-                        value={meeting.status ?? "scheduled"}
+                        value={meeting.status}
+                        required
                         onChange={(e) =>
                             setMeeting({
                                 ...meeting,
@@ -209,6 +213,7 @@ export default function MeetingForm({
                             })
                         }
                     >
+                        <option value="">Selecciona estado</option>
                         <option value="scheduled">Programada</option>
                         <option value="completed">Completada</option>
                         <option value="cancelled">Cancelada</option>

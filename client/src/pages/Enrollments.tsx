@@ -3,10 +3,7 @@ import api from "../api";
 import { IoCreateOutline, IoTrashOutline } from "react-icons/io5";
 import { FiEdit } from "react-icons/fi";
 import { TbPlus } from "react-icons/tb";
-import axios from "axios";
 import { Skeleton } from "../components/Skeleton";
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 type SortDirection = "asc" | "desc";
 
@@ -41,16 +38,14 @@ export default function Enrollments() {
     const token = sessionStorage.getItem("token");
     if (!token) { setLoading(false); return; }
 
-    const config = { headers: { Authorization: `Bearer ${token}` } };
-
     Promise.resolve({ data: JSON.parse(sessionStorage.getItem("user") || "{}") }).then((res) => {
       setRole(res.data.role);
       setUserId(res.data.id);
     });
 
-    axios.get(`${API_BASE_URL}/enrollments`, config).then((res) => setEnrollments(res.data));
-    axios.get(`${API_BASE_URL}/students`, config).then((res) => setStudents(res.data));
-    axios.get(`${API_BASE_URL}/courses`, config).then((res) => setCourses(res.data)).finally(() => setLoading(false));
+    api.get("/enrollments").then((res) => setEnrollments(res.data));
+    api.get("/students").then((res) => setStudents(res.data));
+    api.get("/courses").then((res) => setCourses(res.data)).finally(() => setLoading(false));
   }, []);
 
   const handleSort = (key: string) => {
@@ -113,19 +108,15 @@ export default function Enrollments() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const token = sessionStorage.getItem("token");
-    const config = { headers: { Authorization: `Bearer ${token}` } };
-
     try {
       if (form.id) {
-        const res = await axios.put(
-          `${API_BASE_URL}/enrollments/${form.id}`,
-          { student_id: form.student_id, course_id: form.course_id },
-          config
+        const res = await api.put(
+          `/enrollments/${form.id}`,
+          { student_id: form.student_id, course_id: form.course_id }
         );
         setEnrollments((prev) => prev.map((e) => (e.id === form.id ? res.data : e)));
       } else {
-        const res = await axios.post(`${API_BASE_URL}/enrollments`, form, config);
+        const res = await api.post("/enrollments", form);
         setEnrollments((prev) => [...prev, res.data]);
       }
       setForm({ id: "", student_id: "", course_id: "" });
@@ -145,10 +136,7 @@ export default function Enrollments() {
 
   const handleDelete = async (id: string) => {
     if (!confirm("¿Eliminar matrícula?")) return;
-    const token = sessionStorage.getItem("token");
-    await axios.delete(`${API_BASE_URL}/enrollments/${id}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    await api.delete(`/enrollments/${id}`);
     setEnrollments((prev) => prev.filter((e) => e.id !== id));
   };
 
@@ -269,8 +257,8 @@ export default function Enrollments() {
 
                 {role === "admin" && (
                   <td>
-                    <button className="btn secondary extracted-style-4" onClick={() => handleEdit(en)}><IoCreateOutline /></button>
-                    <button className="btn secondary extracted-style-5" onClick={() => handleDelete(en.id)}><IoTrashOutline /></button>
+                    <button className="btn secondary extracted-style-4" onClick={() => handleEdit(en)} aria-label="Editar"><IoCreateOutline /></button>
+                    <button className="btn secondary extracted-style-5" onClick={() => handleDelete(en.id)} aria-label="Eliminar"><IoTrashOutline /></button>
                   </td>
                 )}
               </tr>

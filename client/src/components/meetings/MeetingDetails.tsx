@@ -22,8 +22,7 @@ export default function MeetingDetails() {
         try {
             const data = await getMeeting(meetingId);
             setMeeting(data);
-        } catch (error) {
-            console.error(error);
+        } catch {
             alert("No fue posible cargar la reunión.");
             navigate("/meetings");
         } finally {

@@ -1,11 +1,8 @@
 import { useState } from "react";
 import api from "../api";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import Layout from "../components/Layout";
 import { TbUserPlus } from "react-icons/tb";
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 export default function Signup() {
   const [form, setForm] = useState({
@@ -25,7 +22,7 @@ export default function Signup() {
     setLoading(true);
 
     try {
-      const res = await axios.post(`${API_BASE_URL}/users/register`, form);
+      const res = await api.post("/users/register", form);
 
       sessionStorage.setItem("token", res.data.token);
       if (res.data.user) {

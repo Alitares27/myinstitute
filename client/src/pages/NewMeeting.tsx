@@ -28,8 +28,6 @@ export default function NewMeeting() {
             alert("El consejo fue creado correctamente.");
             navigate("/meetings");
         } catch (error: any) {
-            console.error(error);
-
             if (isAxiosError(error) && error.response?.status === 401) {
                 return;
             }

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import axios, { isAxiosError } from "axios";
 import { TbCalendar, TbCheck, TbX, TbClock } from "react-icons/tb";
-import { IoCreateOutline, IoTrashOutline } from "react-icons/io5";
+import { IoCreateOutline, IoTrashOutline, IoAddOutline } from "react-icons/io5";
 
 import { Meeting } from "../interfaces/Meeting";
 import { Skeleton } from "../components/Skeleton";
@@ -31,7 +31,7 @@ export default function Meetings() {
       axios
         .get(`${API_BASE_URL}/me`, { headers: { Authorization: `Bearer ${token}` } })
         .then((res) => setRole(res.data.role))
-        .catch(() => {});
+        .catch(() => { });
     }
   }, []);
 
@@ -41,7 +41,6 @@ export default function Meetings() {
       const data = await getMeetings();
       setMeetings(data);
     } catch (error) {
-      console.error(error);
       if (isAxiosError(error) && error.response?.status === 401) return;
       alert("Error obteniendo consejos");
     } finally {
@@ -56,7 +55,6 @@ export default function Meetings() {
       await deleteMeeting(id);
       loadMeetings();
     } catch (error) {
-      console.error(error);
       if (isAxiosError(error) && error.response?.status === 401) return;
       alert("No fue posible eliminar el consejo.");
     }
@@ -67,8 +65,7 @@ export default function Meetings() {
       setLoadingDetail(true);
       const data = await getMeeting(id);
       setSelectedMeeting(data);
-    } catch (error) {
-      console.error(error);
+    } catch {
       alert("No fue posible cargar el consejo.");
     } finally {
       setLoadingDetail(false);
@@ -139,7 +136,7 @@ export default function Meetings() {
       <div className="meetings-header">
 
         <h1><span className="page-title-icon"><TbCalendar /></span> Consejos</h1>
-         
+
 
         <Link
           to="/meetings/new"
@@ -149,7 +146,7 @@ export default function Meetings() {
         </Link>
 
       </div>
-<h2 className="dashboard-subtitle">Consejos registrados</h2>
+      <h2 className="dashboard-subtitle"><IoAddOutline /> Consejos registrados</h2>
       {meetings.length === 0 ? (
         <div className="empty">
           <h3>No hay Consejos registrados.</h3>
@@ -191,12 +188,13 @@ export default function Meetings() {
                   </td>
                   {role === "admin" && (
                     <td>
-                      <Link to={`/meetings/edit/${meeting.id}`} className="btn secondary extracted-style-4">
+                      <Link to={`/meetings/edit/${meeting.id}`} className="btn secondary extracted-style-4" aria-label="Editar">
                         <IoCreateOutline />
                       </Link>
                       <button
                         className="btn secondary extracted-style-5"
                         onClick={() => handleDelete(meeting.id!)}
+                        aria-label="Eliminar"
                       >
                         <IoTrashOutline />
                       </button>
@@ -227,6 +225,7 @@ export default function Meetings() {
       {selectedMeeting && (
         <div className="modal-overlay" onClick={() => setSelectedMeeting(null)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <button className="modal-close" onClick={() => setSelectedMeeting(null)} title="Cerrar" />
             {loadingDetail ? (
               <p>Cargando consejo...</p>
             ) : (
@@ -283,10 +282,6 @@ export default function Meetings() {
                       ))}
                     </div>
                   )}
-                </div>
-
-                <div style={{ marginTop: "1.5rem", display: "flex", justifyContent: "flex-end" }}>
-                  <button className="btn secondary" onClick={() => setSelectedMeeting(null)}>Cerrar</button>
                 </div>
 
               </div>

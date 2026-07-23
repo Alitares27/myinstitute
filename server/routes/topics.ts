@@ -1,6 +1,6 @@
 import express, { Response } from "express";
 import { pool } from "../models/db";
-import { verifyToken, AuthRequest } from "../middleware/auth";
+import { verifyToken, isAdmin, AuthRequest } from "../middleware/auth";
 
 const router = express.Router();
 
@@ -24,7 +24,7 @@ router.get("/", verifyToken, async (req: AuthRequest, res: Response) => {
   }
 });
 
-router.post("/", verifyToken, async (req: AuthRequest, res: Response) => {
+router.post("/", verifyToken, isAdmin, async (req: AuthRequest, res: Response) => {
   const { course_id, title, description, order_index } = req.body;
   try {
     const result = await pool.query(
@@ -37,7 +37,7 @@ router.post("/", verifyToken, async (req: AuthRequest, res: Response) => {
   }
 });
 
-router.put("/:id", verifyToken, async (req: AuthRequest, res: Response) => {
+router.put("/:id", verifyToken, isAdmin, async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
   const { title, description, order_index } = req.body;
   try {
@@ -51,7 +51,7 @@ router.put("/:id", verifyToken, async (req: AuthRequest, res: Response) => {
   }
 });
 
-router.delete("/:id", verifyToken, async (req: AuthRequest, res: Response) => {
+router.delete("/:id", verifyToken, isAdmin, async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
   try {
     await pool.query("DELETE FROM topics WHERE id = $1", [id]);

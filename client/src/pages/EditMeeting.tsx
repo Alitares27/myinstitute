@@ -54,8 +54,6 @@ export default function EditMeeting() {
 
             setMeeting(formData);
         } catch (error) {
-            console.error(error);
-
             if (isAxiosError(error) && error.response?.status === 401) {
                 return;
             }
@@ -77,8 +75,6 @@ export default function EditMeeting() {
             alert("Consejo actualizado correctamente.");
             navigate("/meetings");
         } catch (error: any) {
-            console.error(error);
-
             if (isAxiosError(error) && error.response?.status === 401) {
                 return;
             }

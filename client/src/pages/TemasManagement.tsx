@@ -1,17 +1,15 @@
 import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { IoCreateOutline, IoTrashOutline, IoListOutline } from "react-icons/io5";
+import { IoCreateOutline, IoTrashOutline } from "react-icons/io5";
 import { FiList } from "react-icons/fi";
-import { TbPlus, TbPencil, TbSearch, TbAlertTriangle } from "react-icons/tb";
-import axios from "axios";
+import { TbPlus, TbPencil, TbAlertTriangle } from "react-icons/tb";
+import api from "../api";
 import { Skeleton } from "../components/Skeleton";
 
 interface Tema {
   id: number;
   title: string;
 }
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 export default function TemasManagement() {
   const navigate = useNavigate();
@@ -37,10 +35,7 @@ export default function TemasManagement() {
 
   const fetchTemas = async () => {
     try {
-      const token = sessionStorage.getItem("token");
-      const res = await axios.get(`${API_BASE_URL}/temas`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await api.get("/temas");
       setTemas(res.data);
     } catch {
       setError("Error al cargar los temas");
@@ -51,14 +46,12 @@ export default function TemasManagement() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const token = sessionStorage.getItem("token");
-    const config = { headers: { Authorization: `Bearer ${token}` } };
     try {
       if (form.id) {
-        const res = await axios.put(`${API_BASE_URL}/temas/${form.id}`, { title: form.title }, config);
+        const res = await api.put(`/temas/${form.id}`, { title: form.title });
         setTemas(prev => prev.map(t => t.id === Number(form.id) ? res.data : t));
       } else {
-        const res = await axios.post(`${API_BASE_URL}/temas`, { title: form.title }, config);
+        const res = await api.post("/temas", { title: form.title });
         setTemas(prev => [...prev, res.data]);
       }
       setForm({ id: "", title: "" });
@@ -75,11 +68,8 @@ export default function TemasManagement() {
 
   const handleDelete = async (id: number) => {
     if (!window.confirm("¿Seguro que deseas eliminar este tema?")) return;
-    const token = sessionStorage.getItem("token");
     try {
-      await axios.delete(`${API_BASE_URL}/temas/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await api.delete(`/temas/${id}`);
       setTemas(prev => prev.filter(t => t.id !== id));
     } catch {
       setError("Error al eliminar el tema");
@@ -196,10 +186,10 @@ export default function TemasManagement() {
                   <td>{t.id}</td>
                   <td>{t.title}</td>
                   <td>
-                    <button className="btn secondary extracted-style-4" onClick={() => handleEdit(t)}>
+                    <button className="btn secondary extracted-style-4" onClick={() => handleEdit(t)} aria-label="Editar">
                       <IoCreateOutline />
                     </button>
-                    <button className="btn secondary extracted-style-5" onClick={() => handleDelete(t.id)}>
+                    <button className="btn secondary extracted-style-5" onClick={() => handleDelete(t.id)} aria-label="Eliminar">
                       <IoTrashOutline />
                     </button>
                   </td>

@@ -1,9 +1,9 @@
 import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { IoCreateOutline, IoTrashOutline, IoBusinessOutline } from "react-icons/io5";
+import { IoCreateOutline, IoTrashOutline } from "react-icons/io5";
 import { FiBriefcase } from "react-icons/fi";
-import { TbPlus, TbPencil, TbSearch, TbAlertTriangle, TbBuilding } from "react-icons/tb";
-import axios from "axios";
+import { TbPlus, TbPencil, TbAlertTriangle, TbBuilding } from "react-icons/tb";
+import api from "../api";
 import { formatDate, toYMD } from "../utils/dateUtils";
 import { Skeleton } from "../components/Skeleton";
 
@@ -38,8 +38,6 @@ const getStatusClass = (status: string) => {
   }
 };
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
-
 export default function TemplosMaintenance() {
   const navigate = useNavigate();
   const [templos, setTemplos] = useState<Templo[]>([]);
@@ -65,10 +63,7 @@ export default function TemplosMaintenance() {
 
   const fetchTemplos = async () => {
     try {
-      const token = sessionStorage.getItem("token");
-      const res = await axios.get(`${API_BASE_URL}/temples`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await api.get("/temples");
       setTemplos(res.data);
     } catch {
       setError("Error al cargar los templos");
@@ -79,15 +74,13 @@ export default function TemplosMaintenance() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const token = sessionStorage.getItem("token");
-    const config = { headers: { Authorization: `Bearer ${token}` } };
     const payload = { name: form.name, city: form.city, province: form.province, address: form.address, dedicated_date: form.dedicated_date || null, status: form.status };
     try {
       if (form.id) {
-        const res = await axios.put(`${API_BASE_URL}/temples/${form.id}`, payload, config);
+        const res = await api.put(`/temples/${form.id}`, payload);
         setTemplos(prev => prev.map(t => t.id === Number(form.id) ? res.data : t));
       } else {
-        const res = await axios.post(`${API_BASE_URL}/temples`, payload, config);
+        const res = await api.post("/temples", payload);
         setTemplos(prev => [...prev, res.data]);
       }
       setForm({ id: "", name: "", city: "", province: "", address: "", dedicated_date: "", status: "operating" });
@@ -112,11 +105,8 @@ export default function TemplosMaintenance() {
 
   const handleDelete = async (id: number) => {
     if (!window.confirm("¿Seguro que deseas eliminar este templo?")) return;
-    const token = sessionStorage.getItem("token");
     try {
-      await axios.delete(`${API_BASE_URL}/temples/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await api.delete(`/temples/${id}`);
       setTemplos(prev => prev.filter(t => t.id !== id));
     } catch {
       setError("Error al eliminar el templo. Puede que tenga viajes asociados.");
@@ -298,10 +288,10 @@ export default function TemplosMaintenance() {
                     </span>
                   </td>
                   <td>
-                    <button className="btn secondary extracted-style-4" onClick={() => handleEdit(t)}>
+                    <button className="btn secondary extracted-style-4" onClick={() => handleEdit(t)} aria-label="Editar">
                       <IoCreateOutline />
                     </button>
-                    <button className="btn secondary extracted-style-5" onClick={() => handleDelete(t.id)}>
+                    <button className="btn secondary extracted-style-5" onClick={() => handleDelete(t.id)} aria-label="Eliminar">
                       <IoTrashOutline />
                     </button>
                   </td>
@@ -329,36 +319,17 @@ export default function TemplosMaintenance() {
 
       {selectedTemplo && (
         <div
-          style={{
-            position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            zIndex: 1000, backdropFilter: "blur(4px)"
-          }}
+          className="modal-overlay"
           onClick={() => setSelectedTemplo(null)}
         >
           <div
-            style={{
-              background: "var(--bg-surface)", borderRadius: "16px",
-              padding: "2rem", minWidth: "320px", maxWidth: "480px", width: "90%",
-              boxShadow: "0 20px 60px rgba(0,0,0,0.4)", position: "relative"
-            }}
+            className="modal-content"
+            style={{ minWidth: "320px", maxWidth: "480px" }}
             onClick={e => e.stopPropagation()}
           >
-            <button
-              onClick={() => setSelectedTemplo(null)}
-              style={{
-                position: "absolute", top: "1rem", right: "1rem",
-                background: "var(--bg-body)", border: "none", borderRadius: "50%",
-                width: "32px", height: "32px", cursor: "pointer",
-                fontSize: "1rem", color: "var(--text-muted)", display: "flex",
-                alignItems: "center", justifyContent: "center"
-              }}
-              title="Cerrar"
-            >
-              ✕
-            </button>
+            <button className="modal-close" onClick={() => setSelectedTemplo(null)} title="Cerrar" />
 
-            <h2 style={{ marginBottom: "1.2rem", color: "var(--text-main)", fontSize: "1.2rem" }}>
+            <h2 style={{ marginBottom: "1.2rem", color: "var(--text-main)", fontSize: "1.2rem", marginTop: '8px' }}>
               <TbBuilding /> {selectedTemplo.name}
             </h2>
 
@@ -397,9 +368,6 @@ export default function TemplosMaintenance() {
                 onClick={() => { handleEdit(selectedTemplo); setSelectedTemplo(null); }}
               >
                 <TbPencil /> Editar
-              </button>
-              <button className="btn secondary" onClick={() => setSelectedTemplo(null)}>
-                Cerrar
               </button>
             </div>
           </div>

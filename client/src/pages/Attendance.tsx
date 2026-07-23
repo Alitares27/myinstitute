@@ -2,7 +2,6 @@ import { useEffect, useState, useMemo } from "react";
 import api from "../api";
 import { FiCalendar } from "react-icons/fi";
 import { TbPlus, TbAlertTriangle } from "react-icons/tb";
-import axios from "axios";
 import { formatDate, toYMD } from "../utils/dateUtils";
 import { openPrintWindow } from "../utils/reportUtils";
 import { Skeleton } from "../components/Skeleton";
@@ -21,7 +20,6 @@ interface Student { id: number; name: string; }
 interface Course { id: number; title: string; }
 interface Topic { id: number; course_id: number; title: string; }
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 type SortDirection = "asc" | "desc";
 
 export default function Attendance() {
@@ -60,14 +58,12 @@ export default function Attendance() {
       return;
     }
 
-    const headers = { Authorization: `Bearer ${token}` };
-
     Promise.all([
       Promise.resolve({ data: JSON.parse(sessionStorage.getItem("user") || "{}") }),
-      axios.get(`${API_BASE_URL}/attendance`, { headers }),
-      axios.get(`${API_BASE_URL}/students`, { headers }),
-      axios.get(`${API_BASE_URL}/courses`, { headers }),
-      axios.get(`${API_BASE_URL}/topics`, { headers }),
+      api.get("/attendance"),
+      api.get("/students"),
+      api.get("/courses"),
+      api.get("/topics"),
     ])
       .then(([userRes, attRes, stdRes, crsRes, topRes]) => {
         setRole(userRes.data.role);
@@ -134,12 +130,9 @@ export default function Attendance() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const token = sessionStorage.getItem("token");
 
     try {
-      const res = await axios.post(`${API_BASE_URL}/attendance`, form, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await api.post("/attendance", form);
 
       const topic = allTopics.find(t => t.id === Number(form.topic_id));
       setAttendance(prev => [

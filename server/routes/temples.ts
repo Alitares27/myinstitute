@@ -1,6 +1,6 @@
 import express, { Response } from "express";
 import { pool } from "../models/db";
-import { verifyToken, AuthRequest } from "../middleware/auth";
+import { verifyToken, isAdmin, AuthRequest } from "../middleware/auth";
 
 const router = express.Router();
 
@@ -18,7 +18,7 @@ router.get("/", verifyToken, async (req: AuthRequest, res: Response) => {
   }
 });
 
-router.post("/", verifyToken, async (req: AuthRequest, res: Response) => {
+router.post("/", verifyToken, isAdmin, async (req: AuthRequest, res: Response) => {
   try {
     const { name, city, province, address, dedicated_date, status } = req.body;
     if (!name) return res.status(400).json({ message: "El nombre es requerido" });
@@ -34,7 +34,7 @@ router.post("/", verifyToken, async (req: AuthRequest, res: Response) => {
   }
 });
 
-router.put("/:id", verifyToken, async (req: AuthRequest, res: Response) => {
+router.put("/:id", verifyToken, isAdmin, async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     const { name, city, province, address, dedicated_date, status } = req.body;
@@ -51,7 +51,7 @@ router.put("/:id", verifyToken, async (req: AuthRequest, res: Response) => {
   }
 });
 
-router.delete("/:id", verifyToken, async (req: AuthRequest, res: Response) => {
+router.delete("/:id", verifyToken, isAdmin, async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     const result = await pool.query("DELETE FROM temples WHERE id = $1 RETURNING *", [id]);

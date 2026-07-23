@@ -3,10 +3,7 @@ import api from "../api";
 import { FaPlus } from "react-icons/fa";
 import { IoCreateOutline, IoTrashOutline } from "react-icons/io5";
 import { FiUsers } from "react-icons/fi";
-import axios from "axios";
 import { Skeleton } from "../components/Skeleton";
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 type SortConfig = {
   key: string;
@@ -27,15 +24,14 @@ export default function Students() {
   useEffect(() => {
     const token = sessionStorage.getItem("token");
     if (!token) { setLoading(false); return; }
-    const config = { headers: { Authorization: `Bearer ${token}` } };
 
     Promise.resolve({ data: JSON.parse(sessionStorage.getItem("user") || "{}") }).then((res) => {
       setRole(res.data.role);
       setUserId(res.data.id);
     });
 
-    axios.get(`${API_BASE_URL}/students`, config).then((res) => setStudents(res.data));
-    axios.get(`${API_BASE_URL}/users`, config).then((res) => setUsers(res.data)).finally(() => setLoading(false));
+    api.get("/students").then((res) => setStudents(res.data));
+    api.get("/users").then((res) => setUsers(res.data)).finally(() => setLoading(false));
   }, []);
 
   const availableUsers = useMemo(() => {
@@ -44,19 +40,16 @@ export default function Students() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const token = sessionStorage.getItem("token");
-    const config = { headers: { Authorization: `Bearer ${token}` } };
 
     try {
       if (form.id) {
-        const res = await axios.put(
-          `${API_BASE_URL}/students/${form.id}`,
-          { name: form.name, grade: form.grade },
-          config
+        const res = await api.put(
+          `/students/${form.id}`,
+          { name: form.name, grade: form.grade }
         );
         setStudents(students.map((s) => (s.id === form.id ? res.data : s)));
       } else {
-        const res = await axios.post(`${API_BASE_URL}/students`, { user_id: form.user_id, grade: form.grade }, config);
+        const res = await api.post("/students", { user_id: form.user_id, grade: form.grade });
         setStudents([...students, res.data]);
       }
       setForm({ id: "", user_id: "", name: "", grade: "" });
@@ -73,10 +66,7 @@ export default function Students() {
   const handleDelete = async (id: string) => {
     if (!window.confirm("¿Seguro que deseas eliminar este estudiante?")) return;
     try {
-      const token = sessionStorage.getItem("token");
-      await axios.delete(`${API_BASE_URL}/students/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await api.delete(`/students/${id}`);
       setStudents(students.filter((s) => s.id !== id));
     } catch {
       alert("Error al eliminar");
@@ -231,8 +221,8 @@ export default function Students() {
                 <td>{s.grade}</td>
                 {role === "admin" && (
                   <td>
-                    <button className="btn secondary extracted-style-4" onClick={() => handleEdit(s)}><IoCreateOutline /></button>
-                    <button className="btn secondary extracted-style-5" onClick={() => handleDelete(s.id)}><IoTrashOutline /></button>
+                    <button className="btn secondary extracted-style-4" onClick={() => handleEdit(s)} aria-label="Editar"><IoCreateOutline /></button>
+                    <button className="btn secondary extracted-style-5" onClick={() => handleDelete(s.id)} aria-label="Eliminar"><IoTrashOutline /></button>
                   </td>
                 )}
               </tr>

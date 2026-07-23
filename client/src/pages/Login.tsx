@@ -1,12 +1,9 @@
 /// <reference types="vite/client" />
 import { useState } from "react";
 import api from "../api";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import Layout from "../components/Layout";
 import { TbLogin, TbAlertTriangle } from "react-icons/tb";
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 export default function Login() {
   const [form, setForm] = useState({ email: "", password: "" });
@@ -19,15 +16,8 @@ export default function Login() {
     setError("");
     setLoading(true);
 
-    const axiosConfig = {
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      withCredentials: false,
-    };
-
     try {
-      const res = await axios.post(`${API_BASE_URL}/users/login`, form, axiosConfig);
+      const res = await api.post("/users/login", form);
 
       if (!res.data?.token) {
         throw new Error("No se recibió el token de autenticación.");
@@ -39,8 +29,6 @@ export default function Login() {
 
       navigate("/dashboard");
     } catch (err: any) {
-      console.error("Login error:", err);
-
       if (err.code === 'ERR_NETWORK' || err.message.includes('Network Error')) {
         setError("No se pudo conectar con el servidor. Verifica que el backend esté activo.");
       } else if (err.response?.status === 0) {
@@ -115,7 +103,7 @@ export default function Login() {
                 onClick={() => navigate("/")}
                 disabled={loading}
               >
-                ← Cancelar
+                Cancelar
               </button>
             </div>
           </form>

@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import api from "../api";
 import "../styles/Dashboard.css";
 import { Skeleton } from "../components/Skeleton";
 import {
   TbSchool, TbUser, TbBooks, TbCalendar,
   TbBook, TbChartLine, TbStar, TbCircleCheck,
-  TbMicrophone, TbBuilding, TbSettings, TbPencil,
+  TbBuilding, TbSettings, TbPencil,
   TbChartBar, TbRocket, TbAlertTriangle
 } from "react-icons/tb";
 
@@ -26,9 +26,6 @@ function Dashboard() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const API_BASE_URL =
-    import.meta.env.VITE_API_URL || "http://localhost:5000/api";
-
   useEffect(() => {
     const token = sessionStorage.getItem("token");
 
@@ -38,25 +35,20 @@ function Dashboard() {
       return;
     }
 
-    const config = {
-      headers: { Authorization: `Bearer ${token}` },
-    };
-
     const sessionUser = sessionStorage.getItem("user");
     if (sessionUser) setUser(JSON.parse(sessionUser));
 
-    axios
-      .get(`${API_BASE_URL}/dashboard-stats`, config)
+    api
+      .get("/dashboard-stats")
       .then((res) => {
         setStats(res.data);
         setLoading(false);
       })
-      .catch((err) => {
-        console.error("Error cargando estadísticas:", err);
+      .catch(() => {
         setError("Error al cargar las estadísticas. Reintente más tarde.");
         setLoading(false);
       });
-  }, [API_BASE_URL]);
+  }, []);
 
   if (loading) {
     return (
@@ -171,21 +163,21 @@ function Dashboard() {
     if (user?.role === "admin") {
       return (
         <div className="shortcuts-grid">
-          <div className="shortcut-card" onClick={() => navigate("/meetings")}>
+          <div className="shortcut-card" onClick={() => navigate("/meetings")} role="button" tabIndex={0} onKeyDown={(e) => e.key === "Enter" && navigate("/meetings")}>
             <div className="shortcut-icon-bg"><TbCalendar /></div>
             <div className="shortcut-info">
               <h3>Consejos</h3>
               <p>Programar y gestionar consejos</p>
             </div>
           </div>
-          <div className="shortcut-card" onClick={() => navigate("/templeAttendance")}>
+          <div className="shortcut-card" onClick={() => navigate("/templeAttendance")} role="button" tabIndex={0} onKeyDown={(e) => e.key === "Enter" && navigate("/templeAttendance")}>
             <div className="shortcut-icon-bg"><TbBuilding /></div>
             <div className="shortcut-info">
               <h3>Templo</h3>
               <p>Reservas y viajes al templo</p>
             </div>
           </div>
-          <div className="shortcut-card" onClick={() => navigate("/users")}>
+          <div className="shortcut-card" onClick={() => navigate("/users")} role="button" tabIndex={0} onKeyDown={(e) => e.key === "Enter" && navigate("/users")}>
             <div className="shortcut-icon-bg"><TbSettings /></div>
             <div className="shortcut-info">
               <h3>Miembros</h3>
@@ -199,28 +191,28 @@ function Dashboard() {
     if (user?.role === "teacher") {
       return (
         <div className="shortcuts-grid">
-          <div className="shortcut-card" onClick={() => navigate("/attendance")}>
+          <div className="shortcut-card" onClick={() => navigate("/attendance")} role="button" tabIndex={0} onKeyDown={(e) => e.key === "Enter" && navigate("/attendance")}>
             <div className="shortcut-icon-bg"><TbPencil /></div>
             <div className="shortcut-info">
               <h3>Tomar Asistencia</h3>
               <p>Registrar alumnos presentes hoy</p>
             </div>
           </div>
-          <div className="shortcut-card" onClick={() => navigate("/grades")}>
+          <div className="shortcut-card" onClick={() => navigate("/grades")} role="button" tabIndex={0} onKeyDown={(e) => e.key === "Enter" && navigate("/grades")}>
             <div className="shortcut-icon-bg"><TbChartBar /></div>
             <div className="shortcut-info">
               <h3>Calificaciones</h3>
               <p>Registrar calificaciones</p>
             </div>
           </div>
-          <div className="shortcut-card" onClick={() => navigate("/courses")}>
+          <div className="shortcut-card" onClick={() => navigate("/courses")} role="button" tabIndex={0} onKeyDown={(e) => e.key === "Enter" && navigate("/courses")}>
             <div className="shortcut-icon-bg"><TbBooks /></div>
             <div className="shortcut-info">
               <h3>Ver mis Cursos</h3>
               <p>Detalle de mis materias</p>
             </div>
           </div>
-          <div className="shortcut-card" onClick={() => navigate("/students")}>
+          <div className="shortcut-card" onClick={() => navigate("/students")} role="button" tabIndex={0} onKeyDown={(e) => e.key === "Enter" && navigate("/students")}>
             <div className="shortcut-icon-bg"><TbUser /></div>
             <div className="shortcut-info">
               <h3>Lista de Miembros</h3>
@@ -233,28 +225,28 @@ function Dashboard() {
 
     return (
       <div className="shortcuts-grid">
-          <div className="shortcut-card" onClick={() => navigate("/courses")}>
+          <div className="shortcut-card" onClick={() => navigate("/courses")} role="button" tabIndex={0} onKeyDown={(e) => e.key === "Enter" && navigate("/courses")}>
             <div className="shortcut-icon-bg"><TbBook /></div>
             <div className="shortcut-info">
               <h3>Mis Cursos</h3>
             <p>Ver mis clases y horarios</p>
           </div>
         </div>
-        <div className="shortcut-card" onClick={() => navigate("/grades")}>
+        <div className="shortcut-card" onClick={() => navigate("/grades")} role="button" tabIndex={0} onKeyDown={(e) => e.key === "Enter" && navigate("/grades")}>
             <div className="shortcut-icon-bg"><TbStar /></div>
           <div className="shortcut-info">
             <h3>Mis Notas</h3>
             <p>Reporte de calificaciones</p>
           </div>
         </div>
-          <div className="shortcut-card" onClick={() => navigate("/attendance")}>
+          <div className="shortcut-card" onClick={() => navigate("/attendance")} role="button" tabIndex={0} onKeyDown={(e) => e.key === "Enter" && navigate("/attendance")}>
             <div className="shortcut-icon-bg"><TbCalendar /></div>
           <div className="shortcut-info">
             <h3>Mi Asistencia</h3>
             <p>Resumen de faltas y presencia</p>
           </div>
         </div>
-        <div className="shortcut-card" onClick={() => navigate("/users")}>
+        <div className="shortcut-card" onClick={() => navigate("/users")} role="button" tabIndex={0} onKeyDown={(e) => e.key === "Enter" && navigate("/users")}>
             <div className="shortcut-icon-bg"><TbUser /></div>
             <div className="shortcut-info">
               <h3>Mi Perfil</h3>

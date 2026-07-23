@@ -2,10 +2,8 @@ import { useEffect, useState, useMemo } from "react";
 import { FaSearch, FaIdCard, FaPlus } from "react-icons/fa";
 import { IoCreateOutline, IoTrashOutline, IoPersonOutline } from "react-icons/io5";
 import { FiUser } from "react-icons/fi";
-import axios from "axios";
+import api from "../api";
 import { Skeleton } from "../components/Skeleton";
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 function UserPage() {
   const [users, setUsers] = useState<any[]>([]);
@@ -36,12 +34,11 @@ function UserPage() {
   const fetchData = async () => {
     const token = sessionStorage.getItem("token");
     if (!token) return;
-    const config = { headers: { Authorization: `Bearer ${token}` } };
     try {
       const userRes = JSON.parse(sessionStorage.getItem("user") || "{}");
       setCurrentUser(userRes);
       if (userRes.role === "admin") {
-        const res = await axios.get(`${API_BASE_URL}/users`, config);
+        const res = await api.get("/users");
         setUsers(res.data);
       }
     } catch (err) {
@@ -64,15 +61,13 @@ function UserPage() {
   const totalPages = Math.ceil(filteredUsers.length / recordsPerPage);
 
   const handleSave = async () => {
-    const token = sessionStorage.getItem("token");
-    const config = { headers: { Authorization: `Bearer ${token}` } };
     try {
       if (form.id) {
-        const res = await axios.put(`${API_BASE_URL}/users/${form.id}`, form, config);
+        const res = await api.put(`/users/${form.id}`, form);
         setUsers(users.map(u => u.id === Number(form.id) ? { ...u, ...res.data } : u));
         alert("Miembro actualizado correctamente");
       } else {
-        const res = await axios.post(`${API_BASE_URL}/users`, form, config);
+        const res = await api.post("/users", form);
         setUsers([...users, res.data.user]);
         alert("Miembro creado con éxito");
       }
@@ -84,9 +79,8 @@ function UserPage() {
 
   const handleDelete = async (id: number) => {
     if (!window.confirm("¿Confirmas la eliminación de este miembro?")) return;
-    const token = sessionStorage.getItem("token");
     try {
-      await axios.delete(`${API_BASE_URL}/users/${id}`, { headers: { Authorization: `Bearer ${token}` } });
+      await api.delete(`/users/${id}`);
       setUsers(users.filter(u => u.id !== id));
     } catch {
       alert("Error al eliminar");
@@ -251,12 +245,14 @@ function UserPage() {
                       <button
                         onClick={() => handleEditClick(u)}
                         className="btn secondary extracted-style-4"
+                        aria-label="Editar"
                       >
                         <IoCreateOutline />
                       </button>
                       <button
                         onClick={() => handleDelete(u.id)}
                         className="btn secondary extracted-style-5"
+                        aria-label="Eliminar"
                       >
                         <IoTrashOutline />
                       </button>

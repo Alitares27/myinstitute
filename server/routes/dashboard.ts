@@ -47,10 +47,10 @@ router.get("/dashboard-stats", verifyToken, async (req: any, res) => {
 
       const studentsCount = await pool.query(
         "SELECT COUNT(DISTINCT student_id) FROM enrollments WHERE course_id IN (SELECT id FROM courses WHERE teacher_id = $1)",
-        [userId]
+        [teacherId]
       );
 
-      const coursesCount = await pool.query("SELECT COUNT(*) FROM courses WHERE teacher_id = $1", [userId]);
+      const coursesCount = await pool.query("SELECT COUNT(*) FROM courses WHERE teacher_id = $1", [teacherId]);
 
       const attendance = await pool.query(`
         SELECT 
@@ -60,7 +60,7 @@ router.get("/dashboard-stats", verifyToken, async (req: any, res) => {
               (SELECT COUNT(*) FROM enrollments e WHERE e.course_id = c.id) * 
               (SELECT COUNT(*) FROM topics t WHERE t.course_id = c.id)
             ) FROM courses c WHERE c.teacher_id = $1), 0) AS total_expected;
-      `, [userId]);
+      `, [teacherId]);
 
       const pCount = parseInt(attendance.rows[0].present_count || 0, 10);
       const eCount = parseInt(attendance.rows[0].total_expected || 0, 10);

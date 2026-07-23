@@ -3,10 +3,7 @@ import api from "../api";
 import { FaPlus } from "react-icons/fa";
 import { IoCreateOutline, IoTrashOutline } from "react-icons/io5";
 import { FiUserCheck } from "react-icons/fi";
-import axios from "axios";
 import { Skeleton } from "../components/Skeleton";
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 type SortConfig = {
   key: string;
@@ -25,15 +22,14 @@ export default function Teachers() {
   useEffect(() => {
     const token = sessionStorage.getItem("token");
     if (!token) { setLoading(false); return; }
-    const config = { headers: { Authorization: `Bearer ${token}` } };
 
     Promise.resolve({ data: JSON.parse(sessionStorage.getItem("user") || "{}") }).then((res) => {
       setRole(res.data.role);
       setUserId(res.data.id);
     });
 
-    axios.get(`${API_BASE_URL}/teachers`, config).then((res) => setTeachers(res.data));
-    axios.get(`${API_BASE_URL}/users`, config).then((res) => setUsers(res.data)).finally(() => setLoading(false));
+    api.get("/teachers").then((res) => setTeachers(res.data));
+    api.get("/users").then((res) => setUsers(res.data)).finally(() => setLoading(false));
   }, []);
 
   const availableUsers = useMemo(() => {
@@ -43,21 +39,17 @@ export default function Teachers() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const token = sessionStorage.getItem("token");
-    const config = { headers: { Authorization: `Bearer ${token}` } };
 
     if (form.id) {
-      const res = await axios.put(
-        `${API_BASE_URL}/teachers/${form.id}`,
-        { specialty: form.specialty },
-        config
+      const res = await api.put(
+        `/teachers/${form.id}`,
+        { specialty: form.specialty }
       );
       setTeachers(teachers.map((t) => (t.id === form.id ? res.data : t)));
     } else {
-      const res = await axios.post(
-        `${API_BASE_URL}/teachers`,
-        { user_id: form.user_id, specialty: form.specialty },
-        config
+      const res = await api.post(
+        "/teachers",
+        { user_id: form.user_id, specialty: form.specialty }
       );
       setTeachers([...teachers, res.data]);
     }
@@ -71,10 +63,7 @@ export default function Teachers() {
   };
 
   const handleDelete = async (id: string) => {
-    const token = sessionStorage.getItem("token");
-    await axios.delete(`${API_BASE_URL}/teachers/${id}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    await api.delete(`/teachers/${id}`);
     setTeachers(teachers.filter((t) => t.id !== id));
   };
 
@@ -193,8 +182,8 @@ export default function Teachers() {
                 <td>{t.specialty}</td>
                 {role === "admin" && (
                   <td>
-                    <button className="btn secondary extracted-style-4" onClick={() => handleEdit(t)}><IoCreateOutline /></button>
-                    <button className="btn secondary extracted-style-5" onClick={() => handleDelete(t.id)}><IoTrashOutline /></button>
+                    <button className="btn secondary extracted-style-4" onClick={() => handleEdit(t)} aria-label="Editar"><IoCreateOutline /></button>
+                    <button className="btn secondary extracted-style-5" onClick={() => handleDelete(t.id)} aria-label="Eliminar"><IoTrashOutline /></button>
                   </td>
                 )}
               </tr>

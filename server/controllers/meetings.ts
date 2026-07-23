@@ -36,8 +36,7 @@ export async function getMeetings(req: Request, res: Response) {
     } catch (err: any) {
         console.error("Error en getMeetings:", err.message);
         res.status(500).json({
-            message: "Error obteniendo consejos",
-            error: err.message
+            message: "Error obteniendo consejos"
         });
     }
 }
@@ -86,8 +85,7 @@ export async function getMeeting(req: Request, res: Response) {
     } catch (err: any) {
         console.error("Error en getMeeting:", err.message);
         res.status(500).json({
-            message: "Error obteniendo consejo",
-            error: err.message
+            message: "Error obteniendo consejo"
         });
     }
 }
@@ -195,8 +193,7 @@ export async function createMeeting(req: Request, res: Response) {
         await client.query("ROLLBACK");
         console.error("Error en createMeeting:", err.message);
         res.status(500).json({
-            message: "Error creando consejo",
-            error: err.message
+            message: "Error creando consejo"
         });
     } finally {
         client.release();
@@ -304,8 +301,7 @@ export async function updateMeeting(req: Request, res: Response) {
         await client.query("ROLLBACK");
         console.error("Error en updateMeeting:", err.message);
         res.status(500).json({
-            message: "Error actualizando consejo",
-            error: err.message
+            message: "Error actualizando consejo"
         });
     } finally {
         client.release();
@@ -329,8 +325,7 @@ export async function deleteMeeting(req: Request, res: Response) {
     } catch (err: any) {
         console.error("Error en deleteMeeting:", err.message);
         res.status(500).json({
-            message: "Error eliminando consejo",
-            error: err.message
+            message: "Error eliminando consejo"
         });
     }
 }

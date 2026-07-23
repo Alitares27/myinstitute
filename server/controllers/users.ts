@@ -19,6 +19,11 @@ export async function registerUser(req: Request, res: Response) {
       return res.status(400).json({ message: "Campos requeridos faltantes" });
     }
 
+    const allowedRoles = ["student", "teacher"];
+    if (!allowedRoles.includes(role)) {
+      return res.status(400).json({ message: "Rol no válido para registro público" });
+    }
+
     const existing = await client.query("SELECT id FROM users WHERE email = $1", [email]);
     if (existing.rows.length > 0) {
       return res.status(400).json({ message: "El correo ya está registrado" });
@@ -78,17 +83,15 @@ export async function loginUser(req: Request, res: Response) {
 
     const user = result.rows[0];
 
-    console.log("👤 Miembro encontrado:", user);
+    console.log("Login attempt for:", email);
 
     if (!user) {
       return res.status(401).json({ message: "Credenciales inválidas" });
     }
 
-    console.log("🔒 Hash en DB:", user.password);
-
     const validPassword = await bcrypt.compare(password, user.password);
 
-    console.log("✅ Resultado bcrypt.compare:", validPassword);
+    console.log("Password valid for:", email);
 
     if (!validPassword) {
       return res.status(401).json({ message: "Credenciales inválidas" });

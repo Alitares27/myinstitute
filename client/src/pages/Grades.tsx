@@ -3,11 +3,8 @@ import api from "../api";
 import { FaPlus } from "react-icons/fa";
 import { IoCreateOutline, IoTrashOutline } from "react-icons/io5";
 import { FiBarChart2 } from "react-icons/fi";
-import axios from "axios";
 import { formatDate } from "../utils/dateUtils";
 import { Skeleton } from "../components/Skeleton";
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 type SortConfig = {
   key: string;
@@ -41,20 +38,16 @@ export default function Grades() {
 
   const fetchData = async () => {
     try {
-      const token = sessionStorage.getItem("token");
-      if (!token) return;
-      const config = { headers: { Authorization: `Bearer ${token}` } };
-
       const meRes = await Promise.resolve({ data: JSON.parse(sessionStorage.getItem("user") || "{}") });
       setRole(meRes.data.role);
 
-      const gradesRes = await axios.get(`${API_BASE_URL}/grades`, config);
+      const gradesRes = await api.get("/grades");
       setGrades(gradesRes.data);
 
       if (meRes.data.role === "admin") {
         const [sRes, cRes] = await Promise.all([
-          axios.get(`${API_BASE_URL}/students`, config),
-          axios.get(`${API_BASE_URL}/courses`, config),
+          api.get("/students"),
+          api.get("/courses"),
         ]);
         setStudents(sRes.data);
         setCourses(cRes.data);
@@ -106,14 +99,12 @@ export default function Grades() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const token = sessionStorage.getItem("token");
-    const config = { headers: { Authorization: `Bearer ${token}` } };
 
     try {
       if (form.id) {
-        await axios.put(`${API_BASE_URL}/grades/${form.id}`, form, config);
+        await api.put(`/grades/${form.id}`, form);
       } else {
-        await axios.post(`${API_BASE_URL}/grades`, form, config);
+        await api.post("/grades", form);
       }
       setForm({ id: "", student_id: "", course_id: "", grade: "", grade_type: "examen" });
       fetchData();
@@ -136,10 +127,7 @@ export default function Grades() {
   const handleDelete = async (id: number) => {
     if (!window.confirm("¿Seguro que deseas eliminar esta calificación?")) return;
     try {
-      const token = sessionStorage.getItem("token");
-      await axios.delete(`${API_BASE_URL}/grades/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await api.delete(`/grades/${id}`);
       setGrades(grades.filter((g) => g.id !== id));
     } catch {
       setError("Error al eliminar el registro.");
@@ -283,8 +271,8 @@ export default function Grades() {
 
                   {role === "admin" && (
                     <td>
-                      <button className="btn secondary extracted-style-4" onClick={() => handleEditClick(g)}><IoCreateOutline /></button>
-                      <button className="btn secondary extracted-style-5" onClick={() => handleDelete(g.id)}><IoTrashOutline /></button>
+                      <button className="btn secondary extracted-style-4" onClick={() => handleEditClick(g)} aria-label="Editar"><IoCreateOutline /></button>
+                      <button className="btn secondary extracted-style-5" onClick={() => handleDelete(g.id)} aria-label="Eliminar"><IoTrashOutline /></button>
                     </td>
                   )}
                 </tr>

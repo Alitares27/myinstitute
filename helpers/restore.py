@@ -26,7 +26,6 @@ def style_obj_to_css(style_str):
     return "\n".join(css_rules)
 
 def main():
-    # 1. Clear duplicated styles from index.css
     with open(CSS_FILE, 'r') as f:
         css_content = f.read()
     if '/* Extracted Inline Styles */' in css_content:
@@ -43,7 +42,6 @@ def main():
             
             # 2. Get original file from git HEAD
             try:
-                # Get relative path for git
                 rel_path = f"client/src/pages/{f_name}"
                 original_content = subprocess.check_output(['git', 'show', f'HEAD:{rel_path}']).decode('utf-8')
             except Exception as e:

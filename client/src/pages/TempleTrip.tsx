@@ -86,8 +86,7 @@ export default function TempleTrip() {
 
             const data = await res.json();
             setTemples(data);
-        } catch (error) {
-            console.error("❌ Error cargando templos:", error);
+        } catch {
         }
     };
 
@@ -103,8 +102,7 @@ export default function TempleTrip() {
 
             const data = await res.json();
             setTrips(data);
-        } catch (error) {
-            console.error("❌ Error cargando viajes:", error);
+        } catch {
         }
     };
 
@@ -155,8 +153,7 @@ export default function TempleTrip() {
                 cost: ""
             });
 
-        } catch (error) {
-            console.error("❌ Error guardando viaje:", error);
+        } catch {
         }
     };
 
@@ -180,8 +177,7 @@ export default function TempleTrip() {
             });
 
             fetchTrips();
-        } catch (error) {
-            console.error("❌ Error eliminando viaje:", error);
+        } catch {
         }
     };
 
@@ -315,18 +311,20 @@ export default function TempleTrip() {
                                 <tr key={trip.id}>
                                     <td>{trip.temple_name}</td>
                                     <td>{formatDate(trip.date)}</td>
-                                    <td><span className="status-general">{trip.status}</span></td>
+                                    <td><span className={`status-${trip.status}`}>{trip.status}</span></td>
                                     <td>${Number(trip.cost).toLocaleString()}</td>
                                     <td>
                                         <button
                                             className="btn secondary extracted-style-4"
                                             onClick={() => handleEdit(trip)}
+                                            aria-label="Editar"
                                         >
                                             <IoCreateOutline />
                                         </button>
                                         <button
                                             className="btn secondary extracted-style-5"
                                             onClick={() => handleDelete(trip.id)}
+                                            aria-label="Eliminar"
                                         >
                                             <IoTrashOutline />
                                         </button>

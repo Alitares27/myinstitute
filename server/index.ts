@@ -38,8 +38,6 @@ app.use(cors({
   optionsSuccessStatus: 200
 }));
 
-app.options('*', cors());
-
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -65,15 +63,6 @@ app.get("/health", (req, res) => {
   res.status(200).json({ status: "ok" });
 });
 
-app.get("/test-topics", async (req, res) => {
-  try {
-    const result = await pool.query("SELECT * FROM topics ORDER BY course_id, order_index ASC");
-    res.json(result.rows);
-  } catch (e: any) {
-    res.json({ error: e.message });
-  }
-});
-
 app.use("*", (req, res) => {
   res.status(404).json({ message: "Endpoint no encontrado" });
 });
@@ -96,7 +85,7 @@ async function startServer() {
     app.listen(PORT, () => {
       console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
       console.log(`📍 URL: http://localhost:${PORT}`);
-      console.log(`✅ CORS habilitado para institutoas-three.vercel.app`);
+      console.log(`✅ CORS habilitado para gestionar-three.vercel.app`);
     });
   } catch (err) {
     console.error("❌ Error Crítico de DB:", err);
