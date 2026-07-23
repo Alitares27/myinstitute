@@ -6,22 +6,8 @@ import { FiMic } from "react-icons/fi";
 import { TbAlertTriangle } from "react-icons/tb";
 import { formatDate, toYMD } from "../utils/dateUtils";
 import { Skeleton } from "../components/Skeleton";
-
-interface SpeakerRecord {
-  id: number;
-  member_id: number;
-  member_name?: string;
-  topic?: string;
-  tema_id: number;
-  speech_title: string;
-  time: number;
-  date: string;
-  assigned: string;
-  completed: string;
-}
-
-interface Member { id: number; name: string; }
-interface Tema { id: number; title: string; }
+import type { SpeakerRecord } from "../interfaces/Speaker";
+import type { Member, Tema } from "../interfaces/Common";
 
 export default function Speakers() {
   const [speakers, setSpeakers] = useState<SpeakerRecord[]>([]);

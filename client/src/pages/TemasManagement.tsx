@@ -2,14 +2,10 @@ import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { IoCreateOutline, IoTrashOutline } from "react-icons/io5";
 import { FiList } from "react-icons/fi";
-import { TbPlus, TbPencil, TbAlertTriangle } from "react-icons/tb";
+import { TbPlus, TbPencil, TbAlertTriangle, TbSearch } from "react-icons/tb";
 import api from "../api";
 import { Skeleton } from "../components/Skeleton";
-
-interface Tema {
-  id: number;
-  title: string;
-}
+import type { Tema } from "../interfaces/Common";
 
 export default function TemasManagement() {
   const navigate = useNavigate();
@@ -108,23 +104,23 @@ export default function TemasManagement() {
 
   if (loading) {
     return (
-        <div className="dashboard-container">
-            <Skeleton width="260px" height="1.8rem" />
-            <Skeleton width="200px" height="1.1rem" style={{ marginTop: "8px" }} />
-            <div style={{ marginTop: "1rem" }}>
-                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                    {Array.from({ length: 5 }).map((_, i) => (
-                        <div key={i} style={{ display: "flex", gap: "1rem" }}>
-                            <Skeleton width="40px" height="1rem" />
-                            <Skeleton height="1rem" style={{ flex: 1 }} />
-                            <Skeleton width="70px" height="1.8rem" />
-                        </div>
-                    ))}
-                </div>
-            </div>
+      <div className="dashboard-container">
+        <Skeleton width="260px" height="1.8rem" />
+        <Skeleton width="200px" height="1.1rem" style={{ marginTop: "8px" }} />
+        <div style={{ marginTop: "1rem" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} style={{ display: "flex", gap: "1rem" }}>
+                <Skeleton width="40px" height="1rem" />
+                <Skeleton height="1rem" style={{ flex: 1 }} />
+                <Skeleton width="70px" height="1.8rem" />
+              </div>
+            ))}
+          </div>
         </div>
+      </div>
     );
-}
+  }
 
   return (
     <div className="dashboard-container">
@@ -133,32 +129,37 @@ export default function TemasManagement() {
       {error && <div className="error"><TbAlertTriangle /> {error}</div>}
 
       <h2 className="dashboard-subtitle">{form.id ? <><TbPencil /> Editar Tema</> : <><TbPlus /> Agregar Tema</>}</h2>
-      <form onSubmit={handleSubmit} className="grid-form">
+      <form onSubmit={handleSubmit}>
         <input
           type="text"
           placeholder="Título del tema"
           value={form.title}
           onChange={e => setForm({ ...form, title: e.target.value })}
           required
+          style={{ marginBottom: "0.75rem" }}
         />
-        <div className="form-group full-width">
-          <button type="submit" className="btn primary">
-            {form.id ? "Actualizar" : "Agregar"}
-          </button>
-          {(form.id || form.title) && (
-            <button type="button" className="btn cancel-btn" onClick={() => setForm({ id: "", title: "" })} title="Cancelar" aria-label="Cancelar">✕</button>
-          )}
+
+        <button type="submit" className="btn primary">
+          {form.id ? "Actualizar" : "Agregar"}
+        </button>
+        {(form.id || form.title) && (
+          <button type="button" className="btn cancel-btn" onClick={() => setForm({ id: "", title: "" })} title="Cancelar" aria-label="Cancelar">✕</button>
+        )}
+
+        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "1rem" }}>
+          <div style={{ position: "relative", flex: "0 1 220px" }}>
+            <TbSearch style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)", fontSize: "0.9rem" }} />
+            <input
+              type="text"
+              placeholder="Buscar tema..."
+              value={search}
+              onChange={e => { setSearch(e.target.value); setCurrentPage(1); }}
+              style={{ paddingLeft: "2rem", width: "100%" }}
+            />
+          </div>
+
         </div>
       </form>
-
-      <div className="grid-form" style={{ marginBottom: "1rem" }}>
-        <input
-          type="text"
-          placeholder="Buscar tema..."
-          value={search}
-          onChange={e => { setSearch(e.target.value); setCurrentPage(1); }}
-        />
-      </div>
 
       <div className="table-container">
         <table>

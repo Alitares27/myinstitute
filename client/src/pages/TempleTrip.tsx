@@ -4,20 +4,8 @@ import { FiTruck } from "react-icons/fi";
 import { TbPlus } from "react-icons/tb";
 import { formatDate, toYMD } from "../utils/dateUtils";
 import { Skeleton } from "../components/Skeleton";
-
-interface Temple {
-    id: number;
-    name: string;
-}
-
-interface Trip {
-    id: number;
-    temple_id: number;
-    temple_name: string;
-    date: string;
-    status: string;
-    cost: number;
-}
+import type { Temple } from "../interfaces/Common";
+import type { Trip } from "../interfaces/Trip";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 

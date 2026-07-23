@@ -1,24 +1,12 @@
 import { useEffect, useState, useMemo } from "react";
 import api from "../api";
-import { FiCalendar } from "react-icons/fi";
-import { TbPlus, TbAlertTriangle } from "react-icons/tb";
+import { FaPlus } from "react-icons/fa";
+import { IoCreateOutline, IoTrashOutline } from "react-icons/io5";
+import { FiBook } from "react-icons/fi";
 import { formatDate, toYMD } from "../utils/dateUtils";
-import { openPrintWindow } from "../utils/reportUtils";
 import { Skeleton } from "../components/Skeleton";
-
-interface AttendanceRecord {
-  id: number;
-  student_id: number;
-  course_id: number;
-  date: string;
-  status: string;
-  topic?: string;
-  topic_id?: number | null;
-}
-
-interface Student { id: number; name: string; }
-interface Course { id: number; title: string; }
-interface Topic { id: number; course_id: number; title: string; }
+import type { AttendanceRecord } from "../interfaces/Attendance";
+import type { Student, Course, Topic } from "../interfaces/Common";
 
 type SortDirection = "asc" | "desc";
 

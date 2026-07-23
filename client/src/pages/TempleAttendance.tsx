@@ -11,11 +11,7 @@ import api from "../api";
 import { TripStatus } from "../shared/constants";
 import { Trip } from "../shared/types";
 import useAvailableTrips from "../hooks/useAvailableTrips";
-
-interface User {
-    id: number;
-    name: string;
-}
+import type { BasicUser } from "../interfaces/Common";
 
 const API_BASE_URL = (import.meta as any).env?.VITE_API_URL ?? "http://localhost:5000/api";
 
@@ -29,7 +25,7 @@ const getTodayYMD = () => {
 
 export default function TripReservations() {
     const navigate = useNavigate();
-    const [users, setUsers] = useState<User[]>([]);
+    const [users, setUsers] = useState<BasicUser[]>([]);
     const [trips, setTrips] = useState<Trip[]>([]);
     const [reservations, setReservations] = useState<any[]>([]);
     const [editingId, setEditingId] = useState<number | null>(null);

@@ -6,16 +6,7 @@ import { TbPlus, TbPencil, TbAlertTriangle, TbBuilding } from "react-icons/tb";
 import api from "../api";
 import { formatDate, toYMD } from "../utils/dateUtils";
 import { Skeleton } from "../components/Skeleton";
-
-interface Templo {
-  id: number;
-  name: string;
-  city: string;
-  province: string;
-  address?: string;
-  dedicated_date?: string;
-  status: string;
-}
+import type { Templo } from "../interfaces/Templo";
 
 const STATUS_OPTIONS = [
   { value: "operating", label: "En funcionamiento" },
@@ -210,7 +201,6 @@ export default function TemplosMaintenance() {
           onChange={e => setForm({ ...form, address: e.target.value })}
         />
         <div className="form-group">
-          <label htmlFor="dedicated_date" style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginBottom: "4px", display: "block" }}>Fecha de dedicación</label>
           <input
             id="dedicated_date"
             type="date"

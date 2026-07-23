@@ -1,17 +1,8 @@
 import api from "../api";
 
-export interface User {
-    id: number;
-    name: string;
-    email: string;
-    telefono: string;
-    role: string;
-    document: string;
-    specialty?: string;
-    grade?: string;
-}
+export type { User } from "../interfaces/User";
 
-export async function getUsers(): Promise<User[]> {
+export async function getUsers() {
     const response = await api.get("/users");
     return response.data;
 }
