@@ -8,7 +8,7 @@
 
   --bg-body: #f4f6f8;
   --bg-surface: #ffffff;
-  --bg-sidebar: #006184;
+  --bg-sidebar: #1c1c1e;
 
   --text-main: #2d3748;
   --text-muted: #718096;
@@ -25,6 +25,12 @@
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
   --shadow-md: 0 10px 25px rgba(0, 0, 0, 0.05);
   --transition-speed: 0.3s;
+  --sidebar-border: #2c2c2e;
+  --sidebar-text: #f5f5f7;
+  --sidebar-text-muted: #8e8e93;
+  --sidebar-hover-bg: rgba(255, 255, 255, 0.06);
+  --sidebar-active-bg: #007aff;
+  --sidebar-active-text: #ffffff;
 }
 
 [data-theme="dark"] {
@@ -34,7 +40,7 @@
 
   --bg-body: #1a202c;
   --bg-surface: #2d3748;
-  --bg-sidebar: #171923;
+  --bg-sidebar: #1c1c1e;
 
   --text-main: #edf2f7;
   --text-muted: #a0aec0;
@@ -44,6 +50,13 @@
 
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
   --shadow-md: 0 10px 25px rgba(0, 0, 0, 0.4);
+
+  --sidebar-border: #2c2c2e;
+  --sidebar-text: #f5f5f7;
+  --sidebar-text-muted: #8e8e93;
+  --sidebar-hover-bg: rgba(255, 255, 255, 0.06);
+  --sidebar-active-bg: #0a84ff;
+  --sidebar-active-text: #ffffff;
 }
 
 * {
@@ -62,7 +75,7 @@ body {
 }
 
 /* =========================================
-   2. LAYOUT (ESTRUCTURA FLUIDA)
+   2. LAYOUT
    ========================================= */
 .app-layout {
   display: flex;
@@ -74,13 +87,14 @@ body {
   width: var(--sidebar-width);
   min-width: var(--sidebar-width);
   background-color: var(--bg-sidebar);
-  color: var(--text-light);
+  color: var(--sidebar-text);
   display: flex;
   flex-direction: column;
   padding: 1rem 1rem;
   position: sticky;
   top: 0;
   z-index: 100;
+  border-right: 1px solid var(--sidebar-border);
 }
 
 .main-content {
@@ -175,7 +189,7 @@ footer {
 }
 
 /* =========================================
-   3. DASHBOARD (ESTILO CARDS)
+   3. DASHBOARD
    ========================================= */
 .dashboard-container {
   padding: 1rem 0;
@@ -243,7 +257,45 @@ footer {
 }
 
 /* =========================================
-   4. FORMULARIOS (DISTRIBUCIÓN HORIZONTAL)
+   2.5. PAGE TITLE ICON 
+   ========================================= */
+.page-title-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: rgba(0, 97, 132, 0.08);
+  color: var(--primary);
+  font-size: 1.4rem;
+  margin-right: 12px;
+  vertical-align: middle;
+  flex-shrink: 0;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(0, 97, 132, 0.1);
+  transition: all 0.3s ease;
+}
+
+[data-theme="dark"] .page-title-icon {
+  background: rgba(49, 130, 206, 0.12);
+  border-color: rgba(49, 130, 206, 0.15);
+  color: var(--primary);
+}
+
+h1 {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  color: var(--text-main);
+}
+
+/* =========================================
+   4. FORMULARIOS 
    ========================================= */
 .grid-form,
 .course-form,
@@ -537,7 +589,12 @@ th {
   align-items: center;
   margin-bottom: 1.2rem;
   text-decoration: none;
-  color: white;
+  color: var(--sidebar-text);
+  transition: opacity 0.2s ease;
+}
+
+.sidebar-logo:hover {
+  opacity: 0.85;
 }
 
 .logo-icon {
@@ -548,6 +605,7 @@ th {
   font-size: 1.2rem;
   font-weight: 800;
   letter-spacing: 1px;
+  color: var(--sidebar-text);
 }
 
 .sidebar ul {
@@ -559,28 +617,72 @@ th {
   display: flex;
   align-items: center;
   gap: 12px;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--sidebar-text);
   text-decoration: none;
-  padding: 10px 15px;
-  border-radius: 10px;
-  margin-bottom: 8px;
-  transition: 0.3s;
+  padding: 10px 14px;
+  border-radius: 8px;
+  margin-bottom: 4px;
+  font-weight: 500;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 .icon-circle {
-  width: 34px;
-  height: 34px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
+  color: var(--sidebar-text-muted);
+  transition: color 0.2s ease;
 }
 
-.sidebar-link:hover,
+.sidebar-link:hover {
+  background-color: var(--sidebar-hover-bg);
+  color: var(--sidebar-text);
+}
+
 .sidebar-link.active {
-  background: rgba(255, 255, 255, 0.15);
-  color: white;
+  background-color: var(--sidebar-active-bg);
+  color: var(--sidebar-active-text);
+}
+
+.sidebar-link.active .icon-circle {
+  color: var(--sidebar-active-text);
+}
+
+.sidebar-link.parent-active {
+  font-weight: 600;
+}
+
+.sidebar button.sidebar-link {
+  background-color: transparent !important;
+  color: var(--sidebar-text) !important;
+  padding: 10px 14px !important;
+  margin: 0 0 4px 0 !important;
+  width: 100% !important;
+  justify-content: flex-start !important;
+  font-family: inherit !important;
+  font-size: inherit !important;
+  box-shadow: none !important;
+  border: none !important;
+  transform: none !important;
+}
+
+.sidebar button.sidebar-link:hover:not(:disabled) {
+  background-color: var(--sidebar-hover-bg) !important;
+  color: var(--sidebar-text) !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.sidebar button.sidebar-link .icon-circle {
+  color: var(--sidebar-text-muted) !important;
+}
+
+.sidebar button.sidebar-link.parent-active .icon-circle {
+  color: var(--sidebar-text) !important;
 }
 
 .menu-toggle {
@@ -604,9 +706,9 @@ th {
 }
 
 .theme-toggle {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--sidebar-hover-bg);
   border: none;
-  color: white;
+  color: var(--sidebar-text);
   padding: 10px;
   border-radius: 50%;
   display: flex;
@@ -618,7 +720,8 @@ th {
 }
 
 .theme-toggle:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background-color: var(--sidebar-hover-bg);
+  filter: brightness(0.9);
   transform: rotate(15deg) scale(1.1);
 }
 
@@ -687,9 +790,6 @@ th {
    9. RESPONSIVE
    ========================================= */
 
-/* =========================================
-   10. SIDEBAR MOBILE ICON NAV (OVERRIDES)
-   ========================================= */
 @media (max-width: 1024px) {
   .app-layout {
     flex-direction: column;
@@ -743,26 +843,27 @@ th {
   .theme-toggle,
   .menu-toggle {
     display: flex !important;
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--sidebar-hover-bg);
     border: none;
-    color: white;
+    color: var(--sidebar-text);
     padding: 10px;
     border-radius: 8px;
     font-size: 1.4rem;
     cursor: pointer;
-    transition: background 0.2s;
+    transition: background-color 0.2s;
   }
 
   .theme-toggle:hover,
   .menu-toggle:hover {
-    background: rgba(255, 255, 255, 0.2);
+    background: var(--sidebar-hover-bg);
+    filter: brightness(0.9);
   }
 
   .sidebar-content {
     display: none;
     padding: 1rem;
     background-color: var(--bg-sidebar);
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    border-top: 1px solid var(--sidebar-border);
     animation: slideDown 0.3s ease-out;
   }
 
@@ -797,7 +898,8 @@ th {
     padding: 12px 15px;
     width: 100%;
     margin-bottom: 4px;
-    background: rgba(255, 255, 255, 0.05);
+    background: transparent;
+    color: var(--sidebar-text);
     border-radius: var(--radius);
   }
 
@@ -999,5 +1101,31 @@ th {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* =========================================
+   14. TABLE ACTION BUTTONS
+   ========================================= */
+.extracted-style-4,
+.extracted-style-5 {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: 8px;
+  font-size: 1.25rem;
+  line-height: 1;
+  margin-right: 4px;
+}
+
+.extracted-style-4 svg,
+.extracted-style-5 svg {
+  width: 1.25rem;
+  height: 1.25rem;
+  flex-shrink: 0;
 }

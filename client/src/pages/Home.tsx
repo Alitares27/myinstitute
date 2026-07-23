@@ -55,7 +55,7 @@ export default function Home() {
             >
               <div className="feature-icon">📝</div>
               <h3>Calificaciones</h3>
-              <p>Seguimiento detallado del progreso de los estudiantes.</p>
+              <p>Seguimiento detallado del progreso de los miembros.</p>
             </div>
 
             <div

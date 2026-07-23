@@ -157,9 +157,8 @@
 .shortcut-card:hover .shortcut-info h3,
 .shortcut-card:hover .shortcut-info p {
   color: white;
-} 
+}
 
-/* Dashboard loading skeleton */
 .dashboard-skeleton {
   padding: 2rem;
   display: flex;
@@ -173,8 +172,8 @@
   gap: 1rem;
 }
 
-/* Skeleton placeholders */
-.skeleton-card, .skeleton-shortcut {
+.skeleton-card,
+.skeleton-shortcut {
   background-color: #e0e0e0;
   border-radius: 4px;
   animation: shimmer 1.5s infinite linear;
@@ -219,8 +218,15 @@
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 [data-theme="dark"] .stat-card,

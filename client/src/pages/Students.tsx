@@ -1,6 +1,8 @@
 import { useEffect, useState, useMemo } from "react";
 import api from "../api";
-import { FaEdit, FaPlus, FaTrash } from "react-icons/fa";
+import { FaPlus } from "react-icons/fa";
+import { IoCreateOutline, IoTrashOutline } from "react-icons/io5";
+import { FiUsers } from "react-icons/fi";
 import axios from "axios";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
@@ -114,100 +116,100 @@ export default function Students() {
 
   return (
     <div className="students-page">
-      <h1>👨‍🎓 Estudiantes</h1>
+      <h1><span className="page-title-icon"><FiUsers /></span> Miembros</h1>
       {role === "admin" && (
         <>
-          <h2 className="dashboard-subtitle">{form.id ? <><FaEdit /> Actualizar</> : <><FaPlus /> Agregar</>}</h2>
+          <h2 className="dashboard-subtitle">{form.id ? <><IoCreateOutline /> Actualizar</> : <><FaPlus /> Agregar</>}</h2>
           <form onSubmit={handleSubmit}>
-          {form.id ? (
-            <input
-              value={form.name}
-              readOnly
-              className="read-only-input"
-              style={{ background: "#f0f0f0", cursor: "not-allowed" }}
-            />
-          ) : (
-            <select
-              value={form.user_id}
-              onChange={(e) => setForm({ ...form, user_id: e.target.value })}
-              required
-            >
-              <option value="">Elegir Miembro</option>
-              {availableUsers.map((u) => (
-                <option key={u.id} value={u.id}>
-                  {u.name}
-                </option>
-              ))}
-            </select>
-          )}
-          <input
-            placeholder="Organización"
-            value={form.grade}
-            onChange={(e) => setForm({ ...form, grade: e.target.value })}
-            required
-          />
-          <div className="form-group full-width">
-            <button type="submit" className="btn primary">{form.id ? "Actualizar" : "Agregar"}</button>
-            {(form.id || form.user_id || form.grade) && (
-              <button type="button" onClick={() => setForm({ id: "", user_id: "", name: "", grade: "" })} className="btn cancel-btn" title="Cancelar" aria-label="Cancelar">✕</button>
+            {form.id ? (
+              <input
+                value={form.name}
+                readOnly
+                className="read-only-input"
+                style={{ background: "#f0f0f0", cursor: "not-allowed" }}
+              />
+            ) : (
+              <select
+                value={form.user_id}
+                onChange={(e) => setForm({ ...form, user_id: e.target.value })}
+                required
+              >
+                <option value="">Elegir Miembro</option>
+                {availableUsers.map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.name}
+                  </option>
+                ))}
+              </select>
             )}
-          </div>
-        </form>
+            <input
+              placeholder="Organización"
+              value={form.grade}
+              onChange={(e) => setForm({ ...form, grade: e.target.value })}
+              required
+            />
+            <div className="form-group full-width">
+              <button type="submit" className="btn primary">{form.id ? "Actualizar" : "Agregar"}</button>
+              {(form.id || form.user_id || form.grade) && (
+                <button type="button" onClick={() => setForm({ id: "", user_id: "", name: "", grade: "" })} className="btn cancel-btn" title="Cancelar" aria-label="Cancelar">✕</button>
+              )}
+            </div>
+          </form>
         </>
       )}
 
-        <div className="table-container">
-          <table
-            className="students-table"
-          >
-            <thead>
-              <tr>
-                <th onClick={() => requestSort("name")} className="sortable-header">
-                  Nombre
-                  <span className="sort-icon">
-                    {sortConfig?.key === "name" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
-                  </span>
-                </th>
-                <th onClick={() => requestSort("email")} className="sortable-header">
-                  Email
-                  <span className="sort-icon">
-                    {sortConfig?.key === "email" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
-                  </span>
-                </th>
-                <th onClick={() => requestSort("telefono")} className="sortable-header">
-                  Teléfono
-                  <span className="sort-icon">
-                    {sortConfig?.key === "telefono" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
-                  </span>
-                </th>
-                <th onClick={() => requestSort("grade")} className="sortable-header">
-                  Organización
-                  <span className="sort-icon">
-                    {sortConfig?.key === "grade" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
-                  </span>
-                </th>
-                {role === "admin" && <th>Acciones</th>}
-              </tr>
-            </thead>
+      <div className="table-container">
+        <table
+          className="students-table"
+        >
+          <thead>
+            <tr>
+              <th onClick={() => requestSort("name")} className="sortable-header">
+                Nombre
+                <span className="sort-icon">
+                  {sortConfig?.key === "name" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
+                </span>
+              </th>
+              <th onClick={() => requestSort("email")} className="sortable-header">
+                Email
+                <span className="sort-icon">
+                  {sortConfig?.key === "email" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
+                </span>
+              </th>
+              <th onClick={() => requestSort("telefono")} className="sortable-header">
+                Teléfono
+                <span className="sort-icon">
+                  {sortConfig?.key === "telefono" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
+                </span>
+              </th>
+              <th onClick={() => requestSort("grade")} className="sortable-header">
+                Organización
+                <span className="sort-icon">
+                  {sortConfig?.key === "grade" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
+                </span>
+              </th>
+              {role === "admin" && <th>Acciones</th>}
+            </tr>
+          </thead>
 
-            <tbody>
-              {currentRecords.map((s) => (
-                <tr key={s.id}>
-                  <td>{s.name}</td>
-                  <td>{s.email}</td>
-                  <td>{s.telefono}</td>
-                  <td>{s.grade}</td>
-                  {role === "admin" && (
-                    <td>
-                      <button className="btn secondary extracted-style-4" onClick={() => handleEdit(s)}><FaEdit /></button>
-                      <button className="btn secondary extracted-style-5" onClick={() => handleDelete(s.id)}><FaTrash /></button>
-                    </td>
-                  )}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+          <tbody>
+            {currentRecords.map((s) => (
+              <tr key={s.id}>
+                <td>{s.name}</td>
+                <td>{s.email}</td>
+                <td>{s.telefono}</td>
+                <td>{s.grade}</td>
+                {role === "admin" && (
+                  <td>
+                    <button className="btn secondary extracted-style-4" onClick={() => handleEdit(s)}><IoCreateOutline /></button>
+                    <button className="btn secondary extracted-style-5" onClick={() => handleDelete(s.id)}><IoTrashOutline /></button>
+                  </td>
+                )}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
       {totalPages > 1 && (
         <div className="pagination-dropdown">

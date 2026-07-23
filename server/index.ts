@@ -90,7 +90,7 @@ async function startServer() {
     const dbCheck = await pool.query("SELECT NOW()");
     console.log("✅ DB Conectada:", dbCheck.rows[0].now);
 
-    const PORT = process.env.PORT || 5001;
+    const PORT = process.env.PORT || 5000;
     app.listen(PORT, () => {
       console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
       console.log(`📍 URL: http://localhost:${PORT}`);

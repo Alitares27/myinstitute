@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { FiHome } from "react-icons/fi";
 
 export default function Temples() {
   const navigate = useNavigate();
@@ -15,11 +16,7 @@ export default function Temples() {
 
   return (
     <div className="dashboard-container">
-      <h1
-        className="dashboard-subtitle extracted-style-27"
-      >
-        Templo
-      </h1>
+      <h1><span className="page-title-icon"><FiHome /></span> Templo</h1>
 
       <div className="cards">
         <div

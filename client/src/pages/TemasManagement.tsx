@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { FaEdit, FaTrash } from "react-icons/fa";
+import { IoCreateOutline, IoTrashOutline, IoListOutline } from "react-icons/io5";
+import { FiList } from "react-icons/fi";
 import axios from "axios";
 
 interface Tema {
@@ -111,7 +112,7 @@ export default function TemasManagement() {
 
   return (
     <div className="dashboard-container">
-      <h1>🗂️ Temas para Discursantes</h1>
+      <h1><span className="page-title-icon"><FiList /></span> Temas para Discursantes</h1>
 
       {error && <div className="error">⚠️ {error}</div>}
 
@@ -170,10 +171,10 @@ export default function TemasManagement() {
                   <td>{t.title}</td>
                   <td>
                     <button className="btn secondary extracted-style-4" onClick={() => handleEdit(t)}>
-                      <FaEdit />
+                      <IoCreateOutline />
                     </button>
                     <button className="btn secondary extracted-style-5" onClick={() => handleDelete(t.id)}>
-                      <FaTrash />
+                      <IoTrashOutline />
                     </button>
                   </td>
                 </tr>

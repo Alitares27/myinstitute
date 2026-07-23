@@ -1,6 +1,8 @@
 import { useEffect, useState, useMemo } from "react";
 import api from "../api";
-import { FaEdit, FaPlus, FaTrash } from "react-icons/fa";
+import { FaPlus } from "react-icons/fa";
+import { IoCreateOutline, IoTrashOutline } from "react-icons/io5";
+import { FiBarChart2 } from "react-icons/fi";
 import axios from "axios";
 import { formatDate } from "../utils/dateUtils";
 
@@ -142,10 +144,10 @@ export default function Grades() {
 
   return (
     <div className="grades-page">
-      <h1>📊 Calificaciones</h1>
+      <h1><span className="page-title-icon"><FiBarChart2 /></span> Calificaciones</h1>
       {role === "admin" && (
         <div className="form-container">
-          <h2 className="dashboard-subtitle">{form.id ? <><FaEdit /> Actualizar</> : <><FaPlus /> Calificar</>}</h2>
+          <h2 className="dashboard-subtitle">{form.id ? <><IoCreateOutline /> Actualizar</> : <><FaPlus /> Calificar</>}</h2>
           <form onSubmit={handleSubmit}>
             <select value={form.student_id} onChange={(e) => setForm({ ...form, student_id: e.target.value })} required>
               <option value="">Elegir Estudiante </option>
@@ -181,7 +183,7 @@ export default function Grades() {
       <div className="grid-form extracted-style-2">
         {role === "admin" && (
           <select value={filterStudent} onChange={(e) => setFilterStudent(e.target.value)}>
-            <option value="">Todos los estudiantes</option>
+            <option value="">Todos los miembros</option>
             {students.map((s) => (
               <option key={s.id} value={s.id}>{s.name}</option>
             ))}
@@ -247,8 +249,8 @@ export default function Grades() {
 
                   {role === "admin" && (
                     <td>
-                      <button className="btn secondary extracted-style-4" onClick={() => handleEditClick(g)}><FaEdit /></button>
-                      <button className="btn secondary extracted-style-5" onClick={() => handleDelete(g.id)}><FaTrash /></button>
+                      <button className="btn secondary extracted-style-4" onClick={() => handleEditClick(g)}><IoCreateOutline /></button>
+                      <button className="btn secondary extracted-style-5" onClick={() => handleDelete(g.id)}><IoTrashOutline /></button>
                     </td>
                   )}
                 </tr>

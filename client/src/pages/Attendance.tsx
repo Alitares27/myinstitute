@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import api from "../api";
+import { FiCalendar } from "react-icons/fi";
 import axios from "axios";
 import { formatDate, toYMD } from "../utils/dateUtils";
 import { openPrintWindow } from "../utils/reportUtils";
@@ -201,7 +202,7 @@ export default function Attendance() {
     if (hasData) {
       body += `
         <div class="summary-box">
-          🎓 Total general de estudiantes con asistencia: ${allUniqueStudentIds.size}
+          🎓 Total general de miembros con asistencia: ${allUniqueStudentIds.size}
         </div>
       `;
     } else {
@@ -221,7 +222,7 @@ export default function Attendance() {
 
   return (
     <div className="attendance-page">
-      <h1>📅 Control de Asistencia</h1>
+      <h1><span className="page-title-icon"><FiCalendar /></span> Control de Asistencia</h1>
       <h2 className="dashboard-subtitle">
         {(role === "admin" || role === "teacher") ? " ➕ Registrar" : "Revisar"}
       </h2>
@@ -268,7 +269,7 @@ export default function Attendance() {
 
         {role !== "student" && (
           <select value={studentFilter} onChange={e => setStudentFilter(e.target.value)} style={{ flex: 1, minWidth: "150px" }}>
-            <option value="">Todos los estudiantes</option>
+            <option value="">Todos los miembros</option>
             {students.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
           </select>
         )}

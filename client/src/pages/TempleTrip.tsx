@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
-import { FaEdit, FaTrash } from "react-icons/fa";
+import { IoCreateOutline, IoTrashOutline } from "react-icons/io5";
+import { FiTruck } from "react-icons/fi";
 import { formatDate, toYMD } from "../utils/dateUtils";
 
 interface Temple {
@@ -183,7 +184,7 @@ export default function TempleTrip() {
 
     return (
         <div>
-            <h1 className="dashboard-subtitle">🚌 Gestionar Viajes</h1>
+            <h1><span className="page-title-icon"><FiTruck /></span> Gestionar Viajes</h1>
             <h2>{role === "admin" ? "➕ Registrar Viaje" : "Disponibles"}</h2>
             <form onSubmit={handleSubmit} className="grid-form trip-form">
                 <div className="form-group">
@@ -296,13 +297,13 @@ export default function TempleTrip() {
                                             className="btn secondary extracted-style-4"
                                             onClick={() => handleEdit(trip)}
                                         >
-                                            <FaEdit />
+                                            <IoCreateOutline />
                                         </button>
                                         <button
                                             className="btn secondary extracted-style-5"
                                             onClick={() => handleDelete(trip.id)}
                                         >
-                                            <FaTrash />
+                                            <IoTrashOutline />
                                         </button>
                                     </td>
                                 </tr>

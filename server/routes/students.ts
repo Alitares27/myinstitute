@@ -33,7 +33,7 @@ router.get("/", verifyToken, async (req: AuthRequest, res: Response) => {
     const result = await pool.query(query, values);
     res.json(result.rows);
   } catch (err) {
-    res.status(500).json({ message: "Error al obtener estudiantes" });
+    res.status(500).json({ message: "Error al obtener miembros" });
   }
 });
 

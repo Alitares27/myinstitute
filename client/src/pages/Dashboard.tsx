@@ -52,24 +52,22 @@ function Dashboard() {
       });
   }, [API_BASE_URL]);
 
-      <div className="dashboard-skeleton">
-      {/* Stats placeholders */}
-      <div className="skeleton-grid stats-skeleton">
-        <div className="skeleton-card"></div>
-        <div className="skeleton-card"></div>
-        <div className="skeleton-card"></div>
-        <div className="skeleton-card"></div>
-      </div>
-      {/* Shortcuts placeholders */}
-      <div className="skeleton-grid shortcuts-skeleton">
-        <div className="skeleton-shortcut"></div>
-        <div className="skeleton-shortcut"></div>
-        <div className="skeleton-shortcut"></div>
-        <div className="skeleton-shortcut"></div>
-        <div className="skeleton-shortcut"></div>
-        <div className="skeleton-shortcut"></div>
-      </div>
+  <div className="dashboard-skeleton">
+    <div className="skeleton-grid stats-skeleton">
+      <div className="skeleton-card"></div>
+      <div className="skeleton-card"></div>
+      <div className="skeleton-card"></div>
+      <div className="skeleton-card"></div>
     </div>
+    <div className="skeleton-grid shortcuts-skeleton">
+      <div className="skeleton-shortcut"></div>
+      <div className="skeleton-shortcut"></div>
+      <div className="skeleton-shortcut"></div>
+      <div className="skeleton-shortcut"></div>
+      <div className="skeleton-shortcut"></div>
+      <div className="skeleton-shortcut"></div>
+    </div>
+  </div>
 
   if (error) {
     return (
@@ -201,8 +199,8 @@ function Dashboard() {
           <div className="shortcut-card" onClick={() => navigate("/students")}>
             <div className="shortcut-icon-bg">👤</div>
             <div className="shortcut-info">
-              <h3>Lista de Alumnos</h3>
-              <p>Consultar estudiantes asignados</p>
+              <h3>Lista de Miembros</h3>
+              <p>Consultar miembros asignados</p>
             </div>
           </div>
         </div>

@@ -1,40 +1,51 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useTheme } from "../context/ThemeContext";
 import {
-  FaUserGraduate,
-  FaChalkboardTeacher,
-  FaClipboardList,
-  FaBookOpen,
-  FaCalendarCheck,
-  FaUser,
-  FaStar,
-  FaSignOutAlt,
-  FaSynagogue,
-  FaChevronDown,
-  FaGraduationCap,
-  FaTools,
-  FaUserTie,
-  FaMicrophone,
-  FaUsers,
-  FaMoneyBillWave,
-  FaFileInvoice,
-  FaBars,
-  FaTimes,
-  FaSun,
-  FaMoon
-} from "react-icons/fa";
+  IoSchoolOutline,
+  IoPersonOutline,
+  IoClipboardOutline,
+  IoCalendarOutline,
+  IoRibbonOutline,
+  IoBriefcaseOutline,
+  IoMicOutline,
+  IoPeopleOutline,
+  IoWalletOutline,
+  IoDocumentTextOutline,
+  IoBusinessOutline,
+  IoSettingsOutline,
+  IoBookOutline,
+  IoChevronDown,
+  IoLogOutOutline,
+  IoMenuOutline,
+  IoCloseOutline,
+  IoMoonOutline,
+  IoSunnyOutline
+} from "react-icons/io5";
 
 function Sidebar() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const currentPath = location.pathname;
   const user = JSON.parse(sessionStorage.getItem("user") || "{}");
   const role = user.role || "";
 
-  const [isTeachingOpen, setIsTeachingOpen] = useState(false);
-  const [isLeadershipOpen, setIsLeadershipOpen] = useState(false);
-  const [isMaintenanceOpen, setIsMaintenanceOpen] = useState(false);
+  const isTeachingActive = ["/students", "/enrollments", "/attendance", "/grades"].includes(currentPath);
+  const isLeadershipActive = ["/discursantes", "/consejos", "/finanzas", "/auditorias"].includes(currentPath);
+  const isMaintenanceActive = ["/users", "/teachers", "/courses", "/temas-management", "/templos-management"].includes(currentPath);
+
+  const [isTeachingOpen, setIsTeachingOpen] = useState(isTeachingActive);
+  const [isLeadershipOpen, setIsLeadershipOpen] = useState(isLeadershipActive);
+  const [isMaintenanceOpen, setIsMaintenanceOpen] = useState(isMaintenanceActive);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
+
+  // Auto-expand menus when their routes are active
+  useEffect(() => {
+    if (isTeachingActive) setIsTeachingOpen(true);
+    if (isLeadershipActive) setIsLeadershipOpen(true);
+    if (isMaintenanceActive) setIsMaintenanceOpen(true);
+  }, [currentPath, isTeachingActive, isLeadershipActive, isMaintenanceActive]);
 
   const handleLogout = () => {
     sessionStorage.clear();
@@ -61,10 +72,10 @@ function Sidebar() {
         </Link>
         <div className="sidebar-actions">
           <button className="theme-toggle" onClick={toggleTheme} title="Cambiar tema">
-            {theme === "light" ? <FaMoon /> : <FaSun />}
+            {theme === "light" ? <IoMoonOutline /> : <IoSunnyOutline />}
           </button>
           <button className="menu-toggle" onClick={() => setIsMenuOpen(!isMenuOpen)}>
-            {isMenuOpen ? <FaTimes /> : <FaBars />}
+            {isMenuOpen ? <IoCloseOutline /> : <IoMenuOutline />}
           </button>
         </div>
       </div>
@@ -73,63 +84,63 @@ function Sidebar() {
         <nav>
           <ul>
             <li>
-              <button type="button" className="sidebar-link button-link" onClick={() => setIsTeachingOpen(!isTeachingOpen)} aria-expanded={isTeachingOpen} style={{ cursor: "pointer" }}>
-                <div className="icon-circle"><FaGraduationCap className="icon" /></div>
+              <button type="button" className={`sidebar-link button-link ${isTeachingActive ? "parent-active" : ""}`} onClick={() => setIsTeachingOpen(!isTeachingOpen)} aria-expanded={isTeachingOpen} style={{ cursor: "pointer" }}>
+                <div className="icon-circle"><IoSchoolOutline className="icon" /></div>
                 <span>Enseñanza</span>
-                <FaChevronDown style={getChevronStyle(isTeachingOpen)} />
+                <IoChevronDown style={getChevronStyle(isTeachingOpen)} />
               </button>
 
               {isTeachingOpen && (
                 <ul className="submenu" style={{ paddingLeft: "20px", listStyle: "none" }}>
-                  <li><Link to="/students" className="sidebar-link" onClick={() => setIsMenuOpen(false)}><div className="icon-circle"><FaUserGraduate className="icon" /></div><span>Miembros</span></Link></li>
-                  <li><Link to="/enrollments" className="sidebar-link" onClick={() => setIsMenuOpen(false)}><div className="icon-circle"><FaClipboardList className="icon" /></div><span>Matrículas</span></Link></li>
-                  <li><Link to="/attendance" className="sidebar-link" onClick={() => setIsMenuOpen(false)}><div className="icon-circle"><FaCalendarCheck className="icon" /></div><span>Asistencia</span></Link></li>
-                  <li><Link to="/grades" className="sidebar-link" onClick={() => setIsMenuOpen(false)}><div className="icon-circle"><FaStar className="icon" /></div><span>Calificaciones</span></Link></li>
+                  <li><NavLink to="/students" className="sidebar-link" onClick={() => setIsMenuOpen(false)}><div className="icon-circle"><IoPersonOutline className="icon" /></div><span>Miembros</span></NavLink></li>
+                  <li><NavLink to="/enrollments" className="sidebar-link" onClick={() => setIsMenuOpen(false)}><div className="icon-circle"><IoClipboardOutline className="icon" /></div><span>Matrículas</span></NavLink></li>
+                  <li><NavLink to="/attendance" className="sidebar-link" onClick={() => setIsMenuOpen(false)}><div className="icon-circle"><IoCalendarOutline className="icon" /></div><span>Asistencia</span></NavLink></li>
+                  <li><NavLink to="/grades" className="sidebar-link" onClick={() => setIsMenuOpen(false)}><div className="icon-circle"><IoRibbonOutline className="icon" /></div><span>Calificaciones</span></NavLink></li>
                 </ul>
               )}
             </li>
 
             <li>
-              <button type="button" className="sidebar-link button-link" onClick={() => setIsLeadershipOpen(!isLeadershipOpen)} aria-expanded={isLeadershipOpen} style={{ cursor: "pointer" }}>
-                <div className="icon-circle"><FaUserTie className="icon" /></div>
+              <button type="button" className={`sidebar-link button-link ${isLeadershipActive ? "parent-active" : ""}`} onClick={() => setIsLeadershipOpen(!isLeadershipOpen)} aria-expanded={isLeadershipOpen} style={{ cursor: "pointer" }}>
+                <div className="icon-circle"><IoBriefcaseOutline className="icon" /></div>
                 <span>Liderazgo</span>
-                <FaChevronDown style={getChevronStyle(isLeadershipOpen)} />
+                <IoChevronDown style={getChevronStyle(isLeadershipOpen)} />
               </button>
 
               {isLeadershipOpen && (
                 <ul className="submenu" style={{ paddingLeft: "20px", listStyle: "none" }}>
-                  <li><Link to="/discursantes" className="sidebar-link" onClick={() => setIsMenuOpen(false)}><div className="icon-circle"><FaMicrophone className="icon" /></div><span>Discursantes</span></Link></li>
-                  <li><Link to="/consejos" className="sidebar-link" onClick={() => setIsMenuOpen(false)}><div className="icon-circle"><FaUsers className="icon" /></div><span>Consejos</span></Link></li>
-                  <li><Link to="/finanzas" className="sidebar-link" onClick={() => setIsMenuOpen(false)}><div className="icon-circle"><FaMoneyBillWave className="icon" /></div><span>Finanzas</span></Link></li>
-                  <li><Link to="/auditorias" className="sidebar-link" onClick={() => setIsMenuOpen(false)}><div className="icon-circle"><FaFileInvoice className="icon" /></div><span>Auditorías</span></Link></li>
+                  <li><NavLink to="/discursantes" className="sidebar-link" onClick={() => setIsMenuOpen(false)}><div className="icon-circle"><IoMicOutline className="icon" /></div><span>Discursantes</span></NavLink></li>
+                  <li><NavLink to="/consejos" className="sidebar-link" onClick={() => setIsMenuOpen(false)}><div className="icon-circle"><IoPeopleOutline className="icon" /></div><span>Consejos</span></NavLink></li>
+                  <li><NavLink to="/finanzas" className="sidebar-link" onClick={() => setIsMenuOpen(false)}><div className="icon-circle"><IoWalletOutline className="icon" /></div><span>Finanzas</span></NavLink></li>
+                  <li><NavLink to="/auditorias" className="sidebar-link" onClick={() => setIsMenuOpen(false)}><div className="icon-circle"><IoDocumentTextOutline className="icon" /></div><span>Auditorías</span></NavLink></li>
                 </ul>
               )}
             </li>
 
             <li>
-              <Link to="/temples" className="sidebar-link" onClick={() => setIsMenuOpen(false)}>
+              <NavLink to="/temples" className="sidebar-link" onClick={() => setIsMenuOpen(false)}>
                 <div className="icon-circle">
-                  <FaSynagogue className="icon" />
+                  <IoBusinessOutline className="icon" />
                 </div>
                 <span>Templo</span>
-              </Link>
+              </NavLink>
             </li>
 
             {role === "admin" && (
               <li>
-                <button type="button" className="sidebar-link button-link" onClick={() => setIsMaintenanceOpen(!isMaintenanceOpen)} aria-expanded={isMaintenanceOpen} style={{ cursor: "pointer" }}>
-                  <div className="icon-circle"><FaTools className="icon" /></div>
+                <button type="button" className={`sidebar-link button-link ${isMaintenanceActive ? "parent-active" : ""}`} onClick={() => setIsMaintenanceOpen(!isMaintenanceOpen)} aria-expanded={isMaintenanceOpen} style={{ cursor: "pointer" }}>
+                  <div className="icon-circle"><IoSettingsOutline className="icon" /></div>
                   <span>Mantenimiento</span>
-                  <FaChevronDown style={getChevronStyle(isMaintenanceOpen)} />
+                  <IoChevronDown style={getChevronStyle(isMaintenanceOpen)} />
                 </button>
 
                 {isMaintenanceOpen && (
                   <ul className="submenu" style={{ paddingLeft: "20px", listStyle: "none" }}>
-                    <li><Link to="/users" className="sidebar-link" onClick={() => setIsMenuOpen(false)}><div className="icon-circle"><FaUser className="icon" /></div><span>Miembros</span></Link></li>
-                    <li><Link to="/teachers" className="sidebar-link" onClick={() => setIsMenuOpen(false)}><div className="icon-circle"><FaChalkboardTeacher className="icon" /></div><span>Maestros</span></Link></li>
-                    <li><Link to="/courses" className="sidebar-link" onClick={() => setIsMenuOpen(false)}><div className="icon-circle"><FaBookOpen className="icon" /></div><span>Cursos</span></Link></li>
-                    <li><Link to="/temas-management" className="sidebar-link" onClick={() => setIsMenuOpen(false)}><div className="icon-circle"><FaMicrophone className="icon" /></div><span>Temas</span></Link></li>
-                    <li><Link to="/templos-management" className="sidebar-link" onClick={() => setIsMenuOpen(false)}><div className="icon-circle"><FaSynagogue className="icon" /></div><span>Templos</span></Link></li>
+                    <li><NavLink to="/users" className="sidebar-link" onClick={() => setIsMenuOpen(false)}><div className="icon-circle"><IoPersonOutline className="icon" /></div><span>Miembros</span></NavLink></li>
+                    <li><NavLink to="/teachers" className="sidebar-link" onClick={() => setIsMenuOpen(false)}><div className="icon-circle"><IoSchoolOutline className="icon" /></div><span>Maestros</span></NavLink></li>
+                    <li><NavLink to="/courses" className="sidebar-link" onClick={() => setIsMenuOpen(false)}><div className="icon-circle"><IoBookOutline className="icon" /></div><span>Cursos</span></NavLink></li>
+                    <li><NavLink to="/temas-management" className="sidebar-link" onClick={() => setIsMenuOpen(false)}><div className="icon-circle"><IoMicOutline className="icon" /></div><span>Temas</span></NavLink></li>
+                    <li><NavLink to="/templos-management" className="sidebar-link" onClick={() => setIsMenuOpen(false)}><div className="icon-circle"><IoBusinessOutline className="icon" /></div><span>Templos</span></NavLink></li>
                   </ul>
                 )}
               </li>
@@ -140,7 +151,7 @@ function Sidebar() {
 
         <div className="logout-section">
           <button onClick={handleLogout} className="logout-button">
-            <FaSignOutAlt className="logout-icon" />
+            <IoLogOutOutline className="logout-icon" />
             <span className="logout-text">Salir</span>
           </button>
         </div>

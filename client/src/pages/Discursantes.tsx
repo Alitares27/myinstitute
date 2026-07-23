@@ -1,6 +1,8 @@
 import { useEffect, useState, useMemo } from "react";
 import api from "../api";
-import { FaPlus, FaCheckCircle, FaClock, FaEdit, FaTrash, FaSave, FaTimes } from "react-icons/fa";
+import { FaPlus } from "react-icons/fa";
+import { IoCreateOutline, IoTrashOutline, IoCheckmarkCircleOutline, IoTimeOutline, IoSaveOutline } from "react-icons/io5";
+import { FiMic } from "react-icons/fi";
 import { formatDate, toYMD } from "../utils/dateUtils";
 
 interface SpeakerRecord {
@@ -221,11 +223,11 @@ export default function Speakers() {
 
   return (
     <div className="dashboard-container">
-      <h1>🎙️ Control de Discursantes</h1>
+      <h1><span className="page-title-icon"><FiMic /></span> Control de Discursantes</h1>
 
       {role === "admin" && (
         <section>
-         <h2 className="dashboard-subtitle">{editingId ? <><FaEdit /> Actualizar</> : <><FaPlus /> Asignar</>}</h2>
+          <h2 className="dashboard-subtitle">{editingId ? <><IoCreateOutline /> Actualizar</> : <><FaPlus /> Asignar</>}</h2>
           <form className="grid-form" onSubmit={handleSubmit}>
             <div className="form-group">
               <label>Miembro</label>
@@ -271,7 +273,7 @@ export default function Speakers() {
 
             <div className="form-group full-width">
               <button type="submit" className="btn primary">
-                {editingId ? <><FaSave /> Guardar</> : <><FaPlus /> Asignar</>}
+                {editingId ? <><IoSaveOutline /> Guardar</> : <><FaPlus /> Asignar</>}
               </button>
               {(editingId || form.member_id || form.tema_id || form.speech_title) && (
                 <button type="button" className="btn cancel-btn" onClick={() => { setEditingId(null); setForm({ member_id: "", tema_id: "", speech_title: "", time: "10", date: new Date().toISOString().split("T")[0], completed: "No" }); }} title="Cancelar" aria-label="Cancelar">✕</button>
@@ -329,10 +331,10 @@ export default function Speakers() {
                 </td>
                 <td>
                   <span className={s.completed === "Si" ? "status-present" : "status-absent"}>
-                    {s.completed === "Si" ? <><FaCheckCircle /> Cumplido</> : "Pendiente"}
+                    {s.completed === "Si" ? <><IoCheckmarkCircleOutline /> Cumplido</> : "Pendiente"}
                   </span>
                   <div className="flex-icon-text">
-                    <FaClock /> {s.time || 0} min
+                    <IoTimeOutline /> {s.time || 0} min
                   </div>
                 </td>
                 <td>
@@ -344,10 +346,10 @@ export default function Speakers() {
                 {role === "admin" && (
                   <td>
                     <button className="btn secondary extracted-style-4" onClick={() => handleEdit(s)}>
-                      <FaEdit />
+                      <IoCreateOutline />
                     </button>
                     <button className="btn secondary extracted-style-5" onClick={() => handleDelete(s.id)}>
-                      <FaTrash />
+                      <IoTrashOutline />
                     </button>
                   </td>
                 )}

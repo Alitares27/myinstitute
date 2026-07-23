@@ -1,6 +1,8 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { FaEdit, FaPlus, FaTrash } from "react-icons/fa";
+import { FaPlus } from "react-icons/fa";
+import { IoCreateOutline, IoTrashOutline, IoCarOutline } from "react-icons/io5";
+import { FiMapPin } from "react-icons/fi";
 import { formatDate, toYMD } from "../utils/dateUtils";
 import { openPrintWindow } from "../utils/reportUtils";
 import api from "../api";
@@ -357,8 +359,8 @@ export default function TripReservations() {
 
     return (
         <div>
-            <h1>🚌 Reservar Viajes</h1>
-            <h2 className="dashboard-subtitle">{editingId ? <><FaEdit /> Actualizar</> : <><FaPlus /> Asignar</>}</h2>
+            <h1><span className="page-title-icon"><FiMapPin /></span> Reservar Viajes</h1>
+            <h2 className="dashboard-subtitle">{editingId ? <><IoCreateOutline /> Actualizar</> : <><FaPlus /> Asignar</>}</h2>
             <form onSubmit={handleSubmit}>
                 <select name="trip_id" value={formData.trip_id} onChange={handleChange} required>
                     <option value="">Elegir Viaje</option>
@@ -529,8 +531,8 @@ export default function TripReservations() {
                                 <td>${Number(res.pending_payment).toLocaleString()}</td>
                                 <td>{formatDate(res.due_date)}</td>
                                 <td>
-                                    <button className="btn secondary extracted-style-4" onClick={() => handleEdit(res)}><FaEdit /></button>
-                                    <button className="btn secondary extracted-style-5" onClick={() => handleDelete(res.id)}><FaTrash /></button>
+                                    <button className="btn secondary extracted-style-4" onClick={() => handleEdit(res)}><IoCreateOutline /></button>
+                                    <button className="btn secondary extracted-style-5" onClick={() => handleDelete(res.id)}><IoTrashOutline /></button>
                                 </td>
                             </tr>
                         ))}

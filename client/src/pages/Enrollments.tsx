@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import api from "../api";
-import { FaEdit, FaTrash } from "react-icons/fa";
+import { IoCreateOutline, IoTrashOutline } from "react-icons/io5";
+import { FiEdit } from "react-icons/fi";
 import axios from "axios";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
@@ -150,7 +151,7 @@ export default function Enrollments() {
 
   return (
     <div className="enrollments-page">
-      <h1>📝 Matrículas</h1>
+      <h1><span className="page-title-icon"><FiEdit /></span> Matrículas</h1>
       <h2 className="dashboard-subtitle">{role === "admin" ? "➕ Matricular" : "Revisar"}</h2>
       {role === "admin" && (
         <form onSubmit={handleSubmit} className="enrollment-form">
@@ -195,7 +196,7 @@ export default function Enrollments() {
               setStudentFilter(e.target.value ? Number(e.target.value) : null)
             }
           >
-            <option value="">Todos los estudiantes</option>
+            <option value="">Todos los miembros</option>
             {students.map((s) => (
               <option key={s.id} value={s.id}>{s.name}</option>
             ))}
@@ -245,8 +246,8 @@ export default function Enrollments() {
 
                 {role === "admin" && (
                   <td>
-                    <button className="btn secondary extracted-style-4" onClick={() => handleEdit(en)}><FaEdit /></button>
-                    <button className="btn secondary extracted-style-5" onClick={() => handleDelete(en.id)}><FaTrash /></button>
+                    <button className="btn secondary extracted-style-4" onClick={() => handleEdit(en)}><IoCreateOutline /></button>
+                    <button className="btn secondary extracted-style-5" onClick={() => handleDelete(en.id)}><IoTrashOutline /></button>
                   </td>
                 )}
               </tr>

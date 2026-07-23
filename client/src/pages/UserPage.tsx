@@ -1,5 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
-import { FaEdit, FaTrash, FaSearch, FaIdCard, FaPlus } from "react-icons/fa";
+import { FaSearch, FaIdCard, FaPlus } from "react-icons/fa";
+import { IoCreateOutline, IoTrashOutline, IoPersonOutline } from "react-icons/io5";
+import { FiUser } from "react-icons/fi";
 import axios from "axios";
 import { Skeleton } from "../components/Skeleton";
 
@@ -114,10 +116,10 @@ function UserPage() {
 
   return (
     <div className="user-page">
-      <h1>👤 Gestión de Miembros</h1>
+      <h1><span className="page-title-icon"><FiUser /></span> Gestión de Miembros</h1>
 
       <h2 className="dashboard-subtitle">
-        {form.id ? <><FaEdit /> Editar Miembro</> : <><FaPlus /> Registrar Miembro</>}
+        {form.id ? <><IoCreateOutline /> Editar Miembro</> : <><FaPlus /> Registrar Miembro</>}
       </h2>
 
       <div className="form-card">
@@ -214,13 +216,13 @@ function UserPage() {
                         onClick={() => handleEditClick(u)}
                         className="btn secondary extracted-style-4"
                       >
-                        <FaEdit />
+                        <IoCreateOutline />
                       </button>
                       <button
                         onClick={() => handleDelete(u.id)}
                         className="btn secondary extracted-style-5"
                       >
-                        <FaTrash />
+                        <IoTrashOutline />
                       </button>
                     </td>
                   </tr>

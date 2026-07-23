@@ -1,6 +1,8 @@
 import { useEffect, useState, useMemo } from "react";
 import api from "../api";
-import { FaEdit, FaPlus, FaTrash } from "react-icons/fa";
+import { FaPlus } from "react-icons/fa";
+import { IoCreateOutline, IoTrashOutline } from "react-icons/io5";
+import { FiUserCheck } from "react-icons/fi";
 import axios from "axios";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
@@ -95,8 +97,8 @@ export default function Teachers() {
 
   return (
     <div className="teachers-page">
-      <h1>👨‍🏫 Maestros</h1>
-      <h2 className="dashboard-subtitle">{form.id ? <><FaEdit /> Actualizar</> : <><FaPlus /> Agregar</>}</h2>
+      <h1><span className="page-title-icon"><FiUserCheck /></span> Maestros</h1>
+      <h2 className="dashboard-subtitle">{form.id ? <><IoCreateOutline /> Actualizar</> : <><FaPlus /> Agregar</>}</h2>
       {role === "admin" && (
         <form onSubmit={handleSubmit} className="teacher-form">
           {form.id ? (
@@ -132,51 +134,51 @@ export default function Teachers() {
         </form>
       )}
 
-        <div className="table-container">
-          <table
-            className="teachers-table"
-          >
-            <thead>
-              <tr>
-                <th onClick={() => requestSort("name")} className="sortable-header">
-                  Nombre
-                  <span className="sort-icon">
-                    {sortConfig?.key === "name" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
-                  </span>
-                </th>
-                <th onClick={() => requestSort("email")} className="sortable-header">
-                  Email
-                  <span className="sort-icon">
-                    {sortConfig?.key === "email" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
-                  </span>
-                </th>
-                <th onClick={() => requestSort("specialty")} className="sortable-header">
-                  Especialidad
-                  <span className="sort-icon">
-                    {sortConfig?.key === "specialty" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
-                  </span>
-                </th>
-                {role === "admin" && <th>Acciones</th>}
-              </tr>
-            </thead>
+      <div className="table-container">
+        <table
+          className="teachers-table"
+        >
+          <thead>
+            <tr>
+              <th onClick={() => requestSort("name")} className="sortable-header">
+                Nombre
+                <span className="sort-icon">
+                  {sortConfig?.key === "name" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
+                </span>
+              </th>
+              <th onClick={() => requestSort("email")} className="sortable-header">
+                Email
+                <span className="sort-icon">
+                  {sortConfig?.key === "email" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
+                </span>
+              </th>
+              <th onClick={() => requestSort("specialty")} className="sortable-header">
+                Especialidad
+                <span className="sort-icon">
+                  {sortConfig?.key === "specialty" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
+                </span>
+              </th>
+              {role === "admin" && <th>Acciones</th>}
+            </tr>
+          </thead>
 
-            <tbody>
-              {sortedTeachers.map((t) => (
-                <tr key={t.id}>
-                  <td>{t.name}</td>
-                  <td>{t.email}</td>
-                  <td>{t.specialty}</td>
-                  {role === "admin" && (
-                    <td>
-                      <button className="btn secondary extracted-style-4" onClick={() => handleEdit(t)}><FaEdit /></button>
-                      <button className="btn secondary extracted-style-5" onClick={() => handleDelete(t.id)}><FaTrash /></button>
-                    </td>
-                  )}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+          <tbody>
+            {sortedTeachers.map((t) => (
+              <tr key={t.id}>
+                <td>{t.name}</td>
+                <td>{t.email}</td>
+                <td>{t.specialty}</td>
+                {role === "admin" && (
+                  <td>
+                    <button className="btn secondary extracted-style-4" onClick={() => handleEdit(t)}><IoCreateOutline /></button>
+                    <button className="btn secondary extracted-style-5" onClick={() => handleDelete(t.id)}><IoTrashOutline /></button>
+                  </td>
+                )}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

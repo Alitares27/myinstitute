@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import api from "../api";
-import { FaEdit, FaTrash } from "react-icons/fa";
+import { IoCreateOutline, IoTrashOutline } from "react-icons/io5";
+import { FiBookOpen } from "react-icons/fi";
 import axios from "axios";
 import { Skeleton } from "../components/Skeleton";
 
@@ -159,7 +160,7 @@ export default function Courses() {
 
   return (
     <div className="page-container">
-      <h1>📚 Cursos</h1>
+      <h1><span className="page-title-icon"><FiBookOpen /></span> Cursos</h1>
       <h2 className="dashboard-subtitle"> {role === "admin" ? "➕ Agregar" : "Disponibles"}</h2>
       {role === "admin" && (
         <form onSubmit={handleSubmit}>
@@ -233,14 +234,14 @@ export default function Courses() {
                         })
                       }
                     >
-                      <FaEdit />
+                      <IoCreateOutline />
                     </button>
 
                     <button
                       onClick={() => handleDelete(c.id)}
                       className="btn secondary extracted-style-5"
                     >
-                      <FaTrash />
+                      <IoTrashOutline />
                     </button>
                   </td>
                 )}
@@ -283,8 +284,8 @@ export default function Courses() {
                       <td>{t.title}</td>
                       {role === "admin" && (
                         <td>
-                          <button className="btn secondary extracted-style-4" onClick={() => setTopicForm({ id: t.id, title: t.title, order_index: t.order_index })}><FaEdit /></button>
-                          <button className="btn secondary extracted-style-5" onClick={() => handleTopicDelete(t.id)}><FaTrash /></button>
+                          <button className="btn secondary extracted-style-4" onClick={() => setTopicForm({ id: t.id, title: t.title, order_index: t.order_index })}><IoCreateOutline /></button>
+                          <button className="btn secondary extracted-style-5" onClick={() => handleTopicDelete(t.id)}><IoTrashOutline /></button>
                         </td>
                       )}
                     </tr>
