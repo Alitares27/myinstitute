@@ -4,6 +4,7 @@ import { FaPlus } from "react-icons/fa";
 import { IoCreateOutline, IoTrashOutline } from "react-icons/io5";
 import { FiUserCheck } from "react-icons/fi";
 import axios from "axios";
+import { Skeleton } from "../components/Skeleton";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
@@ -19,10 +20,11 @@ export default function Teachers() {
   const [role, setRole] = useState<string>("");
   const [userId, setUserId] = useState<string>("");
   const [sortConfig, setSortConfig] = useState<SortConfig>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const token = sessionStorage.getItem("token");
-    if (!token) return;
+    if (!token) { setLoading(false); return; }
     const config = { headers: { Authorization: `Bearer ${token}` } };
 
     Promise.resolve({ data: JSON.parse(sessionStorage.getItem("user") || "{}") }).then((res) => {
@@ -31,7 +33,7 @@ export default function Teachers() {
     });
 
     axios.get(`${API_BASE_URL}/teachers`, config).then((res) => setTeachers(res.data));
-    axios.get(`${API_BASE_URL}/users`, config).then((res) => setUsers(res.data));
+    axios.get(`${API_BASE_URL}/users`, config).then((res) => setUsers(res.data)).finally(() => setLoading(false));
   }, []);
 
   const availableUsers = useMemo(() => {
@@ -94,6 +96,27 @@ export default function Teachers() {
         : { key, direction: "asc" }
     );
   };
+
+  if (loading) {
+    return (
+        <div className="teachers-page">
+            <Skeleton width="200px" height="1.8rem" />
+            <Skeleton width="160px" height="1.1rem" style={{ marginTop: "8px" }} />
+            <div style={{ marginTop: "1rem" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                    {Array.from({ length: 5 }).map((_, i) => (
+                        <div key={i} style={{ display: "flex", gap: "1rem" }}>
+                            <Skeleton height="1rem" style={{ flex: 2 }} />
+                            <Skeleton height="1rem" style={{ flex: 2 }} />
+                            <Skeleton height="1rem" style={{ flex: 2 }} />
+                            <Skeleton width="70px" height="1.8rem" />
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
+  }
 
   return (
     <div className="teachers-page">

@@ -3,7 +3,9 @@ import api from "../api";
 import { FaPlus } from "react-icons/fa";
 import { IoCreateOutline, IoTrashOutline, IoCheckmarkCircleOutline, IoTimeOutline, IoSaveOutline } from "react-icons/io5";
 import { FiMic } from "react-icons/fi";
+import { TbAlertTriangle } from "react-icons/tb";
 import { formatDate, toYMD } from "../utils/dateUtils";
+import { Skeleton } from "../components/Skeleton";
 
 interface SpeakerRecord {
   id: number;
@@ -38,6 +40,7 @@ export default function Speakers() {
   const recordsPerPage = 6;
 
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: "asc" | "desc" } | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const handleSort = (key: string) => {
     setSortConfig(prev =>
@@ -73,7 +76,8 @@ export default function Speakers() {
         setMembers(memRes.data);
         setAllTemas(temasRes.data);
       })
-      .catch(() => setError("Error al conectar con el servidor"));
+      .catch(() => setError("Error al conectar con el servidor"))
+      .finally(() => setLoading(false));
   }, []);
 
   const membersWithSpeeches = useMemo(() => {
@@ -168,8 +172,6 @@ export default function Speakers() {
     } catch { alert("Error al eliminar"); }
   };
 
-  if (error) return <p className="error-message">⚠️ {error}</p>;
-
   const recentSpeechWarning = useMemo(() => {
     if (!form.member_id) return null;
     const memberIdNum = Number(form.member_id);
@@ -187,7 +189,7 @@ export default function Speakers() {
       recentSpeeches.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
       const mostRecent = recentSpeeches[0];
       const daysAgo = Math.floor((today.getTime() - new Date(mostRecent.date).getTime()) / (1000 * 3600 * 24));
-      return `⚠️ Alerta: Este miembro discursó hace ${daysAgo} días (${formatDate(mostRecent.date, { weekday: 'short', day: 'numeric', month: 'short' })}).`;
+      return `Alerta: Este miembro discursó hace ${daysAgo} días (${formatDate(mostRecent.date, { weekday: 'short', day: 'numeric', month: 'short' })}).`;
     }
     return null;
   }, [form.member_id, speakers]);
@@ -212,7 +214,7 @@ export default function Speakers() {
         ? `hace ${daysAgo} días`
         : `está programado para dentro de ${Math.abs(daysAgo)} días`;
 
-      return `⚠️ Alerta: Este tema ya fue elegido. ${timeStr} (${formatDate(mostRecent.date, { weekday: 'short', day: 'numeric', month: 'short' })}).`;
+      return `Alerta: Este tema ya fue elegido. ${timeStr} (${formatDate(mostRecent.date, { weekday: 'short', day: 'numeric', month: 'short' })}).`;
     }
     return null;
   }, [form.tema_id, speakers, editingId]);
@@ -220,6 +222,38 @@ export default function Speakers() {
   useEffect(() => {
     if (recentTopicWarning) alert(recentTopicWarning);
   }, [recentTopicWarning]);
+
+  if (loading) {
+    return (
+      <div className="dashboard-container">
+        <Skeleton width="260px" height="1.8rem" />
+        <Skeleton width="180px" height="1.1rem" style={{ marginTop: "8px" }} />
+        <div style={{ marginTop: "1.5rem" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} style={{ display: "flex", gap: "1rem" }}>
+                <div style={{ flex: 2, display: "flex", flexDirection: "column", gap: "4px" }}>
+                  <Skeleton height="1rem" width="120px" />
+                  <Skeleton height="0.75rem" width="80px" />
+                </div>
+                <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "4px" }}>
+                  <Skeleton height="1rem" width="70px" />
+                  <Skeleton height="0.75rem" width="50px" />
+                </div>
+                <div style={{ flex: 2, display: "flex", flexDirection: "column", gap: "4px" }}>
+                  <Skeleton height="1rem" width="140px" />
+                  <Skeleton height="0.75rem" width="100px" />
+                </div>
+                <Skeleton width="70px" height="1.8rem" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) return <p className="error-message"><TbAlertTriangle /> {error}</p>;
 
   return (
     <div className="dashboard-container">

@@ -2,7 +2,9 @@ import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { IoCreateOutline, IoTrashOutline, IoListOutline } from "react-icons/io5";
 import { FiList } from "react-icons/fi";
+import { TbPlus, TbPencil, TbSearch, TbAlertTriangle } from "react-icons/tb";
 import axios from "axios";
+import { Skeleton } from "../components/Skeleton";
 
 interface Tema {
   id: number;
@@ -22,6 +24,8 @@ export default function TemasManagement() {
 
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: "asc" | "desc" } | null>(null);
 
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
     const role = JSON.parse(sessionStorage.getItem("user") || "{}").role;
     if (role !== "admin") {
@@ -40,6 +44,8 @@ export default function TemasManagement() {
       setTemas(res.data);
     } catch {
       setError("Error al cargar los temas");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -110,13 +116,33 @@ export default function TemasManagement() {
     return sortedTemas.slice(start, start + recordsPerPage);
   }, [sortedTemas, currentPage]);
 
+  if (loading) {
+    return (
+        <div className="dashboard-container">
+            <Skeleton width="260px" height="1.8rem" />
+            <Skeleton width="200px" height="1.1rem" style={{ marginTop: "8px" }} />
+            <div style={{ marginTop: "1rem" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                    {Array.from({ length: 5 }).map((_, i) => (
+                        <div key={i} style={{ display: "flex", gap: "1rem" }}>
+                            <Skeleton width="40px" height="1rem" />
+                            <Skeleton height="1rem" style={{ flex: 1 }} />
+                            <Skeleton width="70px" height="1.8rem" />
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
+}
+
   return (
     <div className="dashboard-container">
       <h1><span className="page-title-icon"><FiList /></span> Temas para Discursantes</h1>
 
-      {error && <div className="error">⚠️ {error}</div>}
+      {error && <div className="error"><TbAlertTriangle /> {error}</div>}
 
-      <h2 className="dashboard-subtitle">{form.id ? "✏️ Editar Tema" : "➕ Agregar Tema"}</h2>
+      <h2 className="dashboard-subtitle">{form.id ? <><TbPencil /> Editar Tema</> : <><TbPlus /> Agregar Tema</>}</h2>
       <form onSubmit={handleSubmit} className="grid-form">
         <input
           type="text"
@@ -138,7 +164,7 @@ export default function TemasManagement() {
       <div className="grid-form" style={{ marginBottom: "1rem" }}>
         <input
           type="text"
-          placeholder="🔍 Buscar tema..."
+          placeholder="Buscar tema..."
           value={search}
           onChange={e => { setSearch(e.target.value); setCurrentPage(1); }}
         />

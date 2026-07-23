@@ -31,21 +31,23 @@ function Sidebar() {
   const role = user.role || "";
 
   const isTeachingActive = ["/students", "/enrollments", "/attendance", "/grades"].includes(currentPath);
-  const isLeadershipActive = ["/discursantes", "/consejos", "/finanzas", "/auditorias"].includes(currentPath);
+  const isLeadershipActive = ["/discursantes", "/meetings", "/finanzas", "/auditorias"].includes(currentPath);
+  const isTempleActive = ["/templeTrip", "/templeAttendance"].includes(currentPath);
   const isMaintenanceActive = ["/users", "/teachers", "/courses", "/temas-management", "/templos-management"].includes(currentPath);
 
   const [isTeachingOpen, setIsTeachingOpen] = useState(isTeachingActive);
   const [isLeadershipOpen, setIsLeadershipOpen] = useState(isLeadershipActive);
+  const [isTempleOpen, setIsTempleOpen] = useState(isTempleActive);
   const [isMaintenanceOpen, setIsMaintenanceOpen] = useState(isMaintenanceActive);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
 
-  // Auto-expand menus when their routes are active
   useEffect(() => {
     if (isTeachingActive) setIsTeachingOpen(true);
     if (isLeadershipActive) setIsLeadershipOpen(true);
+    if (isTempleActive) setIsTempleOpen(true);
     if (isMaintenanceActive) setIsMaintenanceOpen(true);
-  }, [currentPath, isTeachingActive, isLeadershipActive, isMaintenanceActive]);
+  }, [currentPath, isTeachingActive, isLeadershipActive, isTempleActive, isMaintenanceActive]);
 
   const handleLogout = () => {
     sessionStorage.clear();
@@ -110,7 +112,15 @@ function Sidebar() {
               {isLeadershipOpen && (
                 <ul className="submenu" style={{ paddingLeft: "20px", listStyle: "none" }}>
                   <li><NavLink to="/discursantes" className="sidebar-link" onClick={() => setIsMenuOpen(false)}><div className="icon-circle"><IoMicOutline className="icon" /></div><span>Discursantes</span></NavLink></li>
-                  <li><NavLink to="/consejos" className="sidebar-link" onClick={() => setIsMenuOpen(false)}><div className="icon-circle"><IoPeopleOutline className="icon" /></div><span>Consejos</span></NavLink></li>
+                  <li>
+                    <NavLink to="/meetings" className="sidebar-link" onClick={() => setIsMenuOpen(false)}>
+                      <div className="icon-circle">
+                        <IoPeopleOutline className="icon" />
+                      </div>
+
+                      <span>Consejos</span>
+                    </NavLink>
+                  </li>
                   <li><NavLink to="/finanzas" className="sidebar-link" onClick={() => setIsMenuOpen(false)}><div className="icon-circle"><IoWalletOutline className="icon" /></div><span>Finanzas</span></NavLink></li>
                   <li><NavLink to="/auditorias" className="sidebar-link" onClick={() => setIsMenuOpen(false)}><div className="icon-circle"><IoDocumentTextOutline className="icon" /></div><span>Auditorías</span></NavLink></li>
                 </ul>
@@ -118,12 +128,18 @@ function Sidebar() {
             </li>
 
             <li>
-              <NavLink to="/temples" className="sidebar-link" onClick={() => setIsMenuOpen(false)}>
-                <div className="icon-circle">
-                  <IoBusinessOutline className="icon" />
-                </div>
+              <button type="button" className={`sidebar-link button-link ${isTempleActive ? "parent-active" : ""}`} onClick={() => setIsTempleOpen(!isTempleOpen)} aria-expanded={isTempleOpen} style={{ cursor: "pointer" }}>
+                <div className="icon-circle"><IoBusinessOutline className="icon" /></div>
                 <span>Templo</span>
-              </NavLink>
+                <IoChevronDown style={getChevronStyle(isTempleOpen)} />
+              </button>
+
+              {isTempleOpen && (
+                <ul className="submenu" style={{ paddingLeft: "20px", listStyle: "none" }}>
+                  <li><NavLink to="/templeTrip" className="sidebar-link" onClick={() => setIsMenuOpen(false)}><div className="icon-circle"><IoCalendarOutline className="icon" /></div><span>Viajes</span></NavLink></li>
+                  <li><NavLink to="/templeAttendance" className="sidebar-link" onClick={() => setIsMenuOpen(false)}><div className="icon-circle"><IoPeopleOutline className="icon" /></div><span>Reservas</span></NavLink></li>
+                </ul>
+              )}
             </li>
 
             {role === "admin" && (

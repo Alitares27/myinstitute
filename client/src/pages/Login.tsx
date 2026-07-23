@@ -4,6 +4,7 @@ import api from "../api";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import Layout from "../components/Layout";
+import { TbLogin, TbAlertTriangle } from "react-icons/tb";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
@@ -61,7 +62,7 @@ export default function Login() {
       <div className="auth-page-wrapper">
         <div className="auth-container card">
           <div className="auth-header">
-            <h2>🔑 Iniciar Sesión</h2>
+            <h2><TbLogin /> Iniciar Sesión</h2>
           </div>
 
           <form onSubmit={handleSubmit} className="auth-form">
@@ -95,7 +96,7 @@ export default function Login() {
 
             {error && (
               <div className="error-container">
-                <p className="error-message">⚠️ {error}</p>
+                <p className="error-message"><TbAlertTriangle /> {error}</p>
               </div>
             )}
 
@@ -114,7 +115,7 @@ export default function Login() {
                 onClick={() => navigate("/")}
                 disabled={loading}
               >
-                ← Volver
+                ← Cancelar
               </button>
             </div>
           </form>

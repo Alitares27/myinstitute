@@ -1,9 +1,11 @@
 import { useEffect, useState, useMemo } from "react";
 import api from "../api";
 import { FiCalendar } from "react-icons/fi";
+import { TbPlus, TbAlertTriangle } from "react-icons/tb";
 import axios from "axios";
 import { formatDate, toYMD } from "../utils/dateUtils";
 import { openPrintWindow } from "../utils/reportUtils";
+import { Skeleton } from "../components/Skeleton";
 
 interface AttendanceRecord {
   id: number;
@@ -49,6 +51,8 @@ export default function Attendance() {
   const [sortConfig, setSortConfig] =
     useState<{ key: string; direction: SortDirection } | null>(null);
 
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
     const token = sessionStorage.getItem("token");
     if (!token) {
@@ -73,7 +77,8 @@ export default function Attendance() {
         setCourses(crsRes.data);
         setAllTopics(topRes.data);
       })
-      .catch(() => setError("Error al conectar con el servidor"));
+      .catch(() => setError("Error al conectar con el servidor"))
+      .finally(() => setLoading(false));
   }, []);
 
   const filteredTopics = useMemo(() => {
@@ -218,13 +223,40 @@ export default function Attendance() {
     );
   };
 
-  if (error) return <div className="error">⚠️ {error}</div>;
+  if (loading) {
+    return (
+        <div className="attendance-page">
+            <Skeleton width="260px" height="1.8rem" />
+            <Skeleton width="180px" height="1.1rem" style={{ marginTop: "8px" }} />
+            <div style={{ display: "flex", gap: "10px", marginTop: "1rem" }}>
+                <Skeleton height="2.5rem" style={{ flex: 1 }} />
+                <Skeleton height="2.5rem" style={{ flex: 1 }} />
+                <Skeleton height="2.5rem" style={{ flex: 1 }} />
+            </div>
+            <div style={{ marginTop: "1rem" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                    {Array.from({ length: 5 }).map((_, i) => (
+                        <div key={i} style={{ display: "flex", gap: "1rem" }}>
+                            <Skeleton height="1rem" style={{ flex: 2 }} />
+                            <Skeleton height="1rem" style={{ flex: 1 }} />
+                            <Skeleton height="1rem" style={{ flex: 1 }} />
+                            <Skeleton height="1rem" style={{ flex: 1 }} />
+                            <Skeleton height="1rem" style={{ flex: 1 }} />
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
+}
+
+  if (error) return <div className="error"><TbAlertTriangle /> {error}</div>;
 
   return (
     <div className="attendance-page">
       <h1><span className="page-title-icon"><FiCalendar /></span> Control de Asistencia</h1>
       <h2 className="dashboard-subtitle">
-        {(role === "admin" || role === "teacher") ? " ➕ Registrar" : "Revisar"}
+        {(role === "admin" || role === "teacher") ? <><TbPlus /> Registrar</> : "Revisar"}
       </h2>
       {(role === "admin" || role === "teacher") && (
         <form onSubmit={handleSubmit} className="grid-form">

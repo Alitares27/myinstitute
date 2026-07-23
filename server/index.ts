@@ -18,6 +18,7 @@ import templesRoutes from "./routes/temples";
 import templeTripsRoutes from "./routes/templeTrips";
 import tripReservationsRoutes from "./routes/tripReservations";
 import templeAmortizationsRoutes from "./routes/templeAmortizations";
+import meetingsRoutes from "./routes/meetings";
 
 import speakersRoutes from "./routes/speakers";
 import temasRoutes from "./routes/temas";
@@ -56,8 +57,9 @@ app.use("/api/temples", templesRoutes);
 app.use("/api/temple-trips", templeTripsRoutes);
 app.use("/api/trip-reservations", tripReservationsRoutes);
 app.use("/api/temple-amortizations", templeAmortizationsRoutes);
-app.use("/api/speakers", speakersRoutes);      
+app.use("/api/speakers", speakersRoutes);
 app.use("/api/temas", temasRoutes);
+app.use("/api/meetings", meetingsRoutes);
 
 app.get("/health", (req, res) => {
   res.status(200).json({ status: "ok" });
@@ -67,7 +69,7 @@ app.get("/test-topics", async (req, res) => {
   try {
     const result = await pool.query("SELECT * FROM topics ORDER BY course_id, order_index ASC");
     res.json(result.rows);
-  } catch(e: any) {
+  } catch (e: any) {
     res.json({ error: e.message });
   }
 });

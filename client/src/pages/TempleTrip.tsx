@@ -1,7 +1,9 @@
 import { useEffect, useState, useMemo } from "react";
 import { IoCreateOutline, IoTrashOutline } from "react-icons/io5";
 import { FiTruck } from "react-icons/fi";
+import { TbPlus } from "react-icons/tb";
 import { formatDate, toYMD } from "../utils/dateUtils";
+import { Skeleton } from "../components/Skeleton";
 
 interface Temple {
     id: number;
@@ -36,6 +38,8 @@ export default function TempleTrip() {
     });
 
     const [sortConfig, setSortConfig] = useState<{ key: string; direction: "asc" | "desc" } | null>(null);
+
+    const [loading, setLoading] = useState(true);
 
     const handleSort = (key: string) => {
         setSortConfig(prev =>
@@ -105,8 +109,7 @@ export default function TempleTrip() {
     };
 
     useEffect(() => {
-        fetchTemples();
-        fetchTrips();
+        Promise.all([fetchTemples(), fetchTrips()]).finally(() => setLoading(false));
     }, []);
 
     const handleChange = (
@@ -182,10 +185,32 @@ export default function TempleTrip() {
         }
     };
 
+    if (loading) {
+        return (
+            <div>
+                <Skeleton width="240px" height="1.8rem" />
+                <Skeleton width="200px" height="1.1rem" style={{ marginTop: "8px" }} />
+                <div style={{ marginTop: "1rem" }}>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                        {Array.from({ length: 5 }).map((_, i) => (
+                            <div key={i} style={{ display: "flex", gap: "1rem" }}>
+                                <Skeleton height="1rem" style={{ flex: 2 }} />
+                                <Skeleton height="1rem" style={{ flex: 1 }} />
+                                <Skeleton height="1rem" style={{ flex: 1 }} />
+                                <Skeleton height="1rem" style={{ flex: 1 }} />
+                                <Skeleton width="70px" height="1.8rem" />
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div>
             <h1><span className="page-title-icon"><FiTruck /></span> Gestionar Viajes</h1>
-            <h2>{role === "admin" ? "➕ Registrar Viaje" : "Disponibles"}</h2>
+            <h2>{role === "admin" ? <><TbPlus /> Registrar Viaje</> : "Disponibles"}</h2>
             <form onSubmit={handleSubmit} className="grid-form trip-form">
                 <div className="form-group">
                     <label>Templo</label>

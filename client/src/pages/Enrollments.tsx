@@ -2,7 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 import api from "../api";
 import { IoCreateOutline, IoTrashOutline } from "react-icons/io5";
 import { FiEdit } from "react-icons/fi";
+import { TbPlus } from "react-icons/tb";
 import axios from "axios";
+import { Skeleton } from "../components/Skeleton";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
@@ -33,10 +35,11 @@ export default function Enrollments() {
     key: string;
     direction: SortDirection;
   } | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const token = sessionStorage.getItem("token");
-    if (!token) return;
+    if (!token) { setLoading(false); return; }
 
     const config = { headers: { Authorization: `Bearer ${token}` } };
 
@@ -47,7 +50,7 @@ export default function Enrollments() {
 
     axios.get(`${API_BASE_URL}/enrollments`, config).then((res) => setEnrollments(res.data));
     axios.get(`${API_BASE_URL}/students`, config).then((res) => setStudents(res.data));
-    axios.get(`${API_BASE_URL}/courses`, config).then((res) => setCourses(res.data));
+    axios.get(`${API_BASE_URL}/courses`, config).then((res) => setCourses(res.data)).finally(() => setLoading(false));
   }, []);
 
   const handleSort = (key: string) => {
@@ -149,10 +152,30 @@ export default function Enrollments() {
     setEnrollments((prev) => prev.filter((e) => e.id !== id));
   };
 
+  if (loading) {
+    return (
+        <div className="enrollments-page">
+            <Skeleton width="200px" height="1.8rem" />
+            <Skeleton width="160px" height="1.1rem" style={{ marginTop: "8px" }} />
+            <div style={{ marginTop: "1rem" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                    {Array.from({ length: 5 }).map((_, i) => (
+                        <div key={i} style={{ display: "flex", gap: "1rem" }}>
+                            <Skeleton height="1rem" style={{ flex: 2 }} />
+                            <Skeleton height="1rem" style={{ flex: 2 }} />
+                            <Skeleton width="70px" height="1.8rem" />
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
+  }
+
   return (
     <div className="enrollments-page">
       <h1><span className="page-title-icon"><FiEdit /></span> Matrículas</h1>
-      <h2 className="dashboard-subtitle">{role === "admin" ? "➕ Matricular" : "Revisar"}</h2>
+      <h2 className="dashboard-subtitle">{role === "admin" ? <><TbPlus /> Matricular</> : "Revisar"}</h2>
       {role === "admin" && (
         <form onSubmit={handleSubmit} className="enrollment-form">
           <select

@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo } from "react";
 import api from "../api";
 import { IoCreateOutline, IoTrashOutline } from "react-icons/io5";
 import { FiBookOpen } from "react-icons/fi";
+import { TbPlus } from "react-icons/tb";
 import axios from "axios";
 import { Skeleton } from "../components/Skeleton";
 
@@ -16,6 +17,7 @@ export default function Courses() {
   const [error, setError] = useState("");
   const [form, setForm] = useState({ id: "", title: "", teacher_id: "" });
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [selectedCourse, setSelectedCourse] = useState<any | null>(null);
   const [topics, setTopics] = useState<any[]>([]);
   const [loadingTopics, setLoadingTopics] = useState(false);
@@ -41,6 +43,8 @@ export default function Courses() {
         }
       } catch {
         setError("No se pudieron cargar los datos.");
+      } finally {
+        setInitialLoading(false);
       }
     };
     fetchCoursesData();
@@ -156,12 +160,32 @@ export default function Courses() {
     }
   };
 
+  if (initialLoading) {
+    return (
+        <div className="page-container">
+            <Skeleton width="180px" height="1.8rem" />
+            <Skeleton width="160px" height="1.1rem" style={{ marginTop: "8px" }} />
+            <div style={{ marginTop: "1rem" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                    {Array.from({ length: 5 }).map((_, i) => (
+                        <div key={i} style={{ display: "flex", gap: "1rem" }}>
+                            <Skeleton height="1rem" style={{ flex: 2 }} />
+                            <Skeleton height="1rem" style={{ flex: 2 }} />
+                            <Skeleton width="70px" height="1.8rem" />
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
+  }
+
   if (error) return <p>{error}</p>;
 
   return (
     <div className="page-container">
       <h1><span className="page-title-icon"><FiBookOpen /></span> Cursos</h1>
-      <h2 className="dashboard-subtitle"> {role === "admin" ? "➕ Agregar" : "Disponibles"}</h2>
+      <h2 className="dashboard-subtitle"> {role === "admin" ? <><TbPlus /> Agregar</> : "Disponibles"}</h2>
       {role === "admin" && (
         <form onSubmit={handleSubmit}>
           <input

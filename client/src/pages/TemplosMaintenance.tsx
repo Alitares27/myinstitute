@@ -2,8 +2,10 @@ import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { IoCreateOutline, IoTrashOutline, IoBusinessOutline } from "react-icons/io5";
 import { FiBriefcase } from "react-icons/fi";
+import { TbPlus, TbPencil, TbSearch, TbAlertTriangle, TbBuilding } from "react-icons/tb";
 import axios from "axios";
 import { formatDate, toYMD } from "../utils/dateUtils";
+import { Skeleton } from "../components/Skeleton";
 
 interface Templo {
   id: number;
@@ -50,6 +52,8 @@ export default function TemplosMaintenance() {
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: "asc" | "desc" } | null>(null);
   const [selectedTemplo, setSelectedTemplo] = useState<Templo | null>(null);
 
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
     const role = JSON.parse(sessionStorage.getItem("user") || "{}").role;
     if (role !== "admin") {
@@ -68,6 +72,8 @@ export default function TemplosMaintenance() {
       setTemplos(res.data);
     } catch {
       setError("Error al cargar los templos");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -151,13 +157,35 @@ export default function TemplosMaintenance() {
     return sortedTemplos.slice(start, start + recordsPerPage);
   }, [sortedTemplos, currentPage]);
 
+  if (loading) {
+    return (
+        <div className="dashboard-container">
+            <Skeleton width="240px" height="1.8rem" />
+            <Skeleton width="200px" height="1.1rem" style={{ marginTop: "8px" }} />
+            <div style={{ marginTop: "1rem" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                    {Array.from({ length: 5 }).map((_, i) => (
+                        <div key={i} style={{ display: "flex", gap: "1rem" }}>
+                            <Skeleton height="1rem" style={{ flex: 2 }} />
+                            <Skeleton height="1rem" style={{ flex: 1 }} />
+                            <Skeleton height="1rem" style={{ flex: 1 }} />
+                            <Skeleton height="1rem" style={{ flex: 1 }} />
+                            <Skeleton width="70px" height="1.8rem" />
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
+}
+
   return (
     <div className="dashboard-container">
       <h1><span className="page-title-icon"><FiBriefcase /></span> Gestión de Templos</h1>
 
-      {error && <div className="error">⚠️ {error}</div>}
+      {error && <div className="error"><TbAlertTriangle /> {error}</div>}
 
-      <h2 className="dashboard-subtitle">{form.id ? "✏️ Editar Templo" : "➕ Agregar Templo"}</h2>
+      <h2 className="dashboard-subtitle">{form.id ? <><TbPencil /> Editar Templo</> : <><TbPlus /> Agregar Templo</>}</h2>
       <form onSubmit={handleSubmit} className="grid-form">
         <input
           type="text"
@@ -212,7 +240,7 @@ export default function TemplosMaintenance() {
       <div className="grid-form" style={{ marginBottom: "1rem" }}>
         <input
           type="text"
-          placeholder="🔍 Buscar por nombre, ciudad o provincia..."
+          placeholder="Buscar por nombre, ciudad o provincia..."
           value={search}
           onChange={e => { setSearch(e.target.value); setCurrentPage(1); }}
         />
@@ -331,7 +359,7 @@ export default function TemplosMaintenance() {
             </button>
 
             <h2 style={{ marginBottom: "1.2rem", color: "var(--text-main)", fontSize: "1.2rem" }}>
-              🕌 {selectedTemplo.name}
+              <TbBuilding /> {selectedTemplo.name}
             </h2>
 
             <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
@@ -368,7 +396,7 @@ export default function TemplosMaintenance() {
                 className="btn secondary"
                 onClick={() => { handleEdit(selectedTemplo); setSelectedTemplo(null); }}
               >
-                ✏️ Editar
+                <TbPencil /> Editar
               </button>
               <button className="btn secondary" onClick={() => setSelectedTemplo(null)}>
                 Cerrar

@@ -3,6 +3,7 @@ import api from "../api";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import Layout from "../components/Layout";
+import { TbUserPlus } from "react-icons/tb";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
@@ -44,8 +45,7 @@ export default function Signup() {
     <Layout>
       <div className="auth-page-wrapper">
         <div className="auth-container card">
-          <h2>📝 Registrarse</h2>
-          <p className="auth-subtitle">Registrate</p>
+          <h2><TbUserPlus /> Registrarse</h2>
 
           <form onSubmit={handleSubmit} className="auth-form">
             <div className="form-group">
@@ -98,7 +98,7 @@ export default function Signup() {
                 value={form.role}
                 onChange={(e) => setForm({ ...form, role: e.target.value })}
               >
-                <option value="student">Estudiante</option>
+                <option value="student">Miembro</option>
                 <option value="teacher">Maestro</option>
               </select>
             </div>
@@ -114,7 +114,7 @@ export default function Signup() {
                 className="btn secondary"
                 onClick={() => navigate("/")}
               >
-                Volver
+                Cancelar
               </button>
             </div>
           </form>

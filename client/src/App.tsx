@@ -5,6 +5,10 @@ import Signup from "./pages/Signup";
 import Login from "./pages/Login";
 import PrivateRoute from "./components/PrivateRoute";
 import Layout from "./components/Layout";
+import Meetings from "./pages/Meetings";
+import NewMeeting from "./pages/NewMeeting";
+import EditMeeting from "./pages/EditMeeting";
+import MeetingDetails from "./components/meetings/MeetingDetails";
 
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Students = lazy(() => import("./pages/Students"));
@@ -14,11 +18,9 @@ const Enrollments = lazy(() => import("./pages/Enrollments"));
 const Attendance = lazy(() => import("./pages/Attendance"));
 const UserPage = lazy(() => import("./pages/UserPage"));
 const Grades = lazy(() => import("./pages/Grades"));
-const TempleDashboard = lazy(() => import("./pages/Temples"));
 const TempleTrips = lazy(() => import("./pages/TempleTrip"));
 const TempleAttendance = lazy(() => import("./pages/TempleAttendance"));
 const Discursantes = lazy(() => import("./pages/Discursantes"));
-const Consejos = lazy(() => import("./pages/Consejos"));
 const Finanzas = lazy(() => import("./pages/Finanzas"));
 const Auditorias = lazy(() => import("./pages/Auditorias"));
 const TemasManagement = lazy(() => import("./pages/TemasManagement"));
@@ -121,17 +123,6 @@ function App() {
             }
           />
           <Route
-            path="/temples"
-            element={
-              <PrivateRoute>
-                <Layout>
-                  <TempleDashboard />
-                </Layout>
-              </PrivateRoute>
-            }
-          />
-
-          <Route
             path="/templeTrip"
             element={
               <PrivateRoute>
@@ -164,11 +155,44 @@ function App() {
             }
           />
           <Route
-            path="/consejos"
+            path="/meetings"
             element={
               <PrivateRoute>
                 <Layout>
-                  <Consejos />
+                  <Meetings />
+                </Layout>
+              </PrivateRoute>
+            }
+          />
+
+          <Route
+            path="/meetings/new"
+            element={
+              <PrivateRoute>
+                <Layout>
+                  <NewMeeting />
+                </Layout>
+              </PrivateRoute>
+            }
+          />
+
+          <Route
+            path="/meetings/:id"
+            element={
+              <PrivateRoute>
+                <Layout>
+                  <MeetingDetails />
+                </Layout>
+              </PrivateRoute>
+            }
+          />
+
+          <Route
+            path="/meetings/edit/:id"
+            element={
+              <PrivateRoute>
+                <Layout>
+                  <EditMeeting />
                 </Layout>
               </PrivateRoute>
             }

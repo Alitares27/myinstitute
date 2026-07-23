@@ -4,6 +4,7 @@ import { FaPlus } from "react-icons/fa";
 import { IoCreateOutline, IoTrashOutline } from "react-icons/io5";
 import { FiUsers } from "react-icons/fi";
 import axios from "axios";
+import { Skeleton } from "../components/Skeleton";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
@@ -21,10 +22,11 @@ export default function Students() {
   const [currentPage, setCurrentPage] = useState(1);
   const recordsPerPage = 5;
   const [sortConfig, setSortConfig] = useState<SortConfig>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const token = sessionStorage.getItem("token");
-    if (!token) return;
+    if (!token) { setLoading(false); return; }
     const config = { headers: { Authorization: `Bearer ${token}` } };
 
     Promise.resolve({ data: JSON.parse(sessionStorage.getItem("user") || "{}") }).then((res) => {
@@ -33,7 +35,7 @@ export default function Students() {
     });
 
     axios.get(`${API_BASE_URL}/students`, config).then((res) => setStudents(res.data));
-    axios.get(`${API_BASE_URL}/users`, config).then((res) => setUsers(res.data));
+    axios.get(`${API_BASE_URL}/users`, config).then((res) => setUsers(res.data)).finally(() => setLoading(false));
   }, []);
 
   const availableUsers = useMemo(() => {
@@ -113,6 +115,34 @@ export default function Students() {
         : { key, direction: "asc" }
     );
   };
+
+  if (loading) {
+    return (
+        <div className="students-page">
+            <Skeleton width="200px" height="1.8rem" />
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginTop: "1rem" }}>
+                <div style={{ display: "flex", gap: "10px" }}>
+                    <Skeleton height="2.5rem" style={{ flex: 2 }} />
+                    <Skeleton height="2.5rem" style={{ flex: 1 }} />
+                </div>
+                <Skeleton height="2.5rem" width="120px" />
+            </div>
+            <div style={{ marginTop: "1.5rem" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                    {Array.from({ length: 5 }).map((_, i) => (
+                        <div key={i} style={{ display: "flex", gap: "1rem" }}>
+                            <Skeleton height="1rem" style={{ flex: 2 }} />
+                            <Skeleton height="1rem" style={{ flex: 2 }} />
+                            <Skeleton height="1rem" style={{ flex: 1 }} />
+                            <Skeleton height="1rem" style={{ flex: 1 }} />
+                            <Skeleton width="70px" height="1.8rem" />
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
+  }
 
   return (
     <div className="students-page">

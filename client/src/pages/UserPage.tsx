@@ -112,7 +112,43 @@ function UserPage() {
     setForm({ id: "", name: "", email: "", password: "", telefono: "", role: "student", specialty: "", grade: "", document: "" });
   };
 
-  if (loading) return <Skeleton height="2rem" />;
+  if (loading) {
+    return (
+        <div className="user-page">
+            <Skeleton width="240px" height="1.8rem" />
+            <Skeleton width="200px" height="1.1rem" style={{ marginTop: "12px" }} />
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", marginTop: "1rem", padding: "1rem", background: "var(--bg-card)", borderRadius: "var(--radius)" }}>
+                <div style={{ display: "flex", gap: "1rem" }}>
+                    <Skeleton height="2.5rem" style={{ flex: 1 }} />
+                    <Skeleton height="2.5rem" style={{ flex: 1 }} />
+                </div>
+                <div style={{ display: "flex", gap: "1rem" }}>
+                    <Skeleton height="2.5rem" style={{ flex: 1 }} />
+                    <Skeleton height="2.5rem" style={{ flex: 1 }} />
+                </div>
+                <Skeleton height="2.5rem" width="120px" />
+            </div>
+            <div style={{ marginTop: "1.5rem" }}>
+                <Skeleton width="160px" height="1.2rem" style={{ marginBottom: "12px" }} />
+                <div style={{ display: "flex", gap: "10px", marginBottom: "12px" }}>
+                    <Skeleton height="2rem" width="200px" />
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                    {Array.from({ length: 5 }).map((_, i) => (
+                        <div key={i} style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
+                            <Skeleton height="1rem" style={{ flex: 2 }} />
+                            <Skeleton height="1rem" style={{ flex: 2 }} />
+                            <Skeleton height="1rem" style={{ flex: 1 }} />
+                            <Skeleton height="1rem" style={{ flex: 1 }} />
+                            <Skeleton height="1rem" style={{ flex: 1 }} />
+                            <Skeleton width="70px" height="1.8rem" />
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
+}
 
   return (
     <div className="user-page">

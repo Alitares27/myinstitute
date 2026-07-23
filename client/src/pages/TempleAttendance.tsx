@@ -3,8 +3,10 @@ import { useNavigate } from "react-router-dom";
 import { FaPlus } from "react-icons/fa";
 import { IoCreateOutline, IoTrashOutline, IoCarOutline } from "react-icons/io5";
 import { FiMapPin } from "react-icons/fi";
+import { TbAlertTriangle } from "react-icons/tb";
 import { formatDate, toYMD } from "../utils/dateUtils";
 import { openPrintWindow } from "../utils/reportUtils";
+import { Skeleton } from "../components/Skeleton";
 import api from "../api";
 import { TripStatus } from "../shared/constants";
 import { Trip } from "../shared/types";
@@ -56,6 +58,7 @@ export default function TripReservations() {
     const [currentPage, setCurrentPage] = useState(1);
     const [showSummary, setShowSummary] = useState(false);
     const recordsPerPage = 5;
+    const [loading, setLoading] = useState(true);
 
     const [sortConfig, setSortConfig] = useState<{ key: string; direction: "asc" | "desc" } | null>(null);
 
@@ -93,9 +96,7 @@ export default function TripReservations() {
     };
 
     useEffect(() => {
-        fetchUsers();
-        fetchTrips();
-        fetchReservations();
+        Promise.all([fetchUsers(), fetchTrips(), fetchReservations()]).finally(() => setLoading(false));
     }, []);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -137,7 +138,7 @@ export default function TripReservations() {
             if (duplicate) {
                 const memberName = users.find(u => u.id === Number(formData.user_id))?.name || "Este miembro";
                 const tripDate = selectedTrip ? selectedTrip.date.substring(0, 10) : "";
-                alert(`⚠️ ${memberName} ya tiene una reserva para el viaje del ${tripDate}.`);
+                alert(`${memberName} ya tiene una reserva para el viaje del ${tripDate}.`);
                 return;
             }
         }
@@ -343,19 +344,63 @@ export default function TripReservations() {
         );
 
         let body = "";
+        let totalRegistrados = 0;
+        let totalPagado = 0;
+        let totalPendiente = 0;
+
         sortedDates.forEach(date => {
             const dateGroup = groupedByDate[date];
             const sortedMembers = [...dateGroup].sort((a, b) => (a.user_name || "").localeCompare(b.user_name || ""));
 
-            body += `<h2>Fecha de Viaje: ${date}</h2><table><thead><tr><th>Miembro</th><th>Pagado</th><th>Pendiente</th></tr></thead><tbody>`;
+            totalRegistrados += dateGroup.length;
+            dateGroup.forEach(r => {
+                totalPagado += Number(r.advance_payment);
+                totalPendiente += Number(r.pending_payment);
+            });
+
+            body += `<h2>Fecha de Viaje: ${date}</h2><table><thead><tr><th>Miembro</th><th>Documento</th><th>Pagado</th><th>Pendiente</th></tr></thead><tbody>`;
             sortedMembers.forEach(res => {
-                body += `<tr><td>${res.user_name}</td><td>$${Number(res.advance_payment).toLocaleString()}</td><td>$${Number(res.pending_payment).toLocaleString()}</td></tr>`;
+                body += `<tr><td>${res.user_name}</td><td>${res.user_document || "-"}</td><td>$${Number(res.advance_payment).toLocaleString()}</td><td>$${Number(res.pending_payment).toLocaleString()}</td></tr>`;
             });
             body += `</tbody></table>`;
         });
 
+        body += `<div style="margin-top:24px;padding:16px 20px;background:#f8f9fa;border:1px solid #dee2e6;border-radius:8px;display:flex;gap:2rem;">
+            <div><span style="font-size:12px;text-transform:uppercase;color:#888;letter-spacing:0.5px;">Registrados</span><br><strong style="font-size:18px;">${totalRegistrados}</strong></div>
+            <div><span style="font-size:12px;text-transform:uppercase;color:#888;letter-spacing:0.5px;">Total Pagado</span><br><strong style="font-size:18px;">$${totalPagado.toLocaleString()}</strong></div>
+            <div><span style="font-size:12px;text-transform:uppercase;color:#888;letter-spacing:0.5px;">Total Pendiente</span><br><strong style="font-size:18px;">$${totalPendiente.toLocaleString()}</strong></div>
+        </div>`;
+
         openPrintWindow("Reporte de Viajes al Templo", "Rama Arroyo Seco", body);
     };
+
+    if (loading) {
+        return (
+            <div>
+                <Skeleton width="240px" height="1.8rem" />
+                <Skeleton width="200px" height="1.1rem" style={{ marginTop: "8px" }} />
+                <div style={{ display: "flex", gap: "10px", marginTop: "1rem" }}>
+                    <Skeleton height="2.5rem" style={{ flex: 1 }} />
+                    <Skeleton height="2.5rem" style={{ flex: 1 }} />
+                    <Skeleton height="2.5rem" width="100px" />
+                </div>
+                <div style={{ marginTop: "1rem" }}>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                        {Array.from({ length: 5 }).map((_, i) => (
+                            <div key={i} style={{ display: "flex", gap: "1rem" }}>
+                                <Skeleton height="1rem" style={{ flex: 2 }} />
+                                <Skeleton height="1rem" style={{ flex: 1 }} />
+                                <Skeleton height="1rem" style={{ flex: 1 }} />
+                                <Skeleton height="1rem" style={{ flex: 1 }} />
+                                <Skeleton height="1rem" style={{ flex: 1 }} />
+                                <Skeleton width="70px" height="1.8rem" />
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div>

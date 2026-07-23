@@ -5,6 +5,7 @@ import { IoCreateOutline, IoTrashOutline } from "react-icons/io5";
 import { FiBarChart2 } from "react-icons/fi";
 import axios from "axios";
 import { formatDate } from "../utils/dateUtils";
+import { Skeleton } from "../components/Skeleton";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
@@ -24,6 +25,7 @@ export default function Grades() {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const recordsPerPage = 5;
   const [sortConfig, setSortConfig] = useState<SortConfig>(null);
+  const [loading, setLoading] = useState(true);
 
   const [form, setForm] = useState({
     id: "",
@@ -59,6 +61,8 @@ export default function Grades() {
       }
     } catch {
       setError("Error al sincronizar con el servidor");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -141,6 +145,36 @@ export default function Grades() {
       setError("Error al eliminar el registro.");
     }
   };
+
+  if (loading) {
+    return (
+        <div className="grades-page">
+            <Skeleton width="220px" height="1.8rem" />
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginTop: "1rem" }}>
+                <div style={{ display: "flex", gap: "10px" }}>
+                    <Skeleton height="2.5rem" style={{ flex: 1 }} />
+                    <Skeleton height="2.5rem" style={{ flex: 1 }} />
+                    <Skeleton height="2.5rem" style={{ flex: 1 }} />
+                </div>
+                <Skeleton height="2.5rem" width="120px" />
+            </div>
+            <div style={{ marginTop: "1.5rem" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                    {Array.from({ length: 5 }).map((_, i) => (
+                        <div key={i} style={{ display: "flex", gap: "1rem" }}>
+                            <Skeleton height="1rem" style={{ flex: 2 }} />
+                            <Skeleton height="1rem" style={{ flex: 1 }} />
+                            <Skeleton height="1rem" style={{ flex: 1 }} />
+                            <Skeleton height="1rem" style={{ flex: 1 }} />
+                            <Skeleton height="1rem" style={{ flex: 1 }} />
+                            <Skeleton width="70px" height="1.8rem" />
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
+  }
 
   return (
     <div className="grades-page">

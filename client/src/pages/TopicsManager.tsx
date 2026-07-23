@@ -1,6 +1,8 @@
 import { useEffect, useState, useMemo } from "react";
 import api from "../api";
 import axios from "axios";
+import { TbBooks } from "react-icons/tb";
+import { Skeleton } from "../components/Skeleton";
 
 interface Topic {
   id: number;
@@ -23,12 +25,12 @@ export default function TopicsManager() {
   const [selectedCourseId, setSelectedCourseId] = useState<string>("");
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState({ title: "", description: "", order_index: 0 });
+  const [loading, setLoading] = useState(true);
 
   const headers = { Authorization: `Bearer ${sessionStorage.getItem("token")}` };
 
   useEffect(() => {
-    fetchCourses();
-    fetchTopics();
+    Promise.all([fetchCourses(), fetchTopics()]).finally(() => setLoading(false));
   }, []);
 
   const fetchCourses = async () => {
@@ -72,9 +74,29 @@ export default function TopicsManager() {
     fetchTopics();
   };
 
+  if (loading) {
+    return (
+      <div>
+        <Skeleton width="260px" height="1.8rem" style={{ marginBottom: "1rem" }} />
+        <Skeleton height="2.5rem" width="250px" />
+        <div style={{ marginTop: "1.5rem" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} style={{ display: "flex", gap: "1rem" }}>
+                <Skeleton width="40px" height="1rem" />
+                <Skeleton height="1rem" style={{ flex: 1 }} />
+                <Skeleton width="120px" height="1.8rem" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
-      <h2>📚 Gestión de Temas del Manual</h2>
+      <h2><TbBooks /> Gestión de Temas del Manual</h2>
 
       <div>
         <label>Elegir Curso: </label>

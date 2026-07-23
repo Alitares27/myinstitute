@@ -1,6 +1,10 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Layout from "../components/Layout";
+import {
+  TbBuilding, TbLogin, TbUserPlus, TbSparkles,
+  TbBooks, TbPencil, TbCalendar
+} from "react-icons/tb";
 
 export default function Home() {
   const navigate = useNavigate();
@@ -17,21 +21,21 @@ export default function Home() {
       <div className="home-container">
         <section className="home-hero">
           <h1 className="home-title">
-            🏛️ Bienvenido a <span>GestionAR</span>
+            <TbBuilding /> Bienvenido a <span>GestionAR</span>
           </h1>
 
           <div className="auth-buttons">
             <button className="btn primary" onClick={() => navigate("/login")}>
-              🔑 Iniciar Sesión
+              <TbLogin /> Iniciar Sesión
             </button>
             <button className="btn secondary" onClick={() => navigate("/signup")}>
-              📝 Registrarse
+              <TbUserPlus /> Registrarse
             </button>
           </div>
         </section>
 
         <section className="home-features">
-          <h2>✨ ¿Qué puedes hacer aquí?</h2>
+          <h2><TbSparkles /> ¿Qué puedes hacer aquí?</h2>
 
           <div className="features-grid">
             <div
@@ -41,7 +45,7 @@ export default function Home() {
               onClick={() => navigate("/courses")}
               onKeyDown={(e) => e.key === "Enter" && navigate("/courses")}
             >
-              <div className="feature-icon">📚</div>
+              <div className="feature-icon"><TbBooks /></div>
               <h3>Cursos</h3>
               <p>Gestiona programas académicos y materiales de estudio.</p>
             </div>
@@ -53,7 +57,7 @@ export default function Home() {
               onClick={() => navigate("/grades")}
               onKeyDown={(e) => e.key === "Enter" && navigate("/grades")}
             >
-              <div className="feature-icon">📝</div>
+              <div className="feature-icon"><TbPencil /></div>
               <h3>Calificaciones</h3>
               <p>Seguimiento detallado del progreso de los miembros.</p>
             </div>
@@ -65,7 +69,7 @@ export default function Home() {
               onClick={() => navigate("/attendance")}
               onKeyDown={(e) => e.key === "Enter" && navigate("/attendance")}
             >
-              <div className="feature-icon">📅</div>
+              <div className="feature-icon"><TbCalendar /></div>
               <h3>Asistencia</h3>
               <p>Control diario de presencialidad de forma digital.</p>
             </div>

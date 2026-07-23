@@ -11,6 +11,7 @@ export interface Reservation {
   user_id: number;
   trip_id: number;
   user_name?: string;
+  user_document?: string;
   trip_date?: string;
   register_date?: string;
   advance_payment: number;

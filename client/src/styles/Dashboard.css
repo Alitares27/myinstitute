@@ -77,6 +77,15 @@
   font-size: 2rem;
   margin-bottom: 1rem;
   opacity: 0.8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary);
+}
+
+.stat-icon svg {
+  width: 2rem;
+  height: 2rem;
 }
 
 .stat-value {
@@ -106,6 +115,12 @@
   display: flex;
   align-items: center;
   gap: 10px;
+}
+
+.section-title svg {
+  width: 1.5rem;
+  height: 1.5rem;
+  color: var(--primary);
 }
 
 .shortcuts-grid {
@@ -203,6 +218,11 @@
   font-size: 1.8rem;
   color: var(--primary);
   transition: all 0.3s ease;
+}
+
+.shortcut-icon-bg svg {
+  width: 1.8rem;
+  height: 1.8rem;
 }
 
 .shortcut-info h3 {
