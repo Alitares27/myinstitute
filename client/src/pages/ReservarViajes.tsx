@@ -199,6 +199,7 @@ export default function TripReservations() {
         formData.advance_payment !== "";
 
     const handleDelete = async (id: number) => {
+        if (!window.confirm("¿Eliminar esta reserva?")) return;
         await api.delete(`/trip-reservations/${id}`)
             .catch(() => { alert('Error al eliminar la reserva'); });
         fetchReservations();
