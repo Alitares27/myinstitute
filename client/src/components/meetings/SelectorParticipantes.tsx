@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { getUsers, User } from "../../services/users";
+import { getUsers, User } from "../../services/usuarios";
 import { AttendeeRequest, AttendeeStatus } from "../../interfaces/Meeting";
 import { TbCheck } from "react-icons/tb";
 

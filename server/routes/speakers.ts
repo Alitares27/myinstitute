@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { pool } from "../models/db";
-import { verifyToken, AuthRequest } from "../middleware/auth";
+import { verifyToken, isAdmin, AuthRequest } from "../middleware/auth";
 
 const router = Router();
 
@@ -20,7 +20,7 @@ router.get("/", verifyToken, async (req: AuthRequest, res) => {
       FROM speakers s
       LEFT JOIN users u ON s.member_id = u.id
       LEFT JOIN temas t ON s.tema_id = t.id
-      ORDER BY s.speech_date DESC;
+      ORDER BY s.speech_date DESC
     `;
     const result = await pool.query(query);
     res.json(result.rows);
@@ -30,7 +30,7 @@ router.get("/", verifyToken, async (req: AuthRequest, res) => {
   }
 });
 
-router.post("/", verifyToken, async (req: AuthRequest, res) => {
+router.post("/", verifyToken, isAdmin, async (req: AuthRequest, res) => {
   const { member_id, tema_id, speech_title, time, date } = req.body;
   try {
     const query = `
@@ -39,7 +39,7 @@ router.post("/", verifyToken, async (req: AuthRequest, res) => {
       RETURNING *, 
       duration_minutes AS time, 
       speech_date AS date,
-      'No' as completed;
+      'No' as completed
     `;
     const result = await pool.query(query, [
       parseInt(member_id),
@@ -55,7 +55,7 @@ router.post("/", verifyToken, async (req: AuthRequest, res) => {
   }
 });
 
-router.put("/:id", verifyToken, async (req: AuthRequest, res) => {
+router.put("/:id", verifyToken, isAdmin, async (req: AuthRequest, res) => {
   const { id } = req.params;
   const { member_id, tema_id, speech_title, time, date, completed } = req.body;
 
@@ -73,7 +73,7 @@ router.put("/:id", verifyToken, async (req: AuthRequest, res) => {
       RETURNING *, 
       duration_minutes AS time, 
       speech_date AS date,
-      CASE WHEN is_completed = true THEN 'Si' ELSE 'No' END as completed;
+      CASE WHEN is_completed = true THEN 'Si' ELSE 'No' END as completed
     `;
     const values = [
       parseInt(member_id),
@@ -98,10 +98,11 @@ router.put("/:id", verifyToken, async (req: AuthRequest, res) => {
   }
 });
 
-router.delete("/:id", verifyToken, async (req: AuthRequest, res) => {
+router.delete("/:id", verifyToken, isAdmin, async (req: AuthRequest, res) => {
   const { id } = req.params;
   try {
-    await pool.query("DELETE FROM speakers WHERE id = $1", [id]);
+    const result = await pool.query("DELETE FROM speakers WHERE id = $1 RETURNING *", [id]);
+    if (result.rows.length === 0) return res.status(404).json({ message: "Discurso no encontrado" });
     res.json({ message: "Registro eliminado correctamente" });
   } catch (err) {
     console.error("❌ Error en DELETE /speakers:", err);

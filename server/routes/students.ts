@@ -45,11 +45,13 @@ router.post("/", verifyToken, isAdmin, async (req: AuthRequest, res: Response) =
 
     const userRes = await client.query("SELECT id, role FROM users WHERE id = $1", [user_id]);
     if (userRes.rows.length === 0) {
+      await client.query("ROLLBACK");
       return res.status(404).json({ message: "Miembro no encontrado" });
     }
 
     const existing = await client.query("SELECT id FROM students WHERE user_id = $1", [user_id]);
     if (existing.rows.length > 0) {
+      await client.query("ROLLBACK");
       return res.status(400).json({ message: "Este miembro ya está registrado como estudiante" });
     }
 
@@ -93,6 +95,7 @@ router.put("/:id", verifyToken, isAdmin, async (req: AuthRequest, res: Response)
     );
 
     if (studentRes.rows.length === 0) {
+      await client.query("ROLLBACK");
       return res.status(404).json({ message: "Estudiante no encontrado" });
     }
 
@@ -122,12 +125,29 @@ router.put("/:id", verifyToken, isAdmin, async (req: AuthRequest, res: Response)
 
 
 router.delete("/:id", verifyToken, isAdmin, async (req: AuthRequest, res: Response) => {
+  const client = await pool.connect();
   try {
     const { id } = req.params;
-    await pool.query("DELETE FROM students WHERE id = $1", [id]);
+    await client.query("BEGIN");
+
+    const studentRes = await client.query("SELECT user_id FROM students WHERE id = $1", [id]);
+    if (studentRes.rows.length === 0) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ message: "Estudiante no encontrado" });
+    }
+
+    await client.query("DELETE FROM attendance WHERE student_id = $1", [id]);
+    await client.query("DELETE FROM grades WHERE student_id = $1", [id]);
+    await client.query("DELETE FROM enrollments WHERE student_id = $1", [id]);
+    await client.query("DELETE FROM students WHERE id = $1", [id]);
+
+    await client.query("COMMIT");
     res.json({ message: "Estudiante eliminado correctamente" });
   } catch (err) {
+    await client.query("ROLLBACK");
     res.status(500).json({ message: "Error al eliminar" });
+  } finally {
+    client.release();
   }
 });
 

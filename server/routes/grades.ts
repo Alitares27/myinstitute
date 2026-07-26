@@ -74,7 +74,8 @@ router.put("/:id", verifyToken, isAdmin, async (req: AuthRequest, res: Response)
 
 router.delete("/:id", verifyToken, isAdmin, async (req: AuthRequest, res: Response) => {
   try {
-    await pool.query("DELETE FROM grades WHERE id = $1", [req.params.id]);
+    const result = await pool.query("DELETE FROM grades WHERE id = $1 RETURNING *", [req.params.id]);
+    if (result.rows.length === 0) return res.status(404).json({ message: "Calificación no encontrada" });
     res.json({ message: "Calificación eliminada" });
   } catch (err) {
     res.status(500).json({ message: "Error al eliminar" });

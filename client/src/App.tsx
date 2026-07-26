@@ -1,30 +1,29 @@
 import { lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Home from "./pages/Home";
-import Signup from "./pages/Signup";
-import Login from "./pages/Login";
-import PrivateRoute from "./components/PrivateRoute";
-import Layout from "./components/Layout";
-import Meetings from "./pages/Meetings";
-import NewMeeting from "./pages/NewMeeting";
-import EditMeeting from "./pages/EditMeeting";
-import MeetingDetails from "./components/meetings/MeetingDetails";
+import Inicio from "./pages/Inicio";
+import Registrarse from "./pages/Registrarse";
+import IniciarSesion from "./pages/IniciarSesion";
+import RutaPrivada from "./components/RutaPrivada";
+import Disposicion from "./components/Disposicion";
+import Consejos from "./pages/Consejos";
+import NuevoConsejo from "./pages/NuevoConsejo";
+import EditarConsejo from "./pages/EditarConsejo";
+import DetallesConsejo from "./components/meetings/DetallesConsejo";
 
-const Dashboard = lazy(() => import("./pages/Dashboard"));
-const Students = lazy(() => import("./pages/Students"));
-const Teachers = lazy(() => import("./pages/Teachers"));
-const Courses = lazy(() => import("./pages/Courses"));
-const Enrollments = lazy(() => import("./pages/Enrollments"));
-const Attendance = lazy(() => import("./pages/Attendance"));
-const UserPage = lazy(() => import("./pages/UserPage"));
-const Grades = lazy(() => import("./pages/Grades"));
-const TempleTrips = lazy(() => import("./pages/TempleTrip"));
-const TempleAttendance = lazy(() => import("./pages/TempleAttendance"));
+const Panel = lazy(() => import("./pages/Panel"));
+const Miembros = lazy(() => import("./pages/Miembros"));
+const Inscripciones = lazy(() => import("./pages/Inscripciones"));
+const Asistencia = lazy(() => import("./pages/Asistencia"));
+const PaginaUsuario = lazy(() => import("./pages/PaginaUsuario"));
+const Calificaciones = lazy(() => import("./pages/Calificaciones"));
+const ViajesTemplo = lazy(() => import("./pages/ViajesTemplo"));
+const ReservarViajes = lazy(() => import("./pages/ReservarViajes"));
 const Discursantes = lazy(() => import("./pages/Discursantes"));
-const Finanzas = lazy(() => import("./pages/Finanzas"));
+const Actividades = lazy(() => import("./pages/Actividades"));
+const NuevaActividad = lazy(() => import("./pages/NuevaActividad"));
+const EditarActividad = lazy(() => import("./pages/EditarActividad"));
 const Auditorias = lazy(() => import("./pages/Auditorias"));
-const TemasManagement = lazy(() => import("./pages/TemasManagement"));
-const TemplosMaintenance = lazy(() => import("./pages/TemplosMaintenance"));
+const MantTemplos = lazy(() => import("./pages/MantTemplos"));
 
 
 function App() {
@@ -37,207 +36,31 @@ function App() {
         </div>
       }>
         <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
+          <Route path="/" element={<Inicio />} />
+          <Route path="/iniciar-sesion" element={<IniciarSesion />} />
+          <Route path="/registrarse" element={<Registrarse />} />
 
+          <Route path="/panel" element={<RutaPrivada><Disposicion><Panel /></Disposicion></RutaPrivada>} />
+          <Route path="/miembros" element={<RutaPrivada><Disposicion><Miembros /></Disposicion></RutaPrivada>} />
+          <Route path="/inscripciones" element={<RutaPrivada><Disposicion><Inscripciones /></Disposicion></RutaPrivada>} />
+          <Route path="/asistencia" element={<RutaPrivada><Disposicion><Asistencia /></Disposicion></RutaPrivada>} />
+          <Route path="/usuarios" element={<RutaPrivada><Disposicion><PaginaUsuario /></Disposicion></RutaPrivada>} />
+          <Route path="/calificaciones" element={<RutaPrivada><Disposicion><Calificaciones /></Disposicion></RutaPrivada>} />
+          <Route path="/viajes-templo" element={<RutaPrivada><Disposicion><ViajesTemplo /></Disposicion></RutaPrivada>} />
+          <Route path="/reservar-viajes" element={<RutaPrivada><Disposicion><ReservarViajes /></Disposicion></RutaPrivada>} />
+          <Route path="/discursantes" element={<RutaPrivada><Disposicion><Discursantes /></Disposicion></RutaPrivada>} />
 
-          <Route
-            path="/dashboard"
-            element={
-              <PrivateRoute>
-                <Layout>
-                  <Dashboard />
-                </Layout>
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/students"
-            element={
-              <PrivateRoute>
-                <Layout>
-                  <Students />
-                </Layout>
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/teachers"
-            element={
-              <PrivateRoute>
-                <Layout>
-                  <Teachers />
-                </Layout>
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/courses"
-            element={
-              <PrivateRoute>
-                <Layout>
-                  <Courses />
-                </Layout>
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/enrollments"
-            element={
-              <PrivateRoute>
-                <Layout>
-                  <Enrollments />
-                </Layout>
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/attendance"
-            element={
-              <PrivateRoute>
-                <Layout>
-                  <Attendance />
-                </Layout>
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/users"
-            element={
-              <PrivateRoute>
-                <Layout>
-                  <UserPage />
-                </Layout>
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/grades"
-            element={
-              <PrivateRoute>
-                <Layout>
-                  <Grades />
-                </Layout>
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/templeTrip"
-            element={
-              <PrivateRoute>
-                <Layout>
-                  <TempleTrips />
-                </Layout>
-              </PrivateRoute>
-            }
-          />
+          <Route path="/consejos" element={<RutaPrivada><Disposicion><Consejos /></Disposicion></RutaPrivada>} />
+          <Route path="/consejos/nuevo" element={<RutaPrivada><Disposicion><NuevoConsejo /></Disposicion></RutaPrivada>} />
+          <Route path="/consejos/:id" element={<RutaPrivada><Disposicion><DetallesConsejo /></Disposicion></RutaPrivada>} />
+          <Route path="/consejos/editar/:id" element={<RutaPrivada><Disposicion><EditarConsejo /></Disposicion></RutaPrivada>} />
 
-          <Route
-            path="/templeAttendance"
-            element={
-              <PrivateRoute>
-                <Layout>
-                  <TempleAttendance />
-                </Layout>
-              </PrivateRoute>
-            }
-          />
+          <Route path="/actividades" element={<RutaPrivada><Disposicion><Actividades /></Disposicion></RutaPrivada>} />
+          <Route path="/actividades/nueva" element={<RutaPrivada><Disposicion><NuevaActividad /></Disposicion></RutaPrivada>} />
+          <Route path="/actividades/editar/:id" element={<RutaPrivada><Disposicion><EditarActividad /></Disposicion></RutaPrivada>} />
 
-          <Route
-            path="/discursantes"
-            element={
-              <PrivateRoute>
-                <Layout>
-                  <Discursantes />
-                </Layout>
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/meetings"
-            element={
-              <PrivateRoute>
-                <Layout>
-                  <Meetings />
-                </Layout>
-              </PrivateRoute>
-            }
-          />
-
-          <Route
-            path="/meetings/new"
-            element={
-              <PrivateRoute>
-                <Layout>
-                  <NewMeeting />
-                </Layout>
-              </PrivateRoute>
-            }
-          />
-
-          <Route
-            path="/meetings/:id"
-            element={
-              <PrivateRoute>
-                <Layout>
-                  <MeetingDetails />
-                </Layout>
-              </PrivateRoute>
-            }
-          />
-
-          <Route
-            path="/meetings/edit/:id"
-            element={
-              <PrivateRoute>
-                <Layout>
-                  <EditMeeting />
-                </Layout>
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/finanzas"
-            element={
-              <PrivateRoute>
-                <Layout>
-                  <Finanzas />
-                </Layout>
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/auditorias"
-            element={
-              <PrivateRoute>
-                <Layout>
-                  <Auditorias />
-                </Layout>
-              </PrivateRoute>
-            }
-          />
-
-          <Route
-            path="/temas-management"
-            element={
-              <PrivateRoute>
-                <Layout>
-                  <TemasManagement />
-                </Layout>
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/templos-management"
-            element={
-              <PrivateRoute>
-                <Layout>
-                  <TemplosMaintenance />
-                </Layout>
-              </PrivateRoute>
-            }
-          />
+          <Route path="/auditorias" element={<RutaPrivada><Disposicion><Auditorias /></Disposicion></RutaPrivada>} />
+          <Route path="/templos" element={<RutaPrivada><Disposicion><MantTemplos /></Disposicion></RutaPrivada>} />
 
         </Routes>
       </Suspense>

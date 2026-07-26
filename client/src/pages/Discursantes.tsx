@@ -3,9 +3,9 @@ import api from "../api";
 import { FaPlus } from "react-icons/fa";
 import { IoCreateOutline, IoTrashOutline, IoCheckmarkCircleOutline, IoTimeOutline, IoSaveOutline } from "react-icons/io5";
 import { FiMic } from "react-icons/fi";
-import { TbAlertTriangle } from "react-icons/tb";
-import { formatDate, toYMD } from "../utils/dateUtils";
-import { Skeleton } from "../components/Skeleton";
+import { TbAlertTriangle, TbList } from "react-icons/tb";
+import { formatDate, toYMD } from "../utils/utilidadesFecha";
+import { Skeleton } from "../components/Esqueleto";
 import type { SpeakerRecord } from "../interfaces/Speaker";
 import type { Member, Tema } from "../interfaces/Common";
 
@@ -30,6 +30,10 @@ export default function Speakers() {
   const [topicWarning, setTopicWarning] = useState<string | null>(null);
   const speechTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const topicTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const [showTemasModal, setShowTemasModal] = useState(false);
+  const [temaTitle, setTemaTitle] = useState("");
+  const [temaError, setTemaError] = useState<string | null>(null);
 
   const handleSort = (key: string) => {
     setSortConfig(prev =>
@@ -157,6 +161,29 @@ export default function Speakers() {
     } catch { alert("Error al eliminar"); }
   };
 
+  const handleAddTema = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!temaTitle.trim()) return;
+    try {
+      const res = await api.post("/temas", { title: temaTitle.trim() });
+      setAllTemas(prev => [...prev, res.data]);
+      setTemaTitle("");
+      setTemaError(null);
+    } catch {
+      setTemaError("Error al agregar el tema");
+    }
+  };
+
+  const handleDeleteTema = async (id: number) => {
+    if (!window.confirm("¿Eliminar este tema?")) return;
+    try {
+      await api.delete(`/temas/${id}`);
+      setAllTemas(prev => prev.filter(t => t.id !== id));
+    } catch {
+      setTemaError("Error al eliminar el tema");
+    }
+  };
+
   useEffect(() => {
     if (speechTimerRef.current) clearTimeout(speechTimerRef.current);
     if (!form.member_id) { setSpeechWarning(null); return; }
@@ -262,7 +289,7 @@ export default function Speakers() {
           <h2 className="dashboard-subtitle">{editingId ? <><IoCreateOutline /> Actualizar</> : <><FaPlus /> Asignar</>}</h2>
           <form className="grid-form" onSubmit={handleSubmit}>
             <div className="form-group">
-              
+
               <select required value={form.member_id} onChange={e => setForm({ ...form, member_id: e.target.value })}>
                 <option value="">Elegir Miembro</option>
                 {members.map(m => <option key={m.id} value={String(m.id)}>{m.name}</option>)}
@@ -270,7 +297,7 @@ export default function Speakers() {
             </div>
 
             <div className="form-group">
-             
+
               <select required value={form.tema_id} onChange={e => setForm({ ...form, tema_id: e.target.value })}>
                 <option value="">Elegir Tema</option>
                 {allTemas.map(t => <option key={t.id} value={String(t.id)}>{t.title}</option>)}
@@ -278,13 +305,13 @@ export default function Speakers() {
             </div>
 
             <div className="form-group">
-              
+
               <input type="text" placeholder="Ej. El valor de la perseverancia" value={form.speech_title} onChange={e => setForm({ ...form, speech_title: e.target.value })} required />
             </div>
 
             <div className="form-group">
 
-              <input type="number" placeholder="Ingresa tiempo"  value={form.time} onChange={e => setForm({ ...form, time: e.target.value })} />
+              <input type="number" placeholder="Ingresa tiempo" value={form.time} onChange={e => setForm({ ...form, time: e.target.value })} />
             </div>
             <div className="form-group">
               <input type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} />
@@ -303,7 +330,7 @@ export default function Speakers() {
 
             <div className="form-group full-width">
               <button type="submit" className="btn primary">
-                {editingId ? <><IoSaveOutline /> Guardar</> : <><FaPlus /> Asignar</>}
+                {editingId ? <>Guardar</> : <>Asignar</>}
               </button>
               {(editingId || form.member_id || form.tema_id || form.speech_title) && (
                 <button type="button" className="btn cancel-btn" onClick={() => { setEditingId(null); setForm({ member_id: "", tema_id: "", speech_title: "", time: "10", date: new Date().toISOString().split("T")[0], completed: "No" }); }} title="Cancelar" aria-label="Cancelar">✕</button>
@@ -321,6 +348,11 @@ export default function Speakers() {
           {membersWithSpeeches.map(m => <option key={m.id} value={String(m.id)}>{m.name}</option>)}
         </select>
         <input type="date" value={dateFilter} onChange={e => { setDateFilter(e.target.value); setCurrentPage(1); }} />
+        {role === "admin" && (
+          <button className="btn secondary" onClick={() => setShowTemasModal(true)}>
+            <TbList /> Ver Temas
+          </button>
+        )}
       </div>
 
       <div className="table-container">
@@ -406,6 +438,45 @@ export default function Speakers() {
               <option key={i + 1} value={i + 1}>{i + 1} de {totalPages}</option>
             ))}
           </select>
+        </div>
+      )}
+      {showTemasModal && (
+        <div className="modal-overlay" onClick={() => setShowTemasModal(false)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <button className="modal-close" onClick={() => setShowTemasModal(false)} aria-label="Cerrar" />
+            <h2 style={{ marginTop: 0, marginBottom: "1rem" }}>Temas para Discursantes</h2>
+
+            <form onSubmit={handleAddTema} style={{ display: "flex", gap: "0.5rem", marginBottom: "1rem" }}>
+              <input
+                type="text"
+                placeholder="Nuevo tema..."
+                value={temaTitle}
+                onChange={e => setTemaTitle(e.target.value)}
+                style={{ flex: 1 }}
+                required
+              />
+              <button type="submit" className="btn primary"><FaPlus /></button>
+            </form>
+
+            {temaError && <div className="error-message" style={{ marginBottom: "0.5rem" }}>{temaError}</div>}
+
+            <div style={{ maxHeight: "50vh", overflowY: "auto" }}>
+              {allTemas.length > 0 ? (
+                <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+                  {allTemas.map(t => (
+                    <li key={t.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0.5rem 0", borderBottom: "1px solid var(--border-color)" }}>
+                      <span>{t.title}</span>
+                      <button className="btn secondary extracted-style-5" onClick={() => handleDeleteTema(t.id)} aria-label="Eliminar">
+                        <IoTrashOutline />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p style={{ textAlign: "center", color: "var(--text-muted)" }}>No hay temas registrados.</p>
+              )}
+            </div>
+          </div>
         </div>
       )}
     </div>

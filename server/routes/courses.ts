@@ -93,14 +93,31 @@ router.put("/:id", verifyToken, isAdmin, async (req: AuthRequest, res: Response)
 });
 
 router.delete("/:id", verifyToken, isAdmin, async (req: AuthRequest, res: Response) => {
+  const client = await pool.connect();
   try {
     const { id } = req.params;
-    const result = await pool.query("DELETE FROM courses WHERE id = $1 RETURNING *", [id]);
-    if (result.rows.length === 0) return res.status(404).json({ message: "Curso no encontrado" });
+    await client.query("BEGIN");
+
+    const courseRes = await client.query("SELECT id FROM courses WHERE id = $1", [id]);
+    if (courseRes.rows.length === 0) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ message: "Curso no encontrado" });
+    }
+
+    await client.query("DELETE FROM topics WHERE course_id = $1", [id]);
+    await client.query("DELETE FROM attendance WHERE course_id = $1", [id]);
+    await client.query("DELETE FROM grades WHERE course_id = $1", [id]);
+    await client.query("DELETE FROM enrollments WHERE course_id = $1", [id]);
+    await client.query("DELETE FROM courses WHERE id = $1", [id]);
+
+    await client.query("COMMIT");
     res.json({ message: "Curso eliminado correctamente" });
   } catch (err) {
+    await client.query("ROLLBACK");
     console.error("❌ Error deleting course:", err);
     res.status(500).json({ message: "Error al eliminar el curso" });
+  } finally {
+    client.release();
   }
 });
 

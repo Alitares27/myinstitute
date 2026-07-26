@@ -5,13 +5,13 @@ import { TbCalendar, TbCheck, TbX, TbClock } from "react-icons/tb";
 import { IoCreateOutline, IoTrashOutline, IoAddOutline } from "react-icons/io5";
 
 import { Meeting } from "../interfaces/Meeting";
-import { Skeleton } from "../components/Skeleton";
+import { Skeleton } from "../components/Esqueleto";
 
 import {
   getMeetings,
   getMeeting,
   deleteMeeting,
-} from "../services/meetings";
+} from "../services/consejos";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
@@ -139,7 +139,7 @@ export default function Meetings() {
 
 
         <Link
-          to="/meetings/new"
+          to="/consejos/nuevo"
           className="btn-primary"
         >
           Programar
@@ -188,7 +188,7 @@ export default function Meetings() {
                   </td>
                   {role === "admin" && (
                     <td>
-                      <Link to={`/meetings/edit/${meeting.id}`} className="btn secondary extracted-style-4" aria-label="Editar">
+                      <Link to={`/consejos/editar/${meeting.id}`} className="btn secondary extracted-style-4" aria-label="Editar">
                         <IoCreateOutline />
                       </Link>
                       <button

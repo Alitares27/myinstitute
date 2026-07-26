@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useState } from "react";
 import { MeetingRequest, AttendeeRequest } from "../../interfaces/Meeting";
-import AttendeesSelector from "./AttendeesSelector";
+import AttendeesSelector from "./SelectorParticipantes";
 
 interface Props {
     initialValues?: MeetingRequest;

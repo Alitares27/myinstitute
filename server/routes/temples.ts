@@ -52,14 +52,33 @@ router.put("/:id", verifyToken, isAdmin, async (req: AuthRequest, res: Response)
 });
 
 router.delete("/:id", verifyToken, isAdmin, async (req: AuthRequest, res: Response) => {
+  const client = await pool.connect();
   try {
     const { id } = req.params;
-    const result = await pool.query("DELETE FROM temples WHERE id = $1 RETURNING *", [id]);
-    if (result.rows.length === 0) return res.status(404).json({ message: "Templo no encontrado" });
+    await client.query("BEGIN");
+
+    const templeRes = await client.query("SELECT id FROM temples WHERE id = $1", [id]);
+    if (templeRes.rows.length === 0) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ message: "Templo no encontrado" });
+    }
+
+    const tripIds = await client.query("SELECT id FROM temple_trips WHERE temple_id = $1", [id]);
+    for (const trip of tripIds.rows) {
+      await client.query("DELETE FROM temple_amortizations WHERE attendance_id IN (SELECT id FROM temple_attendance WHERE trip_id = $1)", [trip.id]);
+      await client.query("DELETE FROM temple_attendance WHERE trip_id = $1", [trip.id]);
+    }
+    await client.query("DELETE FROM temple_trips WHERE temple_id = $1", [id]);
+    await client.query("DELETE FROM temples WHERE id = $1", [id]);
+
+    await client.query("COMMIT");
     res.json({ message: "Templo eliminado correctamente" });
   } catch (err) {
+    await client.query("ROLLBACK");
     console.error("❌ Error deleting temple:", err);
     res.status(500).json({ message: "Error al eliminar templo" });
+  } finally {
+    client.release();
   }
 });
 

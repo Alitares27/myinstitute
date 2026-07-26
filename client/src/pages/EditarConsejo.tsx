@@ -10,10 +10,10 @@ import {
 import {
     getMeeting,
     updateMeeting,
-} from "../services/meetings";
+} from "../services/consejos";
 
-import MeetingForm from "../components/meetings/MeetingForm";
-import { Skeleton } from "../components/Skeleton";
+import MeetingForm from "../components/meetings/FormularioConsejo";
+import { Skeleton } from "../components/Esqueleto";
 import { TbCalendarExclamation } from "react-icons/tb";
 
 export default function EditMeeting() {
@@ -59,7 +59,7 @@ export default function EditMeeting() {
             }
 
             alert("No fue posible cargar el consejo.");
-            navigate("/meetings");
+            navigate("/consejos");
         } finally {
             setLoading(false);
         }
@@ -73,7 +73,7 @@ export default function EditMeeting() {
             await updateMeeting(Number(id), meetingData);
 
             alert("Consejo actualizado correctamente.");
-            navigate("/meetings");
+            navigate("/consejos");
         } catch (error: any) {
             if (isAxiosError(error) && error.response?.status === 401) {
                 return;
@@ -129,7 +129,7 @@ export default function EditMeeting() {
             <MeetingForm
                 initialValues={meeting}
                 onSubmit={handleUpdate}
-                onCancel={() => navigate("/meetings")}
+                onCancel={() => navigate("/consejos")}
                 loading={saving}
             />
 

@@ -21,7 +21,7 @@ api.interceptors.response.use(
       sessionStorage.removeItem("token");
       sessionStorage.removeItem("user");
       sessionStorage.removeItem("role");
-      window.location.href = "/login";
+      window.location.href = "/iniciar-sesion";
     }
     return Promise.reject(error);
   }

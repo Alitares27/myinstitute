@@ -22,6 +22,7 @@ import meetingsRoutes from "./routes/meetings";
 
 import speakersRoutes from "./routes/speakers";
 import temasRoutes from "./routes/temas";
+import activitiesRoutes from "./routes/activities";
 
 
 const app = express();
@@ -58,13 +59,10 @@ app.use("/api/temple-amortizations", templeAmortizationsRoutes);
 app.use("/api/speakers", speakersRoutes);
 app.use("/api/temas", temasRoutes);
 app.use("/api/meetings", meetingsRoutes);
+app.use("/api/activities", activitiesRoutes);
 
 app.get("/health", (req, res) => {
   res.status(200).json({ status: "ok" });
-});
-
-app.use("*", (req, res) => {
-  res.status(404).json({ message: "Endpoint no encontrado" });
 });
 
 app.use(
@@ -75,6 +73,10 @@ app.use(
     });
   }
 );
+
+app.use("*", (req, res) => {
+  res.status(404).json({ message: "Endpoint no encontrado" });
+});
 
 async function startServer() {
   try {

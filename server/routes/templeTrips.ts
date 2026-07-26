@@ -78,23 +78,29 @@ router.put("/:id", verifyToken, isAdmin, async (req: AuthRequest, res: Response)
 });
 
 router.delete("/:id", verifyToken, isAdmin, async (req: AuthRequest, res: Response) => {
+  const client = await pool.connect();
   try {
     const { id } = req.params;
+    await client.query("BEGIN");
 
-    const result = await pool.query(
-      "DELETE FROM temple_trips WHERE id = $1 RETURNING *",
-      [id]
-    );
-
-    if (result.rows.length === 0) {
+    const tripRes = await client.query("SELECT id FROM temple_trips WHERE id = $1", [id]);
+    if (tripRes.rows.length === 0) {
+      await client.query("ROLLBACK");
       return res.status(404).json({ message: "Viaje no encontrado" });
     }
 
-    res.json({ message: "Viaje eliminado correctamente" });
+    await client.query("DELETE FROM temple_amortizations WHERE attendance_id IN (SELECT id FROM temple_attendance WHERE trip_id = $1)", [id]);
+    await client.query("DELETE FROM temple_attendance WHERE trip_id = $1", [id]);
+    await client.query("DELETE FROM temple_trips WHERE id = $1", [id]);
 
+    await client.query("COMMIT");
+    res.json({ message: "Viaje eliminado correctamente" });
   } catch (err) {
+    await client.query("ROLLBACK");
     console.error("❌ Error deleting temple trip:", err);
     res.status(500).json({ message: "Error al eliminar el viaje" });
+  } finally {
+    client.release();
   }
 });
 

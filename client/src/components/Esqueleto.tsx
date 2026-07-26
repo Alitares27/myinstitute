@@ -1,5 +1,5 @@
 import React from 'react';
-import './Skeleton.css';
+import './Esqueleto.css';
 
 type SkeletonProps = {
   width?: string | number;

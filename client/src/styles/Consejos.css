@@ -940,6 +940,7 @@
 [data-theme="dark"] .meeting-box,
 [data-theme="dark"] .participant-card,
 [data-theme="dark"] .meeting-form,
+[data-theme="dark"] .activity-form,
 [data-theme="dark"] .empty {
   background: rgba(45, 55, 72, 0.6);
   backdrop-filter: blur(20px);

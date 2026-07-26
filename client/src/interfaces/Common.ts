@@ -33,3 +33,10 @@ export interface Temple {
   id: number;
   name: string;
 }
+
+export type SortDirection = "asc" | "desc";
+
+export type SortConfig = {
+  key: string;
+  direction: SortDirection;
+} | null;

@@ -108,11 +108,43 @@ router.put("/:id", verifyToken, isAdmin, async (req: AuthRequest, res: Response)
 });
 
 router.delete("/:id", verifyToken, isAdmin, async (req: AuthRequest, res: Response) => {
+  const client = await pool.connect();
   try {
-    await pool.query("DELETE FROM users WHERE id = $1", [req.params.id]);
+    const { id } = req.params;
+    await client.query("BEGIN");
+
+    const userRes = await client.query("SELECT role FROM users WHERE id = $1", [id]);
+    if (userRes.rows.length === 0) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ message: "Miembro no encontrado" });
+    }
+
+    const role = userRes.rows[0].role;
+
+    if (role === "student") {
+      const studentRes = await client.query("SELECT id FROM students WHERE user_id = $1", [id]);
+      if (studentRes.rows.length > 0) {
+        const studentId = studentRes.rows[0].id;
+        await client.query("DELETE FROM attendance WHERE student_id = $1", [studentId]);
+        await client.query("DELETE FROM grades WHERE student_id = $1", [studentId]);
+        await client.query("DELETE FROM enrollments WHERE student_id = $1", [studentId]);
+        await client.query("DELETE FROM students WHERE id = $1", [studentId]);
+      }
+    } else if (role === "teacher") {
+      const teacherRes = await client.query("SELECT id FROM teachers WHERE user_id = $1", [id]);
+      if (teacherRes.rows.length > 0) {
+        await client.query("DELETE FROM teachers WHERE id = $1", [teacherRes.rows[0].id]);
+      }
+    }
+
+    await client.query("DELETE FROM users WHERE id = $1", [id]);
+    await client.query("COMMIT");
     res.json({ message: "Miembro eliminado" });
-  } catch {
+  } catch (err) {
+    await client.query("ROLLBACK");
     res.status(500).json({ message: "Error eliminando" });
+  } finally {
+    client.release();
   }
 });
 

@@ -2,8 +2,8 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios, { isAxiosError } from "axios";
 import { MeetingRequest } from "../interfaces/Meeting";
-import { createMeeting } from "../services/meetings";
-import MeetingForm from "../components/meetings/MeetingForm";
+import { createMeeting } from "../services/consejos";
+import MeetingForm from "../components/meetings/FormularioConsejo";
 import { TbCalendarPlus } from "react-icons/tb";
 
 const initialValues: MeetingRequest = {
@@ -26,7 +26,7 @@ export default function NewMeeting() {
             setSaving(true);
             await createMeeting(meeting);
             alert("El consejo fue creado correctamente.");
-            navigate("/meetings");
+            navigate("/consejos");
         } catch (error: any) {
             if (isAxiosError(error) && error.response?.status === 401) {
                 return;
@@ -46,14 +46,14 @@ export default function NewMeeting() {
         <div className="page-container">
             <div className="page-header">
                 <div>
-                    <h1><span className="page-title-icon"><TbCalendarPlus /></span> Programar</h1>
+                    <h1><span className="page-title-icon"><TbCalendarPlus /></span>Programar</h1>
                     <p>Registra la información del consejo.</p>
                 </div>
                 <div style={{ display: "flex", gap: "0.75rem" }}>
                     <button
                         type="button"
                         className="btn-secondary"
-                        onClick={() => navigate("/meetings")}
+                        onClick={() => navigate("/consejos")}
                     >
                         Atrás
                     </button>
@@ -61,7 +61,7 @@ export default function NewMeeting() {
                         type="submit"
                         form="meeting-form"
                         disabled={saving}
-                        style={{ color: "white"}}
+                        style={{ color: "white" }}
                     >
                         {saving ? "Guardando..." : "Guardar"}
                     </button>

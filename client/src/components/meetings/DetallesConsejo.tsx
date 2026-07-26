@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
 import { Meeting } from "../../interfaces/Meeting";
-import { getMeeting } from "../../services/meetings";
+import { getMeeting } from "../../services/consejos";
 import { TbCheck, TbX, TbClock } from "react-icons/tb";
 
 export default function MeetingDetails() {
@@ -24,7 +24,7 @@ export default function MeetingDetails() {
             setMeeting(data);
         } catch {
             alert("No fue posible cargar la reunión.");
-            navigate("/meetings");
+            navigate("/consejos");
         } finally {
             setLoading(false);
         }
@@ -88,14 +88,14 @@ export default function MeetingDetails() {
 
                     <Link
                         className="btn-warning"
-                        to={`/meetings/edit/${meeting.id}`}
+                        to={`/consejos/editar/${meeting.id}`}
                     >
                         Editar
                     </Link>
 
                     <button
                         className="btn-secondary"
-                        onClick={() => navigate("/meetings")}
+                        onClick={() => navigate("/consejos")}
                     >
                         Cancelar
                     </button>

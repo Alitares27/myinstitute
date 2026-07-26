@@ -51,7 +51,7 @@ router.post("/", verifyToken, isAdmin, async (req: AuthRequest, res: Response) =
       [user_id, specialty]
     );
 
-    res.json(result.rows[0]);
+    res.status(201).json(result.rows[0]);
   } catch (err) {
     console.error("Error creating teacher:", err);
     res.status(500).json({ message: "Error creating teacher" });

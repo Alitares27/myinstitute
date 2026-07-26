@@ -5,13 +5,13 @@ import {
   updateReservation,
   deleteReservation
 } from "../controllers/tripReservations";
-import { verifyToken } from "../middleware/auth";
+import { verifyToken, isAdmin } from "../middleware/auth";
 
 const router = Router();
 
 router.get("/", verifyToken, getReservations);
-router.post("/", verifyToken, createReservation);
-router.put("/:id", verifyToken, updateReservation);
-router.delete("/:id", verifyToken, deleteReservation);
+router.post("/", verifyToken, isAdmin, createReservation);
+router.put("/:id", verifyToken, isAdmin, updateReservation);
+router.delete("/:id", verifyToken, isAdmin, deleteReservation);
 
 export default router;
