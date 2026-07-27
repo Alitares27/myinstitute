@@ -24,10 +24,10 @@ export default function Signup() {
     try {
       const res = await api.post("/users/register", form);
 
-      sessionStorage.setItem("token", res.data.token);
+      localStorage.setItem("token", res.data.token);
       if (res.data.user) {
-        sessionStorage.setItem("user", JSON.stringify(res.data.user));
-        sessionStorage.setItem("role", res.data.user.role);
+        localStorage.setItem("user", JSON.stringify(res.data.user));
+        localStorage.setItem("role", res.data.user.role);
       }
 
       navigate("/panel");
@@ -42,7 +42,9 @@ export default function Signup() {
     <Layout>
       <div className="auth-page-wrapper">
         <div className="auth-container card">
-          <h2><TbUserPlus /> Registrarse</h2>
+          <div className="auth-header">
+            <h2><TbUserPlus /> Registrarse</h2>
+          </div>
 
           <form onSubmit={handleSubmit} className="auth-form">
             <div className="form-group">
@@ -96,7 +98,6 @@ export default function Signup() {
                 onChange={(e) => setForm({ ...form, role: e.target.value })}
               >
                 <option value="student">Miembro</option>
-                <option value="teacher">Maestro</option>
               </select>
             </div>
 
@@ -121,7 +122,7 @@ export default function Signup() {
               ¿Ya tienes cuenta?{" "}
               <span
                 onClick={() => navigate("/iniciar-sesion")}
-                className="extracted-style-5"
+                className="auth-link"
               >
                 Inicia sesión aquí
               </span>

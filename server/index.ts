@@ -3,6 +3,7 @@ dotenv.config();
 
 import express from "express";
 import cors from "cors";
+import helmet from "helmet";
 import { pool } from "./models/db";
 import users from "./routes/users";
 import students from "./routes/students";
@@ -27,6 +28,8 @@ import activitiesRoutes from "./routes/activities";
 
 const app = express();
 
+app.use(helmet());
+
 app.use(cors({
   origin: [
     "http://localhost:5173",
@@ -39,7 +42,7 @@ app.use(cors({
   optionsSuccessStatus: 200
 }));
 
-app.use(express.json());
+app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: true }));
 
 app.use("/api/users", users);
@@ -69,7 +72,7 @@ app.use(
   (err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
     console.error("❌ Error en Servidor:", err.stack);
     res.status(err.status || 500).json({
-      message: err.message || "Internal Server Error"
+      message: "Error interno del servidor"
     });
   }
 );
@@ -96,3 +99,7 @@ async function startServer() {
 }
 
 startServer();
+
+process.on("unhandledRejection", (reason) => {
+  console.error("❌ Unhandled Rejection:", reason);
+});

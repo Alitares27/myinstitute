@@ -39,14 +39,14 @@ export default function Attendance() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = sessionStorage.getItem("token");
+    const token = localStorage.getItem("token");
     if (!token) {
       setError("No hay sesión activa");
       return;
     }
 
     Promise.all([
-      Promise.resolve({ data: JSON.parse(sessionStorage.getItem("user") || "{}") }),
+      Promise.resolve({ data: JSON.parse(localStorage.getItem("user") || "{}") }),
       api.get("/attendance"),
       api.get("/students"),
       api.get("/courses"),

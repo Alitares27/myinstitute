@@ -29,7 +29,9 @@ export default function ActivityForm({
   useEffect(() => {
     api.get("/users")
       .then(res => setUsers(res.data))
-      .catch(() => { });
+      .catch(() => {
+        // silently ignore - user list is optional
+      });
   }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {

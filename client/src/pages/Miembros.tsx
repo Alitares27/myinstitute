@@ -24,10 +24,10 @@ export default function Students() {
   const [maestroUsers, setMaestroUsers] = useState<any[]>([]);
 
   useEffect(() => {
-    const token = sessionStorage.getItem("token");
+    const token = localStorage.getItem("token");
     if (!token) { setLoading(false); return; }
 
-    Promise.resolve({ data: JSON.parse(sessionStorage.getItem("user") || "{}") }).then((res) => {
+    Promise.resolve({ data: JSON.parse(localStorage.getItem("user") || "{}") }).then((res) => {
       setRole(res.data.role);
       setUserId(res.data.id);
     });

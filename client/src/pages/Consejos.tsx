@@ -1,19 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import axios, { isAxiosError } from "axios";
 import { TbCalendar, TbCheck, TbX, TbClock } from "react-icons/tb";
 import { IoCreateOutline, IoTrashOutline, IoAddOutline } from "react-icons/io5";
 
 import { Meeting } from "../interfaces/Meeting";
 import { Skeleton } from "../components/Esqueleto";
+import api from "../api";
 
 import {
   getMeetings,
   getMeeting,
   deleteMeeting,
 } from "../services/consejos";
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 export default function Meetings() {
   const [meetings, setMeetings] = useState<Meeting[]>([]);
@@ -26,13 +24,9 @@ export default function Meetings() {
 
   useEffect(() => {
     loadMeetings();
-    const token = sessionStorage.getItem("token");
-    if (token) {
-      axios
-        .get(`${API_BASE_URL}/me`, { headers: { Authorization: `Bearer ${token}` } })
-        .then((res) => setRole(res.data.role))
-        .catch(() => { });
-    }
+    api.get("/users/me")
+      .then((res) => setRole(res.data.role))
+      .catch(() => { });
   }, []);
 
   async function loadMeetings() {
@@ -138,12 +132,14 @@ export default function Meetings() {
         <h1><span className="page-title-icon"><TbCalendar /></span> Consejos</h1>
 
 
-        <Link
-          to="/consejos/nuevo"
-          className="btn-primary"
-        >
-          Programar
-        </Link>
+        {role === "admin" && (
+          <Link
+            to="/consejos/nuevo"
+            className="btn-primary"
+          >
+            Programar
+          </Link>
+        )}
 
       </div>
       <h2 className="dashboard-subtitle"><IoAddOutline /> Consejos registrados</h2>

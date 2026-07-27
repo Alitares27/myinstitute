@@ -39,10 +39,10 @@ export default function Enrollments() {
   const [cursoError, setCursoError] = useState<string | null>(null);
 
   useEffect(() => {
-    const token = sessionStorage.getItem("token");
+    const token = localStorage.getItem("token");
     if (!token) { setLoading(false); return; }
 
-    Promise.resolve({ data: JSON.parse(sessionStorage.getItem("user") || "{}") }).then((res) => {
+    Promise.resolve({ data: JSON.parse(localStorage.getItem("user") || "{}") }).then((res) => {
       setRole(res.data.role);
       setUserId(res.data.id);
     });
@@ -140,8 +140,12 @@ export default function Enrollments() {
 
   const handleDelete = async (id: string) => {
     if (!confirm("¿Eliminar matrícula?")) return;
-    await api.delete(`/enrollments/${id}`);
-    setEnrollments((prev) => prev.filter((e) => e.id !== id));
+    try {
+      await api.delete(`/enrollments/${id}`);
+      setEnrollments((prev) => prev.filter((e) => e.id !== id));
+    } catch {
+      alert("Error al eliminar la matrícula");
+    }
   };
 
   const handleAddCurso = async (e: React.FormEvent) => {

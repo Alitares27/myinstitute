@@ -16,7 +16,7 @@ export default function Actividades() {
   const recordsPerPage = 6;
 
   useEffect(() => {
-    const user = JSON.parse(sessionStorage.getItem("user") || "{}");
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
     setRole(user.role);
 
     api.get("/activities")
@@ -77,9 +77,11 @@ export default function Actividades() {
     <div className="actividades-page">
       <div className="actividades-header">
         <h1><span className="page-title-icon"><FiCalendar /></span> Actividades</h1>
-        <Link to="/actividades/nueva" className="btn-primary">
-          Programar
-        </Link>
+        {role === "admin" && (
+          <Link to="/actividades/nueva" className="btn-primary">
+            Programar
+          </Link>
+        )}
       </div>
 
       <h2 className="dashboard-subtitle"><IoAddOutline /> Actividades programadas</h2>
@@ -114,7 +116,7 @@ export default function Actividades() {
                     <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
                       {a.spiritual && <span className="status-badge status-scheduled">Esp</span>}
                       {a.social && <span className="status-badge status-completed">Soc</span>}
-                      {a.physical && <span className="status-badge" style={{ background: "rgba(52,199,89,0.12)", color: "#34C759" }}>Fís</span>}
+                      {a.physical && <span className="status-badge status-completed">Fís</span>}
                       {a.intellectual && <span className="status-badge" style={{ background: "rgba(0,122,255,0.12)", color: "#007AFF" }}>Int</span>}
                     </div>
                   </td>

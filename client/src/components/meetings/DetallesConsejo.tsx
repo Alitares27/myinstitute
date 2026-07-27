@@ -8,9 +8,14 @@ import { TbCheck, TbX, TbClock } from "react-icons/tb";
 export default function MeetingDetails() {
     const { id } = useParams();
     const navigate = useNavigate();
-
     const [meeting, setMeeting] = useState<Meeting | null>(null);
     const [loading, setLoading] = useState(true);
+    const [role, setRole] = useState("");
+
+    useEffect(() => {
+        const user = JSON.parse(localStorage.getItem("user") || "{}");
+        setRole(user.role || "");
+    }, []);
 
     useEffect(() => {
         if (id) {
@@ -86,12 +91,14 @@ export default function MeetingDetails() {
 
                 <div className="meeting-actions">
 
-                    <Link
-                        className="btn-warning"
-                        to={`/consejos/editar/${meeting.id}`}
-                    >
-                        Editar
-                    </Link>
+                    {role === "admin" && (
+                        <Link
+                            className="btn-warning"
+                            to={`/consejos/editar/${meeting.id}`}
+                        >
+                            Editar
+                        </Link>
+                    )}
 
                     <button
                         className="btn-secondary"

@@ -15,12 +15,12 @@ function isTokenExpired(token: string): boolean {
 }
 
 export default function PrivateRoute({ children }: PrivateRouteProps) {
-  const token = sessionStorage.getItem("token");
+  const token = localStorage.getItem("token");
 
   if (!token || isTokenExpired(token)) {
-    sessionStorage.removeItem("token");
-    sessionStorage.removeItem("user");
-    sessionStorage.removeItem("role");
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    localStorage.removeItem("role");
     return <Navigate to="/iniciar-sesion" replace />;
   }
 

@@ -14,6 +14,13 @@ export default function EditActividad() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    if (user.role !== "admin") {
+      navigate("/actividades");
+    }
+  }, [navigate]);
+
+  useEffect(() => {
     if (!id) return;
     api.get("/activities")
       .then(res => {

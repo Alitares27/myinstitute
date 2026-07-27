@@ -27,7 +27,7 @@ function Dashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = sessionStorage.getItem("token");
+    const token = localStorage.getItem("token");
 
     if (!token) {
       setError("No hay una sesión activa. Por favor, inicia sesión.");
@@ -35,8 +35,14 @@ function Dashboard() {
       return;
     }
 
-    const sessionUser = sessionStorage.getItem("user");
-    if (sessionUser) setUser(JSON.parse(sessionUser));
+    const sessionUser = localStorage.getItem("user");
+    if (sessionUser) {
+      try {
+        setUser(JSON.parse(sessionUser));
+      } catch {
+        localStorage.removeItem("user");
+      }
+    }
 
     api
       .get("/dashboard-stats")

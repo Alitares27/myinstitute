@@ -8,7 +8,7 @@ import {
 
 export default function Home() {
   const navigate = useNavigate();
-  const token = sessionStorage.getItem("token");
+  const token = localStorage.getItem("token");
 
   useEffect(() => {
     if (token) {
@@ -21,10 +21,10 @@ export default function Home() {
       <div className="home-container">
         <section className="home-hero">
           <h1 className="home-title">
-            <TbBuilding /> Bienvenido a <span>GestionAR</span>
+            <TbBuilding /> Bienvenido a GestionAR
           </h1>
 
-          <div className="auth-buttons">
+          <div className="home-buttons">
             <button className="btn primary" onClick={() => navigate("/iniciar-sesion")}>
               <TbLogin /> Iniciar Sesión
             </button>

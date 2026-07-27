@@ -68,7 +68,7 @@ export default function TempleTrip() {
     }, [totalPages, currentPage]);
 
     useEffect(() => {
-        const user = JSON.parse(sessionStorage.getItem("user") || "{}");
+        const user = JSON.parse(localStorage.getItem("user") || "{}");
         setRole(user.role || "");
 
         Promise.all([
@@ -79,7 +79,9 @@ export default function TempleTrip() {
                 setTemples(templesRes.data);
                 setTrips(tripsRes.data);
             })
-            .catch(() => {})
+            .catch(() => {
+                alert("Error al cargar datos del templo");
+            })
             .finally(() => setLoading(false));
     }, []);
 
@@ -114,6 +116,7 @@ export default function TempleTrip() {
             });
 
         } catch {
+            alert("Error al guardar el viaje");
         }
     };
 
@@ -133,6 +136,7 @@ export default function TempleTrip() {
             await api.delete(`/temple-trips/${id}`);
             setTrips(prev => prev.filter(t => t.id !== id));
         } catch {
+            alert("Error al eliminar el viaje");
         }
     };
 

@@ -44,7 +44,7 @@ export default function TemplosMaintenance() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const role = JSON.parse(sessionStorage.getItem("user") || "{}").role;
+    const role = JSON.parse(localStorage.getItem("user") || "{}").role;
     if (role !== "admin") {
       navigate("/panel", { replace: true });
       return;

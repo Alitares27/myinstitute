@@ -22,9 +22,9 @@ export default function Login() {
         throw new Error("No se recibió el token de autenticación.");
       }
 
-      sessionStorage.setItem("token", res.data.token);
-      sessionStorage.setItem("user", JSON.stringify(res.data.user));
-      sessionStorage.setItem("role", res.data.user.role);
+      localStorage.setItem("token", res.data.token);
+      localStorage.setItem("user", JSON.stringify(res.data.user));
+      localStorage.setItem("role", res.data.user.role);
 
       navigate("/panel");
     } catch (err: any) {

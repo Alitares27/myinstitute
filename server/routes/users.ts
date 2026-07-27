@@ -1,13 +1,22 @@
 import express, { Response } from "express";
 import bcrypt from "bcryptjs";
+import rateLimit from "express-rate-limit";
 import { pool } from "../models/db";
 import { registerUser, loginUser } from "../controllers/users";
 import { verifyToken, isAdmin, AuthRequest } from "../middleware/auth";
 
 const router = express.Router();
 
-router.post("/register", registerUser);
-router.post("/login", loginUser);
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: { message: "Demasiados intentos. Intenta de nuevo en 15 minutos." },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+router.post("/register", authLimiter, registerUser);
+router.post("/login", authLimiter, loginUser);
 
 router.get("/me", verifyToken, async (req: AuthRequest, res: Response) => {
   try {
@@ -19,6 +28,32 @@ router.get("/me", verifyToken, async (req: AuthRequest, res: Response) => {
     res.json(result.rows[0]);
   } catch {
     res.status(500).json({ message: "Error obteniendo miembro" });
+  }
+});
+
+router.put("/me/password", verifyToken, async (req: AuthRequest, res: Response) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ message: "Se requieren ambas contraseñas" });
+    }
+    if (newPassword.length < 6) {
+      return res.status(400).json({ message: "La nueva contraseña debe tener al menos 6 caracteres" });
+    }
+    const result = await pool.query("SELECT password FROM users WHERE id = $1", [req.user?.id]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: "Miembro no encontrado" });
+    }
+    const valid = await bcrypt.compare(currentPassword, result.rows[0].password);
+    if (!valid) {
+      return res.status(401).json({ message: "La contraseña actual es incorrecta" });
+    }
+    const salt = await bcrypt.genSalt(10);
+    const hashed = await bcrypt.hash(newPassword, salt);
+    await pool.query("UPDATE users SET password = $1 WHERE id = $2", [hashed, req.user?.id]);
+    res.json({ message: "Contraseña actualizada correctamente" });
+  } catch {
+    res.status(500).json({ message: "Error actualizando contraseña" });
   }
 });
 
@@ -41,6 +76,25 @@ router.post("/", verifyToken, isAdmin, async (req: AuthRequest, res: Response) =
   const client = await pool.connect();
   try {
     const { name, email, password, telefono, role, specialty, grade, document } = req.body;
+
+    if (!name || !email || !password || !role) {
+      return res.status(400).json({ message: "Campos requeridos faltantes" });
+    }
+    if (password.length < 6) {
+      return res.status(400).json({ message: "La contraseña debe tener al menos 6 caracteres" });
+    }
+
+    const existingEmail = await client.query("SELECT id FROM users WHERE email = $1", [email]);
+    if (existingEmail.rows.length > 0) {
+      return res.status(400).json({ message: "El correo ya está registrado" });
+    }
+    if (document) {
+      const existingDoc = await client.query("SELECT id FROM users WHERE document = $1", [document]);
+      if (existingDoc.rows.length > 0) {
+        return res.status(400).json({ message: "El número de documento ya está registrado" });
+      }
+    }
+
     await client.query("BEGIN");
 
     const salt = await bcrypt.genSalt(10);
@@ -133,7 +187,9 @@ router.delete("/:id", verifyToken, isAdmin, async (req: AuthRequest, res: Respon
     } else if (role === "teacher") {
       const teacherRes = await client.query("SELECT id FROM teachers WHERE user_id = $1", [id]);
       if (teacherRes.rows.length > 0) {
-        await client.query("DELETE FROM teachers WHERE id = $1", [teacherRes.rows[0].id]);
+        const teacherId = teacherRes.rows[0].id;
+        await client.query("DELETE FROM courses WHERE teacher_id = $1", [teacherId]);
+        await client.query("DELETE FROM teachers WHERE id = $1", [teacherId]);
       }
     }
 

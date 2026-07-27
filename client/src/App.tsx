@@ -62,6 +62,17 @@ function App() {
           <Route path="/auditorias" element={<RutaPrivada><Disposicion><Auditorias /></Disposicion></RutaPrivada>} />
           <Route path="/templos" element={<RutaPrivada><Disposicion><MantTemplos /></Disposicion></RutaPrivada>} />
 
+          <Route path="*" element={
+            <RutaPrivada>
+              <Disposicion>
+                <div className="page-container" style={{ textAlign: "center", paddingTop: "4rem" }}>
+                  <h1>404</h1>
+                  <p style={{ color: "var(--text-secondary)" }}>Página no encontrada</p>
+                </div>
+              </Disposicion>
+            </RutaPrivada>
+          } />
+
         </Routes>
       </Suspense>
     </BrowserRouter>

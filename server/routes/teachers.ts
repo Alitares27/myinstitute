@@ -80,19 +80,26 @@ router.put("/:id", verifyToken, isAdmin, async (req: AuthRequest, res: Response)
 });
 
 router.delete("/:id", verifyToken, isAdmin, async (req: AuthRequest, res: Response) => {
+  const client = await pool.connect();
   try {
     const { id } = req.params;
+    await client.query("BEGIN");
 
-    const result = await pool.query("DELETE FROM teachers WHERE id = $1 RETURNING *", [id]);
+    const result = await client.query("DELETE FROM teachers WHERE id = $1 RETURNING *", [id]);
 
     if (result.rows.length === 0) {
+      await client.query("ROLLBACK");
       return res.status(404).json({ message: "Teacher not found" });
     }
 
+    await client.query("COMMIT");
     res.json({ message: "Teacher deleted successfully" });
   } catch (err) {
+    try { await client.query("ROLLBACK"); } catch {}
     console.error("Error deleting teacher:", err);
     res.status(500).json({ message: "Error deleting teacher" });
+  } finally {
+    client.release();
   }
 });
 

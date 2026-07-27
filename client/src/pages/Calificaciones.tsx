@@ -34,7 +34,7 @@ export default function Grades() {
 
   const fetchData = async () => {
     try {
-      const meRes = await Promise.resolve({ data: JSON.parse(sessionStorage.getItem("user") || "{}") });
+      const meRes = await Promise.resolve({ data: JSON.parse(localStorage.getItem("user") || "{}") });
       setRole(meRes.data.role);
 
       const gradesRes = await api.get("/grades");

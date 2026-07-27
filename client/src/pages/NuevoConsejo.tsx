@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios, { isAxiosError } from "axios";
 import { MeetingRequest } from "../interfaces/Meeting";
@@ -20,6 +20,13 @@ const initialValues: MeetingRequest = {
 export default function NewMeeting() {
     const navigate = useNavigate();
     const [saving, setSaving] = useState(false);
+
+    useEffect(() => {
+        const user = JSON.parse(localStorage.getItem("user") || "{}");
+        if (user.role !== "admin") {
+            navigate("/consejos");
+        }
+    }, [navigate]);
 
     async function handleCreate(meeting: MeetingRequest) {
         try {
@@ -52,7 +59,7 @@ export default function NewMeeting() {
                 <div style={{ display: "flex", gap: "0.75rem" }}>
                     <button
                         type="button"
-                        className="btn-secondary"
+                        className="btn secondary"
                         onClick={() => navigate("/consejos")}
                     >
                         Atrás

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api";
 import ActivityForm from "../components/activities/FormularioActividad";
@@ -8,6 +8,13 @@ import { TbCalendarPlus } from "react-icons/tb";
 export default function NewActividad() {
   const navigate = useNavigate();
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    if (user.role !== "admin") {
+      navigate("/actividades");
+    }
+  }, [navigate]);
 
   async function handleCreate(data: ActivityFormData) {
     try {

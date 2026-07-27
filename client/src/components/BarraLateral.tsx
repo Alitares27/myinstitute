@@ -26,7 +26,7 @@ function Sidebar() {
   const navigate = useNavigate();
   const location = useLocation();
   const currentPath = location.pathname;
-  const user = JSON.parse(sessionStorage.getItem("user") || "{}");
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
   const role = user.role || "";
 
   const isTeachingActive = ["/miembros", "/inscripciones", "/asistencia", "/calificaciones"].includes(currentPath);
@@ -49,7 +49,9 @@ function Sidebar() {
   }, [currentPath, isTeachingActive, isLeadershipActive, isTempleActive, isMaintenanceActive]);
 
   const handleLogout = () => {
-    sessionStorage.clear();
+    const theme = localStorage.getItem("theme");
+    localStorage.clear();
+    if (theme) localStorage.setItem("theme", theme);
     navigate("/");
   };
 

@@ -25,6 +25,13 @@ export default function EditMeeting() {
     const [saving, setSaving] = useState(false);
 
     useEffect(() => {
+        const user = JSON.parse(localStorage.getItem("user") || "{}");
+        if (user.role !== "admin") {
+            navigate("/consejos");
+        }
+    }, [navigate]);
+
+    useEffect(() => {
         if (id) {
             loadMeeting(Number(id));
         }

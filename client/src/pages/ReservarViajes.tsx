@@ -13,8 +13,6 @@ import { Trip } from "../shared/types";
 import useAvailableTrips from "../hooks/usarViajesDisponibles";
 import type { BasicUser } from "../interfaces/Common";
 
-const API_BASE_URL = (import.meta as any).env?.VITE_API_URL ?? "http://localhost:5000/api";
-
 const getTodayYMD = () => {
     const today = new Date();
     const y = today.getFullYear();
@@ -67,7 +65,8 @@ export default function TripReservations() {
     };
 
     useEffect(() => {
-        const userRole = sessionStorage.getItem("role");
+        const user = JSON.parse(localStorage.getItem("user") || "{}");
+        const userRole = user.role || "";
         setRole(userRole);
 
         if (!userRole || userRole !== "admin") {

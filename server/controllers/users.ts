@@ -19,6 +19,10 @@ export async function registerUser(req: Request, res: Response) {
       return res.status(400).json({ message: "Campos requeridos faltantes" });
     }
 
+    if (password.length < 6) {
+      return res.status(400).json({ message: "La contraseña debe tener al menos 6 caracteres" });
+    }
+
     const allowedRoles = ["student", "teacher"];
     if (!allowedRoles.includes(role)) {
       return res.status(400).json({ message: "Rol no válido para registro público" });
@@ -83,15 +87,11 @@ export async function loginUser(req: Request, res: Response) {
 
     const user = result.rows[0];
 
-    console.log("Login attempt for:", email);
-
     if (!user) {
       return res.status(401).json({ message: "Credenciales inválidas" });
     }
 
     const validPassword = await bcrypt.compare(password, user.password);
-
-    console.log("Password valid for:", email);
 
     if (!validPassword) {
       return res.status(401).json({ message: "Credenciales inválidas" });
@@ -131,56 +131,6 @@ export async function getProfile(req: AuthRequest, res: Response) {
     res.json(result.rows[0]);
   } catch (err) {
     res.status(500).json({ message: "Error al obtener perfil" });
-  }
-}
-
-export async function updateUser(req: AuthRequest, res: Response) {
-  try {
-    const { id } = req.params;
-    const { name, email, password, telefono, role, document } = req.body;
-    const authenticatedUser = req.user;
-
-    if (!authenticatedUser) {
-      return res.status(401).json({ message: "No autorizado" });
-    }
-
-    if (authenticatedUser.role !== "admin" && authenticatedUser.id !== Number(id)) {
-      return res.status(403).json({ message: "No tienes permiso para actualizar este perfil" });
-    }
-
-    const userExist = await pool.query("SELECT * FROM users WHERE id = $1", [id]);
-    if (userExist.rows.length === 0) {
-      return res.status(404).json({ message: "Miembro no encontrado" });
-    }
-
-    if (document) {
-      const existingDoc = await pool.query("SELECT id FROM users WHERE document = $1 AND id != $2", [document, id]);
-      if (existingDoc.rows.length > 0) {
-        return res.status(400).json({ message: "El número de documento ya está registrado" });
-      }
-    }
-
-    let query = "UPDATE users SET name = $1, email = $2, telefono = $3, document = $4";
-    const values: any[] = [name, email, telefono, document || null];
-
-    if (authenticatedUser.role === "admin" && role) {
-      query += `, role = $${values.length + 1}`;
-      values.push(role);
-    }
-
-    if (password && password.trim() !== "") {
-      const hash = await bcrypt.hash(password, 10);
-      query += `, password = $${values.length + 1}`;
-      values.push(hash);
-    }
-
-    query += ` WHERE id = $${values.length + 1} RETURNING id, name, email, telefono, role, document`;
-    values.push(id);
-
-    const result = await pool.query(query, values);
-    res.json(result.rows[0]);
-  } catch (err) {
-    res.status(500).json({ message: "Error al actualizar miembro" });
   }
 }
 
