@@ -1275,3 +1275,73 @@ button:disabled {
   border-radius: 0 0 8px 8px;
   margin: -16px -16px 16px -16px;
 }
+
+/* =========================================
+   RESERVATIONS FILTERS
+   ========================================= */
+.reservations-filters {
+  margin: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.reservations-filter-row {
+  display: flex;
+  gap: 12px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.reservations-filter-row .filter-select {
+  flex: 1;
+  min-width: 0;
+}
+
+.reservations-actions {
+  display: flex;
+  gap: 12px;
+  flex: 0 0 auto;
+}
+
+@media (max-width: 600px) {
+  .reservations-filters {
+    flex-direction: column;
+  }
+
+  .reservations-filter-row {
+    flex-direction: row;
+    width: 100%;
+  }
+
+  .reservations-actions {
+    flex-direction: row;
+    width: 100%;
+  }
+
+  .reservations-actions .btn {
+    flex: 1;
+  }
+}
+
+.payment-info-card {
+  background: var(--primary-light);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  padding: 1rem;
+}
+
+.payment-info-card p {
+  margin: 0 0 0.5rem;
+  font-weight: 600;
+}
+
+.payment-info-grid {
+  display: flex;
+  gap: 1.5rem;
+  font-size: 0.9rem;
+}
+
+.payment-info-grid strong {
+  color: var(--primary);
+}

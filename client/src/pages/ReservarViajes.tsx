@@ -212,7 +212,9 @@ export default function TripReservations() {
 
     const availableReservationsForSelectedTrip = useMemo(() => {
         if (!paymentForm.trip_id) return [];
-        return reservations.filter(r => r.trip_id === Number(paymentForm.trip_id) && Number(r.pending_payment) > 0);
+        return reservations
+            .filter(r => r.trip_id === Number(paymentForm.trip_id) && Number(r.pending_payment) > 0)
+            .sort((a, b) => (a.user_name || "").localeCompare(b.user_name || ""));
     }, [paymentForm.trip_id, reservations]);
 
     const handleOpenPaymentModal = () => {
@@ -422,7 +424,7 @@ export default function TripReservations() {
                         <label>Adelanto</label>
                         <input type="number" name="advance_payment" placeholder="Adelanto" value={formData.advance_payment} onChange={handleChange} />
                     </div>
-                    <div className="form-group" style={{ width: "25%" }}>
+                    <div className="form-group" style={{ width: "50%" }}>
                         <button type="submit" className="btn primary">{editingId ? "Actualizar" : "Reservar"}</button>
                         {isFormDirty && <button type="button" onClick={handleCancel} className="btn cancel-btn" title="Cancelar" aria-label="Cancelar">✕</button>}
                     </div>
@@ -430,25 +432,29 @@ export default function TripReservations() {
 
             </form>
 
-            <div className="filters" style={{ margin: "16px", display: "flex", gap: "12px", alignItems: "center" }}>
-                <select value={filterTripId} onChange={e => setFilterTripId(e.target.value)} className="filter-select">
-                    <option value="">Todos los viajes</option>
-                    {trips.map(t => (
-                        <option key={t.id} value={t.id}>
-                            {formatDate(t.date)}
-                        </option>
-                    ))}
-                </select>
-                <select value={filterUserId} onChange={e => setFilterUserId(e.target.value)} className="filter-select">
-                    <option value="">Todos los miembros</option>
-                    {users.map(u => (
-                        <option key={u.id} value={u.id}>
-                            {u.name}
-                        </option>
-                    ))}
-                </select>
-                <button className="btn primary" onClick={handleOpenPaymentModal}>Pagar</button>
-                <button onClick={handlePrintReport} className="btn primary">Imprimir</button>
+            <div className="reservations-filters">
+                <div className="reservations-filter-row">
+                    <select value={filterTripId} onChange={e => setFilterTripId(e.target.value)} className="filter-select">
+                        <option value="">Todos los viajes</option>
+                        {trips.map(t => (
+                            <option key={t.id} value={t.id}>
+                                {formatDate(t.date)}
+                            </option>
+                        ))}
+                    </select>
+                    <select value={filterUserId} onChange={e => setFilterUserId(e.target.value)} className="filter-select">
+                        <option value="">Todos los miembros</option>
+                        {users.map(u => (
+                            <option key={u.id} value={u.id}>
+                                {u.name}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+                <div className="reservations-actions">
+                    <button className="btn primary" onClick={handleOpenPaymentModal}>Pagar</button>
+                    <button onClick={handlePrintReport} className="btn primary">Imprimir</button>
+                </div>
             </div>
 
             {showSummary && (
@@ -465,19 +471,24 @@ export default function TripReservations() {
 
             {showPaymentModal && (
                 <div className="modal-overlay">
-                    <div className="modal-content">
+                    <div className="modal-content" style={{ maxWidth: "440px" }}>
                         <button className="modal-close" onClick={handleClosePaymentModal} title="Cerrar" />
-                        <h2>Pago de Adelanto</h2>
-                        <form onSubmit={handlePaymentSubmit}>
-                            <select name="trip_id" value={paymentForm.trip_id} onChange={handlePaymentChange} required>
-                                <option value="">Elegir viaje</option>
-                                {availableTripsForReservation.map(trip => (
-                                    <option key={trip.id} value={trip.id}>{formatDate(trip.date)}</option>
-                                ))}
-                            </select>
+                        <h2 style={{ marginBottom: "0.5rem", marginTop: "1.5rem" }}>Pago de Adelanto</h2>
+                        <form onSubmit={handlePaymentSubmit} style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                            <div className="form-group">
+                                <label htmlFor="trip_id">Viaje</label>
+                                <select name="trip_id" id="trip_id" value={paymentForm.trip_id} onChange={handlePaymentChange} required>
+                                    <option value="">Elegir viaje</option>
+                                    {availableTripsForReservation.map(trip => (
+                                        <option key={trip.id} value={trip.id}>{formatDate(trip.date)}</option>
+                                    ))}
+                                </select>
+                            </div>
+
                             {paymentForm.trip_id && (
                                 <div className="form-group">
-                                    <select name="attendance_id" value={paymentForm.attendance_id} onChange={handlePaymentChange} required>
+                                    <label htmlFor="attendance_id">Miembro</label>
+                                    <select name="attendance_id" id="attendance_id" value={paymentForm.attendance_id} onChange={handlePaymentChange} required>
                                         <option value="">Elegir miembro</option>
                                         {availableReservationsForSelectedTrip.map(res => (
                                             <option key={res.id} value={res.id}>{res.user_name}</option>
@@ -487,10 +498,12 @@ export default function TripReservations() {
                             )}
 
                             {selectedReservationForPayment && (
-                                <div className="form-group full-width">
-                                    <p>| <strong>{selectedReservationForPayment.user_name}</strong>    |</p>
-                                    <p>| Pagado: <strong>${Number(selectedReservationForPayment.advance_payment).toLocaleString()}</strong> |</p>
-                                    <p>| Saldo: <strong>${Number(selectedReservationForPayment.pending_payment).toLocaleString()}</strong> |</p>
+                                <div className="payment-info-card">
+                                    <p><strong>{selectedReservationForPayment.user_name}</strong></p>
+                                    <div className="payment-info-grid">
+                                        <span>Pagado: <strong>${Number(selectedReservationForPayment.advance_payment).toLocaleString()}</strong></span>
+                                        <span>Saldo: <strong>${Number(selectedReservationForPayment.pending_payment).toLocaleString()}</strong></span>
+                                    </div>
                                 </div>
                             )}
 
@@ -522,10 +535,10 @@ export default function TripReservations() {
                             </div>
 
                             {paymentError && (
-                                <p style={{ color: "var(--danger)", marginBottom: "16px" }}>{paymentError}</p>
+                                <p style={{ color: "var(--danger)", margin: 0 }}>{paymentError}</p>
                             )}
 
-                            <div className="form-group full-width">
+                            <div className="form-group full-width" style={{ marginTop: "0.5rem" }}>
                                 <button type="submit" className="btn primary" disabled={isSubmittingPayment || !selectedReservationForPayment}>
                                     {isSubmittingPayment ? "Pagando..." : "Pagar"}
                                 </button>
