@@ -7,7 +7,8 @@ import {
   TbSchool, TbUser, TbBooks, TbCalendar,
   TbBook, TbChartLine, TbStar, TbCircleCheck,
   TbBuilding, TbSettings, TbPencil,
-  TbChartBar, TbRocket, TbAlertTriangle
+  TbChartBar, TbRocket, TbAlertTriangle,
+  TbCalendarCheck
 } from "react-icons/tb";
 
 function Dashboard() {
@@ -18,6 +19,7 @@ function Dashboard() {
     teachers: 0,
     courses: 0,
     enrollments: 0,
+    completedActivities: 0,
     attendanceRate: "0%",
     averageGrade: 0,
   });
@@ -118,9 +120,9 @@ function Dashboard() {
         <div className="stat-label">Cursos</div>
       </div>
       <div className="stat-card">
-        <div className="stat-icon"><TbCalendar /></div>
-        <div className="stat-value">{stats.attendanceRate}</div>
-        <div className="stat-label">Asistencia General</div>
+        <div className="stat-icon"><TbCalendarCheck /></div>
+        <div className="stat-value">{stats.completedActivities}</div>
+        <div className="stat-label">Actividades Completadas</div>
       </div>
     </div>
   );

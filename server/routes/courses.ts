@@ -50,7 +50,7 @@ router.get("/", verifyToken, async (req: AuthRequest, res: Response) => {
       values.push(userId);
     }
 
-    query += ` ORDER BY c.id ASC`;
+    query += ` ORDER BY c.title ASC`;
 
     const result = await pool.query(query, values);
     res.json(result.rows);

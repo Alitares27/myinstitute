@@ -405,7 +405,7 @@ export default function TripReservations() {
             <h1><span className="page-title-icon"><FiMapPin /></span> Reservar Viajes</h1>
             <h2 className="dashboard-subtitle">{editingId ? <><IoCreateOutline /> Actualizar</> : <><FaPlus /> Asignar</>}</h2>
             <form onSubmit={handleSubmit} className="activity-form">
-                <div className="form-row">
+                <div className="form-row form-row-4">
                     <div className="form-group">
                         <label>Viaje</label>
                         <select name="trip_id" value={formData.trip_id} onChange={handleChange} required>
@@ -424,7 +424,7 @@ export default function TripReservations() {
                         <label>Adelanto</label>
                         <input type="number" name="advance_payment" placeholder="Adelanto" value={formData.advance_payment} onChange={handleChange} />
                     </div>
-                    <div className="form-group" style={{ width: "50%" }}>
+                    <div className="form-group full-width">
                         <button type="submit" className="btn primary">{editingId ? "Actualizar" : "Reservar"}</button>
                         {isFormDirty && <button type="button" onClick={handleCancel} className="btn cancel-btn" title="Cancelar" aria-label="Cancelar">✕</button>}
                     </div>

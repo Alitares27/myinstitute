@@ -329,7 +329,7 @@ export default function Students() {
                   <div className="form-group">
                     <input placeholder="Especialidad" value={maestroForm.specialty} onChange={e => setMaestroForm({ ...maestroForm, specialty: e.target.value })} required />
                   </div>
-                  <div className="form-group" style={{ width: "40%" }}>
+                  <div className="form-group full-width">
                     <button type="submit" className="btn primary">{maestroForm.id ? "Actualizar" : "Agregar"}</button>
                     {(maestroForm.id || maestroForm.user_id || maestroForm.specialty) && (
                       <button type="button" onClick={() => setMaestroForm({ id: "", user_id: "", name: "", specialty: "" })} className="btn cancel-btn" title="Cancelar" aria-label="Cancelar">✕</button>

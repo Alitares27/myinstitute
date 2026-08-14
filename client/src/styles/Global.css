@@ -1166,6 +1166,11 @@ button:disabled {
   grid-template-columns: 1fr 1fr 1fr;
 }
 
+.activity-form .form-row-4 {
+  grid-template-columns: repeat(4, 1fr);
+  align-items: end;
+}
+
 .activity-form input,
 .activity-form select,
 .activity-form textarea {
@@ -1232,12 +1237,17 @@ button:disabled {
   .activity-form .form-row-3 {
     grid-template-columns: 1fr 1fr;
   }
+
+  .activity-form .form-row-4 {
+    grid-template-columns: 1fr 1fr;
+  }
 }
 
 @media (max-width: 600px) {
 
   .activity-form .form-row,
-  .activity-form .form-row-3 {
+  .activity-form .form-row-3,
+  .activity-form .form-row-4 {
     grid-template-columns: 1fr;
   }
 }

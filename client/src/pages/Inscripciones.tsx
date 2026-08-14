@@ -5,6 +5,7 @@ import { IoCreateOutline, IoTrashOutline } from "react-icons/io5";
 import { FiEdit } from "react-icons/fi";
 import { TbPlus, TbList } from "react-icons/tb";
 import { Skeleton } from "../components/Esqueleto";
+import { openPrintWindow } from "../utils/utilidadesReportes";
 import type { SortDirection } from "../interfaces/Common";
 
 const ITEMS_PER_PAGE = 5;
@@ -36,7 +37,15 @@ export default function Enrollments() {
 
   const [showCursosModal, setShowCursosModal] = useState(false);
   const [cursoTitle, setCursoTitle] = useState("");
+  const [editingCursoId, setEditingCursoId] = useState<number | null>(null);
   const [cursoError, setCursoError] = useState<string | null>(null);
+
+  const [selectedCurso, setSelectedCurso] = useState<any | null>(null);
+  const [topics, setTopics] = useState<any[]>([]);
+  const [loadingTopics, setLoadingTopics] = useState(false);
+  const [topicForm, setTopicForm] = useState({ title: "", description: "", order_index: "" });
+  const [editingTopicId, setEditingTopicId] = useState<number | null>(null);
+  const [topicError, setTopicError] = useState<string | null>(null);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -152,13 +161,25 @@ export default function Enrollments() {
     e.preventDefault();
     if (!cursoTitle.trim()) return;
     try {
-      const res = await api.post("/courses", { title: cursoTitle.trim() });
-      setCourses(prev => [...prev, res.data]);
+      if (editingCursoId !== null) {
+        const res = await api.put(`/courses/${editingCursoId}`, { title: cursoTitle.trim() });
+        setCourses(prev => prev.map(c => c.id === editingCursoId ? { ...c, ...res.data } : c));
+      } else {
+        const res = await api.post("/courses", { title: cursoTitle.trim() });
+        setCourses(prev => [...prev, res.data].sort((a, b) => a.title.localeCompare(b.title)));
+      }
       setCursoTitle("");
+      setEditingCursoId(null);
       setCursoError(null);
     } catch {
-      setCursoError("Error al agregar el curso");
+      setCursoError("Error al guardar el curso");
     }
+  };
+
+  const handleEditCurso = (c: any) => {
+    setEditingCursoId(c.id);
+    setCursoTitle(c.title);
+    setCursoError(null);
   };
 
   const handleDeleteCurso = async (id: number) => {
@@ -171,23 +192,172 @@ export default function Enrollments() {
     }
   };
 
+  const loadTopics = async (courseId: number) => {
+    setLoadingTopics(true);
+    setTopicError(null);
+    try {
+      const res = await api.get(`/courses/${courseId}/topics`);
+      setTopics(res.data);
+    } catch {
+      setTopicError("Error al cargar los temas");
+    } finally {
+      setLoadingTopics(false);
+    }
+  };
+
+  const handleOpenTopics = (curso: any) => {
+    setSelectedCurso(curso);
+    setTopicForm({ title: "", description: "", order_index: "" });
+    setEditingTopicId(null);
+    setTopics([]);
+    loadTopics(curso.id);
+  };
+
+  const handleCloseTopics = () => {
+    setSelectedCurso(null);
+    setTopics([]);
+    setTopicForm({ title: "", description: "", order_index: "" });
+    setEditingTopicId(null);
+    setTopicError(null);
+  };
+
+  const handleTopicSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedCurso || !topicForm.title.trim()) return;
+    try {
+      if (editingTopicId !== null) {
+        const res = await api.put(`/topics/${editingTopicId}`, {
+          title: topicForm.title.trim(),
+          description: topicForm.description.trim(),
+          order_index: topicForm.order_index ? Number(topicForm.order_index) : 0,
+        });
+        setTopics(prev => prev.map(t => (t.id === editingTopicId ? { ...t, ...res.data } : t)));
+      } else {
+        const res = await api.post("/topics", {
+          course_id: selectedCurso.id,
+          title: topicForm.title.trim(),
+          description: topicForm.description.trim(),
+          order_index: topicForm.order_index ? Number(topicForm.order_index) : 0,
+        });
+        setTopics(prev => [...prev, res.data]);
+      }
+      setTopicForm({ title: "", description: "", order_index: "" });
+      setEditingTopicId(null);
+      setTopicError(null);
+    } catch {
+      setTopicError("Error al guardar el tema");
+    }
+  };
+
+  const handleEditTopic = (t: any) => {
+    setEditingTopicId(t.id);
+    setTopicForm({
+      title: t.title || "",
+      description: t.description || "",
+      order_index: t.order_index != null ? String(t.order_index) : "",
+    });
+    setTopicError(null);
+  };
+
+  const handleDeleteTopic = async (id: number) => {
+    if (!confirm("¿Eliminar este tema?")) return;
+    try {
+      await api.delete(`/topics/${id}`);
+      setTopics(prev => prev.filter(t => t.id !== id));
+    } catch {
+      setTopicError("Error al eliminar el tema");
+    }
+  };
+
+  const handlePrintEnrollmentsReport = () => {
+    const relevantCourses = courseFilter
+      ? courses.filter(c => c.id === courseFilter)
+      : courses;
+
+    const relevantEnrollments = enrollments.filter(e => {
+      if (studentFilter !== null && Number(e.student_id) !== studentFilter) return false;
+      if (courseFilter !== null && Number(e.course_id) !== courseFilter) return false;
+      return true;
+    });
+
+    const allUniqueStudentIds = new Set<number>();
+    let hasData = false;
+    let body = "";
+
+    relevantCourses.forEach(course => {
+      const courseStudents = relevantEnrollments
+        .filter(e => Number(e.course_id) === course.id)
+        .map(e => Number(e.student_id))
+        .filter((id, idx, arr) => arr.indexOf(id) === idx)
+        .sort((a, b) => {
+          const nameA = students.find(s => s.id === a)?.name || "";
+          const nameB = students.find(s => s.id === b)?.name || "";
+          return nameA.localeCompare(nameB);
+        });
+
+      if (courseStudents.length === 0) return;
+      hasData = true;
+      courseStudents.forEach(id => allUniqueStudentIds.add(id));
+
+      body += `
+        <h2>${course.title}</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Nombre del Alumno</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+
+      courseStudents.forEach(studentId => {
+        const studentName = students.find(s => s.id === studentId)?.name || "Desconocido";
+        body += `
+            <tr>
+              <td>${studentName}</td>
+            </tr>
+        `;
+      });
+
+      body += `</tbody></table>`;
+    });
+
+    if (hasData) {
+      body += `
+        <div class="summary-box">
+          🎓 Total general de miembros matriculados: ${allUniqueStudentIds.size}
+        </div>
+      `;
+    } else {
+      body += `<p style="text-align: center; color: #666; margin-top: 10px;">No hay matrículas registradas para mostrar.</p>`;
+    }
+
+    openPrintWindow(
+      "Reporte de Matrículas",
+      courseFilter
+        ? `Curso: ${courses.find(c => c.id === courseFilter)?.title || ""}`
+        : "Todos los cursos",
+      body
+    );
+  };
+
   if (loading) {
     return (
-        <div className="enrollments-page">
-            <Skeleton width="200px" height="1.8rem" />
-            <Skeleton width="160px" height="1.1rem" style={{ marginTop: "8px" }} />
-            <div style={{ marginTop: "1rem" }}>
-                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                    {Array.from({ length: 5 }).map((_, i) => (
-                        <div key={i} style={{ display: "flex", gap: "1rem" }}>
-                            <Skeleton height="1rem" style={{ flex: 2 }} />
-                            <Skeleton height="1rem" style={{ flex: 2 }} />
-                            <Skeleton width="70px" height="1.8rem" />
-                        </div>
-                    ))}
-                </div>
-            </div>
+      <div className="enrollments-page">
+        <Skeleton width="200px" height="1.8rem" />
+        <Skeleton width="160px" height="1.1rem" style={{ marginTop: "8px" }} />
+        <div style={{ marginTop: "1rem" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} style={{ display: "flex", gap: "1rem" }}>
+                <Skeleton height="1rem" style={{ flex: 2 }} />
+                <Skeleton height="1rem" style={{ flex: 2 }} />
+                <Skeleton width="70px" height="1.8rem" />
+              </div>
+            ))}
+          </div>
         </div>
+      </div>
     );
   }
 
@@ -263,6 +433,10 @@ export default function Enrollments() {
             <TbList /> Ver Cursos
           </button>
         )}
+
+        {role === "admin" && (
+          <button type="button" onClick={handlePrintEnrollmentsReport} className="btn primary">Imprimir</button>
+        )}
       </div>
 
       <div className="table-container">
@@ -328,13 +502,16 @@ export default function Enrollments() {
             <form onSubmit={handleAddCurso} style={{ display: "flex", gap: "0.5rem", marginBottom: "1rem" }}>
               <input
                 type="text"
-                placeholder="Nuevo curso..."
+                placeholder={editingCursoId !== null ? "Editar curso..." : "Nuevo curso..."}
                 value={cursoTitle}
                 onChange={e => setCursoTitle(e.target.value)}
                 style={{ flex: 1 }}
                 required
               />
-              <button type="submit" className="btn primary"><FaPlus /></button>
+              <button type="submit" className="btn primary">{editingCursoId !== null ? "Guardar" : <FaPlus />}</button>
+              {editingCursoId !== null && (
+                <button type="button" onClick={() => { setEditingCursoId(null); setCursoTitle(""); setCursoError(null); }} className="btn cancel-btn" title="Cancelar" aria-label="Cancelar">✕</button>
+              )}
             </form>
 
             {cursoError && <div className="error-message" style={{ marginBottom: "0.5rem" }}>{cursoError}</div>}
@@ -344,10 +521,22 @@ export default function Enrollments() {
                 <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
                   {courses.map(c => (
                     <li key={c.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0.5rem 0", borderBottom: "1px solid var(--border-color)" }}>
-                      <span>{c.title}</span>
-                      <button className="btn secondary extracted-style-5" onClick={() => handleDeleteCurso(c.id)} aria-label="Eliminar">
-                        <IoTrashOutline />
+                      <button
+                        className="link-button"
+                        style={{ textAlign: "left" }}
+                        onClick={() => handleOpenTopics(c)}
+                        title={`Ver temas de ${c.title}`}
+                      >
+                        {c.title}
                       </button>
+                      <span style={{ display: "flex", gap: "0.5rem" }}>
+                        <button className="btn secondary extracted-style-4" onClick={() => handleEditCurso(c)} aria-label="Editar">
+                          <IoCreateOutline />
+                        </button>
+                        <button className="btn secondary extracted-style-5" onClick={() => handleDeleteCurso(c.id)} aria-label="Eliminar">
+                          <IoTrashOutline />
+                        </button>
+                      </span>
                     </li>
                   ))}
                 </ul>
@@ -355,6 +544,69 @@ export default function Enrollments() {
                 <p style={{ textAlign: "center", color: "var(--text-muted)" }}>No hay cursos registrados.</p>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {selectedCurso && (
+        <div className="modal-overlay" onClick={handleCloseTopics}>
+          <div className="modal-content" style={{ maxWidth: "640px" }} onClick={e => e.stopPropagation()}>
+            <button className="modal-close" onClick={handleCloseTopics} aria-label="Cerrar" />
+            <h2 style={{ marginTop: 0, marginBottom: "0.25rem" }}>Temas de {selectedCurso.title}</h2>
+            <p style={{ color: "var(--text-muted)", fontSize: "0.9em", marginBottom: "1rem" }}>Haz clic en un tema para editarlo o elimínalo con el botón de la derecha.</p>
+
+            <form onSubmit={handleTopicSubmit} style={{ display: "flex", gap: "0.5rem", marginBottom: "1rem" }}>
+              <input
+                type="text"
+                placeholder={editingTopicId !== null ? "Editar tema..." : "Nuevo tema..."}
+                value={topicForm.title}
+                onChange={e => setTopicForm(prev => ({ ...prev, title: e.target.value }))}
+                style={{ flex: 1 }}
+                required
+              />
+              <button type="submit" className="btn primary">{editingTopicId !== null ? "Guardar" : <FaPlus />}</button>
+              {editingTopicId !== null && (
+                <button type="button" onClick={() => { setEditingTopicId(null); setTopicForm({ title: "", description: "", order_index: "" }); setTopicError(null); }} className="btn cancel-btn" title="Cancelar" aria-label="Cancelar">✕</button>
+              )}
+            </form>
+
+            {topicError && <div className="error-message" style={{ marginBottom: "0.5rem" }}>{topicError}</div>}
+
+            {loadingTopics ? (
+              <p style={{ textAlign: "center", color: "var(--text-muted)" }}>Cargando temas...</p>
+            ) : topics.length > 0 ? (
+              <div className="table-container" style={{ maxHeight: "40vh", overflowY: "auto" }}>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Tema</th>
+                      <th>Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {topics.map(t => (
+                      <tr key={t.id}>
+                        <td>{t.order_index != null ? t.order_index : "—"}</td>
+                        <td>{t.title}</td>
+                        <td>
+                          <span style={{ display: "flex", gap: "0.5rem" }}>
+                            <button className="btn secondary extracted-style-4" onClick={() => handleEditTopic(t)} aria-label="Editar">
+                              <IoCreateOutline />
+                            </button>
+                            <button className="btn secondary extracted-style-5" onClick={() => handleDeleteTopic(t.id)} aria-label="Eliminar">
+                              <IoTrashOutline />
+                            </button>
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p style={{ textAlign: "center", color: "var(--text-muted)" }}>No hay temas registrados para este curso.</p>
+            )}
           </div>
         </div>
       )}

@@ -13,26 +13,16 @@ router.get("/dashboard-stats", verifyToken, async (req: any, res) => {
       const teachers = await pool.query("SELECT COUNT(*) FROM teachers");
       const courses = await pool.query("SELECT COUNT(*) FROM courses");
       const enrollments = await pool.query("SELECT COUNT(*) FROM enrollments");
-      const attendance = await pool.query(`
-        SELECT 
-          (SELECT COUNT(*) FROM attendance WHERE status ILIKE 'present') AS present_count,
-          COALESCE(
-            (SELECT SUM(
-              (SELECT COUNT(*) FROM enrollments e WHERE e.course_id = c.id) * 
-              (SELECT COUNT(*) FROM topics t WHERE t.course_id = c.id)
-            ) FROM courses c), 0) AS total_expected;
-      `);
-
-      const pCount = parseInt(attendance.rows[0].present_count || 0, 10);
-      const eCount = parseInt(attendance.rows[0].total_expected || 0, 10);
-      const rate = eCount > 0 ? Math.round((pCount / eCount) * 100) : 0;
+      const completedActivities = await pool.query(
+        "SELECT COUNT(*) FROM activity_plans WHERE activity_datetime <= NOW()"
+      );
 
       return res.json({
         students: students.rows[0].count,
         teachers: teachers.rows[0].count,
         courses: courses.rows[0].count,
         enrollments: enrollments.rows[0].count,
-        attendanceRate: `${rate}%`,
+        completedActivities: completedActivities.rows[0].count,
       });
     }
 
