@@ -19,7 +19,8 @@ import {
   IoMenuOutline,
   IoCloseOutline,
   IoMoonOutline,
-  IoSunnyOutline
+  IoSunnyOutline,
+  IoCashOutline,
 } from "react-icons/io5";
 
 function Sidebar() {
@@ -31,7 +32,7 @@ function Sidebar() {
 
   const isTeachingActive = ["/miembros", "/inscripciones", "/asistencia", "/calificaciones"].includes(currentPath);
   const isLeadershipActive = ["/discursantes", "/consejos", "/actividades", "/auditorias"].includes(currentPath);
-  const isTempleActive = ["/viajes-templo", "/reservar-viajes"].includes(currentPath);
+  const isTempleActive = ["/viajes-templo", "/reservar-viajes", "/templos/pagos"].includes(currentPath);
   const isMaintenanceActive = ["/usuarios", "/templos"].includes(currentPath);
 
   const [isTeachingOpen, setIsTeachingOpen] = useState(isTeachingActive);
@@ -118,7 +119,6 @@ function Sidebar() {
                       <div className="icon-circle">
                         <IoPeopleOutline className="icon" />
                       </div>
-
                       <span>Consejos</span>
                     </NavLink>
                   </li>
@@ -139,6 +139,7 @@ function Sidebar() {
                 <ul className="submenu" style={{ paddingLeft: "20px", listStyle: "none" }}>
                   <li><NavLink to="/viajes-templo" className="sidebar-link" onClick={() => setIsMenuOpen(false)}><div className="icon-circle"><IoCalendarOutline className="icon" /></div><span>Viajes</span></NavLink></li>
                   <li><NavLink to="/reservar-viajes" className="sidebar-link" onClick={() => setIsMenuOpen(false)}><div className="icon-circle"><IoPeopleOutline className="icon" /></div><span>Reservas</span></NavLink></li>
+                  <li><NavLink to="/templos/pagos" className="sidebar-link" onClick={() => setIsMenuOpen(false)}><div className="icon-circle"><IoCashOutline className="icon" /></div><span>Pagos</span></NavLink></li>
                 </ul>
               )}
             </li>
@@ -159,16 +160,15 @@ function Sidebar() {
                 )}
               </li>
             )}
-
           </ul>
         </nav>
+      </div>
 
-        <div className="logout-section">
-          <button onClick={handleLogout} className="logout-button">
-            <IoLogOutOutline className="logout-icon" />
-            <span className="logout-text">Salir</span>
-          </button>
-        </div>
+      <div className="sidebar-footer">
+        <button className="sidebar-link logout-btn" onClick={handleLogout}>
+          <div className="icon-circle"><IoLogOutOutline className="icon" /></div>
+          <span>Cerrar sesión</span>
+        </button>
       </div>
     </div>
   );

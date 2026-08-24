@@ -30,7 +30,6 @@ export default function ActivityForm({
     api.get("/users")
       .then(res => setUsers(res.data))
       .catch(() => {
-        // silently ignore - user list is optional
       });
   }, []);
 

@@ -345,6 +345,9 @@ export default function TripReservations() {
         let totalRegistrados = 0;
         let totalPagado = 0;
         let totalPendiente = 0;
+        let totalPagadoEfectivo = 0;
+        let totalPagadoTransferencia = 0;
+        let totalPagadoDonacion = 0;
 
         sortedDates.forEach(date => {
             const dateGroup = groupedByDate[date];
@@ -354,6 +357,14 @@ export default function TripReservations() {
             dateGroup.forEach(r => {
                 totalPagado += Number(r.advance_payment);
                 totalPendiente += Number(r.pending_payment);
+                const paymentType: string = (r as any).payment_type || "efectivo";
+                if (paymentType === "efectivo") {
+                    totalPagadoEfectivo += Number(r.advance_payment);
+                } else if (paymentType === "transferencia") {
+                    totalPagadoTransferencia += Number(r.advance_payment);
+                } else if (paymentType === "donacion") {
+                    totalPagadoDonacion += Number(r.advance_payment);
+                }
             });
 
             body += `<h2>Fecha de Viaje: ${date}</h2><table><thead><tr><th>Miembro</th><th>Documento</th><th>Pagado</th><th>Pendiente</th></tr></thead><tbody>`;
@@ -364,9 +375,17 @@ export default function TripReservations() {
         });
 
         body += `<div style="margin-top:24px;padding:16px 20px;background:#f8f9fa;border:1px solid #dee2e6;border-radius:8px;display:flex;gap:2rem;">
+
+            <div>
             <div><span style="font-size:12px;text-transform:uppercase;color:#888;letter-spacing:0.5px;">Registrados</span><br><strong style="font-size:18px;">${totalRegistrados}</strong></div>
-            <div><span style="font-size:12px;text-transform:uppercase;color:#888;letter-spacing:0.5px;">Total Pagado</span><br><strong style="font-size:18px;">$${totalPagado.toLocaleString()}</strong></div>
-            <div><span style="font-size:12px;text-transform:uppercase;color:#888;letter-spacing:0.5px;">Total Pendiente</span><br><strong style="font-size:18px;">$${totalPendiente.toLocaleString()}</strong></div>
+            <div><span style="font-size:12px;text-transform:uppercase;color:#888;letter-spacing:0.5px;">Pagado</span><br><strong style="font-size:18px;">$${totalPagado.toLocaleString()}</strong></div>
+            <div><span style="font-size:12px;text-transform:uppercase;color:#888;letter-spacing:0.5px;">Pendiente</span><br><strong style="font-size:18px;">$${totalPendiente.toLocaleString()}</strong></div>
+            </div>
+            <div>
+            <div><span style="font-size:12px;text-transform:uppercase;color:#888;letter-spacing:0.5px;">Efectivo</span><br><strong style="font-size:18px;">$${totalPagadoEfectivo.toLocaleString()}</strong></div>
+            <div><span style="font-size:12px;text-transform:uppercase;color:#888;letter-spacing:0.5px;">Transferencia</span><br><strong style="font-size:18px;">$${totalPagadoTransferencia.toLocaleString()}</strong></div>
+            <div><span style="font-size:12px;text-transform:uppercase;color:#888;letter-spacing:0.5px;">Donación</span><br><strong style="font-size:18px;">$${totalPagadoDonacion.toLocaleString()}</strong></div>
+            </div>
         </div>`;
 
         openPrintWindow("Reporte de Viajes al Templo", "Rama Arroyo Seco", body);
@@ -423,6 +442,15 @@ export default function TripReservations() {
                     <div className="form-group">
                         <label>Adelanto</label>
                         <input type="number" name="advance_payment" placeholder="Adelanto" value={formData.advance_payment} onChange={handleChange} />
+                    </div>
+                    <div className="form-group">
+                        <label>Medio de Pago</label>
+                        <select name="payment_type" value={paymentForm.payment_type} onChange={handlePaymentChange} required>
+                            <option value="">Seleccionar</option>
+                            <option value="efectivo">Efectivo</option>
+                            <option value="transferencia">Transferencia</option>
+                            <option value="donacion">Donación</option>
+                        </select>
                     </div>
                     <div className="form-group full-width">
                         <button type="submit" className="btn primary">{editingId ? "Actualizar" : "Reservar"}</button>
@@ -599,7 +627,23 @@ export default function TripReservations() {
                                 <td>{formatDate(res.trip_date)}</td>
                                 <td>{formatDate(res.register_date)}</td>
                                 <td>${Number(res.advance_payment).toLocaleString()}</td>
-                                <td>${Number(res.pending_payment).toLocaleString()}</td>
+                                <td>
+                                    {Number(res.pending_payment) > 0 ? (
+                                        <span style={{
+                                            display: "inline-block",
+                                            background: "var(--danger, #e74c3c)",
+                                            color: "#fff",
+                                            borderRadius: "999px",
+                                            padding: "2px 10px",
+                                            fontSize: "0.82rem",
+                                            fontWeight: 600,
+                                        }}>
+                                            ${Number(res.pending_payment).toLocaleString()}
+                                        </span>
+                                    ) : (
+                                        <span style={{ color: "var(--success, #27ae60)", fontWeight: 600 }}>Saldado</span>
+                                    )}
+                                </td>
                                 <td>{formatDate(res.due_date)}</td>
                                 <td>
                                     <button className="btn secondary extracted-style-4" onClick={() => handleEdit(res)} aria-label="Editar"><IoCreateOutline /></button>

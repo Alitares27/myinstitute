@@ -64,10 +64,6 @@ export const reportBaseStyles = `
   }
 
   .report-footer {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -77,15 +73,13 @@ export const reportBaseStyles = `
     background: #fff;
     font-size: 0.78em;
     color: #666;
+    margin-top: 30px;
   }
   .report-footer img {
     width: 22px;
     height: 22px;
     object-fit: contain;
     opacity: 0.7;
-  }
-  @media print {
-    .report-footer { position: fixed; bottom: 0; }
   }
 `;
 

@@ -24,6 +24,7 @@ const NuevaActividad = lazy(() => import("./pages/NuevaActividad"));
 const EditarActividad = lazy(() => import("./pages/EditarActividad"));
 const Auditorias = lazy(() => import("./pages/Auditorias"));
 const MantTemplos = lazy(() => import("./pages/MantTemplos"));
+const PagosTemplos = lazy(() => import("./pages/PagosTemplos"));
 
 
 function App() {
@@ -61,6 +62,7 @@ function App() {
 
           <Route path="/auditorias" element={<RutaPrivada><Disposicion><Auditorias /></Disposicion></RutaPrivada>} />
           <Route path="/templos" element={<RutaPrivada><Disposicion><MantTemplos /></Disposicion></RutaPrivada>} />
+          <Route path="/templos/pagos" element={<RutaPrivada><Disposicion><PagosTemplos /></Disposicion></RutaPrivada>} />
 
           <Route path="*" element={
             <RutaPrivada>
