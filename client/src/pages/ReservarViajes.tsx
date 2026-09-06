@@ -44,7 +44,8 @@ export default function TripReservations() {
         trip_id: "",
         attendance_id: "",
         payment_amount: "",
-        payment_date: getTodayYMD()
+        payment_date: getTodayYMD(),
+        payment_type: ""
     });
 
     const [filterTripId, setFilterTripId] = useState<string>("");
@@ -223,7 +224,8 @@ export default function TripReservations() {
             trip_id: "",
             attendance_id: "",
             payment_amount: "",
-            payment_date: ""
+            payment_date: "",
+            payment_type: ""
         });
         setShowPaymentModal(true);
     };

@@ -32,7 +32,7 @@ function Sidebar() {
 
   const isTeachingActive = ["/miembros", "/inscripciones", "/asistencia", "/calificaciones"].includes(currentPath);
   const isLeadershipActive = ["/discursantes", "/consejos", "/actividades", "/auditorias"].includes(currentPath);
-  const isTempleActive = ["/viajes-templo", "/reservar-viajes", "/templos/pagos"].includes(currentPath);
+  const isTempleActive = ["/viajes-templo", "/reservar-viajes", "/pagos"].includes(currentPath);
   const isMaintenanceActive = ["/usuarios", "/templos"].includes(currentPath);
 
   const [isTeachingOpen, setIsTeachingOpen] = useState(isTeachingActive);
@@ -139,7 +139,7 @@ function Sidebar() {
                 <ul className="submenu" style={{ paddingLeft: "20px", listStyle: "none" }}>
                   <li><NavLink to="/viajes-templo" className="sidebar-link" onClick={() => setIsMenuOpen(false)}><div className="icon-circle"><IoCalendarOutline className="icon" /></div><span>Viajes</span></NavLink></li>
                   <li><NavLink to="/reservar-viajes" className="sidebar-link" onClick={() => setIsMenuOpen(false)}><div className="icon-circle"><IoPeopleOutline className="icon" /></div><span>Reservas</span></NavLink></li>
-                  <li><NavLink to="/templos/pagos" className="sidebar-link" onClick={() => setIsMenuOpen(false)}><div className="icon-circle"><IoCashOutline className="icon" /></div><span>Pagos</span></NavLink></li>
+                  <li><NavLink to="/pagos" className="sidebar-link" onClick={() => setIsMenuOpen(false)}><div className="icon-circle"><IoCashOutline className="icon" /></div><span>Pagos</span></NavLink></li>
                 </ul>
               )}
             </li>

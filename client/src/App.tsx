@@ -62,7 +62,7 @@ function App() {
 
           <Route path="/auditorias" element={<RutaPrivada><Disposicion><Auditorias /></Disposicion></RutaPrivada>} />
           <Route path="/templos" element={<RutaPrivada><Disposicion><MantTemplos /></Disposicion></RutaPrivada>} />
-          <Route path="/templos/pagos" element={<RutaPrivada><Disposicion><PagosTemplos /></Disposicion></RutaPrivada>} />
+          <Route path="/pagos" element={<RutaPrivada><Disposicion><PagosTemplos /></Disposicion></RutaPrivada>} />
 
           <Route path="*" element={
             <RutaPrivada>

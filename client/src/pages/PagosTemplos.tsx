@@ -5,7 +5,9 @@ import { FiMapPin } from "react-icons/fi";
 import { formatDate } from "../utils/utilidadesFecha";
 import { Skeleton } from "../components/Esqueleto";
 import { openPrintWindow } from "../utils/utilidadesReportes";
+import type { Templo } from "../interfaces/Templo";
 import api from "../api";
+import useAvailableTrips from "../hooks/usarViajesDisponibles";
 
 const getTodayYMD = () => {
   const today = new Date();
@@ -42,6 +44,7 @@ export default function PagosTemplos() {
     attendance_id: "",
     payment_amount: "",
     payment_date: getTodayYMD(),
+    payment_type: "efectivo",
   });
 
   const [pagos, setPagos] = useState<any[]>([]);
@@ -111,9 +114,11 @@ export default function PagosTemplos() {
     r => r.id === Number(paymentForm.attendance_id)
   );
 
+  const availableTrips = useAvailableTrips(trips);
+
   const handleOpenPaymentModal = () => {
     setPaymentError("");
-    setPaymentForm({ trip_id: "", attendance_id: "", payment_amount: "", payment_date: getTodayYMD() });
+    setPaymentForm({ trip_id: "", attendance_id: "", payment_amount: "", payment_date: getTodayYMD(), payment_type: "efectivo" });
     setShowPaymentModal(true);
   };
 
@@ -330,7 +335,7 @@ export default function PagosTemplos() {
                     required
                   >
                     <option value="">Elegir viaje</option>
-                    {trips.map(t => (
+                    {availableTrips.map(t => (
                       <option key={t.id} value={t.id}>{formatDate(t.date)}</option>
                     ))}
                   </select>
