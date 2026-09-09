@@ -22,6 +22,7 @@ export default function Students() {
   const [teachers, setTeachers] = useState<any[]>([]);
   const [maestroForm, setMaestroForm] = useState({ id: "", user_id: "", name: "", specialty: "" });
   const [maestroUsers, setMaestroUsers] = useState<any[]>([]);
+  const [maestroCursos, setMaestroCursos] = useState<any[]>([]);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -77,18 +78,31 @@ export default function Students() {
 
   const handleOpenMaestros = async () => {
     setShowMaestrosModal(true);
-    const [teachersRes, usersRes] = await Promise.all([
+    const [teachersRes, usersRes, coursesRes] = await Promise.all([
       api.get("/teachers"),
       api.get("/users"),
+      api.get("/courses"),
     ]);
     setTeachers(teachersRes.data);
     setMaestroUsers(usersRes.data);
+    setMaestroCursos(coursesRes.data);
   };
 
   const maestroAvailableUsers = useMemo(() => {
     const teacherUserIds = new Set(teachers.map((t: any) => Number(t.user_id)));
     return maestroUsers.filter((u: any) => !teacherUserIds.has(Number(u.id)));
   }, [maestroUsers, teachers]);
+
+  const maestroSpecialtyOptions = useMemo(() => {
+    const titles = Array.from(new Set(maestroCursos.map((c: any) => c.title).filter(Boolean)));
+    const current = maestroForm.specialty?.trim();
+    if (current && !titles.includes(current)) {
+      return [...titles, current];
+    }
+    return titles;
+  }, [maestroCursos, maestroForm.specialty]);
+
+  const hasMaestroCursos = maestroCursos.length > 0;
 
   const handleMaestroSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -327,10 +341,20 @@ export default function Students() {
                     )}
                   </div>
                   <div className="form-group">
-                    <input placeholder="Especialidad" value={maestroForm.specialty} onChange={e => setMaestroForm({ ...maestroForm, specialty: e.target.value })} required />
+                    <select value={maestroForm.specialty} onChange={e => setMaestroForm({ ...maestroForm, specialty: e.target.value })} required>
+                      <option value="">Elegir especialidad</option>
+                      {maestroSpecialtyOptions.map((sp) => (
+                        <option key={sp} value={sp}>{sp}</option>
+                      ))}
+                    </select>
+                    {!hasMaestroCursos && (
+                      <p style={{ color: "var(--text-muted)", fontSize: "0.85rem", margin: "4px 0 0" }}>
+                        Registra cursos antes de asignar una especialidad.
+                      </p>
+                    )}
                   </div>
                   <div className="form-group full-width">
-                    <button type="submit" className="btn primary">{maestroForm.id ? "Actualizar" : "Agregar"}</button>
+                    <button type="submit" className="btn primary" disabled={!hasMaestroCursos}>{maestroForm.id ? "Actualizar" : "Agregar"}</button>
                     {(maestroForm.id || maestroForm.user_id || maestroForm.specialty) && (
                       <button type="button" onClick={() => setMaestroForm({ id: "", user_id: "", name: "", specialty: "" })} className="btn cancel-btn" title="Cancelar" aria-label="Cancelar">✕</button>
                     )}

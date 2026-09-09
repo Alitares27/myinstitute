@@ -28,6 +28,16 @@ function UserPage() {
   });
 
   const [pwdForm, setPwdForm] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
+  const [courses, setCourses] = useState<any[]>([]);
+
+  const specialtyOptions = useMemo(() => {
+    const titles = Array.from(new Set(courses.map((c: any) => c.title).filter(Boolean)));
+    const current = form.specialty?.trim();
+    if (current && !titles.includes(current)) {
+      return [...titles, current];
+    }
+    return titles;
+  }, [courses, form.specialty]);
 
   useEffect(() => {
     fetchData();
@@ -40,8 +50,12 @@ function UserPage() {
       const userRes = JSON.parse(localStorage.getItem("user") || "{}");
       setCurrentUser(userRes);
       if (userRes.role === "admin") {
-        const res = await api.get("/users");
-        setUsers(res.data);
+        const [usersRes, coursesRes] = await Promise.all([
+          api.get("/users"),
+          api.get("/courses"),
+        ]);
+        setUsers(usersRes.data);
+        setCourses(coursesRes.data);
       }
     } catch {
     } finally {
@@ -187,7 +201,12 @@ function UserPage() {
               </select>
 
               {form.role === "teacher" && (
-                <input placeholder="Especialidad" value={form.specialty} onChange={e => setForm({ ...form, specialty: e.target.value })} />
+                <select value={form.specialty} onChange={e => setForm({ ...form, specialty: e.target.value })}>
+                  <option value="">Elegir Especialidad</option>
+                  {specialtyOptions.map((sp) => (
+                    <option key={sp} value={sp}>{sp}</option>
+                  ))}
+                </select>
               )}
               {form.role === "student" && (
                 <select value={form.grade} onChange={e => setForm({ ...form, grade: e.target.value })}>

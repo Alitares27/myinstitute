@@ -37,8 +37,10 @@ export default function Enrollments() {
 
   const [showCursosModal, setShowCursosModal] = useState(false);
   const [cursoTitle, setCursoTitle] = useState("");
+  const [cursoTeacherId, setCursoTeacherId] = useState("");
   const [editingCursoId, setEditingCursoId] = useState<number | null>(null);
   const [cursoError, setCursoError] = useState<string | null>(null);
+  const [teachers, setTeachers] = useState<any[]>([]);
 
   const [selectedCurso, setSelectedCurso] = useState<any | null>(null);
   const [topics, setTopics] = useState<any[]>([]);
@@ -58,7 +60,8 @@ export default function Enrollments() {
 
     api.get("/enrollments").then((res) => setEnrollments(res.data));
     api.get("/students").then((res) => setStudents(res.data));
-    api.get("/courses").then((res) => setCourses(res.data)).finally(() => setLoading(false));
+    api.get("/courses").then((res) => setCourses(res.data));
+    api.get("/teachers").then((res) => setTeachers(res.data)).finally(() => setLoading(false));
   }, []);
 
   const handleSort = (key: string) => {
@@ -128,11 +131,23 @@ export default function Enrollments() {
           { student_id: form.student_id, course_id: form.course_id }
         );
         setEnrollments((prev) => prev.map((e) => (e.id === form.id ? res.data : e)));
-      } else {
-        const res = await api.post("/enrollments", form);
-        setEnrollments((prev) => [...prev, res.data]);
+        setForm({ id: "", student_id: "", course_id: "" });
+        alert("Matrícula actualizada correctamente");
+        return;
       }
-      setForm({ id: "", student_id: "", course_id: "" });
+      const res = await api.post("/enrollments", form);
+      setEnrollments((prev) => [...prev, res.data]);
+      alert("Matrícula registrada correctamente");
+      if (confirm("¿Deseas editar el registro recién creado?")) {
+        setForm({
+          id: res.data.id,
+          student_id: res.data.student_id,
+          course_id: res.data.course_id,
+        });
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      } else {
+        setForm({ id: "", student_id: "", course_id: "" });
+      }
     } catch {
       alert("Error al procesar la matrícula");
     }
@@ -160,15 +175,17 @@ export default function Enrollments() {
   const handleAddCurso = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!cursoTitle.trim()) return;
+    const teacherId = cursoTeacherId ? Number(cursoTeacherId) : null;
     try {
       if (editingCursoId !== null) {
-        const res = await api.put(`/courses/${editingCursoId}`, { title: cursoTitle.trim() });
+        const res = await api.put(`/courses/${editingCursoId}`, { title: cursoTitle.trim(), teacher_id: teacherId });
         setCourses(prev => prev.map(c => c.id === editingCursoId ? { ...c, ...res.data } : c));
       } else {
-        const res = await api.post("/courses", { title: cursoTitle.trim() });
+        const res = await api.post("/courses", { title: cursoTitle.trim(), teacher_id: teacherId });
         setCourses(prev => [...prev, res.data].sort((a, b) => a.title.localeCompare(b.title)));
       }
       setCursoTitle("");
+      setCursoTeacherId("");
       setEditingCursoId(null);
       setCursoError(null);
     } catch {
@@ -179,6 +196,7 @@ export default function Enrollments() {
   const handleEditCurso = (c: any) => {
     setEditingCursoId(c.id);
     setCursoTitle(c.title);
+    setCursoTeacherId(c.teacher_id != null ? String(c.teacher_id) : "");
     setCursoError(null);
   };
 
@@ -508,9 +526,19 @@ export default function Enrollments() {
                 style={{ flex: 1 }}
                 required
               />
+              <select
+                value={cursoTeacherId}
+                onChange={e => setCursoTeacherId(e.target.value)}
+                style={{ minWidth: "160px" }}
+              >
+                <option value="">Sin maestro</option>
+                {teachers.map(t => (
+                  <option key={t.id} value={t.id}>{t.name}</option>
+                ))}
+              </select>
               <button type="submit" className="btn primary">{editingCursoId !== null ? "Guardar" : <FaPlus />}</button>
               {editingCursoId !== null && (
-                <button type="button" onClick={() => { setEditingCursoId(null); setCursoTitle(""); setCursoError(null); }} className="btn cancel-btn" title="Cancelar" aria-label="Cancelar">✕</button>
+                <button type="button" onClick={() => { setEditingCursoId(null); setCursoTitle(""); setCursoTeacherId(""); setCursoError(null); }} className="btn cancel-btn" title="Cancelar" aria-label="Cancelar">✕</button>
               )}
             </form>
 
@@ -579,7 +607,6 @@ export default function Enrollments() {
                 <table>
                   <thead>
                     <tr>
-                      <th>#</th>
                       <th>Tema</th>
                       <th>Acciones</th>
                     </tr>
@@ -587,7 +614,6 @@ export default function Enrollments() {
                   <tbody>
                     {topics.map(t => (
                       <tr key={t.id}>
-                        <td>{t.order_index != null ? t.order_index : "—"}</td>
                         <td>{t.title}</td>
                         <td>
                           <span style={{ display: "flex", gap: "0.5rem" }}>
