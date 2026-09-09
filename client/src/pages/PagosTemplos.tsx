@@ -5,7 +5,6 @@ import { FiMapPin } from "react-icons/fi";
 import { formatDate } from "../utils/utilidadesFecha";
 import { Skeleton } from "../components/Esqueleto";
 import { openPrintWindow } from "../utils/utilidadesReportes";
-import type { Templo } from "../interfaces/Templo";
 import api from "../api";
 import useAvailableTrips from "../hooks/usarViajesDisponibles";
 
@@ -23,7 +22,6 @@ export default function PagosTemplos() {
   const [role, setRole] = useState<string>("");
   const [trips, setTrips] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
-  const [templos, setTemplos] = useState<Templo[]>([]);
   const [reservations, setReservations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -64,11 +62,6 @@ export default function PagosTemplos() {
     setTrips(data);
   };
 
-  const fetchTemplos = async () => {
-    const { data } = await api.get("/temples");
-    setTemplos(data);
-  };
-
   const fetchUsers = async () => {
     const { data } = await api.get("/users");
     setUsers(data);
@@ -81,7 +74,7 @@ export default function PagosTemplos() {
 
   const fetchPagos = async () => {
     const params: string[] = [];
-    if (filterTripId) params.push(`temple_id=${filterTripId}`);
+    if (filterTripId) params.push(`trip_id=${filterTripId}`);
     if (filterUserId) params.push(`member_id=${filterUserId}`);
     const qs = params.length ? `?${params.join("&")}` : "";
     const { data } = await api.get(`/temple-amortizations${qs}`);
@@ -89,7 +82,7 @@ export default function PagosTemplos() {
   };
 
   useEffect(() => {
-    Promise.all([fetchTrips(), fetchTemplos(), fetchUsers(), fetchReservations()])
+    Promise.all([fetchTrips(), fetchUsers(), fetchReservations()])
       .then(() => fetchPagos())
       .finally(() => setLoading(false));
   }, []);
@@ -262,9 +255,11 @@ export default function PagosTemplos() {
             onChange={e => { setFilterTripId(e.target.value); setCurrentPage(1); }}
             className="filter-select"
           >
-            <option value="">Todos los templos</option>
-            {templos.map(t => (
-              <option key={t.id} value={t.id}>{t.name}</option>
+            <option value="">Todos los viajes</option>
+            {trips.map(t => (
+              <option key={t.id} value={t.id}>
+                {formatDate(t.date)}
+              </option>
             ))}
           </select>
 

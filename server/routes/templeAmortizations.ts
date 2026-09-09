@@ -10,7 +10,7 @@ router.get(
   isAdmin,
   async (req: Request, res: Response) => {
     try {
-      const { member_id, temple_id } = req.query;
+      const { member_id, temple_id, trip_id } = req.query;
       const where: string[] = [];
       const params: any[] = [];
 
@@ -18,8 +18,12 @@ router.get(
         where.push(`ta.user_id = $${params.length + 1}`);
         params.push(member_id as string);
       }
+      if (trip_id) {
+        where.push(`ta.trip_id = $${params.length + 1}`);
+        params.push(trip_id as string);
+      }
       if (temple_id) {
-        where.push(`ta.temple_id = $${params.length + 1}`);
+        where.push(`tt.temple_id = $${params.length + 1}`);
         params.push(temple_id as string);
       }
 
@@ -35,6 +39,7 @@ router.get(
         FROM temple_amortizations tam
         JOIN temple_attendance ta ON tam.attendance_id = ta.id
         JOIN users u ON ta.user_id = u.id
+        LEFT JOIN temple_trips tt ON ta.trip_id = tt.id
         ${where.length > 0 ? "WHERE " + where.join(" AND ") : ""}
         ORDER BY tam.payment_date DESC
       `;
