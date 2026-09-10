@@ -1,0 +1,320 @@
+/* =========================================
+   ASISTENCIA STYLES
+   ========================================= */
+
+.asistencia-page {
+  animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* -----------------------------------------
+   Header & Controls
+   ----------------------------------------- */
+.asistencia-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.asistencia-header-info h1 {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin: 0;
+}
+
+.asistencia-header-info p {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  margin: 0.35rem 0 0 0;
+}
+
+.asistencia-header-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+/* -----------------------------------------
+   Stats Summary Cards
+   ----------------------------------------- */
+.asistencia-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.75rem;
+}
+
+.asistencia-stat-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  box-shadow: var(--shadow-xs);
+  transition: transform var(--transition), box-shadow var(--transition);
+}
+
+.asistencia-stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+}
+
+.asistencia-stat-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.asistencia-stat-icon.blue {
+  background: rgba(0, 122, 255, 0.12);
+  color: var(--primary);
+}
+
+.asistencia-stat-icon.green {
+  background: rgba(52, 199, 89, 0.12);
+  color: var(--success);
+}
+
+.asistencia-stat-icon.orange {
+  background: rgba(255, 149, 0, 0.12);
+  color: var(--warning);
+}
+
+.asistencia-stat-icon.purple {
+  background: rgba(175, 82, 222, 0.12);
+  color: #AF52DE;
+}
+
+.asistencia-stat-content h3 {
+  font-size: 1.6rem;
+  font-weight: 700;
+  margin: 0;
+  color: var(--text-main);
+  line-height: 1.1;
+}
+
+.asistencia-stat-content p {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin: 0.25rem 0 0 0;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* -----------------------------------------
+   Form Card
+   ----------------------------------------- */
+.asistencia-form-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.asistencia-form-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.asistencia-form-header h2 {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--text-main);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.asistencia-form-grid {
+  display: grid;
+  grid-template-columns: 1.8fr 1.8fr 1.8fr 1.4fr auto;
+  gap: 1rem;
+  align-items: flex-end;
+}
+
+.asistencia-form-grid .form-group {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.asistencia-form-grid .form-group label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.asistencia-form-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.asistencia-form-actions .btn {
+  margin: 0;
+}
+
+/* -----------------------------------------
+   Filters & Search Toolbar
+   ----------------------------------------- */
+.asistencia-toolbar {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: nowrap;
+  align-items: center;
+  margin-bottom: 1.25rem;
+  width: 100%;
+}
+
+.asistencia-search-container {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  padding: 0.5rem 0.85rem;
+  flex: 1;
+  min-width: 180px;
+  box-shadow: var(--shadow-xs);
+}
+
+.asistencia-search-container input {
+  border: none;
+  outline: none;
+  background: transparent;
+  width: 100%;
+  font-size: 0.88rem;
+  color: var(--text-main);
+}
+
+.asistencia-filters {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: nowrap;
+  flex-shrink: 0;
+}
+
+.asistencia-filters select,
+.asistencia-filters input[type="date"] {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  padding: 0.5rem 0.85rem;
+  font-size: 0.88rem;
+  color: var(--text-main);
+  outline: none;
+  box-shadow: var(--shadow-xs);
+  cursor: pointer;
+  max-width: 200px;
+}
+
+/* -----------------------------------------
+   Status Badges & Topic Badges
+   ----------------------------------------- */
+.status-badge-modern {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.status-badge-modern.present {
+  background: rgba(52, 199, 89, 0.12);
+  color: var(--success);
+  border: 1px solid rgba(52, 199, 89, 0.25);
+}
+
+.status-badge-modern.absent {
+  background: rgba(255, 59, 48, 0.12);
+  color: var(--danger);
+  border: 1px solid rgba(255, 59, 48, 0.25);
+}
+
+.topic-tag-modern {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: var(--bg-body);
+  border: 1px solid var(--border-color);
+  padding: 0.25rem 0.6rem;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  color: var(--text-main);
+  font-weight: 500;
+}
+
+/* -----------------------------------------
+   Responsive adjustments
+   ----------------------------------------- */
+@media (max-width: 950px) {
+  .asistencia-form-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .asistencia-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .asistencia-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .asistencia-filters {
+    flex-wrap: wrap;
+    width: 100%;
+  }
+
+  .asistencia-filters select,
+  .asistencia-filters input[type="date"] {
+    flex: 1;
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 600px) {
+  .asistencia-form-grid {
+    grid-template-columns: 1fr;
+  }
+}

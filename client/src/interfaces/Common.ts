@@ -11,6 +11,8 @@ export interface Tema {
 export interface Student {
   id: number;
   name: string;
+  email?: string;
+  telefono?: string;
 }
 
 export interface Course {

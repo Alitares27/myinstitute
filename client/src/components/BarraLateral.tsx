@@ -30,7 +30,7 @@ function Sidebar() {
   const user = JSON.parse(localStorage.getItem("user") || "{}");
   const role = user.role || "";
 
-  const isTeachingActive = ["/miembros", "/inscripciones", "/asistencia", "/calificaciones"].includes(currentPath);
+  const isTeachingActive = ["/miembros", "/maestros", "/inscripciones", "/asistencia", "/calificaciones"].includes(currentPath);
   const isLeadershipActive = ["/discursantes", "/consejos", "/actividades", "/auditorias"].includes(currentPath);
   const isTempleActive = ["/viajes-templo", "/reservar-viajes", "/pagos"].includes(currentPath);
   const isMaintenanceActive = ["/usuarios", "/templos"].includes(currentPath);
@@ -96,7 +96,7 @@ function Sidebar() {
 
               {isTeachingOpen && (
                 <ul className="submenu" style={{ paddingLeft: "20px", listStyle: "none" }}>
-                  <li><NavLink to="/miembros" className="sidebar-link" onClick={() => setIsMenuOpen(false)}><div className="icon-circle"><IoPersonOutline className="icon" /></div><span>Miembros</span></NavLink></li>
+                  <li><NavLink to="/maestros" className="sidebar-link" onClick={() => setIsMenuOpen(false)}><div className="icon-circle"><IoSchoolOutline className="icon" /></div><span>Maestros</span></NavLink></li>
                   <li><NavLink to="/inscripciones" className="sidebar-link" onClick={() => setIsMenuOpen(false)}><div className="icon-circle"><IoClipboardOutline className="icon" /></div><span>Matrículas</span></NavLink></li>
                   <li><NavLink to="/asistencia" className="sidebar-link" onClick={() => setIsMenuOpen(false)}><div className="icon-circle"><IoCalendarOutline className="icon" /></div><span>Asistencia</span></NavLink></li>
                   <li><NavLink to="/calificaciones" className="sidebar-link" onClick={() => setIsMenuOpen(false)}><div className="icon-circle"><IoRibbonOutline className="icon" /></div><span>Calificaciones</span></NavLink></li>

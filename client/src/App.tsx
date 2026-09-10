@@ -12,6 +12,7 @@ import DetallesConsejo from "./components/meetings/DetallesConsejo";
 
 const Panel = lazy(() => import("./pages/Panel"));
 const Miembros = lazy(() => import("./pages/Miembros"));
+const Maestros = lazy(() => import("./pages/Maestros"));
 const Inscripciones = lazy(() => import("./pages/Inscripciones"));
 const Asistencia = lazy(() => import("./pages/Asistencia"));
 const PaginaUsuario = lazy(() => import("./pages/PaginaUsuario"));
@@ -43,6 +44,7 @@ function App() {
 
           <Route path="/panel" element={<RutaPrivada><Disposicion><Panel /></Disposicion></RutaPrivada>} />
           <Route path="/miembros" element={<RutaPrivada><Disposicion><Miembros /></Disposicion></RutaPrivada>} />
+          <Route path="/maestros" element={<RutaPrivada><Disposicion><Maestros /></Disposicion></RutaPrivada>} />
           <Route path="/inscripciones" element={<RutaPrivada><Disposicion><Inscripciones /></Disposicion></RutaPrivada>} />
           <Route path="/asistencia" element={<RutaPrivada><Disposicion><Asistencia /></Disposicion></RutaPrivada>} />
           <Route path="/usuarios" element={<RutaPrivada><Disposicion><PaginaUsuario /></Disposicion></RutaPrivada>} />

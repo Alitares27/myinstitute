@@ -1355,3 +1355,85 @@ button:disabled {
 .payment-info-grid strong {
   color: var(--primary);
 }
+
+/* =========================================
+   Calificaciones - Formulario en una sola línea
+   ========================================= */
+.grades-page .activity-form {
+  padding: 1.25rem 1.5rem;
+}
+
+.grades-page .activity-form .form-row {
+  display: grid;
+  grid-template-columns: minmax(160px, 1.6fr) minmax(160px, 1.6fr) minmax(100px, 1fr) minmax(130px, 1.2fr) auto;
+  gap: 1rem;
+  align-items: center;
+}
+
+.grades-page .activity-form .form-group {
+  margin: 0;
+  width: 100%;
+}
+
+.grades-page .activity-form .form-group.form-actions {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center;
+  gap: 8px;
+  width: auto;
+  white-space: nowrap;
+}
+
+.grades-page .activity-form .form-group.form-actions .btn {
+  margin: 0;
+  white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+  .grades-page .activity-form .form-row {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .grades-page .activity-form .form-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* =========================================
+   Asistencia - Formulario en una sola línea
+   ========================================= */
+.attendance-page form.attendance-form {
+  display: grid !important;
+  grid-template-columns: minmax(160px, 1.5fr) minmax(160px, 1.5fr) minmax(160px, 1.5fr) minmax(140px, 1.2fr) auto !important;
+  gap: 1rem;
+  align-items: center;
+  padding: 1.25rem 1.5rem;
+}
+
+.attendance-page form.attendance-form .form-group.form-actions {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center;
+  gap: 8px;
+  width: auto;
+  white-space: nowrap;
+}
+
+.attendance-page form.attendance-form .form-group.form-actions .btn {
+  margin: 0;
+  white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+  .attendance-page form.attendance-form {
+    grid-template-columns: 1fr 1fr !important;
+  }
+}
+
+@media (max-width: 600px) {
+  .attendance-page form.attendance-form {
+    grid-template-columns: 1fr !important;
+  }
+}

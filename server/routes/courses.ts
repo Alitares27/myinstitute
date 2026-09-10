@@ -80,11 +80,19 @@ router.put("/:id", verifyToken, isAdmin, async (req: AuthRequest, res: Response)
   try {
     const { id } = req.params;
     const { title, description, teacher_id } = req.body;
+
+    const existingRes = await pool.query("SELECT * FROM courses WHERE id = $1", [id]);
+    if (existingRes.rows.length === 0) return res.status(404).json({ message: "Curso no encontrado" });
+
+    const current = existingRes.rows[0];
+    const newTitle = title !== undefined ? title : current.title;
+    const newDesc = description !== undefined ? description : current.description;
+    const newTeacherId = teacher_id !== undefined ? teacher_id : current.teacher_id;
+
     const result = await pool.query(
       "UPDATE courses SET title = $1, description = $2, teacher_id = $3 WHERE id = $4 RETURNING *",
-      [title, description, teacher_id, id]
+      [newTitle, newDesc, newTeacherId, id]
     );
-    if (result.rows.length === 0) return res.status(404).json({ message: "Curso no encontrado" });
     res.json(result.rows[0]);
   } catch (err) {
     console.error("❌ Error updating course:", err);

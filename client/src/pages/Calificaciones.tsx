@@ -1,11 +1,13 @@
 import { useEffect, useState, useMemo } from "react";
 import api from "../api";
 import { FaPlus } from "react-icons/fa";
-import { IoCreateOutline, IoTrashOutline } from "react-icons/io5";
+import { IoCreateOutline, IoTrashOutline, IoPrintOutline, IoPeopleOutline, IoSchoolOutline } from "react-icons/io5";
 import { FiBarChart2 } from "react-icons/fi";
 import { formatDate } from "../utils/utilidadesFecha";
 import { Skeleton } from "../components/Esqueleto";
+import { openPrintWindow } from "../utils/utilidadesReportes";
 import type { SortConfig } from "../interfaces/Common";
+import "../styles/calificaciones.css";
 
 export default function Grades() {
   const [grades, setGrades] = useState<any[]>([]);
@@ -130,9 +132,107 @@ export default function Grades() {
     }
   };
 
+  const averageGrade = useMemo(() => {
+    const numeric = grades.map(g => parseFloat(g.grade)).filter(v => !isNaN(v));
+    return numeric.length ? (numeric.reduce((a, b) => a + b, 0) / numeric.length).toFixed(2) : "N/A";
+  }, [grades]);
+
+  const handlePrintGradesReport = () => {
+    let body = "";
+    const hasData = filteredGrades.length > 0;
+
+    if (hasData) {
+      const numericGrades = filteredGrades
+        .map((g) => parseFloat(g.grade))
+        .filter((val) => !isNaN(val));
+      const averageGrade = numericGrades.length > 0
+        ? (numericGrades.reduce((a, b) => a + b, 0) / numericGrades.length).toFixed(2)
+        : "N/A";
+
+      body += `
+        <table>
+          <thead>
+            <tr>
+              ${role === "admin" ? "<th>Estudiante</th>" : ""}
+              <th>Curso</th>
+              <th class="center">Nota</th>
+              <th>Tipo</th>
+              <th>Fecha</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+
+      filteredGrades.forEach((g) => {
+        body += `
+          <tr>
+            ${role === "admin" ? `<td>${g.student_name || "-"}</td>` : ""}
+            <td>${g.course_title || "-"}</td>
+            <td class="center"><strong>${g.grade}</strong></td>
+            <td>${g.grade_type || "-"}</td>
+            <td>${formatDate(g.created_at)}</td>
+          </tr>
+        `;
+      });
+
+      body += `
+          </tbody>
+        </table>
+        <div class="summary-box" style="margin-top: 16px;">
+          📊 <strong>Total de registros:</strong> ${filteredGrades.length} &nbsp;|&nbsp; <strong>Promedio general:</strong> ${averageGrade}
+        </div>
+      `;
+    } else {
+      body += `<p style="text-align: center; color: #666; margin-top: 20px;">No hay calificaciones registradas para los filtros seleccionados.</p>`;
+    }
+
+    const studentObj = students.find((s) => s.id.toString() === filterStudent);
+    const studentName = filterStudent && studentObj ? studentObj.name : "Todos los miembros";
+    const typeLabel = filterType ? filterType : "Todos los tipos";
+    const subtitle = role === "admin" ? `Estudiante: ${studentName} | Tipo: ${typeLabel}` : `Tipo: ${typeLabel}`;
+
+    openPrintWindow(
+      "Reporte de Calificaciones",
+      subtitle,
+      body
+    );
+  };
+
   if (loading) {
     return (
       <div className="grades-page">
+        <div className="calificaciones-header">
+          {role === "admin" && (
+            <div className="calificaciones-stats-grid">
+              <div className="stat-card">
+                <div className="stat-icon blue"><IoPeopleOutline /></div>
+                <div className="stat-content"><h3>{filteredGrades.length}</h3><p>Total Calificaciones</p></div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-icon green"><IoSchoolOutline /></div>
+                <div className="stat-content"><h3>{averageGrade}</h3><p>Promedio</p></div>
+              </div>
+            </div>
+          )}
+          <div className="calificaciones-header-info">
+            <h1>
+              <span className="page-title-icon">
+                <FiBarChart2 />
+              </span>
+              Calificaciones
+            </h1>
+          </div>
+          <div className="calificaciones-header-actions">
+            <button
+              type="button"
+              className="btn secondary"
+              onClick={handlePrintGradesReport}
+              title="Imprimir o Exportar Reporte"
+            >
+              <IoPrintOutline /> Imprimir
+            </button>
+          </div>
+        </div>
         <Skeleton width="220px" height="1.8rem" />
         <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginTop: "1rem" }}>
           <div style={{ display: "flex", gap: "10px" }}>
@@ -164,58 +264,88 @@ export default function Grades() {
     <div className="grades-page">
       <h1><span className="page-title-icon"><FiBarChart2 /></span> Calificaciones</h1>
       {role === "admin" && (
-        <div className="form-container">
-          <h2 className="dashboard-subtitle">{form.id ? <><IoCreateOutline /> Actualizar</> : <><FaPlus /> Calificar</>}</h2>
+        <div className="calificaciones-form-card">
+          <div className="calificaciones-form-header">
+            <h2 className="dashboard-subtitle">
+              {form.id ? (
+                <>
+                  <IoCreateOutline /> Actualizar
+                </>
+              ) : (
+                <>
+                  <FaPlus /> Calificar
+                </>
+              )}
+            </h2>
+          </div>
           <form onSubmit={handleSubmit} className="activity-form">
             <div className="form-row">
               <div className="form-group">
-                <select value={form.student_id} onChange={(e) => setForm({ ...form, student_id: e.target.value })} required>
-                  <option value="">Elegir Estudiante </option>
-                  {students.map((s) => (
+                <select
+                  value={form.student_id}
+                  onChange={e => setForm({ ...form, student_id: e.target.value })}
+                  required
+                >
+                  <option value="">Elegir Estudiante</option>
+                  {students.map(s => (
                     <option key={s.id} value={s.id}>{s.name}</option>
                   ))}
                 </select>
               </div>
-
               <div className="form-group">
-                <select value={form.course_id} onChange={(e) => setForm({ ...form, course_id: e.target.value })} required>
+                <select
+                  value={form.course_id}
+                  onChange={e => setForm({ ...form, course_id: e.target.value })}
+                  required
+                >
                   <option value="">Elegir Curso</option>
-                  {courses.map((c) => (
+                  {courses.map(c => (
                     <option key={c.id} value={c.id}>{c.title}</option>
                   ))}
                 </select>
               </div>
-
               <div className="form-group">
-                <input type="number" step="0.1" placeholder="Calificación" value={form.grade} onChange={(e) => setForm({ ...form, grade: e.target.value })} required />
+                <input
+                  type="number"
+                  step="0.1"
+                  placeholder="Calificación"
+                  value={form.grade}
+                  onChange={e => setForm({ ...form, grade: e.target.value })}
+                  required
+                />
               </div>
-
               <div className="form-group">
-                <select value={form.grade_type} onChange={(e) => setForm({ ...form, grade_type: e.target.value })}>
+                <select
+                  value={form.grade_type}
+                  onChange={e => setForm({ ...form, grade_type: e.target.value })}
+                >
                   <option value="examen">Examen</option>
                   <option value="Lectura">Lectura</option>
                   <option value="participacion">Participación</option>
                 </select>
               </div>
-              <div className="form-group full-width">
-                <button type="submit" className="btn primary">{form.id ? "Actualizar" : "Calificar"}</button>
+              <div className="form-group form-actions">
+                <button type="submit" className="btn primary">
+                  {form.id ? "Actualizar" : "Calificar"}
+                </button>
                 {(form.id || form.student_id || form.course_id || form.grade) && (
-                  <button type="button" onClick={() => setForm({ id: "", student_id: "", course_id: "", grade: "", grade_type: "examen" })} className="btn cancel-btn" title="Cancelar" aria-label="Cancelar">✕</button>
+                  <button
+                    type="button"
+                    onClick={() => setForm({ id: "", student_id: "", course_id: "", grade: "", grade_type: "examen" })}
+                    className="btn cancel-btn"
+                    title="Cancelar"
+                    aria-label="Cancelar"
+                  >
+                    ✕
+                  </button>
                 )}
               </div>
             </div>
-
-
-
-
-
-
-
           </form>
         </div>
       )}
 
-      <div className="grid-form extracted-style-2">
+      <div className="calificaciones-toolbar">
         {role === "admin" && (
           <select value={filterStudent} onChange={(e) => setFilterStudent(e.target.value)}>
             <option value="">Todos los miembros</option>
@@ -230,6 +360,14 @@ export default function Grades() {
           <option value="Lectura">Lectura</option>
           <option value="participacion">Participación</option>
         </select>
+        <button
+          type="button"
+          onClick={handlePrintGradesReport}
+          className="btn primary"
+          style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
+        >
+          <IoPrintOutline /> Imprimir
+        </button>
       </div>
 
       <div className="table-container">

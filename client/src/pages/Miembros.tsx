@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import api from "../api";
 import { FaPlus } from "react-icons/fa";
 import { IoCreateOutline, IoTrashOutline } from "react-icons/io5";
@@ -8,6 +9,7 @@ import { Skeleton } from "../components/Esqueleto";
 import type { SortConfig } from "../interfaces/Common";
 
 export default function Students() {
+  const navigate = useNavigate();
   const [students, setStudents] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
   const [form, setForm] = useState({ id: "", user_id: "", name: "", grade: "" });
@@ -17,12 +19,6 @@ export default function Students() {
   const recordsPerPage = 5;
   const [sortConfig, setSortConfig] = useState<SortConfig>(null);
   const [loading, setLoading] = useState(true);
-
-  const [showMaestrosModal, setShowMaestrosModal] = useState(false);
-  const [teachers, setTeachers] = useState<any[]>([]);
-  const [maestroForm, setMaestroForm] = useState({ id: "", user_id: "", name: "", specialty: "" });
-  const [maestroUsers, setMaestroUsers] = useState<any[]>([]);
-  const [maestroCursos, setMaestroCursos] = useState<any[]>([]);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -71,64 +67,6 @@ export default function Students() {
     try {
       await api.delete(`/students/${id}`);
       setStudents(students.filter((s) => s.id !== id));
-    } catch {
-      alert("Error al eliminar");
-    }
-  };
-
-  const handleOpenMaestros = async () => {
-    setShowMaestrosModal(true);
-    const [teachersRes, usersRes, coursesRes] = await Promise.all([
-      api.get("/teachers"),
-      api.get("/users"),
-      api.get("/courses"),
-    ]);
-    setTeachers(teachersRes.data);
-    setMaestroUsers(usersRes.data);
-    setMaestroCursos(coursesRes.data);
-  };
-
-  const maestroAvailableUsers = useMemo(() => {
-    const teacherUserIds = new Set(teachers.map((t: any) => Number(t.user_id)));
-    return maestroUsers.filter((u: any) => !teacherUserIds.has(Number(u.id)));
-  }, [maestroUsers, teachers]);
-
-  const maestroSpecialtyOptions = useMemo(() => {
-    const titles = Array.from(new Set(maestroCursos.map((c: any) => c.title).filter(Boolean)));
-    const current = maestroForm.specialty?.trim();
-    if (current && !titles.includes(current)) {
-      return [...titles, current];
-    }
-    return titles;
-  }, [maestroCursos, maestroForm.specialty]);
-
-  const hasMaestroCursos = maestroCursos.length > 0;
-
-  const handleMaestroSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      if (maestroForm.id) {
-        const res = await api.put(`/teachers/${maestroForm.id}`, { specialty: maestroForm.specialty });
-        setTeachers(teachers.map((t) => (t.id === maestroForm.id ? res.data : t)));
-      } else {
-        const res = await api.post("/teachers", { user_id: maestroForm.user_id, specialty: maestroForm.specialty });
-        setTeachers([...teachers, res.data]);
-      }
-      setMaestroForm({ id: "", user_id: "", name: "", specialty: "" });
-    } catch {
-      alert("Error al procesar la solicitud");
-    }
-  };
-
-  const handleMaestroEdit = (teacher: any) => {
-    setMaestroForm({ id: teacher.id, user_id: teacher.user_id, name: teacher.name || "", specialty: teacher.specialty });
-  };
-
-  const handleMaestroDelete = async (id: string) => {
-    if (!window.confirm("¿Seguro que deseas eliminar este maestro?")) return;
-    try {
-      await api.delete(`/teachers/${id}`);
-      setTeachers(teachers.filter((t) => t.id !== id));
     } catch {
       alert("Error al eliminar");
     }
@@ -241,7 +179,7 @@ export default function Students() {
                 {(form.id || form.user_id || form.grade) && (
                   <button type="button" onClick={() => setForm({ id: "", user_id: "", name: "", grade: "" })} className="btn cancel-btn" title="Cancelar" aria-label="Cancelar">✕</button>
                 )}
-                <button type="button" className="btn secondary" onClick={handleOpenMaestros}>
+                <button type="button" className="btn secondary" onClick={() => navigate("/maestros")}>
                   <TbList /> Ver Maestros
                 </button>
               </div>
@@ -317,82 +255,6 @@ export default function Students() {
               <option key={i + 1} value={i + 1}>{i + 1} de {totalPages}</option>
             ))}
           </select>
-        </div>
-      )}
-      {showMaestrosModal && (
-        <div className="modal-overlay" onClick={() => setShowMaestrosModal(false)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: "800px" }}>
-            <button className="modal-close" onClick={() => setShowMaestrosModal(false)} aria-label="Cerrar" />
-            <h2 style={{ marginTop: 0, marginBottom: "1rem" }}>Maestros</h2>
-
-            {role === "admin" && (
-              <form onSubmit={handleMaestroSubmit} className="activity-form" style={{ marginBottom: "1rem" }}>
-                <div className="form-row">
-                  <div className="form-group">
-                    {maestroForm.id ? (
-                      <input value={maestroForm.name} readOnly style={{ background: "#f0f0f0", cursor: "not-allowed", opacity: 0.8 }} />
-                    ) : (
-                      <select value={maestroForm.user_id} onChange={e => setMaestroForm({ ...maestroForm, user_id: e.target.value })} required>
-                        <option value="">Elegir Miembro</option>
-                        {maestroAvailableUsers.map((u: any) => (
-                          <option key={u.id} value={u.id}>{u.name}</option>
-                        ))}
-                      </select>
-                    )}
-                  </div>
-                  <div className="form-group">
-                    <select value={maestroForm.specialty} onChange={e => setMaestroForm({ ...maestroForm, specialty: e.target.value })} required>
-                      <option value="">Elegir especialidad</option>
-                      {maestroSpecialtyOptions.map((sp) => (
-                        <option key={sp} value={sp}>{sp}</option>
-                      ))}
-                    </select>
-                    {!hasMaestroCursos && (
-                      <p style={{ color: "var(--text-muted)", fontSize: "0.85rem", margin: "4px 0 0" }}>
-                        Registra cursos antes de asignar una especialidad.
-                      </p>
-                    )}
-                  </div>
-                  <div className="form-group full-width">
-                    <button type="submit" className="btn primary" disabled={!hasMaestroCursos}>{maestroForm.id ? "Actualizar" : "Agregar"}</button>
-                    {(maestroForm.id || maestroForm.user_id || maestroForm.specialty) && (
-                      <button type="button" onClick={() => setMaestroForm({ id: "", user_id: "", name: "", specialty: "" })} className="btn cancel-btn" title="Cancelar" aria-label="Cancelar">✕</button>
-                    )}
-                  </div>
-                </div>
-              </form>
-            )}
-
-            <div style={{ maxHeight: "50vh", overflowY: "auto" }}>
-              <table>
-                <thead>
-                  <tr>
-                    <th>Nombre</th>
-                    <th>Especialidad</th>
-                    {role === "admin" && <th>Acciones</th>}
-                  </tr>
-                </thead>
-                <tbody>
-                  {teachers.length > 0 ? (
-                    teachers.map((t: any) => (
-                      <tr key={t.id}>
-                        <td>{t.name}</td>
-                        <td>{t.specialty}</td>
-                        {role === "admin" && (
-                          <td>
-                            <button className="btn secondary extracted-style-4" onClick={() => handleMaestroEdit(t)} aria-label="Editar"><IoCreateOutline /></button>
-                            <button className="btn secondary extracted-style-5" onClick={() => handleMaestroDelete(t.id)} aria-label="Eliminar"><IoTrashOutline /></button>
-                          </td>
-                        )}
-                      </tr>
-                    ))
-                  ) : (
-                    <tr><td colSpan={role === "admin" ? 3 : 2}>No hay maestros registrados.</td></tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
         </div>
       )}
     </div>
