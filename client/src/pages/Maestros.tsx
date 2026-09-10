@@ -379,7 +379,7 @@ export default function Maestros() {
 
   if (loading) {
     return (
-      <div className="maestros-page page-container">
+      <div className="maestros-page">
         <Skeleton width="220px" height="2rem" />
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "1rem", marginTop: "1.5rem" }}>
           {Array.from({ length: 4 }).map((_, i) => (

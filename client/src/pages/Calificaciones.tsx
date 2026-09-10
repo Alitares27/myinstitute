@@ -1,13 +1,23 @@
 import { useEffect, useState, useMemo } from "react";
 import api from "../api";
 import { FaPlus } from "react-icons/fa";
-import { IoCreateOutline, IoTrashOutline, IoPrintOutline, IoPeopleOutline, IoSchoolOutline } from "react-icons/io5";
+import { IoCreateOutline, IoTrashOutline, IoPrintOutline, IoPeopleOutline, IoSchoolOutline, IoSearchOutline } from "react-icons/io5";
 import { FiBarChart2 } from "react-icons/fi";
+import { TbBooks } from "react-icons/tb";
 import { formatDate } from "../utils/utilidadesFecha";
 import { Skeleton } from "../components/Esqueleto";
 import { openPrintWindow } from "../utils/utilidadesReportes";
 import type { SortConfig } from "../interfaces/Common";
 import "../styles/calificaciones.css";
+
+const getInitials = (name: string) =>
+  (name || "?")
+    .split(" ")
+    .filter(Boolean)
+    .map((w) => w[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
 
 export default function Grades() {
   const [grades, setGrades] = useState<any[]>([]);
@@ -15,6 +25,7 @@ export default function Grades() {
   const [courses, setCourses] = useState<any[]>([]);
   const [role, setRole] = useState<string>("");
   const [error, setError] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
   const [filterStudent, setFilterStudent] = useState("");
   const [filterType, setFilterType] = useState("");
   const [currentPage, setCurrentPage] = useState<number>(1);
@@ -58,12 +69,15 @@ export default function Grades() {
   };
 
   const filteredGrades = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
     return grades.filter((g) => {
-      const matchStudent = filterStudent === "" || g.student_id.toString() === filterStudent;
+      const matchStudent = filterStudent === "" || g.student_id?.toString() === filterStudent;
       const matchType = filterType === "" || g.grade_type === filterType;
-      return matchStudent && matchType;
+      const matchSearch =
+        !q || `${g.student_name || ""} ${g.course_title || ""}`.toLowerCase().includes(q);
+      return matchStudent && matchType && matchSearch;
     });
-  }, [grades, filterStudent, filterType]);
+  }, [grades, filterStudent, filterType, searchQuery]);
 
   const sortedGrades = useMemo(() => {
     if (!sortConfig) return filteredGrades;
@@ -78,7 +92,7 @@ export default function Grades() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [filterStudent, filterType, sortConfig]);
+  }, [filterStudent, filterType, searchQuery, sortConfig]);
 
   const totalPages = Math.ceil(sortedGrades.length / recordsPerPage);
   const currentRecords = useMemo(() => {
@@ -95,6 +109,8 @@ export default function Grades() {
     );
   };
 
+  const resetForm = () => setForm({ id: "", student_id: "", course_id: "", grade: "", grade_type: "examen" });
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -104,7 +120,7 @@ export default function Grades() {
       } else {
         await api.post("/grades", form);
       }
-      setForm({ id: "", student_id: "", course_id: "", grade: "", grade_type: "examen" });
+      resetForm();
       fetchData();
     } catch {
       setError("No se pudo procesar la operación.");
@@ -136,6 +152,16 @@ export default function Grades() {
     const numeric = grades.map(g => parseFloat(g.grade)).filter(v => !isNaN(v));
     return numeric.length ? (numeric.reduce((a, b) => a + b, 0) / numeric.length).toFixed(2) : "N/A";
   }, [grades]);
+
+  const distinctCourses = useMemo(
+    () => new Set(grades.map((g) => g.course_id || g.course_title).filter(Boolean)).size,
+    [grades]
+  );
+
+  const distinctStudents = useMemo(
+    () => new Set(grades.map((g) => g.student_id).filter((v) => v != null)).size,
+    [grades]
+  );
 
   const handlePrintGradesReport = () => {
     let body = "";
@@ -200,20 +226,8 @@ export default function Grades() {
 
   if (loading) {
     return (
-      <div className="grades-page">
+      <div className="calificaciones-page">
         <div className="calificaciones-header">
-          {role === "admin" && (
-            <div className="calificaciones-stats-grid">
-              <div className="stat-card">
-                <div className="stat-icon blue"><IoPeopleOutline /></div>
-                <div className="stat-content"><h3>{filteredGrades.length}</h3><p>Total Calificaciones</p></div>
-              </div>
-              <div className="stat-card">
-                <div className="stat-icon green"><IoSchoolOutline /></div>
-                <div className="stat-content"><h3>{averageGrade}</h3><p>Promedio</p></div>
-              </div>
-            </div>
-          )}
           <div className="calificaciones-header-info">
             <h1>
               <span className="page-title-icon">
@@ -221,37 +235,53 @@ export default function Grades() {
               </span>
               Calificaciones
             </h1>
+            <p>Cargando…</p>
           </div>
           <div className="calificaciones-header-actions">
-            <button
-              type="button"
-              className="btn secondary"
-              onClick={handlePrintGradesReport}
-              title="Imprimir o Exportar Reporte"
-            >
-              <IoPrintOutline /> Imprimir
-            </button>
+            <Skeleton width="120px" height="2.5rem" />
           </div>
         </div>
-        <Skeleton width="220px" height="1.8rem" />
-        <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginTop: "1rem" }}>
-          <div style={{ display: "flex", gap: "10px" }}>
-            <Skeleton height="2.5rem" style={{ flex: 1 }} />
-            <Skeleton height="2.5rem" style={{ flex: 1 }} />
-            <Skeleton height="2.5rem" style={{ flex: 1 }} />
-          </div>
-          <Skeleton height="2.5rem" width="120px" />
+
+        <div className="asistencia-stats-grid">
+          {Array.from({ length: role === "admin" ? 4 : 3 }).map((_, i) => (
+            <div key={i} className="asistencia-stat-card">
+              <Skeleton width="48px" height="48px" />
+              <div className="asistencia-stat-content" style={{ flex: 1 }}>
+                <Skeleton height="1.6rem" width="60px" />
+                <Skeleton height="0.9rem" width="100px" style={{ marginTop: "6px" }} />
+              </div>
+            </div>
+          ))}
         </div>
-        <div style={{ marginTop: "1.5rem" }}>
-          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+
+        {role === "admin" && (
+          <div className="asistencia-form-card">
+            <Skeleton height="1.3rem" width="200px" />
+            <div style={{ display: "flex", gap: "10px", marginTop: "1rem" }}>
+              <Skeleton height="2.5rem" style={{ flex: 1 }} />
+              <Skeleton height="2.5rem" style={{ flex: 1 }} />
+              <Skeleton height="2.5rem" style={{ flex: 1 }} />
+              <Skeleton height="2.5rem" style={{ flex: 1 }} />
+              <Skeleton height="2.5rem" width="110px" />
+            </div>
+          </div>
+        )}
+
+        <div className="asistencia-toolbar">
+          <Skeleton height="2.5rem" style={{ flex: 1 }} />
+          <Skeleton height="2.5rem" width="140px" />
+          <Skeleton height="2.5rem" width="140px" />
+        </div>
+
+        <div className="table-container">
+          <div style={{ display: "flex", flexDirection: "column", gap: "12px", padding: "1rem" }}>
             {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} style={{ display: "flex", gap: "1rem" }}>
+              <div key={i} style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
+                <Skeleton width="38px" height="38px" />
                 <Skeleton height="1rem" style={{ flex: 2 }} />
                 <Skeleton height="1rem" style={{ flex: 1 }} />
                 <Skeleton height="1rem" style={{ flex: 1 }} />
                 <Skeleton height="1rem" style={{ flex: 1 }} />
-                <Skeleton height="1rem" style={{ flex: 1 }} />
-                <Skeleton width="70px" height="1.8rem" />
               </div>
             ))}
           </div>
@@ -261,26 +291,100 @@ export default function Grades() {
   }
 
   return (
-    <div className="grades-page">
-      <h1><span className="page-title-icon"><FiBarChart2 /></span> Calificaciones</h1>
+    <div className="calificaciones-page">
+      <div className="calificaciones-header">
+        <div className="calificaciones-header-info">
+          <h1>
+            <span className="page-title-icon">
+              <FiBarChart2 />
+            </span>
+            Calificaciones
+          </h1>
+          <p>Registro y seguimiento de las calificaciones de los miembros en sus cursos</p>
+        </div>
+        <div className="calificaciones-header-actions">
+          <button
+            type="button"
+            className="btn secondary"
+            onClick={handlePrintGradesReport}
+            title="Imprimir o Exportar Reporte"
+          >
+            <IoPrintOutline /> Imprimir
+          </button>
+        </div>
+      </div>
+
+      <div className="asistencia-stats-grid">
+        <div className="asistencia-stat-card">
+          <div className="asistencia-stat-icon blue">
+            <IoSchoolOutline />
+          </div>
+          <div className="asistencia-stat-content">
+            <h3>{grades.length}</h3>
+            <p>{role === "admin" ? "Total Calificaciones" : "Mis Calificaciones"}</p>
+          </div>
+        </div>
+        <div className="asistencia-stat-card">
+          <div className="asistencia-stat-icon green">
+            <FiBarChart2 />
+          </div>
+          <div className="asistencia-stat-content">
+            <h3>{averageGrade}</h3>
+            <p>Promedio</p>
+          </div>
+        </div>
+        <div className="asistencia-stat-card">
+          <div className="asistencia-stat-icon orange">
+            <TbBooks />
+          </div>
+          <div className="asistencia-stat-content">
+            <h3>{distinctCourses}</h3>
+            <p>Cursos Evaluados</p>
+          </div>
+        </div>
+        {role === "admin" && (
+          <div className="asistencia-stat-card">
+            <div className="asistencia-stat-icon purple">
+              <IoPeopleOutline />
+            </div>
+            <div className="asistencia-stat-content">
+              <h3>{distinctStudents}</h3>
+              <p>Estudiantes Evaluados</p>
+            </div>
+          </div>
+        )}
+      </div>
+
       {role === "admin" && (
-        <div className="calificaciones-form-card">
-          <div className="calificaciones-form-header">
-            <h2 className="dashboard-subtitle">
+        <div className="asistencia-form-card">
+          <div className="asistencia-form-header">
+            <h2>
               {form.id ? (
                 <>
-                  <IoCreateOutline /> Actualizar
+                  <IoCreateOutline /> Actualizar Calificación
                 </>
               ) : (
                 <>
-                  <FaPlus /> Calificar
+                  <FaPlus /> Calificar Miembro
                 </>
               )}
             </h2>
+            {(form.id || form.student_id || form.course_id || form.grade) && (
+              <button
+                type="button"
+                onClick={resetForm}
+                className="btn cancel-btn"
+                title="Cancelar"
+                aria-label="Cancelar"
+              >
+                ✕
+              </button>
+            )}
           </div>
-          <form onSubmit={handleSubmit} className="activity-form">
-            <div className="form-row">
+          <form onSubmit={handleSubmit}>
+            <div className="asistencia-form-grid">
               <div className="form-group">
+                <label>Estudiante / Miembro:</label>
                 <select
                   value={form.student_id}
                   onChange={e => setForm({ ...form, student_id: e.target.value })}
@@ -293,6 +397,7 @@ export default function Grades() {
                 </select>
               </div>
               <div className="form-group">
+                <label>Curso:</label>
                 <select
                   value={form.course_id}
                   onChange={e => setForm({ ...form, course_id: e.target.value })}
@@ -305,16 +410,18 @@ export default function Grades() {
                 </select>
               </div>
               <div className="form-group">
+                <label>Calificación:</label>
                 <input
                   type="number"
                   step="0.1"
-                  placeholder="Calificación"
+                  placeholder="0 - 100"
                   value={form.grade}
                   onChange={e => setForm({ ...form, grade: e.target.value })}
                   required
                 />
               </div>
               <div className="form-group">
+                <label>Tipo:</label>
                 <select
                   value={form.grade_type}
                   onChange={e => setForm({ ...form, grade_type: e.target.value })}
@@ -324,54 +431,56 @@ export default function Grades() {
                   <option value="participacion">Participación</option>
                 </select>
               </div>
-              <div className="form-group form-actions">
+              <div className="asistencia-form-actions">
                 <button type="submit" className="btn primary">
                   {form.id ? "Actualizar" : "Calificar"}
                 </button>
-                {(form.id || form.student_id || form.course_id || form.grade) && (
-                  <button
-                    type="button"
-                    onClick={() => setForm({ id: "", student_id: "", course_id: "", grade: "", grade_type: "examen" })}
-                    className="btn cancel-btn"
-                    title="Cancelar"
-                    aria-label="Cancelar"
-                  >
-                    ✕
-                  </button>
-                )}
               </div>
             </div>
           </form>
         </div>
       )}
 
-      <div className="calificaciones-toolbar">
-        {role === "admin" && (
-          <select value={filterStudent} onChange={(e) => setFilterStudent(e.target.value)}>
-            <option value="">Todos los miembros</option>
-            {students.map((s) => (
-              <option key={s.id} value={s.id}>{s.name}</option>
-            ))}
+      <div className="asistencia-toolbar">
+        <div className="asistencia-search-container">
+          <IoSearchOutline style={{ flexShrink: 0, color: "var(--text-muted)" }} />
+          <input
+            type="text"
+            placeholder="Buscar por estudiante o curso…"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              className="search-clear-btn"
+              onClick={() => setSearchQuery("")}
+              aria-label="Limpiar búsqueda"
+            >
+              ✕
+            </button>
+          )}
+        </div>
+        <div className="asistencia-filters">
+          {role === "admin" && (
+            <select value={filterStudent} onChange={(e) => setFilterStudent(e.target.value)}>
+              <option value="">Todos los miembros ({students.length})</option>
+              {students.map((s) => (
+                <option key={s.id} value={s.id}>{s.name}</option>
+              ))}
+            </select>
+          )}
+          <select value={filterType} onChange={(e) => setFilterType(e.target.value)}>
+            <option value="">Todos los tipos</option>
+            <option value="examen">Examen</option>
+            <option value="Lectura">Lectura</option>
+            <option value="participacion">Participación</option>
           </select>
-        )}
-        <select value={filterType} onChange={(e) => setFilterType(e.target.value)}>
-          <option value="">Todos los tipos</option>
-          <option value="examen">Examen</option>
-          <option value="Lectura">Lectura</option>
-          <option value="participacion">Participación</option>
-        </select>
-        <button
-          type="button"
-          onClick={handlePrintGradesReport}
-          className="btn primary"
-          style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
-        >
-          <IoPrintOutline /> Imprimir
-        </button>
+        </div>
       </div>
 
       <div className="table-container">
-        <table >
+        <table>
           <thead>
             <tr>
               {role === "admin" && (
@@ -412,11 +521,22 @@ export default function Grades() {
 
           <tbody>
             {currentRecords.length > 0 ? (
-              currentRecords.map((g) => (
+              currentRecords.map((g, idx) => (
                 <tr key={g.id}>
-                  {role === "admin" && <td>{g.student_name}</td>}
+                  {role === "admin" && (
+                    <td>
+                      <div className="student-profile-cell">
+                        <div className={`student-avatar-circle ${g.student_id % 3 === 1 ? "gradient-2" : g.student_id % 3 === 2 ? "gradient-3" : ""}`}>
+                          {getInitials(g.student_name)}
+                        </div>
+                        <div className="student-details">
+                          <span className="student-name">{g.student_name}</span>
+                        </div>
+                      </div>
+                    </td>
+                  )}
                   <td>{g.course_title}</td>
-                  <td>{g.grade}</td>
+                  <td><strong>{g.grade}</strong></td>
                   <td>{g.grade_type}</td>
                   <td>{formatDate(g.created_at)}</td>
 
