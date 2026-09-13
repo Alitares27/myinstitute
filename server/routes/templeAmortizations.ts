@@ -95,14 +95,14 @@ router.post(
         const newAdvance = Number(currentAttendance.advance_payment || 0) + amount;
         const newPending = Math.max(0, currentPending - amount);
 
-        const amortizationResult = await pool.query(
+        const amortizationResult = await client.query(
           `INSERT INTO temple_amortizations (attendance_id, payment_amount, payment_date, payment_type)
            VALUES ($1, $2, $3, $4)
            RETURNING *`,
           [attendance_id, amount, payment_date || new Date().toISOString().split("T")[0], payment_type || "efectivo"]
         );
 
-        await pool.query(
+        await client.query(
           `UPDATE temple_attendance
             SET advance_payment = $1,
                 pending_payment = $2
@@ -110,7 +110,7 @@ router.post(
           [newAdvance, newPending, attendance_id]
         );
 
-        await pool.query("COMMIT");
+        await client.query("COMMIT");
 
         res.status(201).json({
           amortization: amortizationResult.rows[0],
@@ -121,7 +121,7 @@ router.post(
           }
         });
       } catch (err) {
-        try { await pool.query("ROLLBACK"); } catch {}
+        try { await client.query("ROLLBACK"); } catch {}
         console.error("Error crear amortización:", err);
         res.status(500).json({ message: "Error al registrar el pago" });
       } finally {
@@ -130,6 +130,159 @@ router.post(
     } catch (err) {
       console.error("Error en endpoint:", err);
       res.status(500).json({ message: "Error interno del servidor" });
+    }
+  }
+);
+
+// ── PUT /:id  Editar un pago ─────────────────────────────────────────────────
+router.put(
+  "/:id",
+  verifyToken,
+  isAdmin,
+  async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const { payment_amount, payment_date, payment_type } = req.body;
+
+    const amount = Number(payment_amount);
+    if (Number.isNaN(amount) || amount <= 0) {
+      return res.status(400).json({ message: "payment_amount debe ser un número positivo" });
+    }
+
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+
+      // Obtener pago actual (lock)
+      const amortResult = await client.query(
+        "SELECT attendance_id, payment_amount FROM temple_amortizations WHERE id = $1 FOR UPDATE",
+        [id]
+      );
+      if (amortResult.rows.length === 0) {
+        await client.query("ROLLBACK");
+        return res.status(404).json({ message: "Pago no encontrado" });
+      }
+
+      const oldAmount = Number(amortResult.rows[0].payment_amount);
+      const attendanceId = amortResult.rows[0].attendance_id;
+
+      // Obtener saldos actuales (lock)
+      const attendanceResult = await client.query(
+        "SELECT advance_payment, pending_payment FROM temple_attendance WHERE id = $1 FOR UPDATE",
+        [attendanceId]
+      );
+      if (attendanceResult.rows.length === 0) {
+        await client.query("ROLLBACK");
+        return res.status(404).json({ message: "Asistencia no encontrada" });
+      }
+
+      const currentAdvance = Number(attendanceResult.rows[0].advance_payment || 0);
+      const currentPending  = Number(attendanceResult.rows[0].pending_payment  || 0);
+
+      // Revertir monto viejo y aplicar nuevo
+      const newAdvance = currentAdvance - oldAmount + amount;
+      const newPending  = currentPending  + oldAmount - amount;
+
+      if (newPending < 0) {
+        await client.query("ROLLBACK");
+        return res.status(400).json({ message: "El monto excede el saldo total del miembro" });
+      }
+      if (newAdvance < 0) {
+        await client.query("ROLLBACK");
+        return res.status(400).json({ message: "El monto no puede ser menor que cero" });
+      }
+
+      const updatedAmort = await client.query(
+        `UPDATE temple_amortizations
+            SET payment_amount = $1,
+                payment_date   = $2,
+                payment_type   = $3
+          WHERE id = $4
+          RETURNING *`,
+        [amount, payment_date || new Date().toISOString().split("T")[0], payment_type || "efectivo", id]
+      );
+
+      await client.query(
+        `UPDATE temple_attendance
+            SET advance_payment = $1,
+                pending_payment = $2
+          WHERE id = $3`,
+        [newAdvance, newPending, attendanceId]
+      );
+
+      await client.query("COMMIT");
+
+      res.json({
+        amortization: updatedAmort.rows[0],
+        updatedAttendance: { advance_payment: newAdvance, pending_payment: newPending }
+      });
+    } catch (err) {
+      try { await client.query("ROLLBACK"); } catch {}
+      console.error("Error editar amortización:", err);
+      res.status(500).json({ message: "Error al editar el pago" });
+    } finally {
+      client.release();
+    }
+  }
+);
+
+// ── DELETE /:id  Eliminar un pago ────────────────────────────────────────────
+router.delete(
+  "/:id",
+  verifyToken,
+  isAdmin,
+  async (req: Request, res: Response) => {
+    const { id } = req.params;
+
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+
+      const amortResult = await client.query(
+        "SELECT attendance_id, payment_amount FROM temple_amortizations WHERE id = $1 FOR UPDATE",
+        [id]
+      );
+      if (amortResult.rows.length === 0) {
+        await client.query("ROLLBACK");
+        return res.status(404).json({ message: "Pago no encontrado" });
+      }
+
+      const oldAmount   = Number(amortResult.rows[0].payment_amount);
+      const attendanceId = amortResult.rows[0].attendance_id;
+
+      const attendanceResult = await client.query(
+        "SELECT advance_payment, pending_payment FROM temple_attendance WHERE id = $1 FOR UPDATE",
+        [attendanceId]
+      );
+      if (attendanceResult.rows.length === 0) {
+        await client.query("ROLLBACK");
+        return res.status(404).json({ message: "Asistencia no encontrada" });
+      }
+
+      const currentAdvance = Number(attendanceResult.rows[0].advance_payment || 0);
+      const currentPending  = Number(attendanceResult.rows[0].pending_payment  || 0);
+
+      const newAdvance = Math.max(0, currentAdvance - oldAmount);
+      const newPending  = currentPending + oldAmount;
+
+      await client.query("DELETE FROM temple_amortizations WHERE id = $1", [id]);
+
+      await client.query(
+        `UPDATE temple_attendance
+            SET advance_payment = $1,
+                pending_payment = $2
+          WHERE id = $3`,
+        [newAdvance, newPending, attendanceId]
+      );
+
+      await client.query("COMMIT");
+
+      res.json({ message: "Pago eliminado correctamente", id: Number(id) });
+    } catch (err) {
+      try { await client.query("ROLLBACK"); } catch {}
+      console.error("Error eliminar amortización:", err);
+      res.status(500).json({ message: "Error al eliminar el pago" });
+    } finally {
+      client.release();
     }
   }
 );

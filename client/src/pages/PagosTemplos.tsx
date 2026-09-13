@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { IoCarOutline } from "react-icons/io5";
+import { IoCreateOutline, IoTrashOutline } from "react-icons/io5";
 import { FiMapPin } from "react-icons/fi";
 import { formatDate } from "../utils/utilidadesFecha";
 import { Skeleton } from "../components/Esqueleto";
@@ -37,6 +37,8 @@ export default function PagosTemplos() {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentError, setPaymentError] = useState("");
   const [isSubmittingPayment, setIsSubmittingPayment] = useState(false);
+  const [editingPayment, setEditingPayment] = useState<any | null>(null);
+  const [isDeletingId, setIsDeletingId] = useState<number | null>(null);
   const [paymentForm, setPaymentForm] = useState({
     trip_id: "",
     attendance_id: "",
@@ -110,14 +112,43 @@ export default function PagosTemplos() {
   const availableTrips = useAvailableTrips(trips);
 
   const handleOpenPaymentModal = () => {
+    setEditingPayment(null);
     setPaymentError("");
     setPaymentForm({ trip_id: "", attendance_id: "", payment_amount: "", payment_date: getTodayYMD(), payment_type: "efectivo" });
+    setShowPaymentModal(true);
+  };
+
+  const handleOpenEditModal = (pago: any) => {
+    setEditingPayment(pago);
+    setPaymentError("");
+    setPaymentForm({
+      trip_id: "",
+      attendance_id: "",
+      payment_amount: String(pago.payment_amount),
+      payment_date: pago.payment_date ? pago.payment_date.split("T")[0] : getTodayYMD(),
+      payment_type: pago.payment_type || "efectivo",
+    });
     setShowPaymentModal(true);
   };
 
   const handleClosePaymentModal = () => {
     setShowPaymentModal(false);
     setPaymentError("");
+    setEditingPayment(null);
+  };
+
+  const handleDeletePayment = async (pago: any) => {
+    if (!window.confirm(`¿Eliminar el pago de $${Number(pago.payment_amount).toLocaleString()} de ${pago.miembro_nombre}?`)) return;
+    setIsDeletingId(pago.id);
+    try {
+      await api.delete(`/temple-amortizations/${pago.id}`);
+      await fetchReservations();
+      await fetchPagos();
+    } catch (err: any) {
+      alert(err.response?.data?.message || "Error al eliminar el pago");
+    } finally {
+      setIsDeletingId(null);
+    }
   };
 
   const handlePaymentChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -135,16 +166,27 @@ export default function PagosTemplos() {
     }
     setIsSubmittingPayment(true);
     try {
-      await api.post("/temple-amortizations", {
-        attendance_id: Number(paymentForm.attendance_id),
-        payment_amount: amount,
-        payment_date: paymentForm.payment_date,
-      });
+      if (editingPayment) {
+        // Modo edición
+        await api.put(`/temple-amortizations/${editingPayment.id}`, {
+          payment_amount: amount,
+          payment_date: paymentForm.payment_date,
+          payment_type: paymentForm.payment_type,
+        });
+      } else {
+        // Modo creación
+        await api.post("/temple-amortizations", {
+          attendance_id: Number(paymentForm.attendance_id),
+          payment_amount: amount,
+          payment_date: paymentForm.payment_date,
+          payment_type: paymentForm.payment_type,
+        });
+      }
       handleClosePaymentModal();
       await fetchReservations();
       await fetchPagos();
     } catch (err: any) {
-      setPaymentError(err.response?.data?.message || "Error al registrar el pago");
+      setPaymentError(err.response?.data?.message || (editingPayment ? "Error al editar el pago" : "Error al registrar el pago"));
     } finally {
       setIsSubmittingPayment(false);
     }
@@ -317,56 +359,63 @@ export default function PagosTemplos() {
           <div className="modal-overlay">
             <div className="modal-content" style={{ maxWidth: "440px" }}>
               <button className="modal-close" onClick={handleClosePaymentModal} title="Cerrar" />
-              <h2 style={{ marginBottom: "0.5rem", marginTop: "1.5rem" }}>Registrar Pago</h2>
+              <h2 style={{ marginBottom: "0.5rem", marginTop: "1.5rem" }}>
+                {editingPayment ? `Editar Pago — ${editingPayment.miembro_nombre}` : "Registrar Pago"}
+              </h2>
               <form onSubmit={handlePaymentSubmit} style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
 
-                <div className="form-group">
-                  <label htmlFor="pay_trip_id">Viaje</label>
-                  <select
-                    id="pay_trip_id"
-                    name="trip_id"
-                    value={paymentForm.trip_id}
-                    onChange={handlePaymentChange}
-                    required
-                  >
-                    <option value="">Elegir viaje</option>
-                    {availableTrips.map(t => (
-                      <option key={t.id} value={t.id}>{formatDate(t.date)}</option>
-                    ))}
-                  </select>
-                </div>
-
-                {paymentForm.trip_id && (
-                  <div className="form-group">
-                    <label htmlFor="pay_attendance_id">Miembro</label>
-                    <select
-                      id="pay_attendance_id"
-                      name="attendance_id"
-                      value={paymentForm.attendance_id}
-                      onChange={handlePaymentChange}
-                      required
-                    >
-                      <option value="">Elegir miembro</option>
-                      {availableReservationsForSelectedTrip.map(res => (
-                        <option key={res.id} value={res.id}>{res.user_name}</option>
-                      ))}
-                    </select>
-                    {availableReservationsForSelectedTrip.length === 0 && (
-                      <p style={{ color: "var(--text-muted)", fontSize: "0.85rem", margin: "4px 0 0" }}>
-                        Sin saldo pendiente para este viaje.
-                      </p>
-                    )}
-                  </div>
-                )}
-
-                {selectedReservationForPayment && (
-                  <div className="payment-info-card">
-                    <p><strong>{selectedReservationForPayment.user_name}</strong></p>
-                    <div className="payment-info-grid">
-                      <span>Pagado: <strong>${Number(selectedReservationForPayment.advance_payment).toLocaleString()}</strong></span>
-                      <span>Saldo: <strong>${Number(selectedReservationForPayment.pending_payment).toLocaleString()}</strong></span>
+                {/* Selección de viaje/miembro solo en modo creación */}
+                {!editingPayment && (
+                  <>
+                    <div className="form-group">
+                      <label htmlFor="pay_trip_id">Viaje</label>
+                      <select
+                        id="pay_trip_id"
+                        name="trip_id"
+                        value={paymentForm.trip_id}
+                        onChange={handlePaymentChange}
+                        required
+                      >
+                        <option value="">Elegir viaje</option>
+                        {availableTrips.map(t => (
+                          <option key={t.id} value={t.id}>{formatDate(t.date)}</option>
+                        ))}
+                      </select>
                     </div>
-                  </div>
+
+                    {paymentForm.trip_id && (
+                      <div className="form-group">
+                        <label htmlFor="pay_attendance_id">Miembro</label>
+                        <select
+                          id="pay_attendance_id"
+                          name="attendance_id"
+                          value={paymentForm.attendance_id}
+                          onChange={handlePaymentChange}
+                          required
+                        >
+                          <option value="">Elegir miembro</option>
+                          {availableReservationsForSelectedTrip.map(res => (
+                            <option key={res.id} value={res.id}>{res.user_name}</option>
+                          ))}
+                        </select>
+                        {availableReservationsForSelectedTrip.length === 0 && (
+                          <p style={{ color: "var(--text-muted)", fontSize: "0.85rem", margin: "4px 0 0" }}>
+                            Sin saldo pendiente para este viaje.
+                          </p>
+                        )}
+                      </div>
+                    )}
+
+                    {selectedReservationForPayment && (
+                      <div className="payment-info-card">
+                        <p><strong>{selectedReservationForPayment.user_name}</strong></p>
+                        <div className="payment-info-grid">
+                          <span>Pagado: <strong>${Number(selectedReservationForPayment.advance_payment).toLocaleString()}</strong></span>
+                          <span>Saldo: <strong>${Number(selectedReservationForPayment.pending_payment).toLocaleString()}</strong></span>
+                        </div>
+                      </div>
+                    )}
+                  </>
                 )}
 
                 <div className="form-group">
@@ -417,9 +466,11 @@ export default function PagosTemplos() {
                   <button
                     type="submit"
                     className="btn primary"
-                    disabled={isSubmittingPayment || !selectedReservationForPayment}
+                    disabled={isSubmittingPayment || (!editingPayment && !selectedReservationForPayment)}
                   >
-                    {isSubmittingPayment ? "Pagando..." : "Pagar"}
+                    {isSubmittingPayment
+                      ? (editingPayment ? "Guardando..." : "Pagando...")
+                      : (editingPayment ? "Guardar cambios" : "Pagar")}
                   </button>
                   <button type="button" onClick={handleClosePaymentModal} className="btn cancel-btn">
                     Cancelar
@@ -470,6 +521,7 @@ export default function PagosTemplos() {
                     {sortConfig?.key === "payment_type" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
                   </span>
                 </th>
+                <th style={{ width: "96px", textAlign: "center" }}>Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -496,6 +548,25 @@ export default function PagosTemplos() {
                   </td>
                   <td>{formatDate(p.payment_date)}</td>
                   <td>{p.payment_type || "efectivo"}</td>
+                  <td>
+                    <div style={{ display: "flex", gap: "4px" }}>
+                      <button
+                        className="btn secondary extracted-style-4"
+                        onClick={() => handleOpenEditModal(p)}
+                        aria-label="Editar"
+                      >
+                        <IoCreateOutline />
+                      </button>
+                      <button
+                        className="btn secondary extracted-style-5"
+                        onClick={() => handleDeletePayment(p)}
+                        disabled={isDeletingId === p.id}
+                        aria-label="Eliminar"
+                      >
+                        {isDeletingId === p.id ? "⏳" : <IoTrashOutline />}
+                      </button>
+                    </div>
+                  </td>
                 </tr>
               ))}
             </tbody>
