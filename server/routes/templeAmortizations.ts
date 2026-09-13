@@ -121,7 +121,7 @@ router.post(
           }
         });
       } catch (err) {
-        try { await client.query("ROLLBACK"); } catch {}
+        try { await client.query("ROLLBACK"); } catch { }
         console.error("Error crear amortización:", err);
         res.status(500).json({ message: "Error al registrar el pago" });
       } finally {
@@ -134,7 +134,6 @@ router.post(
   }
 );
 
-// ── PUT /:id  Editar un pago ─────────────────────────────────────────────────
 router.put(
   "/:id",
   verifyToken,
@@ -152,7 +151,6 @@ router.put(
     try {
       await client.query("BEGIN");
 
-      // Obtener pago actual (lock)
       const amortResult = await client.query(
         "SELECT attendance_id, payment_amount FROM temple_amortizations WHERE id = $1 FOR UPDATE",
         [id]
@@ -165,7 +163,6 @@ router.put(
       const oldAmount = Number(amortResult.rows[0].payment_amount);
       const attendanceId = amortResult.rows[0].attendance_id;
 
-      // Obtener saldos actuales (lock)
       const attendanceResult = await client.query(
         "SELECT advance_payment, pending_payment FROM temple_attendance WHERE id = $1 FOR UPDATE",
         [attendanceId]
@@ -176,11 +173,10 @@ router.put(
       }
 
       const currentAdvance = Number(attendanceResult.rows[0].advance_payment || 0);
-      const currentPending  = Number(attendanceResult.rows[0].pending_payment  || 0);
+      const currentPending = Number(attendanceResult.rows[0].pending_payment || 0);
 
-      // Revertir monto viejo y aplicar nuevo
       const newAdvance = currentAdvance - oldAmount + amount;
-      const newPending  = currentPending  + oldAmount - amount;
+      const newPending = currentPending + oldAmount - amount;
 
       if (newPending < 0) {
         await client.query("ROLLBACK");
@@ -216,7 +212,7 @@ router.put(
         updatedAttendance: { advance_payment: newAdvance, pending_payment: newPending }
       });
     } catch (err) {
-      try { await client.query("ROLLBACK"); } catch {}
+      try { await client.query("ROLLBACK"); } catch { }
       console.error("Error editar amortización:", err);
       res.status(500).json({ message: "Error al editar el pago" });
     } finally {
@@ -225,7 +221,6 @@ router.put(
   }
 );
 
-// ── DELETE /:id  Eliminar un pago ────────────────────────────────────────────
 router.delete(
   "/:id",
   verifyToken,
@@ -246,7 +241,7 @@ router.delete(
         return res.status(404).json({ message: "Pago no encontrado" });
       }
 
-      const oldAmount   = Number(amortResult.rows[0].payment_amount);
+      const oldAmount = Number(amortResult.rows[0].payment_amount);
       const attendanceId = amortResult.rows[0].attendance_id;
 
       const attendanceResult = await client.query(
@@ -259,10 +254,10 @@ router.delete(
       }
 
       const currentAdvance = Number(attendanceResult.rows[0].advance_payment || 0);
-      const currentPending  = Number(attendanceResult.rows[0].pending_payment  || 0);
+      const currentPending = Number(attendanceResult.rows[0].pending_payment || 0);
 
       const newAdvance = Math.max(0, currentAdvance - oldAmount);
-      const newPending  = currentPending + oldAmount;
+      const newPending = currentPending + oldAmount;
 
       await client.query("DELETE FROM temple_amortizations WHERE id = $1", [id]);
 
@@ -278,7 +273,7 @@ router.delete(
 
       res.json({ message: "Pago eliminado correctamente", id: Number(id) });
     } catch (err) {
-      try { await client.query("ROLLBACK"); } catch {}
+      try { await client.query("ROLLBACK"); } catch { }
       console.error("Error eliminar amortización:", err);
       res.status(500).json({ message: "Error al eliminar el pago" });
     } finally {

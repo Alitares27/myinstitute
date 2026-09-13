@@ -16,7 +16,17 @@ export const getReservations = async (_req: Request, res: Response) => {
         tr.register_date,
         tr.advance_payment,
         tr.pending_payment,
-        tr.due_date
+        tr.due_date,
+        COALESCE((
+          SELECT SUM(payment_amount)
+          FROM temple_amortizations tam
+          WHERE tam.attendance_id = tr.id
+        ), 0) AS total_amortizado,
+        (
+          SELECT COUNT(*)
+          FROM temple_amortizations tam
+          WHERE tam.attendance_id = tr.id
+        )::int AS num_pagos
       FROM temple_attendance tr
       LEFT JOIN users u ON u.id = tr.user_id
       LEFT JOIN temple_trips tp ON tp.id = tr.trip_id

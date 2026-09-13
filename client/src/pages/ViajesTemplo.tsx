@@ -1,8 +1,9 @@
 import { useEffect, useState, useMemo } from "react";
 import api from "../api";
-import { IoCreateOutline, IoTrashOutline } from "react-icons/io5";
-import { FiTruck } from "react-icons/fi";
+import { IoCreateOutline, IoTrashOutline, IoCalendarOutline } from "react-icons/io5";
+import { FiTruck, FiSearch } from "react-icons/fi";
 import { TbPlus } from "react-icons/tb";
+import { FaCheckCircle, FaMoneyBillWave } from "react-icons/fa";
 import { formatDate, toYMD } from "../utils/utilidadesFecha";
 import { Skeleton } from "../components/Esqueleto";
 import type { Temple } from "../interfaces/Common";
@@ -16,6 +17,9 @@ export default function TempleTrip() {
     const [currentPage, setCurrentPage] = useState(1);
     const recordsPerPage = 5;
     const [role, setRole] = useState<string>("");
+
+    const [searchQuery, setSearchQuery] = useState("");
+    const [filterStatus, setFilterStatus] = useState("");
 
     const [formData, setFormData] = useState({
         temple_id: "",
@@ -36,9 +40,29 @@ export default function TempleTrip() {
         );
     };
 
+    const filteredTrips = useMemo(() => {
+        return trips.filter(t => {
+            if (filterStatus && t.status !== filterStatus) return false;
+            if (searchQuery) {
+                const q = searchQuery.toLowerCase();
+                const name = (t.temple_name || "").toLowerCase();
+                const date = formatDate(t.date).toLowerCase();
+                if (!name.includes(q) && !date.includes(q)) return false;
+            }
+            return true;
+        });
+    }, [trips, filterStatus, searchQuery]);
+
+    const stats = useMemo(() => ({
+        total: trips.length,
+        programados: trips.filter(t => t.status === "programado").length,
+        finalizados: trips.filter(t => t.status === "finalizado").length,
+        costo: filteredTrips.reduce((acc, t) => acc + Number(t.cost || 0), 0)
+    }), [trips, filteredTrips]);
+
     const sortedTrips = useMemo(() => {
-        if (!sortConfig) return trips;
-        return [...trips].sort((a, b) => {
+        if (!sortConfig) return filteredTrips;
+        return [...filteredTrips].sort((a, b) => {
             let aVal: any = a[sortConfig.key as keyof Trip];
             let bVal: any = b[sortConfig.key as keyof Trip];
 
@@ -51,7 +75,7 @@ export default function TempleTrip() {
             if (aVal > bVal) return sortConfig.direction === "asc" ? 1 : -1;
             return 0;
         });
-    }, [trips, sortConfig]);
+    }, [filteredTrips, sortConfig]);
 
     const totalPages = Math.ceil(sortedTrips.length / recordsPerPage);
 
@@ -168,73 +192,140 @@ export default function TempleTrip() {
     }
 
     return (
-        <div>
-            <h1><span className="page-title-icon"><FiTruck /></span> Gestionar Viajes</h1>
-            <h2>{role === "admin" ? <><TbPlus /> Registrar Viaje</> : "Disponibles"}</h2>
+        <div className="asistencia-page">
+            <div className="asistencia-header">
+                <div className="asistencia-header-info">
+                    <h1><span className="page-title-icon"><FiTruck /></span> Gestionar Viajes</h1>
+                    <p>{role === "admin" ? "Registro y seguimiento de viajes al templo" : "Viajes disponibles"}</p>
+                </div>
+            </div>
+
+            <div className="asistencia-stats-grid">
+                <div className="asistencia-stat-card">
+                    <div className="asistencia-stat-icon blue"><FiTruck /></div>
+                    <div className="asistencia-stat-content">
+                        <h3>{stats.total}</h3>
+                        <p>Viajes</p>
+                    </div>
+                </div>
+                <div className="asistencia-stat-card">
+                    <div className="asistencia-stat-icon purple"><IoCalendarOutline /></div>
+                    <div className="asistencia-stat-content">
+                        <h3>{stats.programados}</h3>
+                        <p>Programados</p>
+                    </div>
+                </div>
+                <div className="asistencia-stat-card">
+                    <div className="asistencia-stat-icon green"><FaCheckCircle /></div>
+                    <div className="asistencia-stat-content">
+                        <h3>{stats.finalizados}</h3>
+                        <p>Finalizados</p>
+                    </div>
+                </div>
+                <div className="asistencia-stat-card">
+                    <div className="asistencia-stat-icon orange"><FaMoneyBillWave /></div>
+                    <div className="asistencia-stat-content">
+                        <h3>${stats.costo.toLocaleString()}</h3>
+                        <p>Costo Total</p>
+                    </div>
+                </div>
+            </div>
+
             {role === "admin" && (
-                <form onSubmit={handleSubmit} className="grid-form">
-                    <div className="form-group">
-                        <label>Templo</label>
-                        <select
-                            name="temple_id"
-                            value={formData.temple_id}
-                            onChange={handleChange}
-                            required
-                        >
-                            <option value="">Elegir templo</option>
-                            {temples.map(temple => (
-                                <option key={temple.id} value={temple.id}>
-                                    {temple.name}
-                                </option>
-                            ))}
-                        </select>
+                <div className="asistencia-form-card">
+                    <div className="asistencia-form-header">
+                        <h2><TbPlus /> {editingId ? "Actualizar Viaje" : "Registrar Viaje"}</h2>
                     </div>
+                    <form onSubmit={handleSubmit} className="asistencia-form-grid">
+                        <div className="form-group">
+                            <label>Templo</label>
+                            <select
+                                name="temple_id"
+                                value={formData.temple_id}
+                                onChange={handleChange}
+                                required
+                            >
+                                <option value="">Elegir templo</option>
+                                {temples.map(temple => (
+                                    <option key={temple.id} value={temple.id}>
+                                        {temple.name}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
 
-                    <div className="form-group">
-                        <label>Fecha</label>
-                        <input
-                            type="date"
-                            name="date"
-                            value={formData.date}
-                            onChange={handleChange}
-                            required
-                        />
-                    </div>
+                        <div className="form-group">
+                            <label>Fecha</label>
+                            <input
+                                type="date"
+                                name="date"
+                                value={formData.date}
+                                onChange={handleChange}
+                                required
+                            />
+                        </div>
 
-                    <div className="form-group">
-                        <label>Estado</label>
-                        <select
-                            name="status"
-                            value={formData.status}
-                            onChange={handleChange}
-                        >
-                            <option value="programado">Programado</option>
-                            <option value="finalizado">Finalizado</option>
-                            <option value="cancelado">Cancelado</option>
-                        </select>
-                    </div>
+                        <div className="form-group">
+                            <label>Estado</label>
+                            <select
+                                name="status"
+                                value={formData.status}
+                                onChange={handleChange}
+                            >
+                                <option value="programado">Programado</option>
+                                <option value="finalizado">Finalizado</option>
+                                <option value="cancelado">Cancelado</option>
+                            </select>
+                        </div>
 
-                    <div className="form-group">
-                        <label>Costo</label>
-                        <input
-                            type="number"
-                            name="cost"
-                            value={formData.cost}
-                            onChange={handleChange}
-                            required
-                        />
-                    </div>
+                        <div className="form-group">
+                            <label>Costo</label>
+                            <input
+                                type="number"
+                                name="cost"
+                                value={formData.cost}
+                                onChange={handleChange}
+                                required
+                            />
+                        </div>
 
-                    <div className="form-group full-width">
-                        <button type="submit" className="btn primary">
-                            {editingId ? "Actualizar" : "Registrar"}
-                        </button>
-                        {(editingId !== null || formData.temple_id || formData.date || formData.cost) && (
-                            <button type="button" onClick={() => { setEditingId(null); setFormData({ temple_id: "", date: "", status: "programado", cost: "" }); }} className="btn cancel-btn" title="Cancelar" aria-label="Cancelar">✕</button>
-                        )}
-                    </div>
-                </form>
+                        <div className="asistencia-form-actions">
+                            <button type="submit" className="btn primary">
+                                {editingId ? "Actualizar" : "Registrar"}
+                            </button>
+                            {(editingId !== null || formData.temple_id || formData.date || formData.cost) && (
+                                <button type="button" onClick={() => { setEditingId(null); setFormData({ temple_id: "", date: "", status: "programado", cost: "" }); }} className="btn cancel-btn" title="Cancelar" aria-label="Cancelar">✕</button>
+                            )}
+                        </div>
+                    </form>
+                </div>
             )}
+
+            <div className="asistencia-toolbar">
+                <div className="asistencia-search-container">
+                    <FiSearch style={{ color: "var(--text-muted)", flexShrink: 0 }} />
+                    <input
+                        type="text"
+                        placeholder="Buscar por templo o fecha..."
+                        value={searchQuery}
+                        onChange={e => { setSearchQuery(e.target.value); setCurrentPage(1); }}
+                    />
+                    {searchQuery && (
+                        <button className="search-clear-btn" onClick={() => setSearchQuery("")} title="Limpiar" aria-label="Limpiar búsqueda">✕</button>
+                    )}
+                </div>
+                <div className="asistencia-filters">
+                    <select
+                        value={filterStatus}
+                        onChange={e => { setFilterStatus(e.target.value); setCurrentPage(1); }}
+                    >
+                        <option value="">Todos los estados</option>
+                        <option value="programado">Programado</option>
+                        <option value="finalizado">Finalizado</option>
+                        <option value="cancelado">Cancelado</option>
+                    </select>
+                </div>
+            </div>
 
             <div className="table-container">
                 <table>

@@ -1,14 +1,13 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { FaPlus } from "react-icons/fa";
-import { IoCreateOutline, IoTrashOutline, IoCarOutline } from "react-icons/io5";
-import { FiMapPin } from "react-icons/fi";
+import { FaPlus, FaMoneyBillWave, FaCalendarCheck } from "react-icons/fa";
+import { IoCreateOutline, IoTrashOutline, IoCarOutline, IoPrintOutline } from "react-icons/io5";
+import { FiMapPin, FiSearch } from "react-icons/fi";
 import { TbAlertTriangle } from "react-icons/tb";
 import { formatDate, toYMD } from "../utils/utilidadesFecha";
 import { openPrintWindow } from "../utils/utilidadesReportes";
 import { Skeleton } from "../components/Esqueleto";
 import api from "../api";
-import { TripStatus } from "../shared/constants";
 import { Trip } from "../shared/types";
 import useAvailableTrips from "../hooks/usarViajesDisponibles";
 import type { BasicUser } from "../interfaces/Common";
@@ -19,6 +18,22 @@ const getTodayYMD = () => {
     const m = String(today.getMonth() + 1).padStart(2, "0");
     const d = String(today.getDate()).padStart(2, "0");
     return `${y}-${m}-${d}`;
+};
+
+const getInitials = (name: string = "") => {
+    const parts = name.trim().split(/\s+/).filter(Boolean);
+    if (parts.length === 0) return "?";
+    if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
+    return (parts[0].charAt(0) + parts[1].charAt(0)).toUpperCase();
+};
+
+const avatarGradient = (index: number) => {
+    const gradients = [
+        "",
+        " gradient-2",
+        " gradient-3"
+    ];
+    return gradients[index % gradients.length];
 };
 
 export default function TripReservations() {
@@ -45,13 +60,13 @@ export default function TripReservations() {
         attendance_id: "",
         payment_amount: "",
         payment_date: getTodayYMD(),
-        payment_type: ""
+        payment_type: "efectivo"
     });
 
     const [filterTripId, setFilterTripId] = useState<string>("");
     const [filterUserId, setFilterUserId] = useState<string>("");
+    const [searchQuery, setSearchQuery] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
-    const [showSummary, setShowSummary] = useState(false);
     const recordsPerPage = 5;
     const [loading, setLoading] = useState(true);
 
@@ -224,8 +239,8 @@ export default function TripReservations() {
             trip_id: "",
             attendance_id: "",
             payment_amount: "",
-            payment_date: "",
-            payment_type: ""
+            payment_date: getTodayYMD(),
+            payment_type: "efectivo"
         });
         setShowPaymentModal(true);
     };
@@ -256,7 +271,8 @@ export default function TripReservations() {
             await api.post(`/temple-amortizations`, {
                 attendance_id: Number(paymentForm.attendance_id),
                 payment_amount: amount,
-                payment_date: paymentForm.payment_date
+                payment_date: paymentForm.payment_date,
+                payment_type: paymentForm.payment_type
             });
             handleClosePaymentModal();
             fetchReservations();
@@ -283,17 +299,37 @@ export default function TripReservations() {
     }, [reservations, users, formData.trip_id]);
 
     const filteredReservations = useMemo(() => {
-        let result = reservations;
-        if (filterTripId) result = result.filter(r => r.trip_id === Number(filterTripId));
-        if (filterUserId) result = result.filter(r => r.user_id === Number(filterUserId));
-        return result;
-    }, [reservations, filterTripId, filterUserId]);
+        return reservations
+            .filter(r => {
+                if (filterTripId && r.trip_id !== Number(filterTripId)) return false;
+                if (filterUserId && r.user_id !== Number(filterUserId)) return false;
+                return true;
+            })
+            .map(r => {
+                const abonos = Number(r.total_amortizado) || 0;
+                return {
+                    ...r,
+                    adelanto: Math.max(0, (Number(r.advance_payment) || 0) - abonos),
+                    abonos,
+                    pagado: Number(r.advance_payment) || 0,
+                    saldo: Number(r.pending_payment) || 0,
+                    num_pagos: Number(r.num_pagos) || 0
+                };
+            })
+            .filter(r => {
+                if (!searchQuery) return true;
+                const q = searchQuery.toLowerCase();
+                const name = (r.user_name || "").toLowerCase();
+                const date = formatDate(r.trip_date).toLowerCase();
+                return name.includes(q) || date.includes(q);
+            });
+    }, [reservations, filterTripId, filterUserId, searchQuery]);
 
     const reservationTotals = useMemo(() => {
         return filteredReservations.reduce(
             (totals, reservation) => {
-                totals.totalPaid += Number(reservation.advance_payment) || 0;
-                totals.totalPending += Number(reservation.pending_payment) || 0;
+                totals.totalPaid += reservation.pagado || 0;
+                totals.totalPending += reservation.saldo || 0;
                 return totals;
             },
             { totalPaid: 0, totalPending: 0 }
@@ -303,8 +339,10 @@ export default function TripReservations() {
     const sortedReservations = useMemo(() => {
         if (!sortConfig) return filteredReservations;
         return [...filteredReservations].sort((a, b) => {
-            const aVal = (a as any)[sortConfig.key as string];
-            const bVal = (b as any)[sortConfig.key as string];
+            let aVal: any = (a as any)[sortConfig.key as string];
+            let bVal: any = (b as any)[sortConfig.key as string];
+            if (typeof aVal === "string") aVal = aVal.toLowerCase();
+            if (typeof bVal === "string") bVal = bVal.toLowerCase();
             if (aVal < bVal) return sortConfig.direction === "asc" ? -1 : 1;
             if (aVal > bVal) return sortConfig.direction === "asc" ? 1 : -1;
             return 0;
@@ -325,13 +363,7 @@ export default function TripReservations() {
         }
     }, [totalPages, currentPage]);
 
-    useEffect(() => {
-        if (filterTripId || filterUserId) {
-            setShowSummary(true);
-        }
-    }, [filterTripId, filterUserId]);
-
-    const handlePrintReport = () => {
+    const handlePrintReport = useCallback(() => {
         const groupedByDate = filteredReservations.reduce((acc: Record<string, any[]>, r: any) => {
             const dateStr = formatDate(r.trip_date);
             if (!acc[dateStr]) acc[dateStr] = [];
@@ -347,9 +379,6 @@ export default function TripReservations() {
         let totalRegistrados = 0;
         let totalPagado = 0;
         let totalPendiente = 0;
-        let totalPagadoEfectivo = 0;
-        let totalPagadoTransferencia = 0;
-        let totalPagadoDonacion = 0;
 
         sortedDates.forEach(date => {
             const dateGroup = groupedByDate[date];
@@ -357,41 +386,27 @@ export default function TripReservations() {
 
             totalRegistrados += dateGroup.length;
             dateGroup.forEach(r => {
-                totalPagado += Number(r.advance_payment);
-                totalPendiente += Number(r.pending_payment);
-                const paymentType: string = (r as any).payment_type || "efectivo";
-                if (paymentType === "efectivo") {
-                    totalPagadoEfectivo += Number(r.advance_payment);
-                } else if (paymentType === "transferencia") {
-                    totalPagadoTransferencia += Number(r.advance_payment);
-                } else if (paymentType === "donacion") {
-                    totalPagadoDonacion += Number(r.advance_payment);
-                }
+                totalPagado += r.pagado || 0;
+                totalPendiente += r.saldo || 0;
             });
 
-            body += `<h2>Fecha de Viaje: ${date}</h2><table><thead><tr><th>Miembro</th><th>Documento</th><th>Pagado</th><th>Pendiente</th></tr></thead><tbody>`;
+            body += `<h2>Fecha de Viaje: ${date}</h2><table><thead><tr><th>Miembro</th><th>Documento</th><th>Pagado</th><th>Saldo</th></tr></thead><tbody>`;
             sortedMembers.forEach(res => {
-                body += `<tr><td>${res.user_name}</td><td>${res.user_document || "-"}</td><td>$${Number(res.advance_payment).toLocaleString()}</td><td>$${Number(res.pending_payment).toLocaleString()}</td></tr>`;
+                body += `<tr><td>${res.user_name}</td><td>${res.user_document || "-"}</td><td>$${(res.pagado || 0).toLocaleString()}</td><td>${res.saldo > 0 ? `$${res.saldo.toLocaleString()}` : "Saldado"}</td></tr>`;
             });
             body += `</tbody></table>`;
         });
 
         body += `<div style="margin-top:24px;padding:16px 20px;background:#f8f9fa;border:1px solid #dee2e6;border-radius:8px;display:flex;gap:2rem;">
-
             <div>
             <div><span style="font-size:12px;text-transform:uppercase;color:#888;letter-spacing:0.5px;">Registrados</span><br><strong style="font-size:18px;">${totalRegistrados}</strong></div>
             <div><span style="font-size:12px;text-transform:uppercase;color:#888;letter-spacing:0.5px;">Pagado</span><br><strong style="font-size:18px;">$${totalPagado.toLocaleString()}</strong></div>
             <div><span style="font-size:12px;text-transform:uppercase;color:#888;letter-spacing:0.5px;">Pendiente</span><br><strong style="font-size:18px;">$${totalPendiente.toLocaleString()}</strong></div>
             </div>
-            <div>
-            <div><span style="font-size:12px;text-transform:uppercase;color:#888;letter-spacing:0.5px;">Efectivo</span><br><strong style="font-size:18px;">$${totalPagadoEfectivo.toLocaleString()}</strong></div>
-            <div><span style="font-size:12px;text-transform:uppercase;color:#888;letter-spacing:0.5px;">Transferencia</span><br><strong style="font-size:18px;">$${totalPagadoTransferencia.toLocaleString()}</strong></div>
-            <div><span style="font-size:12px;text-transform:uppercase;color:#888;letter-spacing:0.5px;">Donación</span><br><strong style="font-size:18px;">$${totalPagadoDonacion.toLocaleString()}</strong></div>
-            </div>
         </div>`;
 
         openPrintWindow("Reporte de Viajes al Templo", "Rama Arroyo Seco", body);
-    };
+    }, [filteredReservations]);
 
     if (loading) {
         return (
@@ -422,11 +437,54 @@ export default function TripReservations() {
     }
 
     return (
-        <div>
-            <h1><span className="page-title-icon"><FiMapPin /></span> Reservar Viajes</h1>
-            <h2 className="dashboard-subtitle">{editingId ? <><IoCreateOutline /> Actualizar</> : <><FaPlus /> Asignar</>}</h2>
-            <form onSubmit={handleSubmit} className="activity-form">
-                <div className="form-row form-row-4">
+        <div className="asistencia-page">
+            <div className="asistencia-header">
+                <div className="asistencia-header-info">
+                    <h1><span className="page-title-icon"><FiMapPin /></span> Reservar Viajes</h1>
+                    <p>Gestión de reservas y pagos a los viajes al templo</p>
+                </div>
+                <div className="asistencia-header-actions">
+                    <button className="btn primary" onClick={handleOpenPaymentModal}><FaPlus /> Pagar</button>
+                    <button onClick={handlePrintReport} className="btn secondary"><IoPrintOutline /> Imprimir</button>
+                </div>
+            </div>
+
+            <div className="asistencia-stats-grid">
+                <div className="asistencia-stat-card">
+                    <div className="asistencia-stat-icon blue"><FaCalendarCheck /></div>
+                    <div className="asistencia-stat-content">
+                        <h3>{filteredReservations.length}</h3>
+                        <p>Reservas</p>
+                    </div>
+                </div>
+                <div className="asistencia-stat-card">
+                    <div className="asistencia-stat-icon green"><FaMoneyBillWave /></div>
+                    <div className="asistencia-stat-content">
+                        <h3>${reservationTotals.totalPaid.toLocaleString()}</h3>
+                        <p>Pagado</p>
+                    </div>
+                </div>
+                <div className="asistencia-stat-card">
+                    <div className="asistencia-stat-icon orange"><TbAlertTriangle /></div>
+                    <div className="asistencia-stat-content">
+                        <h3>${reservationTotals.totalPending.toLocaleString()}</h3>
+                        <p>Pendiente</p>
+                    </div>
+                </div>
+                <div className="asistencia-stat-card">
+                    <div className="asistencia-stat-icon purple"><IoCarOutline /></div>
+                    <div className="asistencia-stat-content">
+                        <h3>{availableTripsForReservation.length}</h3>
+                        <p>Viajes Disponibles</p>
+                    </div>
+                </div>
+            </div>
+
+            <div className="asistencia-form-card">
+                <div className="asistencia-form-header">
+                    <h2>{editingId ? <><IoCreateOutline /> Actualizar Reserva</> : <><FaPlus /> Asignar Viaje</>}</h2>
+                </div>
+                <form onSubmit={handleSubmit} className="asistencia-form-grid">
                     <div className="form-group">
                         <label>Viaje</label>
                         <select name="trip_id" value={formData.trip_id} onChange={handleChange} required>
@@ -445,26 +503,28 @@ export default function TripReservations() {
                         <label>Adelanto</label>
                         <input type="number" name="advance_payment" placeholder="Adelanto" value={formData.advance_payment} onChange={handleChange} />
                     </div>
-                    <div className="form-group">
-                        <label>Medio de Pago</label>
-                        <select name="payment_type" value={paymentForm.payment_type} onChange={handlePaymentChange} required>
-                            <option value="">Seleccionar</option>
-                            <option value="efectivo">Efectivo</option>
-                            <option value="transferencia">Transferencia</option>
-                            <option value="donacion">Donación</option>
-                        </select>
-                    </div>
-                    <div className="form-group full-width">
+                    <div className="asistencia-form-actions">
                         <button type="submit" className="btn primary">{editingId ? "Actualizar" : "Reservar"}</button>
                         {isFormDirty && <button type="button" onClick={handleCancel} className="btn cancel-btn" title="Cancelar" aria-label="Cancelar">✕</button>}
                     </div>
+                </form>
+            </div>
+
+            <div className="asistencia-toolbar">
+                <div className="asistencia-search-container">
+                    <FiSearch style={{ color: "var(--text-muted)", flexShrink: 0 }} />
+                    <input
+                        type="text"
+                        placeholder="Buscar por miembro o fecha de viaje..."
+                        value={searchQuery}
+                        onChange={e => { setSearchQuery(e.target.value); setCurrentPage(1); }}
+                    />
+                    {searchQuery && (
+                        <button className="search-clear-btn" onClick={() => setSearchQuery("")} title="Limpiar" aria-label="Limpiar búsqueda">✕</button>
+                    )}
                 </div>
-
-            </form>
-
-            <div className="reservations-filters">
-                <div className="reservations-filter-row">
-                    <select value={filterTripId} onChange={e => setFilterTripId(e.target.value)} className="filter-select">
+                <div className="asistencia-filters">
+                    <select value={filterTripId} onChange={e => setFilterTripId(e.target.value)}>
                         <option value="">Todos los viajes</option>
                         {trips.map(t => (
                             <option key={t.id} value={t.id}>
@@ -472,38 +532,22 @@ export default function TripReservations() {
                             </option>
                         ))}
                     </select>
-                    <select value={filterUserId} onChange={e => setFilterUserId(e.target.value)} className="filter-select">
+                    <select value={filterUserId} onChange={e => setFilterUserId(e.target.value)}>
                         <option value="">Todos los miembros</option>
-                        {users.map(u => (
+                        {membersWithReservations.map(u => (
                             <option key={u.id} value={u.id}>
                                 {u.name}
                             </option>
                         ))}
                     </select>
                 </div>
-                <div className="reservations-actions">
-                    <button className="btn primary" onClick={handleOpenPaymentModal}>Pagar</button>
-                    <button onClick={handlePrintReport} className="btn primary">Imprimir</button>
-                </div>
             </div>
-
-            {showSummary && (
-                <div className="modal-overlay" style={{ zIndex: 1000 }} onClick={() => setShowSummary(false)}>
-                    <div className="modal-content" style={{ maxWidth: '360px' }} onClick={(e) => e.stopPropagation()}>
-                        <button className="modal-close" onClick={() => setShowSummary(false)} title="Cerrar" />
-                        <p style={{ marginTop: '8px' }}><strong>{filteredReservations.length} reserva(s)</strong> {filterTripId ? ` para el viaje ${formatDate(trips.find(t => t.id === Number(filterTripId))?.date)}` : ""}{filterUserId ? ` del miembro ${users.find(u => u.id === Number(filterUserId))?.name}` : ""}.</p>
-                        <p>Pagado: <strong>${reservationTotals.totalPaid.toLocaleString()}</strong></p>
-                        <p>Pendiente: <strong>${reservationTotals.totalPending.toLocaleString()}</strong></p>
-                    </div>
-                </div>
-            )}
-
 
             {showPaymentModal && (
                 <div className="modal-overlay">
-                    <div className="modal-content" style={{ maxWidth: "440px" }}>
+                    <div className="modal-content" style={{ maxWidth: "460px" }}>
                         <button className="modal-close" onClick={handleClosePaymentModal} title="Cerrar" />
-                        <h2 style={{ marginBottom: "0.5rem", marginTop: "1.5rem" }}>Pago de Adelanto</h2>
+                        <h2 style={{ marginBottom: "0.5rem", marginTop: "1.5rem" }}>Registrar Pago</h2>
                         <form onSubmit={handlePaymentSubmit} style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
                             <div className="form-group">
                                 <label htmlFor="trip_id">Viaje</label>
@@ -553,6 +597,15 @@ export default function TripReservations() {
                             </div>
 
                             <div className="form-group">
+                                <label htmlFor="payment_type">Medio de Pago</label>
+                                <select name="payment_type" id="payment_type" value={paymentForm.payment_type} onChange={handlePaymentChange}>
+                                    <option value="efectivo">Efectivo</option>
+                                    <option value="transferencia">Transferencia</option>
+                                    <option value="donacion">Donación</option>
+                                </select>
+                            </div>
+
+                            <div className="form-group">
                                 <label htmlFor="payment_date">Fecha de Pago</label>
                                 <input
                                     id="payment_date"
@@ -595,42 +648,57 @@ export default function TripReservations() {
                                     {sortConfig?.key === "trip_date" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
                                 </span>
                             </th>
-                            <th onClick={() => handleSort("register_date")} className="sortable-header">
-                                Registro
+                            <th onClick={() => handleSort("adelanto")} className="sortable-header">
+                                Adelanto
                                 <span className="sort-icon">
-                                    {sortConfig?.key === "register_date" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
+                                    {sortConfig?.key === "adelanto" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
                                 </span>
                             </th>
-                            <th onClick={() => handleSort("advance_payment")} className="sortable-header">
-                                Pago
+                            <th onClick={() => handleSort("abonos")} className="sortable-header">
+                                Abonos
                                 <span className="sort-icon">
-                                    {sortConfig?.key === "advance_payment" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
+                                    {sortConfig?.key === "abonos" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
                                 </span>
                             </th>
-                            <th onClick={() => handleSort("pending_payment")} className="sortable-header">
-                                Pendiente
+                            <th onClick={() => handleSort("pagado")} className="sortable-header">
+                                Pagado
                                 <span className="sort-icon">
-                                    {sortConfig?.key === "pending_payment" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
+                                    {sortConfig?.key === "pagado" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
                                 </span>
                             </th>
-                            <th onClick={() => handleSort("due_date")} className="sortable-header">
-                                Vencimiento
+                            <th onClick={() => handleSort("saldo")} className="sortable-header">
+                                Saldo
                                 <span className="sort-icon">
-                                    {sortConfig?.key === "due_date" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
+                                    {sortConfig?.key === "saldo" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
                                 </span>
                             </th>
                             <th>Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {currentRecords.map(res => (
+                        {currentRecords.map((res, idx) => (
                             <tr key={res.id}>
-                                <td>{res.user_name}</td>
-                                <td>{formatDate(res.trip_date)}</td>
-                                <td>{formatDate(res.register_date)}</td>
-                                <td>${Number(res.advance_payment).toLocaleString()}</td>
                                 <td>
-                                    {Number(res.pending_payment) > 0 ? (
+                                    <div className="student-profile-cell">
+                                        <div className={`student-avatar-circle${avatarGradient(idx)}`}>{getInitials(res.user_name)}</div>
+                                        <div className="student-details">
+                                            <span className="student-name">{res.user_name}</span>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>{formatDate(res.trip_date)}</td>
+                                <td>${res.adelanto.toLocaleString()}</td>
+                                <td>
+                                    ${res.abonos.toLocaleString()}
+                                    {res.num_pagos > 0 && (
+                                        <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
+                                            {res.num_pagos} pago{res.num_pagos === 1 ? "" : "s"}
+                                        </div>
+                                    )}
+                                </td>
+                                <td>${res.pagado.toLocaleString()}</td>
+                                <td>
+                                    {res.saldo > 0 ? (
                                         <span style={{
                                             display: "inline-block",
                                             background: "var(--danger, #e74c3c)",
@@ -640,13 +708,12 @@ export default function TripReservations() {
                                             fontSize: "0.82rem",
                                             fontWeight: 600,
                                         }}>
-                                            ${Number(res.pending_payment).toLocaleString()}
+                                            ${res.saldo.toLocaleString()}
                                         </span>
                                     ) : (
                                         <span style={{ color: "var(--success, #27ae60)", fontWeight: 600 }}>Saldado</span>
                                     )}
                                 </td>
-                                <td>{formatDate(res.due_date)}</td>
                                 <td>
                                     <button className="btn secondary extracted-style-4" onClick={() => handleEdit(res)} aria-label="Editar"><IoCreateOutline /></button>
                                     <button className="btn secondary extracted-style-5" onClick={() => handleDelete(res.id)} aria-label="Eliminar"><IoTrashOutline /></button>
