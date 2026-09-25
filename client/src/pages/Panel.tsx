@@ -24,7 +24,13 @@ function Dashboard() {
     averageGrade: 0,
   });
 
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<any>(() => {
+    try {
+      return JSON.parse(localStorage.getItem("user") || "null");
+    } catch {
+      return null;
+    }
+  });
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -35,15 +41,6 @@ function Dashboard() {
       setError("No hay una sesión activa. Por favor, inicia sesión.");
       setLoading(false);
       return;
-    }
-
-    const sessionUser = localStorage.getItem("user");
-    if (sessionUser) {
-      try {
-        setUser(JSON.parse(sessionUser));
-      } catch {
-        localStorage.removeItem("user");
-      }
     }
 
     api
@@ -90,15 +87,6 @@ function Dashboard() {
                 </div>
             </div>
         </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="error-container" style={{ padding: '2rem', textAlign: 'center' }}>
-        <p className="extracted-style-29"><TbAlertTriangle /> {error}</p>
-        <button onClick={() => navigate("/iniciar-sesion")} className="btn primary">Ir al Login</button>
-      </div>
     );
   }
 
@@ -273,6 +261,11 @@ function Dashboard() {
         <p className="dashboard-subtitle">
           Bienvenido de nuevo. Aquí tienes un resumen de lo que está sucediendo en tu cuenta hoy.
         </p>
+        {error && (
+          <p className="error-message" role="status">
+            <TbAlertTriangle /> {error} Se muestra el panel sin estadísticas actualizadas.
+          </p>
+        )}
       </div>
 
       {user?.role === "admin" && renderAdminStats()}
