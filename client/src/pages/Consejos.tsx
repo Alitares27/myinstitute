@@ -13,6 +13,7 @@ import {
   getMeeting,
   deleteMeeting,
 } from "../services/consejos";
+import "../styles/Consejos.css";
 
 export default function Meetings() {
   const [meetings, setMeetings] = useState<Meeting[]>([]);

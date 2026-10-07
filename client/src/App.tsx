@@ -1,14 +1,15 @@
 import { lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Inicio from "./pages/Inicio";
-import Registrarse from "./pages/Registrarse";
 import IniciarSesion from "./pages/IniciarSesion";
 import RutaPrivada from "./components/RutaPrivada";
 import Disposicion from "./components/Disposicion";
-import Consejos from "./pages/Consejos";
-import NuevoConsejo from "./pages/NuevoConsejo";
-import EditarConsejo from "./pages/EditarConsejo";
-import DetallesConsejo from "./components/meetings/DetallesConsejo";
+
+const Registrarse = lazy(() => import("./pages/Registrarse"));
+const Consejos = lazy(() => import("./pages/Consejos"));
+const NuevoConsejo = lazy(() => import("./pages/NuevoConsejo"));
+const EditarConsejo = lazy(() => import("./pages/EditarConsejo"));
+const DetallesConsejo = lazy(() => import("./components/meetings/DetallesConsejo"));
 
 const Panel = lazy(() => import("./pages/Panel"));
 const Miembros = lazy(() => import("./pages/Miembros"));

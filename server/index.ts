@@ -4,6 +4,7 @@ dotenv.config();
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
+import compression from "compression";
 import { pool } from "./models/db";
 import users from "./routes/users";
 import students from "./routes/students";
@@ -29,6 +30,7 @@ import activitiesRoutes from "./routes/activities";
 const app = express();
 
 app.use(helmet());
+app.use(compression());
 
 app.use(cors({
   origin: [

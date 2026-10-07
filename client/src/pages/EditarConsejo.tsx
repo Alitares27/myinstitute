@@ -15,6 +15,7 @@ import {
 import MeetingForm from "../components/meetings/FormularioConsejo";
 import { Skeleton } from "../components/Esqueleto";
 import { TbCalendarExclamation } from "react-icons/tb";
+import "../styles/Consejos.css";
 
 export default function EditMeeting() {
     const { id } = useParams<{ id: string }>();

@@ -5,6 +5,7 @@ import { MeetingRequest } from "../interfaces/Meeting";
 import { createMeeting } from "../services/consejos";
 import MeetingForm from "../components/meetings/FormularioConsejo";
 import { TbCalendarPlus } from "react-icons/tb";
+import "../styles/Consejos.css";
 
 const initialValues: MeetingRequest = {
     title: "",

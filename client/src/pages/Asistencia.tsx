@@ -18,6 +18,7 @@ import { Skeleton } from "../components/Esqueleto";
 import { TbAlertTriangle } from "react-icons/tb";
 import type { AttendanceRecord } from "../interfaces/Attendance";
 import type { Student, Course, Topic, SortDirection } from "../interfaces/Common";
+import { obtenerEstudiantes, obtenerCursos, obtenerTemas } from "../utils/clienteCache";
 import "../styles/Asistencia.css";
 
 const ITEMS_PER_PAGE = 7;
@@ -66,20 +67,20 @@ export default function Attendance() {
     }
 
     try {
-      const [userRes, attRes, stdRes, crsRes, topRes] = await Promise.all([
+      const [userRes, attRes, stdData, crsData, topData] = await Promise.all([
         Promise.resolve({ data: JSON.parse(localStorage.getItem("user") || "{}") }),
         api.get("/attendance"),
-        api.get("/students"),
-        api.get("/courses"),
-        api.get("/topics"),
+        obtenerEstudiantes(),
+        obtenerCursos(),
+        obtenerTemas(),
       ]);
 
       setRole(userRes.data.role);
       setUserId(userRes.data.id);
       setAttendance(attRes.data || []);
-      setStudents(stdRes.data || []);
-      setCourses(crsRes.data || []);
-      setAllTopics(topRes.data || []);
+      setStudents(stdData || []);
+      setCourses(crsData || []);
+      setAllTopics(topData || []);
     } catch {
       setError("Error al conectar con el servidor");
     } finally {

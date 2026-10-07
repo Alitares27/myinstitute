@@ -4,6 +4,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { Meeting } from "../../interfaces/Meeting";
 import { getMeeting } from "../../services/consejos";
 import { TbCheck, TbX, TbClock } from "react-icons/tb";
+import "../../styles/Consejos.css";
 
 export default function MeetingDetails() {
     const { id } = useParams();

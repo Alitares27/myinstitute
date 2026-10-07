@@ -9,25 +9,26 @@ router.get("/dashboard-stats", verifyToken, async (req: any, res) => {
     const { role, id: userId } = req.user;
 
     if (role === "admin") {
-      const students = await pool.query("SELECT COUNT(*) FROM students");
-      const teachers = await pool.query("SELECT COUNT(*) FROM teachers");
-      const courses = await pool.query("SELECT COUNT(*) FROM courses");
-      const enrollments = await pool.query("SELECT COUNT(*) FROM enrollments");
-      const completedActivities = await pool.query(
-        "SELECT COUNT(*) FROM activity_plans WHERE activity_datetime <= NOW()"
-      );
+      const statsRes = await pool.query(`
+        SELECT 
+          (SELECT COUNT(*) FROM students) AS students,
+          (SELECT COUNT(*) FROM teachers) AS teachers,
+          (SELECT COUNT(*) FROM courses) AS courses,
+          (SELECT COUNT(*) FROM enrollments) AS enrollments,
+          (SELECT COUNT(*) FROM activity_plans WHERE activity_datetime <= NOW()) AS completed_activities
+      `);
 
+      const row = statsRes.rows[0];
       return res.json({
-        students: students.rows[0].count,
-        teachers: teachers.rows[0].count,
-        courses: courses.rows[0].count,
-        enrollments: enrollments.rows[0].count,
-        completedActivities: completedActivities.rows[0].count,
+        students: row.students,
+        teachers: row.teachers,
+        courses: row.courses,
+        enrollments: row.enrollments,
+        completedActivities: row.completed_activities,
       });
     }
 
     if (role === "teacher") {
-
       const teacherRes = await pool.query("SELECT id FROM teachers WHERE user_id = $1", [userId]);
       const teacherId = teacherRes.rows[0]?.id;
 
@@ -35,30 +36,30 @@ router.get("/dashboard-stats", verifyToken, async (req: any, res) => {
         return res.json({ students: 0, courses: 0, attendanceRate: "0%" });
       }
 
-      const studentsCount = await pool.query(
-        "SELECT COUNT(DISTINCT student_id) FROM enrollments WHERE course_id IN (SELECT id FROM courses WHERE teacher_id = $1)",
-        [teacherId]
-      );
+      const [studentsCount, coursesCount, attendance] = await Promise.all([
+        pool.query(
+          "SELECT COUNT(DISTINCT student_id) FROM enrollments WHERE course_id IN (SELECT id FROM courses WHERE teacher_id = $1)",
+          [teacherId]
+        ),
+        pool.query("SELECT COUNT(*) FROM courses WHERE teacher_id = $1", [teacherId]),
+        pool.query(`
+          SELECT 
+            (SELECT COUNT(*) FROM attendance a JOIN courses c ON a.course_id = c.id WHERE a.status ILIKE 'present' AND c.teacher_id = $1) AS present_count,
+            COALESCE(
+              (SELECT SUM(
+                (SELECT COUNT(*) FROM enrollments e WHERE e.course_id = c.id) * 
+                (SELECT COUNT(*) FROM topics t WHERE t.course_id = c.id)
+              ) FROM courses c WHERE c.teacher_id = $1), 0) AS total_expected;
+        `, [teacherId])
+      ]);
 
-      const coursesCount = await pool.query("SELECT COUNT(*) FROM courses WHERE teacher_id = $1", [teacherId]);
-
-      const attendance = await pool.query(`
-        SELECT 
-          (SELECT COUNT(*) FROM attendance a JOIN courses c ON a.course_id = c.id WHERE a.status ILIKE 'present' AND c.teacher_id = $1) AS present_count,
-          COALESCE(
-            (SELECT SUM(
-              (SELECT COUNT(*) FROM enrollments e WHERE e.course_id = c.id) * 
-              (SELECT COUNT(*) FROM topics t WHERE t.course_id = c.id)
-            ) FROM courses c WHERE c.teacher_id = $1), 0) AS total_expected;
-      `, [teacherId]);
-
-      const pCount = parseInt(attendance.rows[0].present_count || 0, 10);
-      const eCount = parseInt(attendance.rows[0].total_expected || 0, 10);
+      const pCount = parseInt(attendance.rows[0]?.present_count || 0, 10);
+      const eCount = parseInt(attendance.rows[0]?.total_expected || 0, 10);
       const rate = eCount > 0 ? Math.round((pCount / eCount) * 100) : 0;
 
       return res.json({
-        students: studentsCount.rows[0].count,
-        courses: coursesCount.rows[0].count,
+        students: studentsCount.rows[0]?.count || 0,
+        courses: coursesCount.rows[0]?.count || 0,
         attendanceRate: `${rate}%`,
       });
     }
@@ -71,30 +72,30 @@ router.get("/dashboard-stats", verifyToken, async (req: any, res) => {
         return res.json({ courses: 0, attendanceRate: "0%", averageGrade: 0 });
       }
 
-      const coursesCount = await pool.query("SELECT COUNT(*) FROM enrollments WHERE student_id = $1", [studentId]);
+      const [coursesCount, attendance, averageGrade] = await Promise.all([
+        pool.query("SELECT COUNT(*) FROM enrollments WHERE student_id = $1", [studentId]),
+        pool.query(`
+          SELECT 
+            (SELECT COUNT(*) FROM attendance WHERE status ILIKE 'present' AND student_id = $1) AS present_count,
+            COALESCE(
+              (SELECT SUM(
+                (SELECT COUNT(*) FROM topics t WHERE t.course_id = e.course_id)
+              ) FROM enrollments e WHERE e.student_id = $1), 0) AS total_expected;
+        `, [studentId]),
+        pool.query(
+          "SELECT AVG(grade) as avg FROM grades WHERE student_id = $1",
+          [studentId]
+        )
+      ]);
 
-      const attendance = await pool.query(`
-        SELECT 
-          (SELECT COUNT(*) FROM attendance WHERE status ILIKE 'present' AND student_id = $1) AS present_count,
-          COALESCE(
-            (SELECT SUM(
-              (SELECT COUNT(*) FROM topics t WHERE t.course_id = e.course_id)
-            ) FROM enrollments e WHERE e.student_id = $1), 0) AS total_expected;
-      `, [studentId]);
-
-      const pCount = parseInt(attendance.rows[0].present_count || 0, 10);
-      const eCount = parseInt(attendance.rows[0].total_expected || 0, 10);
+      const pCount = parseInt(attendance.rows[0]?.present_count || 0, 10);
+      const eCount = parseInt(attendance.rows[0]?.total_expected || 0, 10);
       const rate = eCount > 0 ? Math.round((pCount / eCount) * 100) : 0;
 
-      const averageGrade = await pool.query(
-        "SELECT AVG(grade) as avg FROM grades WHERE student_id = $1",
-        [studentId]
-      );
-
       return res.json({
-        courses: coursesCount.rows[0].count,
+        courses: coursesCount.rows[0]?.count || 0,
         attendanceRate: `${rate}%`,
-        averageGrade: Math.round((averageGrade.rows[0].avg || 0) * 10) / 10,
+        averageGrade: Math.round((averageGrade.rows[0]?.avg || 0) * 10) / 10,
       });
     }
 

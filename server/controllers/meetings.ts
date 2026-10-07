@@ -161,28 +161,20 @@ export async function createMeeting(req: Request, res: Response) {
 
         const meetingId = meeting.rows[0].id;
 
-        if (Array.isArray(attendees)) {
-            for (const item of attendees) {
+        if (Array.isArray(attendees) && attendees.length > 0) {
+            const values: any[] = [];
+            const placeholders = attendees.map((item, idx) => {
                 const userId = typeof item === "number" ? item : item.id;
+                const status = item.status || "pending";
+                const base = idx * 3;
+                values.push(meetingId, userId, status);
+                return `($${base + 1}, $${base + 2}, $${base + 3})`;
+            }).join(", ");
 
-                await client.query(
-                    `
-                    INSERT INTO meeting_attendees
-                    (
-                        meeting_id,
-                        user_id,
-                        status
-                    )
-                    VALUES
-                    ($1,$2,$3)
-                    `,
-                    [
-                        meetingId,
-                        userId,
-                        item.status || "pending"
-                    ]
-                );
-            }
+            await client.query(
+                `INSERT INTO meeting_attendees (meeting_id, user_id, status) VALUES ${placeholders}`,
+                values
+            );
         }
 
         await client.query("COMMIT");
@@ -267,28 +259,20 @@ export async function updateMeeting(req: Request, res: Response) {
             [id]
         );
 
-        if (Array.isArray(attendees)) {
-            for (const item of attendees) {
+        if (Array.isArray(attendees) && attendees.length > 0) {
+            const values: any[] = [];
+            const placeholders = attendees.map((item, idx) => {
                 const userId = typeof item === "number" ? item : item.id;
+                const status = item.status || "pending";
+                const base = idx * 3;
+                values.push(id, userId, status);
+                return `($${base + 1}, $${base + 2}, $${base + 3})`;
+            }).join(", ");
 
-                await client.query(
-                    `
-                    INSERT INTO meeting_attendees
-                    (
-                        meeting_id,
-                        user_id,
-                        status
-                    )
-                    VALUES
-                    ($1,$2,$3)
-                    `,
-                    [
-                        id,
-                        userId,
-                        item.status || "pending"
-                    ]
-                );
-            }
+            await client.query(
+                `INSERT INTO meeting_attendees (meeting_id, user_id, status) VALUES ${placeholders}`,
+                values
+            );
         }
 
         await client.query("COMMIT");

@@ -15,6 +15,7 @@ import { TbBooks, TbList, TbCertificate } from "react-icons/tb";
 import { Skeleton } from "../components/Esqueleto";
 import { openPrintWindow } from "../utils/utilidadesReportes";
 import type { SortConfig } from "../interfaces/Common";
+import { obtenerEstudiantes, obtenerCursos, invalidarCursos } from "../utils/clienteCache";
 import "../styles/Inscripciones.css";
 
 const ITEMS_PER_PAGE = 7;
@@ -70,15 +71,15 @@ export default function Enrollments() {
       setRole(user.role || "");
       setUserId(user.id || "");
 
-      const [enRes, stRes, crRes] = await Promise.all([
+      const [enRes, stData, crData] = await Promise.all([
         api.get("/enrollments"),
-        api.get("/students"),
-        api.get("/courses"),
+        obtenerEstudiantes(),
+        obtenerCursos(),
       ]);
 
       setEnrollments(enRes.data || []);
-      setStudents(stRes.data || []);
-      setCourses(crRes.data || []);
+      setStudents(stData || []);
+      setCourses(crData || []);
     } catch {
       console.error("Error al cargar datos de matrículas");
     } finally {
@@ -240,6 +241,7 @@ export default function Enrollments() {
       setCursoTitle("");
       setEditingCursoId(null);
       setCursoError(null);
+      invalidarCursos();
     } catch {
       setCursoError("Error al guardar el curso");
     }
@@ -255,6 +257,7 @@ export default function Enrollments() {
     if (!confirm("¿Eliminar este curso? Se cancelarán las matrículas asociadas.")) return;
     try {
       await api.delete(`/courses/${id}`);
+      invalidarCursos();
       setCourses((prev) => prev.filter((c) => c.id !== id));
       setEnrollments((prev) => prev.filter((e) => Number(e.course_id) !== id));
     } catch {

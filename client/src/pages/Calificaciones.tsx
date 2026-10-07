@@ -8,6 +8,7 @@ import { formatDate } from "../utils/utilidadesFecha";
 import { Skeleton } from "../components/Esqueleto";
 import { openPrintWindow } from "../utils/utilidadesReportes";
 import type { SortConfig } from "../interfaces/Common";
+import { obtenerEstudiantes, obtenerCursos } from "../utils/clienteCache";
 import "../styles/calificaciones.css";
 
 const getInitials = (name: string) =>
@@ -54,12 +55,12 @@ export default function Grades() {
       setGrades(gradesRes.data);
 
       if (meRes.data.role === "admin") {
-        const [sRes, cRes] = await Promise.all([
-          api.get("/students"),
-          api.get("/courses"),
+        const [sData, cData] = await Promise.all([
+          obtenerEstudiantes(),
+          obtenerCursos(),
         ]);
-        setStudents(sRes.data);
-        setCourses(cRes.data);
+        setStudents(sData);
+        setCourses(cData);
       }
     } catch {
       setError("Error al sincronizar con el servidor");
