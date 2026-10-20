@@ -3,6 +3,7 @@ import ReactDOM from "react-dom/client";
 import App from "./App";
 import "./styles/Global.css";
 import "./styles/Tablas.css";
+import "./styles/Impresion.css";
 import { ThemeProvider } from "./context/ContextoTema";
 
 const chunkReloadKey = "vite:preload-error-reload";

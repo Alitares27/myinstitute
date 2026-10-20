@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import api from "../api";
-import { FiCalendar } from "react-icons/fi";
+import { FiCalendar, FiPrinter } from "react-icons/fi";
 import { IoCreateOutline, IoTrashOutline, IoAddOutline } from "react-icons/io5";
 import { formatDateTime, formatDateTimeLong } from "../utils/utilidadesFecha";
+import { generarPDFActividades } from "../utils/pdfActividades";
 import { Skeleton } from "../components/Esqueleto";
 import type { Activity } from "../interfaces/Activity";
 
@@ -14,6 +15,10 @@ export default function Actividades() {
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
   const recordsPerPage = 6;
+  const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
+  const [selectedToPrint, setSelectedToPrint] = useState<string[]>([]);
+  const [generatingPDF, setGeneratingPDF] = useState(false);
+  const selectAllRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("user") || "{}");
@@ -31,6 +36,78 @@ export default function Actividades() {
       await api.delete(`/activities/${id}`);
       setActivities(prev => prev.filter(a => a.id !== id));
     } catch { }
+  }
+
+  /* -----------------------------------------
+     Impresión en PDF
+     ----------------------------------------- */
+  const actividadesConId = useMemo(
+    () => activities.filter((actividad) => Boolean(actividad.id)),
+    [activities]
+  );
+
+  const todasSeleccionadas =
+    actividadesConId.length > 0 &&
+    selectedToPrint.length === actividadesConId.length;
+
+  useEffect(() => {
+    if (selectAllRef.current) {
+      selectAllRef.current.indeterminate =
+        selectedToPrint.length > 0 &&
+        selectedToPrint.length < actividadesConId.length;
+    }
+  }, [selectedToPrint, actividadesConId.length]);
+
+  useEffect(() => {
+    if (!isPrintModalOpen) return;
+
+    const cerrarConEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && !generatingPDF) setIsPrintModalOpen(false);
+    };
+
+    window.addEventListener("keydown", cerrarConEscape);
+    return () => window.removeEventListener("keydown", cerrarConEscape);
+  }, [isPrintModalOpen, generatingPDF]);
+
+  function openPrintModal() {
+    setSelectedToPrint(actividadesConId.map((actividad) => actividad.id));
+    setIsPrintModalOpen(true);
+  }
+
+  function closePrintModal() {
+    if (generatingPDF) return;
+    setIsPrintModalOpen(false);
+  }
+
+  function toggleActividadParaImprimir(id: string) {
+    setSelectedToPrint(prev =>
+      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+    );
+  }
+
+  function toggleTodasParaImprimir() {
+    setSelectedToPrint(
+      todasSeleccionadas ? [] : actividadesConId.map((actividad) => actividad.id)
+    );
+  }
+
+  async function handleGenerarPDF() {
+    const seleccionadas = actividadesConId.filter((actividad) =>
+      selectedToPrint.includes(actividad.id)
+    );
+
+    if (seleccionadas.length === 0) return;
+
+    try {
+      setGeneratingPDF(true);
+      await generarPDFActividades(seleccionadas);
+      setIsPrintModalOpen(false);
+    } catch (error) {
+      console.error("Error generando el PDF:", error);
+      alert("No fue posible generar el archivo PDF.");
+    } finally {
+      setGeneratingPDF(false);
+    }
   }
 
   const totalPages = Math.ceil(activities.length / recordsPerPage);
@@ -77,11 +154,24 @@ export default function Actividades() {
     <div className="actividades-page">
       <div className="actividades-header">
         <h1><span className="page-title-icon"><FiCalendar /></span> Actividades</h1>
-        {role === "admin" && (
-          <Link to="/actividades/nueva" className="btn-primary">
-            Programar
-          </Link>
-        )}
+
+        <div className="page-actions">
+          <button
+            type="button"
+            className="btn secondary print-trigger"
+            onClick={openPrintModal}
+            disabled={activities.length === 0}
+            title="Imprimir actividades en un archivo PDF"
+          >
+            <FiPrinter /> Imprimir
+          </button>
+
+          {role === "admin" && (
+            <Link to="/actividades/nueva" className="btn-primary">
+              Programar
+            </Link>
+          )}
+        </div>
       </div>
 
       <h2 className="dashboard-subtitle"><IoAddOutline /> Actividades programadas</h2>
@@ -167,6 +257,106 @@ export default function Actividades() {
                 {selectedActivity.physical && <span className="status-badge" style={{ background: "rgba(52,199,89,0.12)", color: "#34C759" }}>Físico</span>}
                 {selectedActivity.intellectual && <span className="status-badge" style={{ background: "rgba(0,122,255,0.12)", color: "#007AFF" }}>Intelectual</span>}
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isPrintModalOpen && (
+        <div className="modal-overlay" onClick={closePrintModal}>
+          <div
+            className="modal-content print-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="print-modal-title"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              className="modal-close"
+              onClick={closePrintModal}
+              title="Cerrar"
+              disabled={generatingPDF}
+            />
+
+            <div className="print-modal-header">
+              <h2 id="print-modal-title"><FiPrinter /> Imprimir actividades</h2>
+              <p>Seleccione las actividades que desea incluir en el archivo PDF.</p>
+            </div>
+
+            <div className="print-modal-toolbar">
+              <label className="print-select-all">
+                <input
+                  ref={selectAllRef}
+                  type="checkbox"
+                  className="print-check"
+                  checked={todasSeleccionadas}
+                  onChange={toggleTodasParaImprimir}
+                  disabled={generatingPDF}
+                />
+                <span>Seleccionar todas</span>
+              </label>
+
+              <span className="print-count">
+                {selectedToPrint.length} de {actividadesConId.length} seleccionadas
+              </span>
+            </div>
+
+            <div className="print-list">
+              {actividadesConId.map((actividad) => {
+                const seleccionada = selectedToPrint.includes(actividad.id);
+
+                return (
+                  <label
+                    key={actividad.id}
+                    className={`print-option ${seleccionada ? "is-selected" : ""}`}
+                  >
+                    <input
+                      type="checkbox"
+                      className="print-check"
+                      checked={seleccionada}
+                      onChange={() => toggleActividadParaImprimir(actividad.id)}
+                      disabled={generatingPDF}
+                    />
+
+                    <span className="print-option-info">
+                      <span className="print-option-title">{actividad.activity_name}</span>
+                      <span className="print-option-meta">
+                        <FiCalendar />
+                        {formatDateTime(actividad.activity_datetime)}
+                        <span className="print-meta-separator">·</span>
+                        {actividad.assigned_to_name || "Sin encargado"}
+                      </span>
+                    </span>
+
+                    <span className="print-areas">
+                      {actividad.spiritual && <span className="print-area">Espiritual</span>}
+                      {actividad.social && <span className="print-area">Social</span>}
+                      {actividad.physical && <span className="print-area">Físico</span>}
+                      {actividad.intellectual && <span className="print-area">Intelectual</span>}
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+
+            <div className="print-modal-footer">
+              <button
+                type="button"
+                className="btn secondary"
+                onClick={closePrintModal}
+                disabled={generatingPDF}
+              >
+                Cancelar
+              </button>
+
+              <button
+                type="button"
+                className="btn primary"
+                onClick={handleGenerarPDF}
+                disabled={selectedToPrint.length === 0 || generatingPDF}
+              >
+                {generatingPDF ? "Generando PDF…" : "Generar PDF"}
+              </button>
             </div>
           </div>
         </div>

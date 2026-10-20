@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { TbCalendar, TbCheck, TbX, TbClock } from "react-icons/tb";
+import { TbCalendar, TbCheck, TbX, TbClock, TbPrinter } from "react-icons/tb";
 import { IoCreateOutline, IoTrashOutline, IoAddOutline } from "react-icons/io5";
 
 import { Meeting } from "../interfaces/Meeting";
@@ -13,6 +13,10 @@ import {
   getMeeting,
   deleteMeeting,
 } from "../services/consejos";
+import {
+  etiquetaEstadoConsejo,
+  generarPDFConsejos,
+} from "../utils/pdfConsejos";
 import "../styles/Consejos.css";
 
 export default function Meetings() {
@@ -23,6 +27,10 @@ export default function Meetings() {
   const [selectedMeeting, setSelectedMeeting] = useState<Meeting | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const recordsPerPage = 5;
+  const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
+  const [selectedToPrint, setSelectedToPrint] = useState<number[]>([]);
+  const [generatingPDF, setGeneratingPDF] = useState(false);
+  const selectAllRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     loadMeetings();
@@ -71,6 +79,76 @@ export default function Meetings() {
   function formatTime(time?: string | null) {
     if (!time) return "--";
     return time.substring(0, 5);
+  }
+
+  /* -----------------------------------------
+     Impresión en PDF
+     ----------------------------------------- */
+  const consejosConId = useMemo(
+    () => meetings.filter((meeting) => meeting.id != null),
+    [meetings]
+  );
+
+  const todosSeleccionados =
+    consejosConId.length > 0 && selectedToPrint.length === consejosConId.length;
+
+  useEffect(() => {
+    if (selectAllRef.current) {
+      selectAllRef.current.indeterminate =
+        selectedToPrint.length > 0 && selectedToPrint.length < consejosConId.length;
+    }
+  }, [selectedToPrint, consejosConId.length]);
+
+  useEffect(() => {
+    if (!isPrintModalOpen) return;
+
+    const cerrarConEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && !generatingPDF) setIsPrintModalOpen(false);
+    };
+
+    window.addEventListener("keydown", cerrarConEscape);
+    return () => window.removeEventListener("keydown", cerrarConEscape);
+  }, [isPrintModalOpen, generatingPDF]);
+
+  function openPrintModal() {
+    setSelectedToPrint(consejosConId.map((meeting) => meeting.id!));
+    setIsPrintModalOpen(true);
+  }
+
+  function closePrintModal() {
+    if (generatingPDF) return;
+    setIsPrintModalOpen(false);
+  }
+
+  function toggleConsejoParaImprimir(id: number) {
+    setSelectedToPrint((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  }
+
+  function toggleTodosParaImprimir() {
+    setSelectedToPrint(
+      todosSeleccionados ? [] : consejosConId.map((meeting) => meeting.id!)
+    );
+  }
+
+  async function handleGenerarPDF() {
+    const seleccionados = consejosConId.filter((meeting) =>
+      selectedToPrint.includes(meeting.id!)
+    );
+
+    if (seleccionados.length === 0) return;
+
+    try {
+      setGeneratingPDF(true);
+      await generarPDFConsejos(seleccionados);
+      setIsPrintModalOpen(false);
+    } catch (error) {
+      console.error("Error generando el PDF:", error);
+      alert("No fue posible generar el archivo PDF.");
+    } finally {
+      setGeneratingPDF(false);
+    }
   }
 
   const totalPages = Math.ceil(meetings.length / recordsPerPage);
@@ -133,15 +211,26 @@ export default function Meetings() {
 
         <h1><span className="page-title-icon"><TbCalendar /></span> Consejos</h1>
 
-
-        {role === "admin" && (
-          <Link
-            to="/consejos/nuevo"
-            className="btn-primary"
+        <div className="page-actions">
+          <button
+            type="button"
+            className="btn secondary print-trigger"
+            onClick={openPrintModal}
+            disabled={meetings.length === 0}
+            title="Imprimir consejos en un archivo PDF"
           >
-            Programar
-          </Link>
-        )}
+            <TbPrinter /> Imprimir
+          </button>
+
+          {role === "admin" && (
+            <Link
+              to="/consejos/nuevo"
+              className="btn-primary"
+            >
+              Programar
+            </Link>
+          )}
+        </div>
 
       </div>
       <h2 className="dashboard-subtitle"><IoAddOutline /> Consejos registrados</h2>
@@ -179,9 +268,7 @@ export default function Meetings() {
                   <td>{meeting.created_by_name}</td>
                   <td>
                     <span className={`status-badge status-${meeting.status || "scheduled"}`}>
-                      {meeting.status === "scheduled" ? "Programada" :
-                        meeting.status === "completed" ? "Completada" :
-                          meeting.status === "cancelled" ? "Cancelada" : meeting.status || "Programada"}
+                      {etiquetaEstadoConsejo(meeting.status)}
                     </span>
                   </td>
                   {role === "admin" && (
@@ -239,9 +326,7 @@ export default function Meetings() {
                       <p>
                         <strong>Estado:</strong>{" "}
                         <span className={`status-badge status-${selectedMeeting.status}`}>
-                          {selectedMeeting.status === "scheduled" ? "Programada" :
-                            selectedMeeting.status === "completed" ? "Completada" :
-                              selectedMeeting.status === "cancelled" ? "Cancelada" : selectedMeeting.status}
+                          {etiquetaEstadoConsejo(selectedMeeting.status)}
                         </span>
                       </p>
                     )}
@@ -284,6 +369,105 @@ export default function Meetings() {
 
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {isPrintModalOpen && (
+        <div className="modal-overlay" onClick={closePrintModal}>
+          <div
+            className="modal-content print-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="print-modal-title"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              className="modal-close"
+              onClick={closePrintModal}
+              title="Cerrar"
+              disabled={generatingPDF}
+            />
+
+            <div className="print-modal-header">
+              <h2 id="print-modal-title"><TbPrinter /> Imprimir consejos</h2>
+              <p>Seleccione los consejos que desea incluir en el archivo PDF.</p>
+            </div>
+
+            <div className="print-modal-toolbar">
+              <label className="print-select-all">
+                <input
+                  ref={selectAllRef}
+                  type="checkbox"
+                  className="print-check"
+                  checked={todosSeleccionados}
+                  onChange={toggleTodosParaImprimir}
+                  disabled={generatingPDF}
+                />
+                <span>Seleccionar todos</span>
+              </label>
+
+              <span className="print-count">
+                {selectedToPrint.length} de {consejosConId.length} seleccionados
+              </span>
+            </div>
+
+            <div className="print-list">
+              {consejosConId.map((meeting) => {
+                const seleccionado = selectedToPrint.includes(meeting.id!);
+
+                return (
+                  <label
+                    key={meeting.id}
+                    className={`print-option ${seleccionado ? "is-selected" : ""}`}
+                  >
+                    <input
+                      type="checkbox"
+                      className="print-check"
+                      checked={seleccionado}
+                      onChange={() => toggleConsejoParaImprimir(meeting.id!)}
+                      disabled={generatingPDF}
+                    />
+
+                    <span className="print-option-info">
+                      <span className="print-option-title">{meeting.title}</span>
+                      <span className="print-option-meta">
+                        <TbCalendar />
+                        {new Date(meeting.meeting_date).toLocaleDateString("es-AR")}
+                        <span className="print-meta-separator">·</span>
+                        {formatTime(meeting.start_time)} - {formatTime(meeting.end_time)}
+                        <span className="print-meta-separator">·</span>
+                        {meeting.created_by_name || "Sin creador"}
+                      </span>
+                    </span>
+
+                    <span className={`status-badge status-${meeting.status || "scheduled"}`}>
+                      {etiquetaEstadoConsejo(meeting.status)}
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+
+            <div className="print-modal-footer">
+              <button
+                type="button"
+                className="btn secondary"
+                onClick={closePrintModal}
+                disabled={generatingPDF}
+              >
+                Cancelar
+              </button>
+
+              <button
+                type="button"
+                className="btn primary"
+                onClick={handleGenerarPDF}
+                disabled={selectedToPrint.length === 0 || generatingPDF}
+              >
+                {generatingPDF ? "Generando PDF…" : "Generar PDF"}
+              </button>
+            </div>
           </div>
         </div>
       )}
