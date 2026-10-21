@@ -15,7 +15,8 @@
    2. Page Container / Header
    ----------------------------------------- */
 .page-container {
-  max-width: 900px;
+  width: 100%;
+  max-width: 100%;
   margin: 0 auto;
 }
 
@@ -330,7 +331,8 @@
    9. Meeting Details
    ----------------------------------------- */
 .meeting-details {
-  max-width: 900px;
+  width: 100%;
+  max-width: 100%;
   margin: 0 auto;
   animation: fadeIn 0.5s ease-out;
 }

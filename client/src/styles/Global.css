@@ -191,14 +191,30 @@ h1 {
   display: flex;
   flex-direction: column;
   min-width: 0;
+  min-height: 100vh;
   background-color: var(--bg-body);
 }
 
 main.content {
+  flex: 1;
   width: 100%;
   max-width: 1400px;
   margin: 0 auto;
   padding: 2rem;
+}
+
+.page-container,
+.maestros-page,
+.students-page,
+.dashboard-page,
+.inscripciones-page,
+.asistencia-page,
+.calificaciones-page,
+.meetings-page,
+.actividades-page {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .home-container {

@@ -75,10 +75,6 @@ export default function Home() {
             </div>
           </div>
         </section>
-
-        <footer className="home-footer">
-          <p>© {new Date().getFullYear()} GestionAR.</p>
-        </footer>
       </div>
     </Layout>
   );

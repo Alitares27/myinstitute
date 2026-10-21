@@ -397,7 +397,7 @@ export default function Maestros() {
   }
 
   return (
-    <div className="maestros-page page-container">
+    <div className="maestros-page">
       <div className="maestros-header">
         <div className="maestros-header-info">
           <h1>

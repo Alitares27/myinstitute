@@ -1,0 +1,30 @@
+/* =========================================
+   PIE DE PÁGINA (FOOTER) STYLES
+   ========================================= */
+
+.app-footer {
+  width: 100%;
+  background-color: var(--bg-surface);
+  border-top: 1px solid var(--border-color);
+  margin-top: auto;
+  transition: background-color var(--transition), border-color var(--transition);
+}
+
+.footer-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 1.25rem 1rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+.footer-copy {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  text-align: center;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+}

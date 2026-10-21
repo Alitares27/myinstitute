@@ -1,5 +1,6 @@
 import { ReactNode, useState, useEffect } from "react";
 import BarraLateral from "./BarraLateral";
+import PieDePagina from "./PieDePagina";
 
 interface LayoutProps {
   children: ReactNode;
@@ -22,14 +23,17 @@ export default function Layout({ children }: LayoutProps) {
   return (
     <div className="app-layout">
       <BarraLateral />
-      <main className="content">
-        {isOffline && (
-          <div className="offline-banner">
-            Sin conexión a internet — algunos datos podrían no estar actualizados
-          </div>
-        )}
-        {children}
-      </main>
+      <div className="main-content">
+        <main className="content">
+          {isOffline && (
+            <div className="offline-banner">
+              Sin conexión a internet — algunos datos podrían no estar actualizados
+            </div>
+          )}
+          {children}
+        </main>
+        <PieDePagina />
+      </div>
     </div>
   );
 }

@@ -172,6 +172,10 @@ export default function Students() {
                   <option value="Q. Elderes">Q. Elderes</option>
                   <option value="S. Aaronico">S. Aaronico</option>
                   <option value="Soc. Soc.">Soc. Soc.</option>
+                  <option value="Independencia">B. Independencia</option>
+                  <option value="Las Delicias">B. Las Delicias</option>
+                  <option value="San Martin">B. San Martin</option>
+                  <option value="Urquiza">B. Urquiza</option>
                 </select>
               </div>
               <div className="form-group" style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "16px" }}>

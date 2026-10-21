@@ -1,5 +1,6 @@
 .dashboard-page {
-  padding: 2rem;
+  width: 100%;
+  max-width: 100%;
   animation: fadeIn 0.8s ease-out;
 }
 
