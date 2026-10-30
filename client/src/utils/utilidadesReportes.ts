@@ -1,3 +1,6 @@
+import DOMPurify from "dompurify";
+
+export const escapeHtml = (value: unknown): string => String(value ?? "").replace(/[&<>"\']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\'": "&#39;", '"': "&quot;" }[char]!));
 
 const LOGO_URL = `${window.location.origin}/temple.webp`;
 const CURRENT_YEAR = new Date().getFullYear();
@@ -88,8 +91,8 @@ export function reportHeader(title: string, subtitle?: string): string {
     <div class="report-header">
       <img src="${LOGO_URL}" alt="GestionAR Logo" />
       <div class="report-header-text">
-        <h1>${title}</h1>
-        ${subtitle ? `<p>${subtitle}</p>` : ""}
+        <h1>${escapeHtml(title)}</h1>
+        ${subtitle ? `<p>${escapeHtml(subtitle)}</p>` : ""}
       </div>
     </div>
   `;
@@ -108,20 +111,21 @@ export function buildReportDocument(title: string, subtitle: string, bodyContent
   return `
     <html>
     <head>
-      <title>${title}</title>
+      <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self'; style-src 'unsafe-inline'">
+      <title>${escapeHtml(title)}</title>
       <style>${reportBaseStyles}</style>
     </head>
     <body>
       ${reportHeader(title, subtitle)}
-      ${bodyContent}
+      ${DOMPurify.sanitize(bodyContent, { ALLOWED_TAGS: ["div", "span", "p", "strong", "b", "em", "h1", "h2", "h3", "table", "thead", "tbody", "tfoot", "tr", "th", "td", "br"], ALLOWED_ATTR: ["class", "style", "colspan", "rowspan"] })}
       ${reportFooter()}
     </body>
     </html>
   `;
 }
 
-export function openPrintWindow(title: string, subtitle: string, bodyContent: string): void {
-  const printWindow = window.open("", "_blank");
+export function openPrintWindow(title: string, subtitle: string, bodyContent: string, existingWindow?: Window | null): void {
+  const printWindow = existingWindow || window.open("", "_blank");
   if (!printWindow) return;
   printWindow.document.write(buildReportDocument(title, subtitle, bodyContent));
   printWindow.document.close();

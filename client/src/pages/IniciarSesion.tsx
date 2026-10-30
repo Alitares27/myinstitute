@@ -1,3 +1,5 @@
+import { invalidarCache } from "../utils/clienteCache";
+import { limpiarSesion } from "../utils/sesion";
 import { useState } from "react";
 import api from "../api";
 import { useNavigate } from "react-router-dom";
@@ -22,6 +24,8 @@ export default function Login() {
         throw new Error("No se recibió el token de autenticación.");
       }
 
+      invalidarCache();
+      await limpiarSesion();
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("user", JSON.stringify(res.data.user));
       localStorage.setItem("role", res.data.user.role);

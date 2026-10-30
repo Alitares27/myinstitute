@@ -1,13 +1,15 @@
+import { cents, isoDate, positiveId, InputError } from "../utils/validation";
+import { asyncRouter } from "../middleware/asyncRouter";
 import express, { Response } from "express";
 import { pool } from "../models/db";
 import { verifyToken, isAdmin, AuthRequest } from "../middleware/auth";
 
-const router = express.Router();
+const router = asyncRouter();
 
 router.get("/", verifyToken, async (req: AuthRequest, res: Response) => {
   try {
     const result = await pool.query(`
-      SELECT 
+      SELECT
         tt.id,
         tt.temple_id,
         t.name AS temple_name,
@@ -30,7 +32,9 @@ router.post("/", verifyToken, isAdmin, async (req: AuthRequest, res: Response) =
   try {
     const { temple_id, date, status, cost } = req.body;
 
-    if (!temple_id || !date || !cost) {
+    positiveId(temple_id); isoDate(date); cents(cost);
+    if (status && !["programado", "cancelado", "finalizado", "completado", "en_curso"].includes(status)) return res.status(400).json({ message: "Estado inválido" });
+    if (!temple_id || !date || cost === undefined || cost === "") {
       return res.status(400).json({ message: "Todos los campos son obligatorios" });
     }
 
@@ -44,37 +48,30 @@ router.post("/", verifyToken, isAdmin, async (req: AuthRequest, res: Response) =
     res.status(201).json(result.rows[0]);
 
   } catch (err) {
+    if (err instanceof InputError) return res.status(400).json({ message: err.message });
     console.error("❌ Error creating temple trip:", err);
     res.status(500).json({ message: "Error al crear el viaje" });
   }
 });
 
 router.put("/:id", verifyToken, isAdmin, async (req: AuthRequest, res: Response) => {
+  const id = positiveId(req.params.id);
+  const { temple_id, date, status, cost } = req.body;
+  positiveId(temple_id); isoDate(date); const costCents = cents(cost);
+  if (!["programado", "cancelado", "finalizado", "completado", "en_curso"].includes(status)) throw new InputError("Estado inválido");
+  const client = await pool.connect();
   try {
-    const { id } = req.params;
-    const { temple_id, date, status, cost } = req.body;
-
-    const result = await pool.query(
-      `UPDATE temple_trips
-       SET temple_id = $1,
-           trip_date = $2,
-           status = $3,
-           cost = $4
-       WHERE id = $5
-       RETURNING *`,
-      [temple_id, date, status, cost, id]
-    );
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({ message: "Viaje no encontrado" });
-    }
-
+    await client.query("BEGIN");
+    const trip = await client.query("SELECT id FROM temple_trips WHERE id=$1 FOR UPDATE", [id]);
+    if (!trip.rowCount) { await client.query("ROLLBACK"); return res.status(404).json({ message: "Viaje no encontrado" }); }
+    const reservations = await client.query("SELECT id,advance_payment FROM temple_attendance WHERE trip_id=$1 ORDER BY id FOR UPDATE", [id]);
+    if (reservations.rows.some(row => cents(row.advance_payment) > costCents)) throw new InputError("El costo no puede ser menor que los pagos recibidos");
+    const result = await client.query("UPDATE temple_trips SET temple_id=$1,trip_date=$2,status=$3,cost=$4 WHERE id=$5 RETURNING *", [temple_id,date,status,costCents/100,id]);
+    await client.query("UPDATE temple_attendance SET pending_payment=$1-advance_payment WHERE trip_id=$2", [costCents/100,id]);
+    await client.query("COMMIT");
     res.json(result.rows[0]);
-
-  } catch (err) {
-    console.error("❌ Error updating temple trip:", err);
-    res.status(500).json({ message: "Error al actualizar el viaje" });
-  }
+  } catch (error) { await client.query("ROLLBACK"); throw error; }
+  finally { client.release(); }
 });
 
 router.delete("/:id", verifyToken, isAdmin, async (req: AuthRequest, res: Response) => {

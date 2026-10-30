@@ -111,7 +111,7 @@ export default function Attendance() {
 
   const filteredAttendance = useMemo(() => {
     let data = attendance.filter((a) => {
-      if (role === "student" && a.student_id !== userId) return false;
+
       if (studentFilter && String(a.student_id) !== String(studentFilter)) return false;
       if (courseFilter && String(a.course_id) !== String(courseFilter)) return false;
       if (dateFilter && toYMD(a.date) !== dateFilter) return false;
@@ -192,7 +192,7 @@ export default function Attendance() {
       const topic = allTopics.find((t) => t.id === Number(form.topic_id));
       setAttendance((prev) => [
         { ...res.data, topic: topic?.title || "—" },
-        ...prev,
+        ...prev.filter(a => a.id !== res.data.id),
       ]);
 
       setForm({ ...form, student_id: "", topic_id: "", status: "Present" });

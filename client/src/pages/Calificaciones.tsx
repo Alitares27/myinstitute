@@ -54,7 +54,7 @@ export default function Grades() {
       const gradesRes = await api.get("/grades");
       setGrades(gradesRes.data);
 
-      if (meRes.data.role === "admin") {
+      if (meRes.data.role !== "student") {
         const [sData, cData] = await Promise.all([
           obtenerEstudiantes(),
           obtenerCursos(),
@@ -180,7 +180,7 @@ export default function Grades() {
         <table>
           <thead>
             <tr>
-              ${role === "admin" ? "<th>Estudiante</th>" : ""}
+              ${role !== "student" ? "<th>Estudiante</th>" : ""}
               <th>Curso</th>
               <th class="center">Nota</th>
               <th>Tipo</th>
@@ -193,7 +193,7 @@ export default function Grades() {
       filteredGrades.forEach((g) => {
         body += `
           <tr>
-            ${role === "admin" ? `<td>${g.student_name || "-"}</td>` : ""}
+            ${role !== "student" ? `<td>${g.student_name || "-"}</td>` : ""}
             <td>${g.course_title || "-"}</td>
             <td class="center"><strong>${g.grade}</strong></td>
             <td>${g.grade_type || "-"}</td>
@@ -216,7 +216,7 @@ export default function Grades() {
     const studentObj = students.find((s) => s.id.toString() === filterStudent);
     const studentName = filterStudent && studentObj ? studentObj.name : "Todos los miembros";
     const typeLabel = filterType ? filterType : "Todos los tipos";
-    const subtitle = role === "admin" ? `Estudiante: ${studentName} | Tipo: ${typeLabel}` : `Tipo: ${typeLabel}`;
+    const subtitle = role !== "student" ? `Estudiante: ${studentName} | Tipo: ${typeLabel}` : `Tipo: ${typeLabel}`;
 
     openPrintWindow(
       "Reporte de Calificaciones",
@@ -244,7 +244,7 @@ export default function Grades() {
         </div>
 
         <div className="asistencia-stats-grid">
-          {Array.from({ length: role === "admin" ? 4 : 3 }).map((_, i) => (
+          {Array.from({ length: role !== "student" ? 4 : 3 }).map((_, i) => (
             <div key={i} className="asistencia-stat-card">
               <Skeleton width="48px" height="48px" />
               <div className="asistencia-stat-content" style={{ flex: 1 }}>
@@ -255,7 +255,7 @@ export default function Grades() {
           ))}
         </div>
 
-        {role === "admin" && (
+        {role !== "student" && (
           <div className="asistencia-form-card">
             <Skeleton height="1.3rem" width="200px" />
             <div style={{ display: "flex", gap: "10px", marginTop: "1rem" }}>
@@ -322,7 +322,7 @@ export default function Grades() {
           </div>
           <div className="asistencia-stat-content">
             <h3>{grades.length}</h3>
-            <p>{role === "admin" ? "Total Calificaciones" : "Mis Calificaciones"}</p>
+            <p>{role !== "student" ? "Total Calificaciones" : "Mis Calificaciones"}</p>
           </div>
         </div>
         <div className="asistencia-stat-card">
@@ -343,7 +343,7 @@ export default function Grades() {
             <p>Cursos Evaluados</p>
           </div>
         </div>
-        {role === "admin" && (
+        {role !== "student" && (
           <div className="asistencia-stat-card">
             <div className="asistencia-stat-icon purple">
               <IoPeopleOutline />
@@ -356,7 +356,7 @@ export default function Grades() {
         )}
       </div>
 
-      {role === "admin" && (
+      {role !== "student" && (
         <div className="asistencia-form-card">
           <div className="asistencia-form-header">
             <h2>
@@ -463,7 +463,7 @@ export default function Grades() {
           )}
         </div>
         <div className="asistencia-filters">
-          {role === "admin" && (
+          {role !== "student" && (
             <select value={filterStudent} onChange={(e) => setFilterStudent(e.target.value)}>
               <option value="">Todos los miembros ({students.length})</option>
               {students.map((s) => (
@@ -484,7 +484,7 @@ export default function Grades() {
         <table>
           <thead>
             <tr>
-              {role === "admin" && (
+              {role !== "student" && (
                 <th onClick={() => requestSort("student_name")} className="sortable-header">
                   Estudiante
                   <span className="sort-icon">
@@ -516,7 +516,7 @@ export default function Grades() {
                   {sortConfig?.key === "created_at" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
                 </span>
               </th>
-              {role === "admin" && <th>Acciones</th>}
+              {role !== "student" && <th>Acciones</th>}
             </tr>
           </thead>
 
@@ -524,7 +524,7 @@ export default function Grades() {
             {currentRecords.length > 0 ? (
               currentRecords.map((g, idx) => (
                 <tr key={g.id}>
-                  {role === "admin" && (
+                  {role !== "student" && (
                     <td>
                       <div className="student-profile-cell">
                         <div className={`student-avatar-circle ${g.student_id % 3 === 1 ? "gradient-2" : g.student_id % 3 === 2 ? "gradient-3" : ""}`}>
@@ -541,7 +541,7 @@ export default function Grades() {
                   <td>{g.grade_type}</td>
                   <td>{formatDate(g.created_at)}</td>
 
-                  {role === "admin" && (
+                  {role !== "student" && (
                     <td>
                       <button className="btn secondary extracted-style-4" onClick={() => handleEditClick(g)} aria-label="Editar"><IoCreateOutline /></button>
                       <button className="btn secondary extracted-style-5" onClick={() => handleDelete(g.id)} aria-label="Eliminar"><IoTrashOutline /></button>
@@ -551,7 +551,7 @@ export default function Grades() {
               ))
             ) : (
               <tr>
-                <td colSpan={role === "admin" ? 6 : 4}>Sin registros.</td>
+                <td colSpan={role !== "student" ? 6 : 4}>Sin registros.</td>
               </tr>
             )}
           </tbody>

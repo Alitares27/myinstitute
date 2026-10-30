@@ -1,3 +1,6 @@
+import { prepareRoleChange } from "../utils/roles";
+import { InputError } from "../utils/validation";
+import { asyncRouter } from "../middleware/asyncRouter";
 import express, { Response } from "express";
 import bcrypt from "bcryptjs";
 import rateLimit from "express-rate-limit";
@@ -5,7 +8,7 @@ import { pool } from "../models/db";
 import { registerUser, loginUser } from "../controllers/users";
 import { verifyToken, isAdmin, AuthRequest } from "../middleware/auth";
 
-const router = express.Router();
+const router = asyncRouter();
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -34,7 +37,7 @@ router.get("/me", verifyToken, async (req: AuthRequest, res: Response) => {
 router.put("/me/password", verifyToken, async (req: AuthRequest, res: Response) => {
   try {
     const { currentPassword, newPassword } = req.body;
-    if (!currentPassword || !newPassword) {
+    if (typeof currentPassword !== "string" || typeof newPassword !== "string" || !currentPassword || !newPassword) {
       return res.status(400).json({ message: "Se requieren ambas contraseñas" });
     }
     if (newPassword.length < 6) {
@@ -46,7 +49,7 @@ router.put("/me/password", verifyToken, async (req: AuthRequest, res: Response) 
     }
     const valid = await bcrypt.compare(currentPassword, result.rows[0].password);
     if (!valid) {
-      return res.status(401).json({ message: "La contraseña actual es incorrecta" });
+      return res.status(400).json({ message: "La contraseña actual es incorrecta" });
     }
     const salt = await bcrypt.genSalt(10);
     const hashed = await bcrypt.hash(newPassword, salt);
@@ -80,10 +83,11 @@ router.post("/", verifyToken, isAdmin, async (req: AuthRequest, res: Response) =
     if (!name || !email || !password || !role) {
       return res.status(400).json({ message: "Campos requeridos faltantes" });
     }
-    if (password.length < 6) {
+    if (typeof password !== "string" || password.length < 6) {
       return res.status(400).json({ message: "La contraseña debe tener al menos 6 caracteres" });
     }
 
+    if (!["admin", "student", "teacher"].includes(role)) return res.status(400).json({ message: "Rol inválido" });
     const existingEmail = await client.query("SELECT id FROM users WHERE email = $1", [email]);
     if (existingEmail.rows.length > 0) {
       return res.status(400).json({ message: "El correo ya está registrado" });
@@ -129,6 +133,8 @@ router.put("/:id", verifyToken, isAdmin, async (req: AuthRequest, res: Response)
     const { name, email, telefono, role, password, specialty, grade, document } = req.body;
     await client.query("BEGIN");
 
+    await prepareRoleChange(client, id, role);
+    if (password && (typeof password !== "string" || password.length < 6)) throw new InputError("La contraseña debe tener al menos 6 caracteres");
     const setClauses = ["name=$1", "email=$2", "telefono=$3", "role=$4", "document=$5"];
     const params: any[] = [name, email, telefono, role, document || null];
 
@@ -154,6 +160,7 @@ router.put("/:id", verifyToken, isAdmin, async (req: AuthRequest, res: Response)
     res.json(result.rows[0]);
   } catch (err) {
     await client.query("ROLLBACK");
+    if (err instanceof InputError) return res.status(err.status).json({ message: err.message });
     console.error("Error actualizando miembro:", err);
     res.status(500).json({ message: "Error actualizando" });
   } finally {

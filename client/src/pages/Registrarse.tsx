@@ -1,3 +1,5 @@
+import { invalidarCache } from "../utils/clienteCache";
+import { limpiarSesion } from "../utils/sesion";
 import { useState } from "react";
 import api from "../api";
 import { useNavigate } from "react-router-dom";
@@ -24,6 +26,8 @@ export default function Signup() {
     try {
       const res = await api.post("/users/register", form);
 
+      invalidarCache();
+      await limpiarSesion();
       localStorage.setItem("token", res.data.token);
       if (res.data.user) {
         localStorage.setItem("user", JSON.stringify(res.data.user));

@@ -1,8 +1,9 @@
+import { asyncRouter } from "../middleware/asyncRouter";
 import express, { Response } from "express";
 import { pool } from "../models/db";
 import { verifyToken, isAdmin, AuthRequest } from "../middleware/auth";
 
-const router = express.Router();
+const router = asyncRouter();
 
 router.get("/", verifyToken, async (req: AuthRequest, res: Response) => {
   try {
@@ -14,7 +15,7 @@ router.get("/", verifyToken, async (req: AuthRequest, res: Response) => {
       query += " WHERE course_id = $1";
       params.push(course_id);
     }
-    
+
     query += " ORDER BY course_id, order_index ASC";
     const result = await pool.query(query, params);
     res.json(result.rows);

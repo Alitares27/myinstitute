@@ -7,6 +7,9 @@ interface EntradaCache<T> {
 
 const cacheMemoria = new Map<string, EntradaCache<any>>();
 
+const pendientes = new Map<string, Promise<any>>();
+let revision = 0;
+
 const TTL_DEFECTO_MS = 60 * 1000;
 
 /**
@@ -18,6 +21,7 @@ export async function fetchConCache<T>(
   ttlMs: number = TTL_DEFECTO_MS,
   forzar: boolean = false
 ): Promise<T> {
+  clave = `${localStorage.getItem("token") || "anonymous"}:${clave}`;
   const ahora = Date.now();
   const entrada = cacheMemoria.get(clave);
 
@@ -25,13 +29,20 @@ export async function fetchConCache<T>(
     return entrada.datos as T;
   }
 
-  const datos = await fetcher();
-  cacheMemoria.set(clave, {
-    datos,
-    expiraEn: ahora + ttlMs,
-  });
-
-  return datos;
+  if (!forzar && pendientes.has(clave)) return pendientes.get(clave)!;
+  const revisionActual = revision;
+  const peticion = fetcher();
+  pendientes.set(clave, peticion);
+  try {
+    const datos = await peticion;
+    if (revisionActual === revision) {
+      for (const [key, value] of cacheMemoria) if (value.expiraEn <= Date.now()) cacheMemoria.delete(key);
+      cacheMemoria.set(clave, { datos, expiraEn: Date.now() + ttlMs });
+    }
+    return datos;
+  } finally {
+    if (pendientes.get(clave) === peticion) pendientes.delete(clave);
+  }
 }
 
 /**
@@ -39,13 +50,15 @@ export async function fetchConCache<T>(
  * Si no se pasa argumento, vacía toda la caché.
  */
 export function invalidarCache(prefijo?: string): void {
+  revision++;
+  pendientes.clear();
   if (!prefijo) {
     cacheMemoria.clear();
     return;
   }
 
   for (const clave of cacheMemoria.keys()) {
-    if (clave.startsWith(prefijo)) {
+    if (clave.includes(`:${prefijo}`)) {
       cacheMemoria.delete(clave);
     }
   }

@@ -1,8 +1,9 @@
+import { asyncRouter } from "../middleware/asyncRouter";
 import express, { Response } from "express";
 import { pool } from "../models/db";
 import { verifyToken, isAdmin, AuthRequest } from "../middleware/auth";
 
-const router = express.Router();
+const router = asyncRouter();
 
 router.get("/", verifyToken, async (req: AuthRequest, res: Response) => {
   try {
@@ -11,8 +12,10 @@ router.get("/", verifyToken, async (req: AuthRequest, res: Response) => {
       FROM enrollments e
       JOIN students s ON e.student_id = s.id
       JOIN courses c ON e.course_id = c.id
+      WHERE ($1 = 'admin' OR ($1 = 'student' AND s.user_id = $2)
+        OR ($1 = 'teacher' AND c.teacher_id IN (SELECT id FROM teachers WHERE user_id = $2)))
       ORDER BY e.id ASC
-    `);
+    `, [req.user?.role, req.user?.id]);
     res.json(result.rows);
   } catch (err) {
     console.error(err);

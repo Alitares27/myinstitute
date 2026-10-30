@@ -9,7 +9,7 @@ const useAvailableTrips = (trips: Trip[]) => {
     today.setHours(0, 0, 0, 0);
     return trips.filter(trip => {
       const status = (trip.status || "").toLowerCase();
-      const tripDate = new Date(trip.date);
+      const tripDate = new Date(`${trip.date.slice(0, 10)}T00:00:00`);
       return status === TripStatus.PROGRAMADO.toLowerCase() && tripDate >= today;
     });
   }, [trips]);

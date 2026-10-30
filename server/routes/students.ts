@@ -1,8 +1,11 @@
+import { prepareRoleChange } from "../utils/roles";
+import { InputError } from "../utils/validation";
+import { asyncRouter } from "../middleware/asyncRouter";
 import express, { Response } from "express";
 import { pool } from "../models/db";
 import { verifyToken, isAdmin, AuthRequest } from "../middleware/auth";
 
-const router = express.Router();
+const router = asyncRouter();
 
 router.get("/", verifyToken, async (req: AuthRequest, res: Response) => {
   try {
@@ -49,6 +52,8 @@ router.post("/", verifyToken, isAdmin, async (req: AuthRequest, res: Response) =
       return res.status(404).json({ message: "Miembro no encontrado" });
     }
 
+    await prepareRoleChange(client, user_id, "student");
+
     const existing = await client.query("SELECT id FROM students WHERE user_id = $1", [user_id]);
     if (existing.rows.length > 0) {
       await client.query("ROLLBACK");
@@ -74,6 +79,7 @@ router.post("/", verifyToken, isAdmin, async (req: AuthRequest, res: Response) =
     } catch (rollbackErr) {
       console.error("❌ Error running rollback in student POST:", rollbackErr);
     }
+    if (err instanceof InputError) return res.status(err.status).json({ message: err.message });
     console.error("❌ Error adding student:", err);
     return res.status(500).json({ message: "Error al añadir estudiante" });
   } finally {
@@ -116,6 +122,7 @@ router.put("/:id", verifyToken, isAdmin, async (req: AuthRequest, res: Response)
     } catch (rollbackErr) {
       console.error("❌ Error running rollback in student PUT:", rollbackErr);
     }
+    if (err instanceof InputError) return res.status(err.status).json({ message: err.message });
     console.error("❌ Error updating student:", err);
     return res.status(500).json({ message: "Error al actualizar" });
   } finally {

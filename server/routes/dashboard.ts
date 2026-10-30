@@ -1,8 +1,9 @@
+import { asyncRouter } from "../middleware/asyncRouter";
 import express from "express";
 import { pool } from "../models/db";
 import { verifyToken } from "../middleware/auth";
 
-const router = express.Router();
+const router = asyncRouter();
 
 router.get("/dashboard-stats", verifyToken, async (req: any, res) => {
   try {
@@ -10,7 +11,7 @@ router.get("/dashboard-stats", verifyToken, async (req: any, res) => {
 
     if (role === "admin") {
       const statsRes = await pool.query(`
-        SELECT 
+        SELECT
           (SELECT COUNT(*) FROM students) AS students,
           (SELECT COUNT(*) FROM teachers) AS teachers,
           (SELECT COUNT(*) FROM courses) AS courses,
@@ -43,11 +44,11 @@ router.get("/dashboard-stats", verifyToken, async (req: any, res) => {
         ),
         pool.query("SELECT COUNT(*) FROM courses WHERE teacher_id = $1", [teacherId]),
         pool.query(`
-          SELECT 
+          SELECT
             (SELECT COUNT(*) FROM attendance a JOIN courses c ON a.course_id = c.id WHERE a.status ILIKE 'present' AND c.teacher_id = $1) AS present_count,
             COALESCE(
               (SELECT SUM(
-                (SELECT COUNT(*) FROM enrollments e WHERE e.course_id = c.id) * 
+                (SELECT COUNT(*) FROM enrollments e WHERE e.course_id = c.id) *
                 (SELECT COUNT(*) FROM topics t WHERE t.course_id = c.id)
               ) FROM courses c WHERE c.teacher_id = $1), 0) AS total_expected;
         `, [teacherId])
@@ -75,7 +76,7 @@ router.get("/dashboard-stats", verifyToken, async (req: any, res) => {
       const [coursesCount, attendance, averageGrade] = await Promise.all([
         pool.query("SELECT COUNT(*) FROM enrollments WHERE student_id = $1", [studentId]),
         pool.query(`
-          SELECT 
+          SELECT
             (SELECT COUNT(*) FROM attendance WHERE status ILIKE 'present' AND student_id = $1) AS present_count,
             COALESCE(
               (SELECT SUM(

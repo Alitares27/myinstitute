@@ -13,7 +13,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["favicon.ico", "church.PNG"],
+      includeAssets: ["temple.webp"],
       manifest: {
         name: "GestionAR - Sistema de Gestión",
         short_name: "GestionAR",
@@ -45,7 +45,8 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ["**/*.{html,css,ico,png,svg,webp,woff2}", "assets/index-*.js", "assets/vendor-*.js"],
+        globPatterns: ["**/*.{html,css,svg,webp,woff2}", "icon-*.png", "assets/index-*.js", "assets/vendor-*.js"],
+        globIgnores: ["**/vendor-pdf-*.js", "**/html2canvas*.js"],
         runtimeCaching: [
           {
             urlPattern: /\/assets\/.*\.js$/i,
@@ -76,13 +77,7 @@ export default defineConfig({
           },
           {
             urlPattern: /\/api\/.*/i,
-            handler: "NetworkFirst",
-            options: {
-              cacheName: "api-cache",
-              networkTimeoutSeconds: 10,
-              expiration: { maxEntries: 50, maxAgeSeconds: 60 * 60 * 24 },
-              cacheableResponse: { statuses: [0, 200] },
-            },
+            handler: "NetworkOnly",
           },
         ],
       },

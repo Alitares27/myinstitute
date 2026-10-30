@@ -1,3 +1,4 @@
+import { asyncRouter } from "../middleware/asyncRouter";
 import express from "express";
 
 import {
@@ -13,7 +14,7 @@ import {
     isAdmin
 } from "../middleware/auth";
 
-const router = express.Router();
+const router = asyncRouter();
 
 router.get(
     "/",

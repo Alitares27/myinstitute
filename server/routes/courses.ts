@@ -1,16 +1,17 @@
+import { asyncRouter } from "../middleware/asyncRouter";
 import express, { Response } from "express";
 import { pool } from "../models/db";
 import { verifyToken, isAdmin, AuthRequest } from "../middleware/auth";
 
-const router = express.Router();
+const router = asyncRouter();
 
 router.get("/:id/topics", verifyToken, async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     const result = await pool.query(
-      `SELECT id, title, description, order_index 
-       FROM topics 
-       WHERE course_id = $1 
+      `SELECT id, title, description, order_index
+       FROM topics
+       WHERE course_id = $1
        ORDER BY order_index ASC, id ASC`,
       [id]
     );
@@ -27,10 +28,10 @@ router.get("/", verifyToken, async (req: AuthRequest, res: Response) => {
     const userId = req.user?.id;
     let query = `
       SELECT DISTINCT
-        c.id, 
-        c.title, 
-        c.description, 
-        c.teacher_id, 
+        c.id,
+        c.title,
+        c.description,
+        c.teacher_id,
         u.name AS teacher_name
       FROM courses c
       LEFT JOIN teachers t ON c.teacher_id = t.id
@@ -112,8 +113,8 @@ router.delete("/:id", verifyToken, isAdmin, async (req: AuthRequest, res: Respon
       return res.status(404).json({ message: "Curso no encontrado" });
     }
 
-    await client.query("DELETE FROM topics WHERE course_id = $1", [id]);
     await client.query("DELETE FROM attendance WHERE course_id = $1", [id]);
+    await client.query("DELETE FROM topics WHERE course_id = $1", [id]);
     await client.query("DELETE FROM grades WHERE course_id = $1", [id]);
     await client.query("DELETE FROM enrollments WHERE course_id = $1", [id]);
     await client.query("DELETE FROM courses WHERE id = $1", [id]);

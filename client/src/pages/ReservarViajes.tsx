@@ -41,6 +41,10 @@ export default function TripReservations() {
     const [users, setUsers] = useState<BasicUser[]>([]);
     const [trips, setTrips] = useState<Trip[]>([]);
     const [reservations, setReservations] = useState<any[]>([]);
+    const [reservationOptions, setReservationOptions] = useState<any[]>([]);
+    const [totalRecords, setTotalRecords] = useState(0);
+    const [reservationTotals, setReservationTotals] = useState({ totalPaid: 0, totalPending: 0 });
+    const [listError, setListError] = useState("");
     const [editingId, setEditingId] = useState<number | null>(null);
     const [role, setRole] = useState<string | null>(null);
     const [formData, setFormData] = useState({
@@ -73,6 +77,7 @@ export default function TripReservations() {
     const [sortConfig, setSortConfig] = useState<{ key: string; direction: "asc" | "desc" } | null>(null);
 
     const handleSort = (key: string) => {
+        setCurrentPage(1);
         setSortConfig(prev =>
             prev?.key === key
                 ? { key, direction: prev.direction === "asc" ? "desc" : "asc" }
@@ -101,14 +106,39 @@ export default function TripReservations() {
         setTrips(data);
     };
 
+    const listParams = { page: currentPage, limit: recordsPerPage, trip_id: filterTripId || undefined,
+        user_id: filterUserId || undefined, search: searchQuery || undefined, sort: sortConfig?.key, direction: sortConfig?.direction };
     const fetchReservations = async () => {
-        const { data } = await api.get('/trip-reservations');
-        setReservations(data);
+        const { data } = await api.get('/trip-reservations', { params: listParams });
+        setReservations(data.items);
+        setTotalRecords(data.total);
+        setReservationTotals({ totalPaid: Number(data.total_paid), totalPending: Number(data.total_pending) });
+        setListError("");
     };
-
+    const fetchOptions = async () => {
+        const ids = [...new Set([formData.trip_id, paymentForm.trip_id].filter(Boolean))];
+        const data = await Promise.all(ids.map(trip_id => api.get('/trip-reservations/options', { params: { trip_id } })));
+        setReservationOptions(data.flatMap(res => res.data));
+    };
     useEffect(() => {
-        Promise.all([fetchUsers(), fetchTrips(), fetchReservations()]).finally(() => setLoading(false));
+        if (JSON.parse(localStorage.getItem("user") || "{}").role !== "admin") return;
+        Promise.all([fetchUsers(), fetchTrips()]).catch(() => setListError("Error al cargar los catálogos"));
     }, []);
+    useEffect(() => {
+        if (JSON.parse(localStorage.getItem("user") || "{}").role !== "admin") return;
+        let active = true;
+        const timer = setTimeout(() => {
+            api.get('/trip-reservations', { params: listParams }).then(({ data }) => {
+                if (!active) return;
+                setReservations(data.items); setTotalRecords(data.total);
+                setReservationTotals({ totalPaid: Number(data.total_paid), totalPending: Number(data.total_pending) });
+                setListError("");
+            }).catch(() => { if (active) setListError("Error al cargar las reservas"); })
+              .finally(() => { if (active) setLoading(false); });
+        }, 200);
+        return () => { active = false; clearTimeout(timer); };
+    }, [currentPage, filterTripId, filterUserId, searchQuery, sortConfig]);
+    useEffect(() => { void fetchOptions().catch(() => setListError("Error al cargar las opciones")); }, [formData.trip_id, paymentForm.trip_id]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
@@ -142,34 +172,14 @@ export default function TripReservations() {
             return;
         }
 
-        if (!editingId) {
-            const duplicate = reservations.find(
-                r => r.user_id === Number(formData.user_id) && r.trip_id === Number(formData.trip_id)
-            );
-            if (duplicate) {
-                const memberName = users.find(u => u.id === Number(formData.user_id))?.name || "Este miembro";
-                const tripDate = selectedTrip ? selectedTrip.date.substring(0, 10) : "";
-                alert(`${memberName} ya tiene una reserva para el viaje del ${tripDate}.`);
-                return;
-            }
-        }
-
-        if (editingId) {
-            await api.put(`/trip-reservations/${editingId}`, {
-                ...formData,
-                user_id: Number(formData.user_id),
-                trip_id: Number(formData.trip_id),
-                advance_payment: Number(formData.advance_payment),
-                pending_payment: Number(formData.pending_payment)
-            }).catch(() => { alert('Error al actualizar la reserva'); });
-        } else {
-            await api.post(`/trip-reservations`, {
-                ...formData,
-                user_id: Number(formData.user_id),
-                trip_id: Number(formData.trip_id),
-                advance_payment: Number(formData.advance_payment),
-                pending_payment: Number(formData.pending_payment)
-            }).catch(() => { alert('Error al crear la reserva'); });
+        try {
+            const payload = { ...formData, user_id: Number(formData.user_id), trip_id: Number(formData.trip_id),
+                initial_payment: Number(formData.advance_payment || 0) };
+            if (editingId) await api.put(`/trip-reservations/${editingId}`, payload);
+            else await api.post('/trip-reservations', payload);
+        } catch (error: any) {
+            setListError(error.response?.data?.message || 'Error al guardar la reserva');
+            return;
         }
 
         setEditingId(null);
@@ -181,7 +191,7 @@ export default function TripReservations() {
             pending_payment: "",
             due_date: ""
         });
-        fetchReservations();
+        await Promise.all([fetchReservations(), fetchOptions()]).catch(() => setListError("Error al actualizar las reservas"));
     };
 
     const handleEdit = (res: any) => {
@@ -189,7 +199,7 @@ export default function TripReservations() {
             user_id: res.user_id.toString(),
             trip_id: res.trip_id.toString(),
             register_date: toYMD(res.register_date),
-            advance_payment: res.advance_payment.toString(),
+            advance_payment: String(Number(res.advance_payment) - Number(res.total_amortizado || 0)),
             pending_payment: res.pending_payment.toString(),
             due_date: toYMD(res.due_date)
         });
@@ -217,21 +227,21 @@ export default function TripReservations() {
         if (!window.confirm("¿Eliminar esta reserva?")) return;
         await api.delete(`/trip-reservations/${id}`)
             .catch(() => { alert('Error al eliminar la reserva'); });
-        fetchReservations();
+        await Promise.all([fetchReservations(), fetchOptions()]).catch(() => setListError("Error al actualizar las reservas"));
     };
 
     const availableTripsForReservation = useAvailableTrips(trips);
 
-    const selectedReservationForPayment = reservations.find(
+    const selectedReservationForPayment = reservationOptions.find(
         r => r.id === Number(paymentForm.attendance_id)
     );
 
     const availableReservationsForSelectedTrip = useMemo(() => {
         if (!paymentForm.trip_id) return [];
-        return reservations
+        return reservationOptions
             .filter(r => r.trip_id === Number(paymentForm.trip_id) && Number(r.pending_payment) > 0)
             .sort((a, b) => (a.user_name || "").localeCompare(b.user_name || ""));
-    }, [paymentForm.trip_id, reservations]);
+    }, [paymentForm.trip_id, reservationOptions]);
 
     const handleOpenPaymentModal = () => {
         setPaymentError("");
@@ -252,7 +262,7 @@ export default function TripReservations() {
 
     const handlePaymentChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
-        setPaymentForm(prev => ({ ...prev, [name]: value }));
+        setPaymentForm(prev => ({ ...prev, [name]: value, ...(name === "trip_id" ? { attendance_id: "" } : {}) }));
     };
 
     const handlePaymentSubmit = async (e: React.FormEvent) => {
@@ -275,7 +285,7 @@ export default function TripReservations() {
                 payment_type: paymentForm.payment_type
             });
             handleClosePaymentModal();
-            fetchReservations();
+            await Promise.all([fetchReservations(), fetchOptions()]).catch(() => setListError("Error al actualizar las reservas"));
         } catch (err: any) {
             setPaymentError(err.response?.data?.message || "Error al registrar el pago");
         } finally {
@@ -283,79 +293,25 @@ export default function TripReservations() {
         }
     };
 
-    const membersWithReservations = useMemo(() => {
-        const uniqueIds = new Set(reservations.map(r => r.user_id));
-        return users.filter(u => uniqueIds.has(u.id));
-    }, [reservations, users]);
+    const membersWithReservations = users;
 
     const availableMembersForSelectedTrip = useMemo(() => {
         if (!formData.trip_id) return users;
         const reservedUserIds = new Set(
-            reservations
-                .filter(r => r.trip_id === Number(formData.trip_id))
+            reservationOptions
+                .filter(r => r.trip_id === Number(formData.trip_id) && r.id !== editingId)
                 .map(r => r.user_id)
         );
         return users.filter(u => !reservedUserIds.has(u.id));
-    }, [reservations, users, formData.trip_id]);
+    }, [reservationOptions, users, formData.trip_id, editingId]);
 
-    const filteredReservations = useMemo(() => {
-        return reservations
-            .filter(r => {
-                if (filterTripId && r.trip_id !== Number(filterTripId)) return false;
-                if (filterUserId && r.user_id !== Number(filterUserId)) return false;
-                return true;
-            })
-            .map(r => {
-                const abonos = Number(r.total_amortizado) || 0;
-                return {
-                    ...r,
-                    adelanto: Math.max(0, (Number(r.advance_payment) || 0) - abonos),
-                    abonos,
-                    pagado: Number(r.advance_payment) || 0,
-                    saldo: Number(r.pending_payment) || 0,
-                    num_pagos: Number(r.num_pagos) || 0
-                };
-            })
-            .filter(r => {
-                if (!searchQuery) return true;
-                const q = searchQuery.toLowerCase();
-                const name = (r.user_name || "").toLowerCase();
-                const date = formatDate(r.trip_date).toLowerCase();
-                return name.includes(q) || date.includes(q);
-            });
-    }, [reservations, filterTripId, filterUserId, searchQuery]);
+    const filteredReservations = useMemo(() => reservations.map(r => ({ ...r,
+        adelanto: Math.max(0, Number(r.advance_payment) - Number(r.total_amortizado)),
+        abonos: Number(r.total_amortizado), pagado: Number(r.advance_payment), saldo: Number(r.pending_payment),
+        num_pagos: Number(r.num_pagos) })), [reservations]);
 
-    const reservationTotals = useMemo(() => {
-        return filteredReservations.reduce(
-            (totals, reservation) => {
-                totals.totalPaid += reservation.pagado || 0;
-                totals.totalPending += reservation.saldo || 0;
-                return totals;
-            },
-            { totalPaid: 0, totalPending: 0 }
-        );
-    }, [filteredReservations]);
-
-    const sortedReservations = useMemo(() => {
-        if (!sortConfig) return filteredReservations;
-        return [...filteredReservations].sort((a, b) => {
-            let aVal: any = (a as any)[sortConfig.key as string];
-            let bVal: any = (b as any)[sortConfig.key as string];
-            if (typeof aVal === "string") aVal = aVal.toLowerCase();
-            if (typeof bVal === "string") bVal = bVal.toLowerCase();
-            if (aVal < bVal) return sortConfig.direction === "asc" ? -1 : 1;
-            if (aVal > bVal) return sortConfig.direction === "asc" ? 1 : -1;
-            return 0;
-        });
-    }, [filteredReservations, sortConfig]);
-
-    const totalPages = Math.ceil(sortedReservations.length / recordsPerPage);
-
-    const currentRecords = useMemo(() => {
-        const lastIdx = currentPage * recordsPerPage;
-        const firstIdx = lastIdx - recordsPerPage;
-        return sortedReservations.slice(firstIdx, lastIdx);
-    }, [sortedReservations, currentPage]);
+    const totalPages = Math.max(1, Math.ceil(totalRecords / recordsPerPage));
+    const currentRecords = filteredReservations;
 
     useEffect(() => {
         if (currentPage > totalPages && totalPages > 0) {
@@ -363,8 +319,13 @@ export default function TripReservations() {
         }
     }, [totalPages, currentPage]);
 
-    const handlePrintReport = useCallback(() => {
-        const groupedByDate = filteredReservations.reduce((acc: Record<string, any[]>, r: any) => {
+    const handlePrintReport = useCallback(async () => {
+      const printWindow = window.open("", "_blank");
+      if (!printWindow) { setListError("Permite las ventanas emergentes para imprimir"); return; }
+      try {
+        const { data } = await api.get('/trip-reservations/report', { params: listParams });
+        const reportRows = data.map((r: any) => ({ ...r, pagado: Number(r.advance_payment), saldo: Number(r.pending_payment) }));
+        const groupedByDate = reportRows.reduce((acc: Record<string, any[]>, r: any) => {
             const dateStr = formatDate(r.trip_date);
             if (!acc[dateStr]) acc[dateStr] = [];
             acc[dateStr].push(r);
@@ -385,7 +346,7 @@ export default function TripReservations() {
             const sortedMembers = [...dateGroup].sort((a, b) => (a.user_name || "").localeCompare(b.user_name || ""));
 
             totalRegistrados += dateGroup.length;
-            dateGroup.forEach(r => {
+            dateGroup.forEach((r: any) => {
                 totalPagado += r.pagado || 0;
                 totalPendiente += r.saldo || 0;
             });
@@ -405,8 +366,9 @@ export default function TripReservations() {
             </div>
         </div>`;
 
-        openPrintWindow("Reporte de Viajes al Templo", "Rama Arroyo Seco", body);
-    }, [filteredReservations]);
+        openPrintWindow("Reporte de Viajes al Templo", "Rama Arroyo Seco", body, printWindow);
+      } catch { printWindow.close(); setListError("No se pudo generar el reporte"); }
+    }, [filterTripId, filterUserId, searchQuery]);
 
     if (loading) {
         return (
@@ -449,11 +411,12 @@ export default function TripReservations() {
                 </div>
             </div>
 
+            {listError && <p role="alert" style={{ color: "var(--danger)" }}>{listError}</p>}
             <div className="asistencia-stats-grid">
                 <div className="asistencia-stat-card">
                     <div className="asistencia-stat-icon blue"><FaCalendarCheck /></div>
                     <div className="asistencia-stat-content">
-                        <h3>{filteredReservations.length}</h3>
+                        <h3>{totalRecords}</h3>
                         <p>Reservas</p>
                     </div>
                 </div>
@@ -501,7 +464,7 @@ export default function TripReservations() {
                     </div>
                     <div className="form-group">
                         <label>Adelanto</label>
-                        <input type="number" name="advance_payment" placeholder="Adelanto" value={formData.advance_payment} onChange={handleChange} />
+                        <input type="number" name="advance_payment" min="0" step="0.01" placeholder="Adelanto inicial" value={formData.advance_payment} onChange={handleChange} />
                     </div>
                     <div className="asistencia-form-actions">
                         <button type="submit" className="btn primary">{editingId ? "Actualizar" : "Reservar"}</button>
@@ -524,7 +487,7 @@ export default function TripReservations() {
                     )}
                 </div>
                 <div className="asistencia-filters">
-                    <select value={filterTripId} onChange={e => setFilterTripId(e.target.value)}>
+                    <select value={filterTripId} onChange={e => { setFilterTripId(e.target.value); setCurrentPage(1); }}>
                         <option value="">Todos los viajes</option>
                         {trips.map(t => (
                             <option key={t.id} value={t.id}>
@@ -532,7 +495,7 @@ export default function TripReservations() {
                             </option>
                         ))}
                     </select>
-                    <select value={filterUserId} onChange={e => setFilterUserId(e.target.value)}>
+                    <select value={filterUserId} onChange={e => { setFilterUserId(e.target.value); setCurrentPage(1); }}>
                         <option value="">Todos los miembros</option>
                         {membersWithReservations.map(u => (
                             <option key={u.id} value={u.id}>

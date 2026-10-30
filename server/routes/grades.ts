@@ -1,85 +1,43 @@
-import express, { Response } from "express";
+import { Response } from "express";
+import { asyncRouter } from "../middleware/asyncRouter";
 import { pool } from "../models/db";
-import { verifyToken, isAdmin, AuthRequest } from "../middleware/auth";
-
-const router = express.Router();
-
+import { verifyToken, canTeach, AuthRequest } from "../middleware/auth";
+import { positiveId, InputError } from "../utils/validation";
+const router = asyncRouter();
+const owner = `(c.teacher_id IN (SELECT id FROM teachers WHERE user_id = $2))`;
 router.get("/", verifyToken, async (req: AuthRequest, res: Response) => {
-  try {
-    const user = req.user;
-    if (!user) return res.status(401).json({ message: "Unauthorized" });
-
-    const { role, id: userId } = user;
-
-    let query = "";
-    let params: any[] = [];
-
-    if (role === "admin") {
-      query = `
-        SELECT g.id, g.student_id, u.name AS student_name, 
-               g.course_id, c.title AS course_title, g.grade, g.grade_type, g.created_at
-        FROM grades g
-        JOIN students s ON g.student_id = s.id
-        JOIN users u ON s.user_id = u.id
-        JOIN courses c ON g.course_id = c.id
-        ORDER BY g.created_at DESC`;
-    } else {
-      query = `
-        SELECT g.id, c.title AS course_title, g.grade, g.grade_type, g.created_at
-        FROM grades g
-        JOIN students s ON g.student_id = s.id
-        JOIN courses c ON g.course_id = c.id
-        WHERE s.user_id = $1
-        ORDER BY g.created_at DESC`;
-      params = [userId];
-    }
-
-    const result = await pool.query(query, params);
-    res.json(result.rows);
-  } catch (err) {
-    res.status(500).json({ message: "Error al obtener calificaciones" });
-  }
+  const result = await pool.query(`SELECT g.*, u.name AS student_name, c.title AS course_title
+    FROM grades g JOIN students s ON s.id=g.student_id JOIN users u ON u.id=s.user_id JOIN courses c ON c.id=g.course_id
+    WHERE ($1 = 'admin' OR ($1 = 'teacher' AND ${owner}) OR ($1 = 'student' AND s.user_id=$2)) ORDER BY g.created_at DESC, g.id DESC`, [req.user!.role, req.user!.id]);
+  res.json(result.rows);
 });
-
-router.post("/", verifyToken, isAdmin, async (req: AuthRequest, res: Response) => {
-  try {
-    const { student_id, course_id, grade, grade_type } = req.body;
-    const result = await pool.query(
-      `INSERT INTO grades (student_id, course_id, grade, grade_type) 
-       VALUES ($1, $2, $3, $4) RETURNING *`,
-      [student_id, course_id, grade, grade_type]
-    );
-    res.status(201).json(result.rows[0]);
-  } catch (err) {
-    res.status(500).json({ message: "Error al crear registro" });
-  }
+function gradeInput(body: any) {
+  const student = positiveId(body.student_id), course = positiveId(body.course_id);
+  const grade = Number(body.grade);
+  if (body.grade === "" || body.grade == null || !Number.isFinite(grade) || grade < 0 || grade > 100 || !["examen", "Lectura", "participacion"].includes(body.grade_type)) throw new InputError("Calificación inválida (0–100) o tipo no permitido");
+  return [student, course, grade, body.grade_type];
+}
+router.post("/", verifyToken, canTeach, async (req: AuthRequest, res: Response) => {
+  const values = gradeInput(req.body);
+  const result = await pool.query(`INSERT INTO grades (student_id,course_id,grade,grade_type)
+    SELECT $1,$2,$3,$4 WHERE EXISTS (SELECT 1 FROM enrollments e JOIN courses c ON c.id=e.course_id
+      WHERE e.student_id=$1 AND e.course_id=$2 AND ($5='admin' OR c.teacher_id IN (SELECT id FROM teachers WHERE user_id=$6))) RETURNING *`, [...values, req.user!.role, req.user!.id]);
+  if (!result.rowCount) return res.status(403).json({ message: "Sin permiso o estudiante no matriculado" });
+  res.status(201).json(result.rows[0]);
 });
-
-router.put("/:id", verifyToken, isAdmin, async (req: AuthRequest, res: Response) => {
-  try {
-    const { id } = req.params;
-    const { grade, grade_type, student_id, course_id } = req.body;
-    const result = await pool.query(
-      `UPDATE grades SET grade = $1, grade_type = $2, student_id = $3, course_id = $4 
-       WHERE id = $5 RETURNING *`,
-      [grade, grade_type, student_id, course_id, id]
-    );
-    
-    if (result.rows.length === 0) return res.status(404).json({ message: "No encontrado" });
-    res.json(result.rows[0]);
-  } catch (err) {
-    res.status(500).json({ message: "Error al actualizar" });
-  }
+router.put("/:id", verifyToken, canTeach, async (req: AuthRequest, res: Response) => {
+  const values = gradeInput(req.body);
+  const result = await pool.query(`UPDATE grades g SET student_id=$1,course_id=$2,grade=$3,grade_type=$4 WHERE g.id=$7
+    AND EXISTS (SELECT 1 FROM courses old WHERE old.id=g.course_id AND ($5='admin' OR old.teacher_id IN (SELECT id FROM teachers WHERE user_id=$6)))
+    AND EXISTS (SELECT 1 FROM enrollments e JOIN courses c ON c.id=e.course_id WHERE e.student_id=$1 AND e.course_id=$2
+      AND ($5='admin' OR c.teacher_id IN (SELECT id FROM teachers WHERE user_id=$6))) RETURNING *`, [...values, req.user!.role, req.user!.id, positiveId(req.params.id)]);
+  if (!result.rowCount) return res.status(403).json({ message: "Sin permiso, registro inexistente o estudiante no matriculado" });
+  res.json(result.rows[0]);
 });
-
-router.delete("/:id", verifyToken, isAdmin, async (req: AuthRequest, res: Response) => {
-  try {
-    const result = await pool.query("DELETE FROM grades WHERE id = $1 RETURNING *", [req.params.id]);
-    if (result.rows.length === 0) return res.status(404).json({ message: "Calificación no encontrada" });
-    res.json({ message: "Calificación eliminada" });
-  } catch (err) {
-    res.status(500).json({ message: "Error al eliminar" });
-  }
+router.delete("/:id", verifyToken, canTeach, async (req: AuthRequest, res: Response) => {
+  const result = await pool.query(`DELETE FROM grades g USING courses c WHERE g.course_id=c.id AND g.id=$1
+    AND ($2='admin' OR c.teacher_id IN (SELECT id FROM teachers WHERE user_id=$3)) RETURNING g.id`, [positiveId(req.params.id), req.user!.role, req.user!.id]);
+  if (!result.rowCount) return res.status(403).json({ message: "Sin permiso o registro inexistente" });
+  res.json({ message: "Calificación eliminada" });
 });
-
 export default router;

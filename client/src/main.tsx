@@ -6,6 +6,8 @@ import "./styles/Tablas.css";
 import "./styles/Impresion.css";
 import { ThemeProvider } from "./context/ContextoTema";
 
+if ("caches" in window) void caches.delete("api-cache").catch(() => undefined);
+
 const chunkReloadKey = "vite:preload-error-reload";
 window.addEventListener("vite:preloadError", (event) => {
   event.preventDefault();

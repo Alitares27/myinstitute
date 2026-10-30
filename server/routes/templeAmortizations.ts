@@ -1,8 +1,10 @@
+import { cents, isoDate, positiveId } from "../utils/validation";
+import { asyncRouter } from "../middleware/asyncRouter";
 import { Router, Request, Response } from "express";
 import { pool } from "../models/db";
 import { verifyToken, isAdmin } from "../middleware/auth";
 
-const router = Router();
+const router = asyncRouter();
 
 router.get(
   "/",
@@ -28,7 +30,7 @@ router.get(
       }
 
       const query = `
-        SELECT 
+        SELECT
           tam.id,
           u.name AS miembro_nombre,
           tam.payment_amount,
@@ -61,11 +63,14 @@ router.post(
     try {
       const { attendance_id, payment_amount, payment_date, payment_type } = req.body;
 
+      positiveId(attendance_id);
+      if (payment_date) isoDate(payment_date);
+      if (payment_type && !["efectivo", "transferencia", "donacion"].includes(payment_type)) return res.status(400).json({ message: "Medio de pago inválido" });
       if (!attendance_id) {
         return res.status(400).json({ message: "attendance_id es requerido" });
       }
 
-      const amount = Number(payment_amount);
+      const amount = cents(payment_amount, false) / 100;
       if (Number.isNaN(amount) || amount <= 0) {
         return res.status(400).json({ message: "payment_amount debe ser un número positivo" });
       }
@@ -92,8 +97,8 @@ router.post(
           return res.status(400).json({ message: "El pago no puede ser mayor al saldo pendiente" });
         }
 
-        const newAdvance = Number(currentAttendance.advance_payment || 0) + amount;
-        const newPending = Math.max(0, currentPending - amount);
+        const newAdvance = (cents(currentAttendance.advance_payment || 0) + cents(amount)) / 100;
+        const newPending = (cents(currentPending) - cents(amount)) / 100;
 
         const amortizationResult = await client.query(
           `INSERT INTO temple_amortizations (attendance_id, payment_amount, payment_date, payment_type)
@@ -127,7 +132,8 @@ router.post(
       } finally {
         client.release();
       }
-    } catch (err) {
+    } catch (err: any) {
+      if (err.status === 400) return res.status(400).json({ message: err.message });
       console.error("Error en endpoint:", err);
       res.status(500).json({ message: "Error interno del servidor" });
     }
@@ -142,7 +148,10 @@ router.put(
     const { id } = req.params;
     const { payment_amount, payment_date, payment_type } = req.body;
 
-    const amount = Number(payment_amount);
+    positiveId(id);
+    if (payment_date) isoDate(payment_date);
+    if (payment_type && !["efectivo", "transferencia", "donacion"].includes(payment_type)) return res.status(400).json({ message: "Medio de pago inválido" });
+    const amount = cents(payment_amount, false) / 100;
     if (Number.isNaN(amount) || amount <= 0) {
       return res.status(400).json({ message: "payment_amount debe ser un número positivo" });
     }
@@ -152,7 +161,7 @@ router.put(
       await client.query("BEGIN");
 
       const amortResult = await client.query(
-        "SELECT attendance_id, payment_amount FROM temple_amortizations WHERE id = $1 FOR UPDATE",
+        "SELECT attendance_id, payment_amount FROM temple_amortizations WHERE id = $1",
         [id]
       );
       if (amortResult.rows.length === 0) {
@@ -160,7 +169,7 @@ router.put(
         return res.status(404).json({ message: "Pago no encontrado" });
       }
 
-      const oldAmount = Number(amortResult.rows[0].payment_amount);
+      let oldAmount = Number(amortResult.rows[0].payment_amount);
       const attendanceId = amortResult.rows[0].attendance_id;
 
       const attendanceResult = await client.query(
@@ -172,11 +181,14 @@ router.put(
         return res.status(404).json({ message: "Asistencia no encontrada" });
       }
 
+      const lockedPayment = await client.query("SELECT payment_amount FROM temple_amortizations WHERE id=$1 FOR UPDATE", [id]);
+      if (!lockedPayment.rowCount) { await client.query("ROLLBACK"); return res.status(404).json({ message: "Pago no encontrado" }); }
+      oldAmount = Number(lockedPayment.rows[0].payment_amount);
       const currentAdvance = Number(attendanceResult.rows[0].advance_payment || 0);
       const currentPending = Number(attendanceResult.rows[0].pending_payment || 0);
 
-      const newAdvance = currentAdvance - oldAmount + amount;
-      const newPending = currentPending + oldAmount - amount;
+      const newAdvance = (cents(currentAdvance) - cents(oldAmount) + cents(amount)) / 100;
+      const newPending = (cents(currentPending) + cents(oldAmount) - cents(amount)) / 100;
 
       if (newPending < 0) {
         await client.query("ROLLBACK");
@@ -233,7 +245,7 @@ router.delete(
       await client.query("BEGIN");
 
       const amortResult = await client.query(
-        "SELECT attendance_id, payment_amount FROM temple_amortizations WHERE id = $1 FOR UPDATE",
+        "SELECT attendance_id, payment_amount FROM temple_amortizations WHERE id = $1",
         [id]
       );
       if (amortResult.rows.length === 0) {
@@ -241,7 +253,7 @@ router.delete(
         return res.status(404).json({ message: "Pago no encontrado" });
       }
 
-      const oldAmount = Number(amortResult.rows[0].payment_amount);
+      let oldAmount = Number(amortResult.rows[0].payment_amount);
       const attendanceId = amortResult.rows[0].attendance_id;
 
       const attendanceResult = await client.query(
@@ -253,11 +265,15 @@ router.delete(
         return res.status(404).json({ message: "Asistencia no encontrada" });
       }
 
+      const lockedPayment = await client.query("SELECT payment_amount FROM temple_amortizations WHERE id=$1 FOR UPDATE", [id]);
+      if (!lockedPayment.rowCount) { await client.query("ROLLBACK"); return res.status(404).json({ message: "Pago no encontrado" }); }
+      oldAmount = Number(lockedPayment.rows[0].payment_amount);
       const currentAdvance = Number(attendanceResult.rows[0].advance_payment || 0);
       const currentPending = Number(attendanceResult.rows[0].pending_payment || 0);
 
-      const newAdvance = Math.max(0, currentAdvance - oldAmount);
-      const newPending = currentPending + oldAmount;
+      const newAdvance = (cents(currentAdvance) - cents(oldAmount)) / 100;
+      const newPending = (cents(currentPending) + cents(oldAmount)) / 100;
+      if (newAdvance < 0) { await client.query("ROLLBACK"); return res.status(409).json({ message: "El saldo histórico requiere conciliación antes de eliminar este pago" }); }
 
       await client.query("DELETE FROM temple_amortizations WHERE id = $1", [id]);
 

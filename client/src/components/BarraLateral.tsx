@@ -1,3 +1,5 @@
+import { invalidarCache } from "../utils/clienteCache";
+import { limpiarSesion } from "../utils/sesion";
 import { useState, useEffect } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import "../styles/BarraLateral.css";
@@ -49,10 +51,9 @@ function Sidebar() {
     if (isMaintenanceActive) setIsMaintenanceOpen(true);
   }, [currentPath, isTeachingActive, isLeadershipActive, isTempleActive, isMaintenanceActive]);
 
-  const handleLogout = () => {
-    const theme = localStorage.getItem("theme");
-    localStorage.clear();
-    if (theme) localStorage.setItem("theme", theme);
+  const handleLogout = async () => {
+    invalidarCache();
+    await limpiarSesion();
     navigate("/");
   };
 

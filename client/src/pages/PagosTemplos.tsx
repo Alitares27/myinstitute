@@ -88,9 +88,11 @@ export default function PagosTemplos() {
   };
 
   const fetchReservations = async () => {
-    const { data } = await api.get("/trip-reservations");
+    if (!paymentForm.trip_id) { setReservations([]); return; }
+    const { data } = await api.get("/trip-reservations/options", { params: { trip_id: paymentForm.trip_id } });
     setReservations(data);
   };
+  useEffect(() => { void fetchReservations().catch(() => setPaymentError("Error al cargar reservas")); }, [paymentForm.trip_id]);
 
   const fetchPagos = async () => {
     const params: string[] = [];
@@ -102,8 +104,10 @@ export default function PagosTemplos() {
   };
 
   useEffect(() => {
+    if (JSON.parse(localStorage.getItem("user") || "{}").role !== "admin") return;
     Promise.all([fetchTrips(), fetchUsers(), fetchReservations()])
       .then(() => fetchPagos())
+      .catch(() => setPaymentError("Error al cargar los pagos"))
       .finally(() => setLoading(false));
   }, []);
 
@@ -166,7 +170,7 @@ export default function PagosTemplos() {
 
   const handlePaymentChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setPaymentForm(prev => ({ ...prev, [name]: value }));
+    setPaymentForm(prev => ({ ...prev, [name]: value, ...(name === "trip_id" ? { attendance_id: "" } : {}) }));
   };
 
   const handlePaymentSubmit = async (e: React.FormEvent) => {

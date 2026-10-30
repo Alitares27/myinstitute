@@ -1,3 +1,5 @@
+import { createHmac } from "crypto";
+import { pool } from "../models/db";
 import { Request, Response, NextFunction } from "express";
 import jwt, { JwtPayload, TokenExpiredError, JsonWebTokenError } from "jsonwebtoken";
 
@@ -12,7 +14,7 @@ export interface AuthRequest extends Request {
   user?: AuthPayload;
 }
 
-export function verifyToken(req: AuthRequest, res: Response, next: NextFunction) {
+export async function verifyToken(req: AuthRequest, res: Response, next: NextFunction) {
   try {
     const authHeader = req.headers.authorization;
 
@@ -30,6 +32,14 @@ export function verifyToken(req: AuthRequest, res: Response, next: NextFunction)
     }
 
     const decoded = jwt.verify(token, secret) as AuthPayload;
+    if (!Number.isSafeInteger(decoded.id) || !["admin", "teacher", "student"].includes(decoded.role)) {
+      return res.status(401).json({ message: "Invalid token" });
+    }
+    const result = await pool.query("SELECT role, password FROM users WHERE id = $1", [decoded.id]);
+    const current = result.rows[0];
+    if (!current || current.role !== decoded.role || decoded.session !== sessionFingerprint(current.password)) {
+      return res.status(401).json({ message: "La sesión expiró. Inicia sesión nuevamente." });
+    }
     req.user = decoded;
     next();
   } catch (err) {
@@ -60,3 +70,12 @@ function hasRole(role: UserRole) {
 export const isAdmin = hasRole("admin");
 export const isStudent = hasRole("student");
 export const isTeacher = hasRole("teacher");
+export function sessionFingerprint(passwordHash: string): string {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) throw new Error("JWT_SECRET is required");
+  return createHmac("sha256", secret).update(passwordHash).digest("hex");
+}
+export const canTeach = (req: AuthRequest, res: Response, next: NextFunction) => {
+  if (req.user?.role !== "admin" && req.user?.role !== "teacher") return res.status(403).json({ message: "Solo administradores y docentes" });
+  next();
+};

@@ -2,12 +2,12 @@ import { Request, Response } from "express";
 import bcrypt from "bcryptjs"
 import jwt from "jsonwebtoken";
 import { pool } from "../models/db";
-import { AuthRequest } from "../middleware/auth";
+import { AuthRequest, sessionFingerprint } from "../middleware/auth";
 
-function generateToken(id: number, role: string): string {
+function generateToken(id: number, role: string, passwordHash: string): string {
   const secret = process.env.JWT_SECRET;
   if (!secret) throw new Error("JWT_SECRET not defined");
-  return jwt.sign({ id, role }, secret, { expiresIn: "1h" });
+  return jwt.sign({ id, role, session: sessionFingerprint(passwordHash) }, secret, { expiresIn: "1h" });
 }
 
 export async function registerUser(req: Request, res: Response) {
@@ -19,7 +19,7 @@ export async function registerUser(req: Request, res: Response) {
       return res.status(400).json({ message: "Campos requeridos faltantes" });
     }
 
-    if (password.length < 6) {
+    if (typeof password !== "string" || password.length < 6) {
       return res.status(400).json({ message: "La contraseña debe tener al menos 6 caracteres" });
     }
 
@@ -62,7 +62,7 @@ export async function registerUser(req: Request, res: Response) {
 
     await client.query("COMMIT");
 
-    const token = generateToken(user.id, user.role);
+    const token = generateToken(user.id, user.role, hash);
     return res.status(201).json({ token, user });
   } catch (err: any) {
     try {
@@ -80,6 +80,9 @@ export async function registerUser(req: Request, res: Response) {
 export async function loginUser(req: Request, res: Response) {
   try {
     const { email, password } = req.body;
+    if (typeof email !== "string" || typeof password !== "string" || !email || !password) {
+      return res.status(400).json({ message: "Correo y contraseña requeridos" });
+    }
     const result = await pool.query(
       "SELECT * FROM users WHERE email = $1",
       [email]
@@ -97,7 +100,7 @@ export async function loginUser(req: Request, res: Response) {
       return res.status(401).json({ message: "Credenciales inválidas" });
     }
 
-    const token = generateToken(user.id, user.role);
+    const token = generateToken(user.id, user.role, user.password);
 
     const safeUser = {
       id: user.id,

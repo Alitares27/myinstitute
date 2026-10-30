@@ -1,20 +1,21 @@
+import { asyncRouter } from "../middleware/asyncRouter";
 import { Router } from "express";
 import { pool } from "../models/db";
 import { verifyToken, isAdmin, AuthRequest } from "../middleware/auth";
 
-const router = Router();
+const router = asyncRouter();
 
 router.get("/", verifyToken, async (req: AuthRequest, res) => {
   try {
     const query = `
-      SELECT 
-        s.id, 
-        s.member_id, 
+      SELECT
+        s.id,
+        s.member_id,
         s.tema_id,
-        u.name AS member_name, 
-        t.title AS topic, 
-        s.speech_title, 
-        s.duration_minutes AS time, 
+        u.name AS member_name,
+        t.title AS topic,
+        s.speech_title,
+        s.duration_minutes AS time,
         s.speech_date AS date,
         CASE WHEN s.is_completed = true THEN 'Si' ELSE 'No' END as completed
       FROM speakers s
@@ -36,8 +37,8 @@ router.post("/", verifyToken, isAdmin, async (req: AuthRequest, res) => {
     const query = `
       INSERT INTO speakers (member_id, tema_id, speech_title, duration_minutes, speech_date, is_completed)
       VALUES ($1, $2, $3, $4, $5, false)
-      RETURNING *, 
-      duration_minutes AS time, 
+      RETURNING *,
+      duration_minutes AS time,
       speech_date AS date,
       'No' as completed
     `;
@@ -61,17 +62,17 @@ router.put("/:id", verifyToken, isAdmin, async (req: AuthRequest, res) => {
 
   try {
     const query = `
-      UPDATE speakers 
-      SET 
-        member_id = $1, 
-        tema_id = $2, 
-        speech_title = $3, 
-        duration_minutes = $4, 
-        speech_date = $5, 
+      UPDATE speakers
+      SET
+        member_id = $1,
+        tema_id = $2,
+        speech_title = $3,
+        duration_minutes = $4,
+        speech_date = $5,
         is_completed = $6
       WHERE id = $7
-      RETURNING *, 
-      duration_minutes AS time, 
+      RETURNING *,
+      duration_minutes AS time,
       speech_date AS date,
       CASE WHEN is_completed = true THEN 'Si' ELSE 'No' END as completed
     `;

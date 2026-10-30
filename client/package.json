@@ -5,11 +5,15 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test tests/regression.cjs",
+    "test:preview": "npm run build && node tests/preview-smoke.cjs"
   },
   "dependencies": {
     "axios": "^1.6.0",
+    "dompurify": "^3.4.17",
     "jspdf": "^4.2.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
@@ -21,6 +25,7 @@
     "@types/react-dom": "^18.2.7",
     "@vitejs/plugin-react": "^5.1.1",
     "autoprefixer": "^10.4.22",
+    "jsdom": "^26.1.0",
     "postcss": "^8.5.6",
     "tailwindcss": "^4.1.17",
     "typescript": "^5.3.3",

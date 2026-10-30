@@ -1,7 +1,8 @@
+import { AuthRequest } from "../middleware/auth";
 import { Request, Response } from "express";
 import { pool } from "../models/db";
 
-export async function getMeetings(req: Request, res: Response) {
+export async function getMeetings(req: AuthRequest, res: Response) {
     try {
         const result = await pool.query(`
             SELECT
@@ -26,10 +27,13 @@ export async function getMeetings(req: Request, res: Response) {
                 ) AS attendees
             FROM meetings m
             LEFT JOIN users u ON u.id = m.created_by
+            WHERE ($1 = 'admin' OR m.created_by = $2 OR EXISTS (
+                SELECT 1 FROM meeting_attendees own WHERE own.meeting_id = m.id AND own.user_id = $2
+            ))
             ORDER BY
                 m.meeting_date DESC,
                 m.start_time DESC
-        `);
+        `, [req.user?.role, req.user?.id]);
 
         res.json(result.rows);
 
@@ -41,7 +45,7 @@ export async function getMeetings(req: Request, res: Response) {
     }
 }
 
-export async function getMeeting(req: Request, res: Response) {
+export async function getMeeting(req: AuthRequest, res: Response) {
     try {
         const { id } = req.params;
 
@@ -69,9 +73,9 @@ export async function getMeeting(req: Request, res: Response) {
                 ) AS attendees
             FROM meetings m
             LEFT JOIN users u ON u.id = m.created_by
-            WHERE m.id = $1
+            WHERE m.id = $1 AND ($2 = 'admin' OR m.created_by = $3 OR EXISTS (SELECT 1 FROM meeting_attendees own WHERE own.meeting_id = m.id AND own.user_id = $3))
             `,
-            [id]
+            [id, req.user?.role, req.user?.id]
         );
 
         if (result.rows.length === 0) {

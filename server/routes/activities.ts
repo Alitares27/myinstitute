@@ -1,8 +1,9 @@
+import { asyncRouter } from "../middleware/asyncRouter";
 import { Router, Request, Response } from "express";
 import { pool } from "../models/db";
 import { verifyToken, isAdmin, AuthRequest } from "../middleware/auth";
 
-const router = Router();
+const router = asyncRouter();
 
 router.get("/", verifyToken, async (req: AuthRequest, res: Response) => {
   try {

@@ -5,7 +5,9 @@
   "scripts": {
     "dev": "nodemon --watch . --ext ts --exec ts-node index.ts",
     "build": "tsc",
-    "start": "node dist/index.js"
+    "start": "node dist/index.js",
+    "test": "npm run build && node --test tests/regression.cjs",
+    "test:readonly": "npm run build && node tests/readonly-smoke.cjs"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

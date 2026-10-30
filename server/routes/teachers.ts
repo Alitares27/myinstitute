@@ -1,22 +1,25 @@
+import { prepareRoleChange } from "../utils/roles";
+import { InputError } from "../utils/validation";
+import { asyncRouter } from "../middleware/asyncRouter";
 import express, { Response } from "express";
 import { pool } from "../models/db";
 import { verifyToken, isAdmin, AuthRequest } from "../middleware/auth";
 
-const router = express.Router();
+const router = asyncRouter();
 
 router.get("/", verifyToken, async (req: AuthRequest, res: Response) => {
   try {
     const role = req.user?.role;
     const userId = req.user?.id;
     let query = `
-      SELECT 
-        t.id, 
-        t.specialty, 
-        t.created_at, 
-        u.id AS user_id, 
-        u.name, 
-        u.email, 
-        u.telefono, 
+      SELECT
+        t.id,
+        t.specialty,
+        t.created_at,
+        u.id AS user_id,
+        u.name,
+        u.email,
+        u.telefono,
         u.role,
         COALESCE(
           json_agg(
@@ -53,6 +56,7 @@ router.get("/", verifyToken, async (req: AuthRequest, res: Response) => {
     const result = await pool.query(query, values);
     res.json(result.rows);
   } catch (err: any) {
+    if (err instanceof InputError) return res.status(err.status).json({ message: err.message });
     console.error("Error fetching teachers:", err);
     res.status(500).json({ message: "Error fetching teachers" });
   }
@@ -75,6 +79,7 @@ router.post("/", verifyToken, isAdmin, async (req: AuthRequest, res: Response) =
       return res.status(404).json({ message: "Miembro no encontrado" });
     }
 
+    await prepareRoleChange(client, user_id, "teacher");
     const existingTeacher = await client.query("SELECT id FROM teachers WHERE user_id = $1", [user_id]);
     let teacherId: number;
 
@@ -92,7 +97,7 @@ router.post("/", verifyToken, isAdmin, async (req: AuthRequest, res: Response) =
       teacherId = insertRes.rows[0].id;
     }
 
-    if (userRes.rows[0].role === "student") {
+    if (userRes.rows[0].role !== "teacher") {
       await client.query("UPDATE users SET role = 'teacher' WHERE id = $1", [user_id]);
     }
 
@@ -106,14 +111,14 @@ router.post("/", verifyToken, isAdmin, async (req: AuthRequest, res: Response) =
     await client.query("COMMIT");
 
     const completeRes = await pool.query(`
-      SELECT 
-        t.id, 
-        t.specialty, 
-        t.created_at, 
-        u.id AS user_id, 
-        u.name, 
-        u.email, 
-        u.telefono, 
+      SELECT
+        t.id,
+        t.specialty,
+        t.created_at,
+        u.id AS user_id,
+        u.name,
+        u.email,
+        u.telefono,
         u.role,
         COALESCE(
           json_agg(
@@ -131,6 +136,7 @@ router.post("/", verifyToken, isAdmin, async (req: AuthRequest, res: Response) =
     res.status(201).json(completeRes.rows[0]);
   } catch (err) {
     await client.query("ROLLBACK");
+    if (err instanceof InputError) return res.status(err.status).json({ message: err.message });
     console.error("Error creating teacher:", err);
     res.status(500).json({ message: "Error al registrar maestro" });
   } finally {
@@ -166,14 +172,14 @@ router.put("/:id", verifyToken, isAdmin, async (req: AuthRequest, res: Response)
     await client.query("COMMIT");
 
     const completeRes = await pool.query(`
-      SELECT 
-        t.id, 
-        t.specialty, 
-        t.created_at, 
-        u.id AS user_id, 
-        u.name, 
-        u.email, 
-        u.telefono, 
+      SELECT
+        t.id,
+        t.specialty,
+        t.created_at,
+        u.id AS user_id,
+        u.name,
+        u.email,
+        u.telefono,
         u.role,
         COALESCE(
           json_agg(
@@ -191,6 +197,7 @@ router.put("/:id", verifyToken, isAdmin, async (req: AuthRequest, res: Response)
     res.json(completeRes.rows[0]);
   } catch (err) {
     await client.query("ROLLBACK");
+    if (err instanceof InputError) return res.status(err.status).json({ message: err.message });
     console.error("Error updating teacher:", err);
     res.status(500).json({ message: "Error al actualizar maestro" });
   } finally {
@@ -217,6 +224,7 @@ router.delete("/:id", verifyToken, isAdmin, async (req: AuthRequest, res: Respon
     res.json({ message: "Maestro eliminado correctamente" });
   } catch (err) {
     try { await client.query("ROLLBACK"); } catch {}
+    if (err instanceof InputError) return res.status(err.status).json({ message: err.message });
     console.error("Error deleting teacher:", err);
     res.status(500).json({ message: "Error al eliminar maestro" });
   } finally {
@@ -224,4 +232,4 @@ router.delete("/:id", verifyToken, isAdmin, async (req: AuthRequest, res: Respon
   }
 });
 
-export default router;
+export default router;

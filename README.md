@@ -40,14 +40,14 @@ cd myinstitute
 
 # Backend
 cd server
-pnpm install
-cp .env.example .env   # configurar DATABASE_URL y JWT_SECRET
-pnpm dev               # http://localhost:5000
+npm ci
+# Crear .env con DATABASE_URL y JWT_SECRET
+npm run dev               # http://localhost:5000
 
 # Frontend
 cd ../client
-pnpm install
-pnpm dev               # http://localhost:5173
+npm ci
+npm run dev               # http://localhost:5173
 ```
 
 ## Despliegue
@@ -62,10 +62,34 @@ pnpm dev               # http://localhost:5173
 - Rate limiting en login/registro (10 intentos/15 min)
 - Helmet para headers de seguridad HTTP
 - Contraseñas hasheadas con bcryptjs
-- Todas las rutas de escritura protegidas con middleware `isAdmin`
+- Escrituras administrativas protegidas con `isAdmin`; asistencia y calificaciones con permisos de administrador o docente asignado
 - SQL parametrizado (sin inyección SQL)
 - PWA con service worker y Workbox
 
 ## Licencia
 
 Uso interno.
+
+## Verificación
+
+```bash
+npm test --prefix server
+npm test --prefix client
+npm run build --prefix server
+npm run build --prefix client
+# Opcional: requiere la base configurada; solo SELECT y GET, sin cambios de datos.
+npm run test:readonly --prefix server
+```
+
+La suite de regresión usa una base simulada para validar escrituras, rechazos y concurrencia.
+La prueba de solo lectura comprueba consultas y aislamiento con los roles disponibles en PostgreSQL.
+
+## Configuración de seguridad y actualización
+
+- PostgreSQL verifica certificados TLS. Para una CA privada, configura `PGSSL_CA` (PEM); `PGSSL=disable` se reserva para una base local sin TLS.
+- Después de actualizar, las sesiones anteriores deben iniciar sesión nuevamente. Cambiar contraseña o rol invalida su uso; las cuentas eliminadas dejan de autenticar.
+- La API privada no se guarda en el service worker. Se elimina la caché heredada `api-cache`.
+- La edición de una reserva recibe `initial_payment` como adelanto inicial; el total pagado incorpora los abonos existentes. No se puede cambiar miembro o viaje si existen abonos.
+- Las reservas se consultan con `page`, `limit` (máximo 100), `trip_id`, `user_id`, `search`, `sort` y `direction`. La respuesta contiene `items`, `total`, `total_paid`, `total_pending`, `page` y `limit`. `/options?trip_id=...` carga opciones y `/report` exporta el conjunto filtrado; ambos requieren administrador.
+- Los cambios de rol con historial académico o cursos asignados se rechazan para preservar los datos. Reasigna o resuelve esas dependencias primero.
+- Las migraciones `server/migrations/performance_indexes.sql` e `integrity_guards.sql` se aplican explícitamente al desplegar. Las restricciones `NOT VALID` preservan datos históricos; revisa inconsistencias previas antes de validarlas. Las pruebas de solo lectura no ejecutan migraciones.
