@@ -45,7 +45,7 @@ test("logout removes authentication and legacy API cache while retaining theme",
   assert.equal(localStorage.getItem("theme"),"dark");assert.deepEqual(deleted,["api-cache"]);
 });
 
-function loadComponent(relativeFile,api) {
+function loadComponent(relativeFile,api,withTheme=false) {
   const modules=new Map();
   function compile(filename) {
     if(modules.has(filename))return modules.get(filename).exports;
@@ -65,7 +65,9 @@ function loadComponent(relativeFile,api) {
     new Function("require","module","exports",js)(resolve,mod,mod.exports);
     return mod.exports;
   }
-  return compile(path.resolve(__dirname,"../src",relativeFile)).default;
+  const Component=compile(path.resolve(__dirname,"../src",relativeFile)).default;
+  if(withTheme){const {ThemeProvider}=compile(path.resolve(__dirname,"../src/context/ContextoTema.tsx"));const React=require('react');return props=>React.createElement(ThemeProvider,null,React.createElement(Component,props));}
+  return Component;
 }
 test("reservation form keeps entered values after server rejection and consumes server pagination",async()=>{
   const React=require("react"),{act}=React,{createRoot}=require("react-dom/client"),{Simulate}=require("react-dom/test-utils"),{MemoryRouter}=require("react-router-dom");
@@ -85,7 +87,7 @@ test("reservation form keeps entered values after server rejection and consumes 
   await act(async()=>{root.render(React.createElement(MemoryRouter,{future:{v7_startTransition:true,v7_relativeSplatPath:true}},React.createElement(Component)));});
   await act(async()=>{await new Promise(resolve=>setTimeout(resolve,260));});
   assert.ok(container.textContent.includes("20"));
-  assert.equal(calls.find(([url])=>url==="/trip-reservations")[1].params.limit,5);
+  assert.equal(calls.find(([url,config])=>url==="/trip-reservations"&&!config.params.trip_id)[1].params.limit,5);
   await act(async()=>{Simulate.change(container.querySelector('select[name="trip_id"]'),{target:{name:"trip_id",value:"1"}});});
   await act(async()=>{Simulate.change(container.querySelector('select[name="user_id"]'),{target:{name:"user_id",value:"5"}});});
   await act(async()=>{Simulate.change(container.querySelector('input[name="advance_payment"]'),{target:{name:"advance_payment",value:"20"}});});
@@ -108,11 +110,11 @@ test("concurrent catalog loads share a request and invalidation rejects late sta
   assert.equal(fresh,"new");assert.equal(requests,2);
 });
 
-async function mountPage(filename,api,user={id:1,role:"admin"}) {
+async function mountPage(filename,api,user={id:1,role:"admin"},withTheme=false) {
  const React=require("react"),{act}=React,{createRoot}=require("react-dom/client"),{MemoryRouter}=require("react-router-dom");
  global.IS_REACT_ACT_ENVIRONMENT=true;
  localStorage.setItem("token","test-"+user.id);localStorage.setItem("user",JSON.stringify(user));
- const Component=loadComponent(filename,api),node=document.createElement("div");document.body.appendChild(node);const root=createRoot(node);
+ const Component=loadComponent(filename,api,withTheme),node=document.createElement("div");document.body.appendChild(node);const root=createRoot(node);
  await act(async()=>root.render(React.createElement(MemoryRouter,null,React.createElement(Component))));
  return {node,act,async wait(){await act(async()=>{await new Promise(resolve=>setTimeout(resolve,190));});},async close(){await act(async()=>root.unmount());node.remove();}};
 }
@@ -123,7 +125,7 @@ test("student sees own enrollment when users.id differs from students.id",async(
  assert.ok(!view.node.textContent.includes("No se encontraron matrículas"));await view.close();
 });
 test("payment page displays reservation-level debt and server totals, not repeated row balances",async()=>{
- const api={get:async(url)=>({data:url==="/temple-amortizations"?{items:[{id:1,attendance_id:10,miembro_nombre:"Member",payment_amount:20,monto_adeudado:50,payment_date:"2026-01-01"},{id:2,attendance_id:10,miembro_nombre:"Member",payment_amount:10,monto_adeudado:50,payment_date:"2026-01-02"}],total:2,summary:{totalPagado:30,totalAdeudado:150,totalSaldados:0}}:[]})};
+ const api={get:async(url)=>({data:url==="/temple-trips"?[{id:1,date:"2999-01-01",status:"programado",temple_name:"Upcoming"}]:url==="/temple-amortizations"?{items:[{id:1,attendance_id:10,miembro_nombre:"Member",payment_amount:20,monto_adeudado:50,payment_date:"2026-01-01"},{id:2,attendance_id:10,miembro_nombre:"Member",payment_amount:10,monto_adeudado:50,payment_date:"2026-01-02"}],total:2,summary:{totalPagado:30,totalAdeudado:150,totalSaldados:0}}:[]})};
  const view=await mountPage("pages/PagosTemplos.tsx",api);await view.wait();
  const figures=[...view.node.querySelectorAll(".asistencia-stat-content h3")].map(item=>item.textContent);
  assert.deepEqual(figures,["2","$30","$150","0"]);await view.close();
@@ -186,10 +188,10 @@ test("unified members keeps academic fields after failed edits and sends profile
   const last=calls.filter(([url])=>url==='/users/members').at(-1);assert.equal(last[1].params.profile,'student');assert.equal(last[1].params.role,undefined);assert.equal(last[1].params.limit,10);
   await view.act(async()=>Simulate.click(view.node.querySelector('[aria-label="Editar Academic member"]')));
   assert.equal(view.node.querySelector('[name="grade"]').value,'Organization A');assert.equal(view.node.querySelector('[name="student_enrollment_date"]').value,'2020-02-29');
-  await view.act(async()=>Simulate.change(view.node.querySelector('[name="grade"]'),{target:{value:'Organization B'}}));
+  await view.act(async()=>Simulate.change(view.node.querySelector('[name="grade"]'),{target:{value:'Estaca'}}));
   await view.act(async()=>Simulate.submit(view.node.querySelector('form')));
-  assert.equal(submitted.grade,'Organization B');assert.equal(submitted.document,directoryMember.document);assert.equal(submitted.include_student_profile,true);
-  assert.equal(view.node.querySelector('[name="grade"]').value,'Organization B');assert.ok(view.node.textContent.includes('Cannot save'));
+  assert.equal(submitted.grade,'Estaca');assert.equal(submitted.document,directoryMember.document);assert.equal(submitted.include_student_profile,true);
+  assert.equal(view.node.querySelector('[name="grade"]').value,'Estaca');assert.ok(view.node.textContent.includes('Cannot save'));
   assert.ok(!calls.some(([url])=>url==='/users'));
  }finally{await view.close();}
 });
@@ -220,4 +222,63 @@ test("student opens own member profile without loading the full directory",async
  const api={get:async(url)=>{calls.push(url);return {data:url==='/users/me'?member:{member,courses:[],summary:null}};}};
  const view=await mountPage('pages/Miembros.tsx',api,member);
  try{assert.ok(view.node.textContent.includes('Mi perfil'));assert.ok(view.node.textContent.includes('Organization A'));assert.ok(calls.includes('/users/42/academic'));assert.ok(!calls.includes('/users/members'));}finally{await view.close();}
+});
+
+for(const filename of ['ReservarViajes.tsx','PagosTemplos.tsx']){
+ test(filename+': statistics automatically use the scheduled trip and exclude historical list totals',async()=>{
+  const {Simulate}=require('react-dom/test-utils');const calls=[];
+  const resource=filename==='ReservarViajes.tsx'?'/trip-reservations':'/temple-amortizations';
+  const api={get:async(url,config)=>{
+   calls.push([url,config]);
+   if(url==='/temple-trips')return {data:[{id:3,date:'2999-03-01',status:'programado',temple_name:'Later'},{id:9,date:'2020-01-01',status:'finalizado',temple_name:'Historical'},{id:2,date:'2999-01-01',status:'programado',temple_name:'Next'},{id:4,date:'2999-02-01',status:'cancelado',temple_name:'Cancelled'}]};
+   if(url===resource){const id=config.params.trip_id;return {data:{items:[],total:id==='2'?2:id==='3'?3:999,summary:id?{totalPaid:20,totalPending:80,totalPagado:20,totalAdeudado:80,totalSaldados:1}:{totalPaid:9999,totalPending:9999,totalPagado:9999,totalAdeudado:9999,totalSaldados:999}}};}
+   return {data:[]};
+  }};
+  const view=await mountPage('pages/'+filename,api);await view.wait();
+  try{
+   assert.equal(view.node.querySelector('[aria-label="Viaje de las estadísticas"] select'),null);assert.ok(view.node.querySelector('[aria-label="Viaje de las estadísticas"]').textContent.includes('Next'));
+   const figures=()=>Array.from(view.node.querySelectorAll('.asistencia-stat-content h3')).map(x=>x.textContent);
+   assert.equal(figures()[0],'2');assert.equal(figures()[1],'$20');assert.equal(figures()[2],'$80');
+   const statsCalls=calls.filter(([url,config])=>url===resource&&config.params.limit===1);assert.ok(statsCalls.length);assert.ok(statsCalls.every(([,config])=>config.params.trip_id==='2'));
+   assert.ok(calls.some(([url,config])=>url===resource&&!config.params.trip_id&&config.params.limit===5));
+  }finally{await view.close();}
+ });
+ test(filename+': no upcoming scheduled trip shows zero statistics despite historical totals',async()=>{
+  const resource=filename==='ReservarViajes.tsx'?'/trip-reservations':'/temple-amortizations';
+  const api={get:async(url)=>({data:url==='/temple-trips'?[{id:9,date:'2020-01-01',status:'finalizado'}]:url===resource?{items:[],total:999,summary:{totalPaid:999,totalPagado:999,totalPending:999,totalAdeudado:999}}:[]})};
+  const view=await mountPage('pages/'+filename,api);await view.wait();
+  try{const figures=Array.from(view.node.querySelectorAll('.asistencia-stat-content h3')).map(x=>x.textContent);assert.deepEqual(figures.slice(0,3),['0','$0','$0']);assert.ok(view.node.textContent.includes('No hay viajes programados próximos'));}finally{await view.close();}
+ });
+}
+
+
+test('floating navigation opens only the selected category, closes on navigation and Escape',async()=>{
+ const {Simulate}=require('react-dom/test-utils');
+ const view=await mountPage('components/BarraLateral.tsx',{}, {id:1,role:'admin'},true);
+ try{
+  const nav=view.node.querySelector('[aria-label="Menú principal"]');
+  assert.equal(nav.querySelectorAll('.floating-nav-trigger').length,4);assert.equal(nav.querySelectorAll('.floating-nav-submenu').length,0);
+  const teaching=nav.querySelector('[aria-label="Enseñanza"]');
+  await view.act(async()=>Simulate.click(teaching));assert.equal(teaching.getAttribute('aria-expanded'),'true');assert.ok(nav.querySelector('a[href="/asistencia"]'));
+  await view.act(async()=>Simulate.click(nav.querySelector('[aria-label="Templo"]')));assert.equal(teaching.getAttribute('aria-expanded'),'false');assert.equal(nav.querySelectorAll('.floating-nav-submenu').length,1);
+  await view.act(async()=>Simulate.click(nav.querySelector('a[href="/pagos"]')));assert.equal(nav.querySelectorAll('.floating-nav-submenu').length,0);
+  await view.act(async()=>Simulate.click(teaching));
+  await view.act(async()=>document.dispatchEvent(new window.KeyboardEvent('keydown',{key:'Escape',bubbles:true})));
+  assert.equal(teaching.getAttribute('aria-expanded'),'false');assert.equal(document.activeElement,teaching);
+  await view.act(async()=>Simulate.click(teaching));
+  await view.act(async()=>document.body.dispatchEvent(new window.Event('pointerdown',{bubbles:true})));assert.equal(teaching.getAttribute('aria-expanded'),'false');
+ }finally{await view.close();}
+});
+
+test('header keeps icon-only theme and logout controls in order and preserves logout behavior',async()=>{
+ const {Simulate}=require('react-dom/test-utils');const posts=[];global.caches=window.caches;localStorage.setItem('theme','light');
+ const view=await mountPage('components/BarraLateral.tsx',{post:async route=>{posts.push(route);}}, {id:42,role:'student'},true);
+ try{
+  const actions=view.node.querySelector('.app-topbar-actions');assert.equal(actions.children.length,2);assert.equal(actions.textContent,'');
+  assert.equal(actions.children[0].getAttribute('aria-label'),'Activar tema oscuro');assert.equal(actions.children[1].getAttribute('aria-label'),'Cerrar sesión');
+  await view.act(async()=>Simulate.click(actions.children[0]));assert.equal(document.documentElement.getAttribute('data-theme'),'dark');
+  const nav=view.node.querySelector('[aria-label="Menú principal"]');assert.equal(nav.querySelector('[aria-label="Mantenimiento"]'),null);
+  await view.act(async()=>Simulate.click(nav.querySelector('[aria-label="Enseñanza"]')));assert.ok(nav.querySelector('a[aria-label="Mi perfil"][href="/miembros"]'));
+  await view.act(async()=>Simulate.click(actions.children[1]));assert.deepEqual(posts,['/logout']);assert.equal(localStorage.getItem('token'),null);assert.equal(localStorage.getItem('user'),null);assert.equal(localStorage.getItem('theme'),'dark');
+ }finally{await view.close();document.documentElement.setAttribute('data-theme','light');localStorage.setItem('theme','light');}
 });

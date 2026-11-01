@@ -3,11 +3,13 @@ import { useState } from "react";
 import type { Member, MemberRole } from "../../interfaces/User";
 import { MEMBER_ROLES } from "../../interfaces/User";
 import { businessDate } from "../../utils/utilidadesFecha";
+const ORGANIZATIONS = ["Estaca", "M. Jovenes", "Q. Elderes", "S. Aaronico", "Soc. Soc.", "B. Independencia", "B. Las  Delicias", "B. San Martin", "B. Saladillo", "B. Urquiza", "B. VGG"];
+
 export interface MemberForm {
     name: string; email: string; telefono: string; document: string; role: MemberRole; password: string;
     grade: string; specialty: string; student_enrollment_date: string; include_student_profile: boolean;
 }
-export default function MemberEditor({ member, organizations, onSave, onCancel, onRemoveStudent }: { member: Member | null; organizations: string[]; onSave: (data: MemberForm) => Promise<void>; onCancel: () => void; onRemoveStudent?: () => Promise<void> }) {
+export default function MemberEditor({ member, onSave, onCancel, onRemoveStudent }: { member: Member | null; onSave: (data: MemberForm) => Promise<void>; onCancel: () => void; onRemoveStudent?: () => Promise<void> }) {
     const [form, setForm] = useState<MemberForm>({ name: member?.name || "", email: member?.email || "", telefono: member?.telefono || "", document: member?.document || "", role: member?.role || "student", password: "", grade: member?.grade || "", specialty: member?.specialty || "", student_enrollment_date: member ? (member.student_enrollment_date?.slice(0, 10) || "") : businessDate(), include_student_profile: !!member?.student_id });
     const [saving, setSaving] = useState(false), [error, setError] = useState("");
     const academic = form.role === 'student' || !!member?.student_id || form.include_student_profile;
@@ -23,7 +25,7 @@ export default function MemberEditor({ member, organizations, onSave, onCancel, 
             <label>{member ? "Nueva contraseña (dejar vacía para conservarla)" : "Contraseña"}<input name="password" type="password" required={!member} minLength={6} autoComplete="new-password" value={form.password} onChange={e => set('password', e.target.value)} /></label>
             <label>Rol de acceso<select name="role" value={form.role} onChange={e => set('role', e.target.value)}>{Object.entries(MEMBER_ROLES).map(([role, label]) => <option key={role} value={role}>{label}</option>)}</select></label>
             <label className="miembros-checkbox"><input type="checkbox" name="include_student_profile" checked={academic} disabled={form.role === 'student' || !!member?.student_id} onChange={e => set('include_student_profile', e.target.checked)} /> Registro de estudiante</label>
-            {academic && <><label>Organización<input name="grade" list="member-organizations" maxLength={20} value={form.grade} onChange={e => set('grade', e.target.value)} /><datalist id="member-organizations">{organizations.map(value => <option key={value} value={value} />)}</datalist></label>
+            {academic && <><label>Organización<select name="grade" value={form.grade} onChange={e => set('grade', e.target.value)}><option value="">Seleccionar organización</option>{member?.grade && !ORGANIZATIONS.includes(member.grade) && <option value={member.grade} disabled>{member.grade} (actual)</option>}{ORGANIZATIONS.map(value => <option key={value} value={value}>{value}</option>)}</select></label>
                 <label>Fecha de alta como estudiante<input name="student_enrollment_date" type="date" value={form.student_enrollment_date} onChange={e => set('student_enrollment_date', e.target.value)} /></label></>}
             {(form.role === 'teacher' || member?.teacher_id) && <label>Especialidad del docente<input name="specialty" maxLength={100} value={form.specialty} onChange={e => set('specialty', e.target.value)} /></label>}
         </div>

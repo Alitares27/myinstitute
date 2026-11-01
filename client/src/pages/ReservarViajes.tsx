@@ -1,3 +1,5 @@
+import {useTripStatistics} from "../hooks/useTripStatistics";
+import TripStatisticsScope from "../components/TripStatisticsScope";
 import { usePagedList } from "../hooks/usePagedList";
 import { useReservationOptions } from "../hooks/useReservationOptions";
 import { businessDate } from "../utils/utilidadesFecha";
@@ -38,6 +40,8 @@ export default function TripReservations() {
     const [users, setUsers] = useState<BasicUser[]>([]);
     const [trips, setTrips] = useState<Trip[]>([]);
     const [optionsRevision,setOptionsRevision]=useState(0);
+  const [statisticsRevision,setStatisticsRevision]=useState(0);
+  const statistics=useTripStatistics(trips,"/trip-reservations",statisticsRevision);
     const [listError, setListError] = useState("");
     const [editingId, setEditingId] = useState<number | null>(null);
     const [role, setRole] = useState<string | null>(null);
@@ -104,8 +108,8 @@ export default function TripReservations() {
         user_id: filterUserId || undefined, search: searchQuery || undefined, sort: sortConfig?.key, direction: sortConfig?.direction };
     const page=usePagedList<any>("/trip-reservations",listParams,JSON.parse(localStorage.getItem("user")||"{}").role==="admin");
     const reservations=page.items,totalRecords=page.total;
-    const reservationTotals={totalPaid:Number(page.summary.totalPaid||0),totalPending:Number(page.summary.totalPending||0)};
-    const fetchReservations=()=>page.refresh();
+    const reservationTotals={totalPaid:Number(statistics.summary.totalPaid||0),totalPending:Number(statistics.summary.totalPending||0)};
+    const fetchReservations=()=>{page.refresh();setStatisticsRevision(value=>value+1);};
     const options=useReservationOptions([formData.trip_id,paymentForm.trip_id],optionsRevision);
     const reservationOptions=options.items;
     const fetchOptions=()=>{setOptionsRevision(value=>value+1);};
@@ -387,33 +391,34 @@ export default function TripReservations() {
             </div>
 
             {(listError || options.error || page.error) && <p role="alert" style={{ color: "var(--danger)" }}>{listError || options.error || page.error}</p>}
-            <div className="asistencia-stats-grid">
+            <TripStatisticsScope trip={statistics.trip} error={statistics.error}/>
+      <div className="asistencia-stats-grid">
                 <div className="asistencia-stat-card">
                     <div className="asistencia-stat-icon blue"><FaCalendarCheck /></div>
                     <div className="asistencia-stat-content">
-                        <h3>{totalRecords}</h3>
+                        <h3>{statistics.loading?"…":statistics.total}</h3>
                         <p>Reservas</p>
                     </div>
                 </div>
                 <div className="asistencia-stat-card">
                     <div className="asistencia-stat-icon green"><FaMoneyBillWave /></div>
                     <div className="asistencia-stat-content">
-                        <h3>${reservationTotals.totalPaid.toLocaleString()}</h3>
+                        <h3>{statistics.loading?"…":`$${reservationTotals.totalPaid.toLocaleString()}`}</h3>
                         <p>Pagado</p>
                     </div>
                 </div>
                 <div className="asistencia-stat-card">
                     <div className="asistencia-stat-icon orange"><TbAlertTriangle /></div>
                     <div className="asistencia-stat-content">
-                        <h3>${reservationTotals.totalPending.toLocaleString()}</h3>
+                        <h3>{statistics.loading?"…":`$${reservationTotals.totalPending.toLocaleString()}`}</h3>
                         <p>Pendiente</p>
                     </div>
                 </div>
                 <div className="asistencia-stat-card">
                     <div className="asistencia-stat-icon purple"><IoCarOutline /></div>
                     <div className="asistencia-stat-content">
-                        <h3>{availableTripsForReservation.length}</h3>
-                        <p>Viajes Disponibles</p>
+                        <h3>{statistics.trip?formatDate(statistics.trip.date):"—"}</h3>
+                        <p>Fecha del viaje</p>
                     </div>
                 </div>
             </div>

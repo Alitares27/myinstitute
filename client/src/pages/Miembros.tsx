@@ -18,12 +18,10 @@ export default function Miembros() {
     const [search, setSearch] = useState(""), [roleFilter, setRoleFilter] = useState(""), [profileFilter, setProfileFilter] = useState("");
     const [currentPage, setCurrentPage] = useState(1), [sort, setSort] = useState({ key: "name", direction: "asc" });
     const [editorOpen, setEditorOpen] = useState(false), [editing, setEditing] = useState<Member | null>(null), [selected, setSelected] = useState<number | null>(null), [revision, setRevision] = useState(0);
-    const [organizations, setOrganizations] = useState<string[]>([]);
     const [password, setPassword] = useState({ current: "", next: "", confirm: "" }), [passwordBusy, setPasswordBusy] = useState(false);
     const admin = me?.role === 'admin', profileView = me?.role === 'student' || searchParams.get('view') === 'profile';
     const directory = usePagedList<Member>("/users/members", { page: currentPage, limit: 10, search: search || undefined, role: roleFilter || undefined, profile: profileFilter || undefined, sort: sort.key, direction: sort.direction }, !!me && !profileView);
     useEffect(() => { let active = true; const controller = new AbortController(); api.get('/users/me', { signal: controller.signal }).then(({ data }) => { if (active) { setMe(data); localStorage.setItem('user', JSON.stringify(data)); } }).catch(() => { if (active) setError('No se pudo cargar la cuenta'); }).finally(() => { if (active) setLoading(false); }); return () => { active = false; controller.abort(); }; }, []);
-    useEffect(() => { if (!admin) return; let active = true; const controller = new AbortController(); api.get('/users/organizations', { signal: controller.signal }).then(({ data }) => { if (active) setOrganizations(data); }).catch(() => { if (active) setError('No se pudieron cargar las organizaciones existentes'); }); return () => { active = false; controller.abort(); }; }, [admin, revision]);
 
     const totalPages = Math.max(1, Math.ceil(directory.total / 10));
     useEffect(() => { if (directory.loaded && !directory.loading && currentPage > totalPages) setCurrentPage(totalPages); }, [directory.loaded, directory.loading, currentPage, totalPages]);
@@ -54,7 +52,7 @@ export default function Miembros() {
                 <button className="btn primary" type="submit">{passwordBusy ? 'Guardando...' : 'Actualizar contraseña'}</button>
             </fieldset></form></section>
         </> : <>
-            {admin && editorOpen && <MemberEditor key={editing?.id || 'new'} member={editing} organizations={organizations} onSave={save} onCancel={() => { setEditorOpen(false); setEditing(null); }} onRemoveStudent={removeStudent} />}
+            {admin && editorOpen && <MemberEditor key={editing?.id || 'new'} member={editing} onSave={save} onCancel={() => { setEditorOpen(false); setEditing(null); }} onRemoveStudent={removeStudent} />}
             <div className="miembros-toolbar"><label className="miembros-search"><IoSearchOutline aria-hidden="true" /><input aria-label="Buscar miembros" type="search" name="member_search" placeholder="Buscar miembros..." value={search} onChange={e => filter(setSearch, e.target.value)} /></label>
                 {admin && <div className="miembros-filters"><select aria-label="Rol de acceso" name="role_filter" value={roleFilter} onChange={e => filter(setRoleFilter, e.target.value)}><option value="">Todos los roles</option>{Object.entries(MEMBER_ROLES).map(([role, label]) => <option key={role} value={role}>{label}</option>)}</select>
                     <select aria-label="Tipo de registro" name="profile_filter" value={profileFilter} onChange={e => filter(setProfileFilter, e.target.value)}><option value="">Todos los registros</option><option value="student">Estudiantes</option><option value="teacher">Docentes</option></select></div>}

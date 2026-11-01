@@ -170,6 +170,20 @@ test("member validation and conflicts roll back without leaving orphan profiles"
     assert.equal((await request('/api/users/999999', { method: 'PUT', body: { ...input, password: '' } })).status, 404);
 });
 
+test("trip-specific statistics never include another trip's reservations or payments",async()=>{
+ const beforeReservations=(await request('/api/trip-reservations?trip_id=1&limit=1')).data;
+ const beforePayments=(await request('/api/temple-amortizations?trip_id=1&limit=1')).data;
+ await db.exec("INSERT INTO temple_trips(id,temple_id,trip_date,status,cost) VALUES(1002,1,'2999-02-01','programado',1000);INSERT INTO temple_attendance(id,user_id,trip_id,register_date,advance_payment,pending_payment) VALUES(1002,43,1002,'2026-01-01',100,900);INSERT INTO temple_amortizations(id,attendance_id,payment_amount,payment_date,payment_type) VALUES(1002,1002,60,'2026-01-01','efectivo')");
+ try{
+  const reservations=(await request('/api/trip-reservations?trip_id=1002&limit=1')).data;
+  assert.equal(reservations.total,1);assert.equal(reservations.summary.totalPaid,100);assert.equal(reservations.summary.totalPending,900);
+  const payments=(await request('/api/temple-amortizations?trip_id=1002&limit=1')).data;
+  assert.equal(payments.total,1);assert.equal(Number(payments.summary.totalPagado),60);assert.equal(Number(payments.summary.totalAdeudado),900);assert.equal(Number(payments.summary.totalSaldados),0);
+  assert.deepEqual((await request('/api/trip-reservations?trip_id=1&limit=1')).data.summary,beforeReservations.summary);
+  assert.deepEqual((await request('/api/temple-amortizations?trip_id=1&limit=1')).data.summary,beforePayments.summary);
+ }finally{await db.exec('DELETE FROM temple_amortizations WHERE id=1002;DELETE FROM temple_attendance WHERE id=1002;DELETE FROM temple_trips WHERE id=1002');}
+});
+
 test("logout increments persisted version and invalidates copies of every previous token", async () => {
     const old = token(1); assert.equal((await request('/api/logout', { method: 'POST', auth: old })).status, 200);
     assert.equal((await request('/api/users/me', { auth: old })).status, 401);

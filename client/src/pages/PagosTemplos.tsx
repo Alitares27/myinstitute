@@ -1,3 +1,5 @@
+import {useTripStatistics} from "../hooks/useTripStatistics";
+import TripStatisticsScope from "../components/TripStatisticsScope";
 import { usePagedList } from "../hooks/usePagedList";
 import { useReservationOptions } from "../hooks/useReservationOptions";
 import { businessDate } from "../utils/utilidadesFecha";
@@ -38,6 +40,8 @@ export default function PagosTemplos() {
   const [trips, setTrips] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
   const [optionsRevision,setOptionsRevision]=useState(0);
+  const [statisticsRevision,setStatisticsRevision]=useState(0);
+  const statistics=useTripStatistics(trips,"/temple-amortizations",statisticsRevision);
   const [loading, setLoading] = useState(true);
 
   const [filterTripId, setFilterTripId] = useState("");
@@ -89,7 +93,7 @@ export default function PagosTemplos() {
   };
 
   const fetchReservations=()=>setOptionsRevision(value=>value+1);
-  const fetchPagos=()=>page.refresh();
+  const fetchPagos=()=>{page.refresh();setStatisticsRevision(value=>value+1);};
   useEffect(()=>{
     if(JSON.parse(localStorage.getItem("user")||"{}").role!=="admin")return;
     Promise.all([fetchTrips(),fetchUsers()]).catch(()=>setPaymentError("Error al cargar los catálogos"))
@@ -197,8 +201,8 @@ export default function PagosTemplos() {
     );
   };
 
-  const filteredTotals={totalPagado:Number(page.summary.totalPagado||0),totalAdeudado:Number(page.summary.totalAdeudado||0)};
-  const totalSaldados=Number(page.summary.totalSaldados||0);
+  const filteredTotals={totalPagado:Number(statistics.summary.totalPagado||0),totalAdeudado:Number(statistics.summary.totalAdeudado||0)};
+  const totalSaldados=Number(statistics.summary.totalSaldados||0);
 
   const handlePrintReport = async () => {
     const printWindow=window.open("","_blank");if(!printWindow)return;
@@ -274,32 +278,33 @@ export default function PagosTemplos() {
         </div>
       </div>
 
+      <TripStatisticsScope trip={statistics.trip} error={statistics.error}/>
       <div className="asistencia-stats-grid">
         <div className="asistencia-stat-card">
           <div className="asistencia-stat-icon blue"><IoCashOutline /></div>
           <div className="asistencia-stat-content">
-            <h3>{page.total}</h3>
+            <h3>{statistics.loading?"…":statistics.total}</h3>
             <p>Nº Pagos</p>
           </div>
         </div>
         <div className="asistencia-stat-card">
           <div className="asistencia-stat-icon green"><FaMoneyBillWave /></div>
           <div className="asistencia-stat-content">
-            <h3>${filteredTotals.totalPagado.toLocaleString()}</h3>
+            <h3>{statistics.loading?"…":`$${filteredTotals.totalPagado.toLocaleString()}`}</h3>
             <p>Total Pagado</p>
           </div>
         </div>
         <div className="asistencia-stat-card">
           <div className="asistencia-stat-icon orange"><TbAlertTriangle /></div>
           <div className="asistencia-stat-content">
-            <h3>${filteredTotals.totalAdeudado.toLocaleString()}</h3>
+            <h3>{statistics.loading?"…":`$${filteredTotals.totalAdeudado.toLocaleString()}`}</h3>
             <p>Deuda de reservas</p>
           </div>
         </div>
         <div className="asistencia-stat-card">
           <div className="asistencia-stat-icon purple"><FaCheckCircle /></div>
           <div className="asistencia-stat-content">
-            <h3>{totalSaldados}</h3>
+            <h3>{statistics.loading?"…":totalSaldados}</h3>
             <p>Reservas saldadas</p>
           </div>
         </div>
