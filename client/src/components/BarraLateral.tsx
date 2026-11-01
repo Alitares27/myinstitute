@@ -1,3 +1,4 @@
+import api from "../api";
 import { invalidarCache } from "../utils/clienteCache";
 import { limpiarSesion } from "../utils/sesion";
 import { useState, useEffect } from "react";
@@ -52,6 +53,8 @@ function Sidebar() {
   }, [currentPath, isTeachingActive, isLeadershipActive, isTempleActive, isMaintenanceActive]);
 
   const handleLogout = async () => {
+    try { await api.post("/logout"); }
+    catch { window.alert("Se cerrará la sesión local, pero no se pudo confirmar la revocación en el servidor. Si perdiste tu dispositivo, cambia la contraseña al recuperar conexión."); }
     invalidarCache();
     await limpiarSesion();
     navigate("/");
@@ -71,7 +74,7 @@ function Sidebar() {
             src="/temple.webp"
             alt="Logo"
             className="logo-icon"
-            style={{ width: "40px", height: "40px", objectFit: "contain" }}
+            style={{ width: "65px", height: "65px", objectFit: "contain" }}
           />
           <span className="logo-text">GestionAR</span>
         </Link>

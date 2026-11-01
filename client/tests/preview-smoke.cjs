@@ -13,7 +13,7 @@ const path=require("node:path");
   const index=await fetch(base);assert.equal(index.status,200);const html=await index.text();
   const assets=[...html.matchAll(/(?:src|href)="(\/[^"]+)"/g)].map(match=>match[1]);
   for(const asset of assets)assert.equal((await fetch(base+asset)).status,200,asset);
-  for(const route of ["/iniciar-sesion","/panel","/reservar-viajes"])assert.equal((await fetch(base+route)).status,200,route);
+  for(const route of ["/iniciar-sesion","/panel","/reservar-viajes","/miembros","/usuarios"])assert.equal((await fetch(base+route)).status,200,route);
   const manifest=await (await fetch(base+"/manifest.webmanifest")).json();
   for(const icon of manifest.icons)assert.equal((await fetch(base+"/"+icon.src)).status,200,icon.src);
   assert.equal((await fetch(base+"/sw.js")).status,200);

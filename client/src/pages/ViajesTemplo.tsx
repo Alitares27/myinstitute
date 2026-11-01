@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import api from "../api";
-import { IoCreateOutline, IoTrashOutline, IoCalendarOutline } from "react-icons/io5";
+import { IoCreateOutline, IoTrashOutline, IoArchiveOutline, IoCalendarOutline } from "react-icons/io5";
 import { FiTruck, FiSearch } from "react-icons/fi";
 import { TbPlus } from "react-icons/tb";
 import { FaCheckCircle, FaMoneyBillWave } from "react-icons/fa";
@@ -159,9 +159,15 @@ export default function TempleTrip() {
         try {
             await api.delete(`/temple-trips/${id}`);
             setTrips(prev => prev.filter(t => t.id !== id));
-        } catch {
-            alert("Error al eliminar el viaje");
+        } catch (error: any) {
+            alert(error.response?.data?.message || "Error al eliminar el viaje");
         }
+    };
+
+    const handleArchive = async (id: number) => {
+      if (!window.confirm("¿Archivar conservando todas las reservas y pagos?")) return;
+      try { await api.patch(`/temple-trips/${id}/archive`); setTrips(prev=>prev.filter(row=>row.id!==id)); }
+      catch (error: any) { window.alert(error.response?.data?.message || "No se pudo archivar"); }
     };
 
     const formatStatus = (status?: string) => {
@@ -379,7 +385,8 @@ export default function TempleTrip() {
                                             >
                                                 <IoCreateOutline />
                                             </button>
-                                            <button
+                                            <button className="btn secondary" onClick={() => handleArchive(trip.id)} aria-label="Archivar" title="Archivar"><IoArchiveOutline /></button>
+<button
                                                 className="btn secondary extracted-style-5"
                                                 onClick={() => handleDelete(trip.id)}
                                                 aria-label="Eliminar"

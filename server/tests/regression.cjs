@@ -7,10 +7,10 @@ const { app } = require("../dist/index");
 const { sessionFingerprint } = require("../dist/middleware/auth");
 const { cents, isoDate, positiveId, reservationBalance } = require("../dist/utils/validation");
 const { prepareRoleChange } = require("../dist/utils/roles");
-const users = new Map([[1,{role:"admin",password:"hash-admin"}],[2,{role:"teacher",password:"hash-teacher"}],[3,{role:"student",password:"hash-student"}]]);
+const users = new Map([[1,{role:"admin",password:"hash-admin",auth_version:0}],[2,{role:"teacher",password:"hash-teacher",auth_version:0}],[3,{role:"student",password:"hash-student",auth_version:0}]]);
 let server, base, calls, transaction, queryHandler, connectError;
 const rows = (...values) => ({ rows:values, rowCount:values.length });
-const token = (id, override={}) => jwt.sign({ id, role:users.get(id).role, session:sessionFingerprint(users.get(id).password), ...override }, process.env.JWT_SECRET, {expiresIn:"1h"});
+const token = (id, override={}) => jwt.sign({ id, role:users.get(id).role, session:sessionFingerprint(users.get(id).password), version:users.get(id).auth_version, ...override }, process.env.JWT_SECRET, {expiresIn:"1h"});
 async function request(path, id=1, body, method=body ? "POST" : "GET", authToken) {
   return fetch(base+path, { method, headers:{"Content-Type":"application/json", ...(id ? {Authorization:`Bearer ${authToken || token(id)}`} : {})}, ...(body ? {body:JSON.stringify(body)} : {}), signal:AbortSignal.timeout(3000) });
 }
@@ -18,7 +18,7 @@ before(async () => { server=app.listen(0,"127.0.0.1"); await new Promise(r=>serv
 after(async () => { await new Promise(r=>server.close(r)); await pool.end(); });
 beforeEach(() => {
   calls=[]; transaction=[]; connectError=false; queryHandler=async()=>rows();
-  pool.query=async(sql,params=[])=>{ calls.push([sql,params]); if(sql.startsWith("SELECT role, password FROM users")) return users.has(params[0]) ? rows(users.get(params[0])) : rows(); return queryHandler(sql,params); };
+  pool.query=async(sql,params=[])=>{ calls.push([sql,params]); if(sql.startsWith("SELECT role, password, auth_version FROM users")) return users.has(params[0]) ? rows(users.get(params[0])) : rows(); return queryHandler(sql,params); };
   pool.connect=async()=> { if(connectError) throw new Error("Simulated pool failure"); return { query:async(sql,params=[])=>{transaction.push([sql,params]); return queryHandler(sql,params);}, release:()=>transaction.push(["RELEASE",[]]) }; };
 });
 test("money arithmetic preserves cents and rejects invalid, negative, overpaid amounts", () => {
@@ -77,7 +77,7 @@ test("teacher cannot grade an unassigned course and invalid grades are rejected"
 });
 test("reservation edit reconciles installments, locks parent and preserves original initial payment",async()=>{
   queryHandler=async(sql,params)=>{
-    if(sql.includes("SELECT cost, status"))return rows({cost:"100.00",status:"programado"});
+    if(sql.includes("SELECT tt.cost, tt.status"))return rows({cost:"100.00",status:"programado"});
     if(sql.includes("SELECT * FROM temple_attendance"))return rows({id:7,user_id:5,trip_id:1});
     if(sql.includes("SUM(payment_amount)"))return rows({total:"30.00",count:2});
     if(sql.includes("UPDATE temple_attendance"))return rows({id:7,advance_payment:params[3],pending_payment:params[4]});
@@ -93,17 +93,17 @@ test("reservation edit reconciles installments, locks parent and preserves origi
   assert.ok(transaction.some(([sql])=>sql==="ROLLBACK"));assert.ok(!transaction.some(([sql])=>sql.startsWith("UPDATE")));
 });
 test("negative, excessive and duplicate reservations never commit",async()=>{
-  queryHandler=async(sql)=>sql.includes("SELECT cost, status")?rows({cost:100,status:"programado"}):rows();
+  queryHandler=async(sql)=>sql.includes("SELECT tt.cost, tt.status")?rows({cost:100,status:"programado"}):rows();
   const body={user_id:5,trip_id:1,register_date:"2026-01-01"};
   for(const amount of [-1,101,1.001]) {
     transaction=[];assert.equal((await request("/api/trip-reservations",1,{...body,initial_payment:amount})).status,400);
     assert.ok(!transaction.some(([sql])=>sql==="COMMIT"));
   }
-  queryHandler=async(sql)=>sql.includes("SELECT cost, status")?rows({cost:100,status:"programado"}):sql.includes("SELECT id FROM temple_attendance")?rows({id:7}):rows();
+  queryHandler=async(sql)=>sql.includes("SELECT tt.cost, tt.status")?rows({cost:100,status:"programado"}):sql.includes("SELECT id FROM temple_attendance")?rows({id:7}):rows();
   assert.equal((await request("/api/trip-reservations",1,{...body,initial_payment:1})).status,400);
 });
 test("reservation with payments cannot be deleted",async()=>{
-  queryHandler=async(sql)=>sql.includes("SELECT id FROM temple_attendance")||sql.includes("SELECT id FROM temple_amortizations")?rows({id:7}):rows();
+  queryHandler=async(sql)=>sql.includes("SELECT id,advance_payment FROM temple_attendance")||sql.includes("SELECT id FROM temple_amortizations")?rows({id:7}):rows();
   assert.equal((await request("/api/trip-reservations/7",1,undefined,"DELETE")).status,400);
   assert.ok(!transaction.some(([sql])=>sql.startsWith("DELETE")));
 });
@@ -115,7 +115,7 @@ test("pagination caps size and never interpolates malicious sort input",async()=
 });
 test("role transition refuses loss of academic history or assigned courses",async()=>{
   for(const role of ["teacher","student"]) {
-    const client={query:async(sql)=>sql.includes("SELECT role FROM users")?rows({role:"student"}):sql.includes("SELECT 1 FROM students")||sql.includes("SELECT id FROM courses")?rows({id:1}):rows()};
+    const client={query:async(sql)=>sql.includes("SELECT role FROM users")?rows({role:role==="student"?"teacher":"student"}):sql.includes("SELECT 1 FROM students")||sql.includes("SELECT id FROM courses")?rows({id:1}):rows()};
     await assert.rejects(()=>prepareRoleChange(client,3,role));
   }
 });
@@ -165,4 +165,15 @@ test("changing trip cost reconciles balances and refuses a cost below payments",
   transaction=[];
   assert.equal((await request("/api/temple-trips/1",1,{...body,cost:40},"PUT")).status,400);
   assert.ok(!transaction.some(([sql])=>sql.startsWith("UPDATE")));
+});
+
+test("business-day validation follows Argentina rather than UTC",()=>{
+ const {businessDate}=require("../dist/utils/businessDate");assert.equal(businessDate(new Date("2026-11-01T01:30:00Z")),"2026-10-31");
+});
+test("proxy trust is explicit and cannot be enabled by a forwarded header",()=>{
+ const express=require("express"),{configureProxy}=require("../dist/middleware/loginLimits");
+ const app=express(),render=process.env.RENDER;delete process.env.RENDER;
+ configureProxy(app,"");assert.equal(app.get("trust proxy"),false);
+ configureProxy(app,"loopback, 10.0.0.0/8");assert.deepEqual(app.get("trust proxy"),["loopback","10.0.0.0/8"]);
+ if(render!==undefined)process.env.RENDER=render;
 });

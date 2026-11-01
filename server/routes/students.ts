@@ -1,9 +1,7 @@
-import { prepareRoleChange } from "../utils/roles";
-import { InputError } from "../utils/validation";
 import { asyncRouter } from "../middleware/asyncRouter";
 import express, { Response } from "express";
 import { pool } from "../models/db";
-import { verifyToken, isAdmin, AuthRequest } from "../middleware/auth";
+import { verifyToken, AuthRequest } from "../middleware/auth";
 
 const router = asyncRouter();
 
@@ -12,7 +10,7 @@ router.get("/", verifyToken, async (req: AuthRequest, res: Response) => {
     const role = req.user?.role;
     const userId = req.user?.id;
     let query = `
-      SELECT DISTINCT s.id, s.grade, u.id AS user_id, u.name, u.email, u.telefono, u.role
+      SELECT DISTINCT s.id, s.grade, s.enrollment_date, u.id AS user_id, u.name, u.email, u.telefono, u.role
       FROM students s
       JOIN users u ON s.user_id = u.id
     `;
@@ -37,124 +35,6 @@ router.get("/", verifyToken, async (req: AuthRequest, res: Response) => {
     res.json(result.rows);
   } catch (err) {
     res.status(500).json({ message: "Error al obtener miembros" });
-  }
-});
-
-router.post("/", verifyToken, isAdmin, async (req: AuthRequest, res: Response) => {
-  const { user_id, grade } = req.body;
-  const client = await pool.connect();
-  try {
-    await client.query("BEGIN");
-
-    const userRes = await client.query("SELECT id, role FROM users WHERE id = $1", [user_id]);
-    if (userRes.rows.length === 0) {
-      await client.query("ROLLBACK");
-      return res.status(404).json({ message: "Miembro no encontrado" });
-    }
-
-    await prepareRoleChange(client, user_id, "student");
-
-    const existing = await client.query("SELECT id FROM students WHERE user_id = $1", [user_id]);
-    if (existing.rows.length > 0) {
-      await client.query("ROLLBACK");
-      return res.status(400).json({ message: "Este miembro ya está registrado como estudiante" });
-    }
-
-    await client.query("INSERT INTO students (user_id, grade) VALUES ($1, $2)", [user_id, grade]);
-
-    if (userRes.rows[0].role !== "student") {
-      await client.query("UPDATE users SET role = 'student' WHERE id = $1", [user_id]);
-    }
-
-    const completeRes = await client.query(`
-      SELECT s.id, s.grade, u.id AS user_id, u.name, u.email, u.telefono, u.role
-      FROM students s JOIN users u ON s.user_id = u.id WHERE s.user_id = $1`, [user_id]
-    );
-
-    await client.query("COMMIT");
-    return res.status(201).json(completeRes.rows[0]);
-  } catch (err) {
-    try {
-      await client.query("ROLLBACK");
-    } catch (rollbackErr) {
-      console.error("❌ Error running rollback in student POST:", rollbackErr);
-    }
-    if (err instanceof InputError) return res.status(err.status).json({ message: err.message });
-    console.error("❌ Error adding student:", err);
-    return res.status(500).json({ message: "Error al añadir estudiante" });
-  } finally {
-    client.release();
-  }
-});
-
-router.put("/:id", verifyToken, isAdmin, async (req: AuthRequest, res: Response) => {
-  const { id } = req.params;
-  const { name, grade } = req.body;
-
-  const client = await pool.connect();
-  try {
-    await client.query("BEGIN");
-
-    const studentRes = await client.query(
-      "UPDATE students SET grade = $1 WHERE id = $2 RETURNING user_id",
-      [grade, id]
-    );
-
-    if (studentRes.rows.length === 0) {
-      await client.query("ROLLBACK");
-      return res.status(404).json({ message: "Estudiante no encontrado" });
-    }
-
-    const userId = studentRes.rows[0].user_id;
-
-    await client.query("UPDATE users SET name = $1 WHERE id = $2", [name, userId]);
-
-    const updated = await client.query(`
-      SELECT s.id, s.grade, u.id AS user_id, u.name, u.email, u.telefono, u.role
-      FROM students s JOIN users u ON s.user_id = u.id WHERE s.id = $1`, [id]
-    );
-
-    await client.query("COMMIT");
-    return res.json(updated.rows[0]);
-  } catch (err: any) {
-    try {
-      await client.query("ROLLBACK");
-    } catch (rollbackErr) {
-      console.error("❌ Error running rollback in student PUT:", rollbackErr);
-    }
-    if (err instanceof InputError) return res.status(err.status).json({ message: err.message });
-    console.error("❌ Error updating student:", err);
-    return res.status(500).json({ message: "Error al actualizar" });
-  } finally {
-    client.release();
-  }
-});
-
-
-router.delete("/:id", verifyToken, isAdmin, async (req: AuthRequest, res: Response) => {
-  const client = await pool.connect();
-  try {
-    const { id } = req.params;
-    await client.query("BEGIN");
-
-    const studentRes = await client.query("SELECT user_id FROM students WHERE id = $1", [id]);
-    if (studentRes.rows.length === 0) {
-      await client.query("ROLLBACK");
-      return res.status(404).json({ message: "Estudiante no encontrado" });
-    }
-
-    await client.query("DELETE FROM attendance WHERE student_id = $1", [id]);
-    await client.query("DELETE FROM grades WHERE student_id = $1", [id]);
-    await client.query("DELETE FROM enrollments WHERE student_id = $1", [id]);
-    await client.query("DELETE FROM students WHERE id = $1", [id]);
-
-    await client.query("COMMIT");
-    res.json({ message: "Estudiante eliminado correctamente" });
-  } catch (err) {
-    await client.query("ROLLBACK");
-    res.status(500).json({ message: "Error al eliminar" });
-  } finally {
-    client.release();
   }
 });
 

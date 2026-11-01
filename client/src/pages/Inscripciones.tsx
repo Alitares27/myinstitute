@@ -1,3 +1,4 @@
+import { useSearchParams } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import api from "../api";
 import {
@@ -33,10 +34,10 @@ export default function Enrollments() {
   });
 
   const [role, setRole] = useState<string>("");
-  const [userId, setUserId] = useState<string>("");
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [studentFilter, setStudentFilter] = useState<string>("");
+  const [searchParams] = useSearchParams();
+  const [studentFilter, setStudentFilter] = useState<string>(searchParams.get("student_id") || "");
   const [courseFilter, setCourseFilter] = useState<string>("");
 
   const [currentPage, setCurrentPage] = useState(1);
@@ -69,7 +70,6 @@ export default function Enrollments() {
 
       const user = JSON.parse(localStorage.getItem("user") || "{}");
       setRole(user.role || "");
-      setUserId(user.id || "");
 
       const [enRes, stData, crData] = await Promise.all([
         api.get("/enrollments"),
@@ -111,10 +111,7 @@ export default function Enrollments() {
   }, [enrollments, courses]);
 
   const filteredEnrollments = useMemo(() => {
-    let data =
-      role === "student"
-        ? enrollments.filter((e) => String(e.student_id) === String(userId))
-        : enrollments;
+    let data = enrollments;
 
     if (studentFilter) {
       data = data.filter((e) => String(e.student_id) === String(studentFilter));
@@ -137,7 +134,7 @@ export default function Enrollments() {
     }
 
     return data;
-  }, [enrollments, role, userId, studentFilter, courseFilter, searchQuery, students, courses]);
+  }, [enrollments, role, studentFilter, courseFilter, searchQuery, students, courses]);
 
   const sortedEnrollments = useMemo(() => {
     if (!sortConfig) return filteredEnrollments;

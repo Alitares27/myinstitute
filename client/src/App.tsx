@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Inicio from "./pages/Inicio";
 import IniciarSesion from "./pages/IniciarSesion";
 import RutaPrivada from "./components/RutaPrivada";
@@ -16,7 +16,6 @@ const Miembros = lazy(() => import("./pages/Miembros"));
 const Maestros = lazy(() => import("./pages/Maestros"));
 const Inscripciones = lazy(() => import("./pages/Inscripciones"));
 const Asistencia = lazy(() => import("./pages/Asistencia"));
-const PaginaUsuario = lazy(() => import("./pages/PaginaUsuario"));
 const Calificaciones = lazy(() => import("./pages/Calificaciones"));
 const ViajesTemplo = lazy(() => import("./pages/ViajesTemplo"));
 const ReservarViajes = lazy(() => import("./pages/ReservarViajes"));
@@ -48,7 +47,7 @@ function App() {
           <Route path="/maestros" element={<RutaPrivada><Disposicion><Maestros /></Disposicion></RutaPrivada>} />
           <Route path="/inscripciones" element={<RutaPrivada><Disposicion><Inscripciones /></Disposicion></RutaPrivada>} />
           <Route path="/asistencia" element={<RutaPrivada><Disposicion><Asistencia /></Disposicion></RutaPrivada>} />
-          <Route path="/usuarios" element={<RutaPrivada><Disposicion><PaginaUsuario /></Disposicion></RutaPrivada>} />
+          <Route path="/usuarios" element={<RutaPrivada><Navigate to="/miembros" replace /></RutaPrivada>} />
           <Route path="/calificaciones" element={<RutaPrivada><Disposicion><Calificaciones /></Disposicion></RutaPrivada>} />
           <Route path="/viajes-templo" element={<RutaPrivada><Disposicion><ViajesTemplo /></Disposicion></RutaPrivada>} />
           <Route path="/reservar-viajes" element={<RutaPrivada><Disposicion><ReservarViajes /></Disposicion></RutaPrivada>} />

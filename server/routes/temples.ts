@@ -1,3 +1,4 @@
+import { positiveId } from "../utils/validation";
 import { asyncRouter } from "../middleware/asyncRouter";
 import express, { Response } from "express";
 import { pool } from "../models/db";
@@ -8,9 +9,10 @@ const router = asyncRouter();
 router.get("/", verifyToken, async (req: AuthRequest, res: Response) => {
   try {
     const result = await pool.query(
-      `SELECT id, name, city, province, address, dedicated_date, status
+      `SELECT id, name, city, province, address, dedicated_date, status, archived_at
        FROM temples
-       ORDER BY name ASC`
+       WHERE ($1::boolean OR archived_at IS NULL)
+       ORDER BY name ASC`, [req.user?.role === "admin" && req.query.include_archived === "true"]
     );
     res.json(result.rows);
   } catch (err) {
@@ -58,17 +60,21 @@ router.delete("/:id", verifyToken, isAdmin, async (req: AuthRequest, res: Respon
     const { id } = req.params;
     await client.query("BEGIN");
 
-    const templeRes = await client.query("SELECT id FROM temples WHERE id = $1", [id]);
+    const templeRes = await client.query("SELECT id FROM temples WHERE id = $1 FOR UPDATE", [id]);
     if (templeRes.rows.length === 0) {
       await client.query("ROLLBACK");
       return res.status(404).json({ message: "Templo no encontrado" });
     }
 
-    const tripIds = await client.query("SELECT id FROM temple_trips WHERE temple_id = $1", [id]);
-    for (const trip of tripIds.rows) {
-      await client.query("DELETE FROM temple_amortizations WHERE attendance_id IN (SELECT id FROM temple_attendance WHERE trip_id = $1)", [trip.id]);
-      await client.query("DELETE FROM temple_attendance WHERE trip_id = $1", [trip.id]);
+    await client.query("SELECT id FROM temple_trips WHERE temple_id = $1 ORDER BY id FOR UPDATE", [id]);
+    const reservations = await client.query(`SELECT ta.id,ta.advance_payment FROM temple_attendance ta JOIN temple_trips tt ON tt.id=ta.trip_id WHERE tt.temple_id=$1 ORDER BY ta.id FOR UPDATE OF ta`, [id]);
+    const payments = await client.query(`SELECT tam.id FROM temple_amortizations tam JOIN temple_attendance ta ON ta.id=tam.attendance_id JOIN temple_trips tt ON tt.id=ta.trip_id WHERE tt.temple_id=$1 LIMIT 1`, [id]);
+    const history=await client.query(`SELECT e.id FROM financial_events e JOIN temple_attendance ta ON ta.id=e.reservation_id JOIN temple_trips tt ON tt.id=ta.trip_id WHERE tt.temple_id=$1 LIMIT 1`,[id]);
+    if (payments.rowCount || history.rowCount || reservations.rows.some(row=>Number(row.advance_payment)!==0)) {
+      await client.query("ROLLBACK");
+      return res.status(409).json({message:"El templo tiene movimientos financieros. Archívalo para conservar su historial."});
     }
+    await client.query("DELETE FROM temple_attendance WHERE trip_id IN (SELECT id FROM temple_trips WHERE temple_id=$1)", [id]);
     await client.query("DELETE FROM temple_trips WHERE temple_id = $1", [id]);
     await client.query("DELETE FROM temples WHERE id = $1", [id]);
 
@@ -83,4 +89,14 @@ router.delete("/:id", verifyToken, isAdmin, async (req: AuthRequest, res: Respon
   }
 });
 
+router.patch("/:id/archive", verifyToken, isAdmin, async (req: AuthRequest, res: Response) => {
+  const client=await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const result=await client.query("UPDATE temples SET archived_at=COALESCE(archived_at,NOW()) WHERE id=$1 RETURNING id",[positiveId(req.params.id)]);
+    if(!result.rowCount){await client.query("ROLLBACK");return res.status(404).json({message:"Templo no encontrado"});}
+    await client.query("UPDATE temple_trips SET archived_at=COALESCE(archived_at,NOW()) WHERE temple_id=$1",[req.params.id]);
+    await client.query("COMMIT");res.json({message:"Templo y viajes archivados; historial conservado"});
+  }catch(error){await client.query("ROLLBACK");throw error;}finally{client.release();}
+});
 export default router;

@@ -43,15 +43,8 @@ router.get("/dashboard-stats", verifyToken, async (req: any, res) => {
           [teacherId]
         ),
         pool.query("SELECT COUNT(*) FROM courses WHERE teacher_id = $1", [teacherId]),
-        pool.query(`
-          SELECT
-            (SELECT COUNT(*) FROM attendance a JOIN courses c ON a.course_id = c.id WHERE a.status ILIKE 'present' AND c.teacher_id = $1) AS present_count,
-            COALESCE(
-              (SELECT SUM(
-                (SELECT COUNT(*) FROM enrollments e WHERE e.course_id = c.id) *
-                (SELECT COUNT(*) FROM topics t WHERE t.course_id = c.id)
-              ) FROM courses c WHERE c.teacher_id = $1), 0) AS total_expected;
-        `, [teacherId])
+        pool.query(`SELECT COUNT(*) FILTER(WHERE a.status='Present') AS present_count,COUNT(*) AS total_expected
+          FROM attendance a JOIN courses c ON c.id=a.course_id WHERE c.teacher_id=$1 AND a.status IN ('Present','Absent')`,[teacherId])
       ]);
 
       const pCount = parseInt(attendance.rows[0]?.present_count || 0, 10);
@@ -75,14 +68,8 @@ router.get("/dashboard-stats", verifyToken, async (req: any, res) => {
 
       const [coursesCount, attendance, averageGrade] = await Promise.all([
         pool.query("SELECT COUNT(*) FROM enrollments WHERE student_id = $1", [studentId]),
-        pool.query(`
-          SELECT
-            (SELECT COUNT(*) FROM attendance WHERE status ILIKE 'present' AND student_id = $1) AS present_count,
-            COALESCE(
-              (SELECT SUM(
-                (SELECT COUNT(*) FROM topics t WHERE t.course_id = e.course_id)
-              ) FROM enrollments e WHERE e.student_id = $1), 0) AS total_expected;
-        `, [studentId]),
+        pool.query(`SELECT COUNT(*) FILTER(WHERE status='Present') AS present_count,COUNT(*) AS total_expected
+          FROM attendance WHERE student_id=$1 AND status IN ('Present','Absent')`,[studentId]),
         pool.query(
           "SELECT AVG(grade) as avg FROM grades WHERE student_id = $1",
           [studentId]

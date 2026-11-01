@@ -1,3 +1,6 @@
+import { usePagedList } from "../hooks/usePagedList";
+import { useReservationOptions } from "../hooks/useReservationOptions";
+import { businessDate } from "../utils/utilidadesFecha";
 import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { IoCreateOutline, IoTrashOutline, IoPrintOutline, IoCashOutline } from "react-icons/io5";
@@ -10,13 +13,7 @@ import { openPrintWindow } from "../utils/utilidadesReportes";
 import api from "../api";
 import useAvailableTrips from "../hooks/usarViajesDisponibles";
 
-const getTodayYMD = () => {
-  const today = new Date();
-  const y = today.getFullYear();
-  const m = String(today.getMonth() + 1).padStart(2, "0");
-  const d = String(today.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
-};
+const getTodayYMD = businessDate;
 
 const getInitials = (name: string = "") => {
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -40,7 +37,7 @@ export default function PagosTemplos() {
   const [role, setRole] = useState<string>("");
   const [trips, setTrips] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
-  const [reservations, setReservations] = useState<any[]>([]);
+  const [optionsRevision,setOptionsRevision]=useState(0);
   const [loading, setLoading] = useState(true);
 
   const [filterTripId, setFilterTripId] = useState("");
@@ -66,7 +63,11 @@ export default function PagosTemplos() {
     payment_type: "efectivo",
   });
 
-  const [pagos, setPagos] = useState<any[]>([]);
+  const listParams={page:currentPage,limit:recordsPerPage,trip_id:filterTripId||undefined,member_id:filterUserId||undefined,payment_type:filterPaymentType||undefined,search:searchQuery||undefined,sort:sortConfig?.key,direction:sortConfig?.direction};
+  const page=usePagedList<any>("/temple-amortizations",listParams,JSON.parse(localStorage.getItem("user")||"{}").role==="admin");
+  const pagos=page.items;
+  const options=useReservationOptions([paymentForm.trip_id],optionsRevision);
+  const reservations=options.items;
 
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("user") || "{}");
@@ -87,33 +88,13 @@ export default function PagosTemplos() {
     setUsers(data);
   };
 
-  const fetchReservations = async () => {
-    if (!paymentForm.trip_id) { setReservations([]); return; }
-    const { data } = await api.get("/trip-reservations/options", { params: { trip_id: paymentForm.trip_id } });
-    setReservations(data);
-  };
-  useEffect(() => { void fetchReservations().catch(() => setPaymentError("Error al cargar reservas")); }, [paymentForm.trip_id]);
-
-  const fetchPagos = async () => {
-    const params: string[] = [];
-    if (filterTripId) params.push(`trip_id=${filterTripId}`);
-    if (filterUserId) params.push(`member_id=${filterUserId}`);
-    const qs = params.length ? `?${params.join("&")}` : "";
-    const { data } = await api.get(`/temple-amortizations${qs}`);
-    setPagos(data);
-  };
-
-  useEffect(() => {
-    if (JSON.parse(localStorage.getItem("user") || "{}").role !== "admin") return;
-    Promise.all([fetchTrips(), fetchUsers(), fetchReservations()])
-      .then(() => fetchPagos())
-      .catch(() => setPaymentError("Error al cargar los pagos"))
-      .finally(() => setLoading(false));
-  }, []);
-
-  useEffect(() => {
-    if (!loading) fetchPagos();
-  }, [filterTripId, filterUserId]);
+  const fetchReservations=()=>setOptionsRevision(value=>value+1);
+  const fetchPagos=()=>page.refresh();
+  useEffect(()=>{
+    if(JSON.parse(localStorage.getItem("user")||"{}").role!=="admin")return;
+    Promise.all([fetchTrips(),fetchUsers()]).catch(()=>setPaymentError("Error al cargar los catálogos"))
+      .finally(()=>setLoading(false));
+  },[]);
 
   const availableReservationsForSelectedTrip = useMemo(() => {
     if (!paymentForm.trip_id) return [];
@@ -208,6 +189,7 @@ export default function PagosTemplos() {
   };
 
   const handleSort = (key: string) => {
+    setCurrentPage(1);
     setSortConfig(prev =>
       prev?.key === key
         ? { key, direction: prev.direction === "asc" ? "desc" : "asc" }
@@ -215,41 +197,15 @@ export default function PagosTemplos() {
     );
   };
 
-  const totals = useMemo(() => pagos.reduce(
-    (acc, p) => {
-      acc.totalPagado += Number(p.payment_amount) || 0;
-      acc.totalAdeudado += Number(p.monto_adeudado) || 0;
-      return acc;
-    },
-    { totalPagado: 0, totalAdeudado: 0 }
-  ), [pagos]);
+  const filteredTotals={totalPagado:Number(page.summary.totalPagado||0),totalAdeudado:Number(page.summary.totalAdeudado||0)};
+  const totalSaldados=Number(page.summary.totalSaldados||0);
 
-  const filteredPagos = useMemo(() => {
-    return pagos.filter(p => {
-      if (filterPaymentType && (p.payment_type || "efectivo") !== filterPaymentType) return false;
-      if (searchQuery) {
-        const q = searchQuery.toLowerCase();
-        if (!(p.miembro_nombre || "").toLowerCase().includes(q)) return false;
-      }
-      return true;
-    });
-  }, [pagos, filterPaymentType, searchQuery]);
-
-  const filteredTotals = useMemo(() => filteredPagos.reduce(
-    (acc, p) => {
-      acc.totalPagado += Number(p.payment_amount) || 0;
-      acc.totalAdeudado += Number(p.monto_adeudado) || 0;
-      return acc;
-    },
-    { totalPagado: 0, totalAdeudado: 0 }
-  ), [filteredPagos]);
-
-  const totalSaldados = useMemo(
-    () => filteredPagos.filter(p => (Number(p.monto_adeudado) || 0) <= 0).length,
-    [filteredPagos]
-  );
-
-  const handlePrintReport = () => {
+  const handlePrintReport = async () => {
+    const printWindow=window.open("","_blank");if(!printWindow)return;
+    try {
+    const {data:report}=await api.get("/temple-amortizations/report",{params:listParams});
+    const filteredPagos:any[]=report.items;
+    const filteredTotals={totalPagado:Number(report.summary.totalPagado||0),totalAdeudado:Number(report.summary.totalAdeudado||0)};
     const totalPagadoEfectivo = filteredPagos.reduce((acc, p) => acc + (p.payment_type === "efectivo" ? Number(p.payment_amount) : 0), 0);
     const totalPagadoTransferencia = filteredPagos.reduce((acc, p) => acc + (p.payment_type === "transferencia" ? Number(p.payment_amount) : 0), 0);
     const totalPagadoDonacion = filteredPagos.reduce((acc, p) => acc + (p.payment_type === "donacion" ? Number(p.payment_amount) : 0), 0);
@@ -268,33 +224,15 @@ export default function PagosTemplos() {
         <div><span style="font-size:12px;text-transform:uppercase;color:#888;letter-spacing:0.5px;">Donación</span><br><strong style="font-size:18px;">$${totalPagadoDonacion.toLocaleString()}</strong></div>
     </div>`;
 
-    openPrintWindow("Reporte de Pagos al Templo", "Rama Arroyo Seco", body);
+    openPrintWindow("Reporte de Pagos al Templo", "Rama Arroyo Seco", body,printWindow);
+    }catch{printWindow.close();setPaymentError("No se pudo generar el reporte");}
   };
 
-  const sortedPagos = useMemo(() => {
-    if (!sortConfig) return filteredPagos;
-    return [...filteredPagos].sort((a, b) => {
-      const aVal = (a as any)[sortConfig.key];
-      const bVal = (b as any)[sortConfig.key];
-      if (aVal < bVal) return sortConfig.direction === "asc" ? -1 : 1;
-      if (aVal > bVal) return sortConfig.direction === "asc" ? 1 : -1;
-      return 0;
-    });
-  }, [filteredPagos, sortConfig]);
+  const totalPages=Math.max(1,Math.ceil(page.total/recordsPerPage));
+  const currentRecords=page.items;
+  useEffect(()=>{if(currentPage>totalPages)setCurrentPage(totalPages);},[totalPages,currentPage]);
 
-  const totalPages = Math.ceil(sortedPagos.length / recordsPerPage);
-
-  const currentRecords = useMemo(() => {
-    const last = currentPage * recordsPerPage;
-    const first = last - recordsPerPage;
-    return sortedPagos.slice(first, last);
-  }, [sortedPagos, currentPage]);
-
-  useEffect(() => {
-    if (currentPage > totalPages && totalPages > 0) setCurrentPage(totalPages);
-  }, [totalPages, currentPage]);
-
-  if (loading) {
+  if (loading || (!page.loaded && page.loading)) {
     return (
       <div>
         <Skeleton width="240px" height="1.8rem" />
@@ -323,6 +261,8 @@ export default function PagosTemplos() {
 
   return (
     <div className="asistencia-page">
+      {(page.error || options.error || paymentError) && <p role="alert">{page.error || options.error || paymentError}</p>}
+      {page.loading && page.loaded && <p role="status">Actualizando resultados...</p>}
       <div className="asistencia-header">
         <div className="asistencia-header-info">
           <h1><span className="page-title-icon"><FiMapPin /></span> Historial de Pagos</h1>
@@ -338,7 +278,7 @@ export default function PagosTemplos() {
         <div className="asistencia-stat-card">
           <div className="asistencia-stat-icon blue"><IoCashOutline /></div>
           <div className="asistencia-stat-content">
-            <h3>{filteredPagos.length}</h3>
+            <h3>{page.total}</h3>
             <p>Nº Pagos</p>
           </div>
         </div>
@@ -353,14 +293,14 @@ export default function PagosTemplos() {
           <div className="asistencia-stat-icon orange"><TbAlertTriangle /></div>
           <div className="asistencia-stat-content">
             <h3>${filteredTotals.totalAdeudado.toLocaleString()}</h3>
-            <p>Total Adeudado</p>
+            <p>Deuda de reservas</p>
           </div>
         </div>
         <div className="asistencia-stat-card">
           <div className="asistencia-stat-icon purple"><FaCheckCircle /></div>
           <div className="asistencia-stat-content">
             <h3>{totalSaldados}</h3>
-            <p>Saldados</p>
+            <p>Reservas saldadas</p>
           </div>
         </div>
       </div>

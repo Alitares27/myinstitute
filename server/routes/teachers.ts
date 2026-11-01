@@ -98,7 +98,7 @@ router.post("/", verifyToken, isAdmin, async (req: AuthRequest, res: Response) =
     }
 
     if (userRes.rows[0].role !== "teacher") {
-      await client.query("UPDATE users SET role = 'teacher' WHERE id = $1", [user_id]);
+      await client.query("UPDATE users SET role = 'teacher', auth_version=auth_version+1 WHERE id = $1", [user_id]);
     }
 
     if (Array.isArray(course_ids)) {

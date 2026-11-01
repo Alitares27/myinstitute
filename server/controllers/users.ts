@@ -4,10 +4,10 @@ import jwt from "jsonwebtoken";
 import { pool } from "../models/db";
 import { AuthRequest, sessionFingerprint } from "../middleware/auth";
 
-function generateToken(id: number, role: string, passwordHash: string): string {
+function generateToken(id: number, role: string, passwordHash: string, version = 0): string {
   const secret = process.env.JWT_SECRET;
   if (!secret) throw new Error("JWT_SECRET not defined");
-  return jwt.sign({ id, role, session: sessionFingerprint(passwordHash) }, secret, { expiresIn: "1h" });
+  return jwt.sign({ id, role, version, session: sessionFingerprint(passwordHash) }, secret, { expiresIn: "1h" });
 }
 
 export async function registerUser(req: Request, res: Response) {
@@ -100,7 +100,7 @@ export async function loginUser(req: Request, res: Response) {
       return res.status(401).json({ message: "Credenciales inválidas" });
     }
 
-    const token = generateToken(user.id, user.role, user.password);
+    const token = generateToken(user.id, user.role, user.password, Number(user.auth_version));
 
     const safeUser = {
       id: user.id,

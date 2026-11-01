@@ -1,3 +1,4 @@
+import { configureProxy } from "./middleware/loginLimits";
 import * as dotenv from "dotenv";
 dotenv.config();
 
@@ -28,6 +29,7 @@ import activitiesRoutes from "./routes/activities";
 
 
 const app = express();
+configureProxy(app);
 
 app.use(helmet());
 app.use(compression());
@@ -44,8 +46,8 @@ app.use(cors({
   optionsSuccessStatus: 200
 }));
 
-app.use(express.json({ limit: "1mb" }));
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: "1mb", inflate: false }));
+app.use(express.urlencoded({ extended: false, inflate: false, limit: "1mb" }));
 
 app.use("/api", (_req, res, next) => {
   res.setHeader("Cache-Control", "no-store, private");
@@ -78,7 +80,7 @@ app.use(
   (err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
     if (!err.status || err.status >= 500) console.error("❌ Error en Servidor:", err.stack);
     res.status(err.status || 500).json({
-      message: err.status === 400 ? err.message : "Error interno del servidor"
+      message: err.status && err.status < 500 ? err.message : "Error interno del servidor"
     });
   }
 );
@@ -90,13 +92,15 @@ app.use("*", (req, res) => {
 async function startServer() {
   try {
     if (!process.env.JWT_SECRET) throw new Error("JWT_SECRET is required");
-    const dbCheck = await pool.query("SELECT NOW()");
-    console.log("✅ DB Conectada:", dbCheck.rows[0].now);
+    const dbCheck = await pool.query("SELECT NOW(), auth_version FROM users LIMIT 1");
+    console.log("✅ DB Conectada:", dbCheck.rows[0]?.now || new Date());
 
     const PORT = process.env.PORT || 5000;
     const server = app.listen(PORT, () => {
-      console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
-      console.log(`📍 URL: http://localhost:${PORT}`);
+      const address=server.address();
+      const actualPort=address && typeof address!=="string"?address.port:PORT;
+      console.log(`🚀 Servidor corriendo en puerto ${actualPort}`);
+      console.log(`📍 URL: http://localhost:${actualPort}`);
       console.log(`✅ CORS habilitado para gestionar-three.vercel.app`);
     });
     return server;

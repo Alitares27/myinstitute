@@ -1,3 +1,7 @@
+import { readPage, addFilters, addSearch } from "../utils/pagination";
+import { courseAccess } from "../utils/courseAccess";
+import { isoDate } from "../utils/validation";
+import { businessDate } from "../utils/businessDate";
 import { asyncRouter } from "../middleware/asyncRouter";
 import express, { Response } from "express";
 import { pool } from "../models/db";
@@ -42,8 +46,8 @@ router.post("/", verifyToken, canTeach, async (req: AuthRequest, res: Response) 
     }
 
     if (!Number.isSafeInteger(targetStudentId) || targetStudentId <= 0 || !Number.isSafeInteger(courseIdNum) || courseIdNum <= 0 ||
-        !["Present", "Absent"].includes(status) || typeof date !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(date) ||
-        !Number.isFinite(Date.parse(date)) || new Date(date).toISOString().slice(0, 10) !== date || date > new Date().toISOString().slice(0, 10)) {
+      !["Present", "Absent"].includes(status) || typeof date !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(date) ||
+      !Number.isFinite(Date.parse(date)) || new Date(date).toISOString().slice(0, 10) !== date || date > businessDate()) {
       return res.status(400).json({ message: "Asistencia inválida: revisa fecha, estado y curso" });
     }
     const enrollment = await pool.query("SELECT id FROM enrollments WHERE student_id = $1 AND course_id = $2", [targetStudentId, courseIdNum]);
@@ -70,56 +74,24 @@ router.post("/", verifyToken, canTeach, async (req: AuthRequest, res: Response) 
   }
 });
 
-router.get("/", verifyToken, async (req: AuthRequest, res: Response) => {
-  try {
-    const user = req.user;
-    if (!user) return res.status(401).json({ message: "Unauthorized" });
-
-    const { role, id: userId } = user;
-    let result;
-
-    if (role === "admin") {
-      result = await pool.query(`
-        SELECT a.id, a.student_id, u.name AS student, a.course_id, c.title AS course, a.date, a.status, t.title AS topic
-        FROM attendance a
-        JOIN students s ON a.student_id = s.id
-        JOIN users u ON s.user_id = u.id
-        JOIN courses c ON a.course_id = c.id
-        LEFT JOIN topics t ON a.topic_id = t.id
-        ORDER BY a.date DESC
-      `);
-    } else if (role === "student") {
-      result = await pool.query(
-        `SELECT a.id, a.student_id, a.course_id, c.title AS course, a.date, a.status, t.title AS topic
-         FROM attendance a
-         JOIN students s ON a.student_id = s.id
-         JOIN courses c ON a.course_id = c.id
-         LEFT JOIN topics t ON a.topic_id = t.id
-         WHERE s.user_id = $1
-         ORDER BY a.date DESC`,
-        [userId]
-      );
-    } else if (role === "teacher") {
-      result = await pool.query(
-        `SELECT a.id, a.student_id, u.name AS student, a.course_id, c.title AS course, a.date, a.status, t.title AS topic
-         FROM attendance a
-         JOIN students s ON a.student_id = s.id
-         JOIN users u ON s.user_id = u.id
-         JOIN courses c ON a.course_id = c.id
-         JOIN teachers th ON c.teacher_id = th.id
-         LEFT JOIN topics t ON a.topic_id = t.id
-         WHERE th.user_id = $1
-         ORDER BY a.date DESC`,
-        [userId]
-      );
-    } else {
-      return res.status(403).json({ message: "Forbidden" });
-    }
-
-    res.json(result.rows);
-  } catch (err: any) {
-    res.status(500).json({ message: "Error fetching attendance" });
-  }
+function attendanceQuery(req: AuthRequest) {
+  const params: any[] = [req.user!.role, req.user!.id];
+  const where = [courseAccess("c", "$1", "$2"), "($1 <> 'student' OR s.user_id=$2)", ...addFilters(req, params, { student_id: "a.student_id", course_id: "a.course_id" }), ...addSearch(req, params, ["u.name", "c.title", "t.title"])];
+  if (req.query.date) { params.push(isoDate(req.query.date)); where.push(`a.date=$${params.length}`); }
+  const select = `SELECT a.id,a.student_id,u.name AS student,a.course_id,c.title AS course,a.date,a.status,t.title AS topic,a.topic_id
+    FROM attendance a JOIN students s ON s.id=a.student_id JOIN users u ON u.id=s.user_id
+    JOIN courses c ON c.id=a.course_id LEFT JOIN topics t ON t.id=a.topic_id
+    WHERE ${where.join(" AND ")}`;
+  return { params, select };
+}
+router.get("/report", verifyToken, async (req: AuthRequest, res: Response) => {
+  const { params, select } = attendanceQuery(req);
+  res.json((await pool.query(select + " ORDER BY a.date DESC,a.id DESC", params)).rows);
 });
-
+router.get("/", verifyToken, async (req: AuthRequest, res: Response) => {
+  const { params, select } = attendanceQuery(req);
+  const today = businessDate();
+  res.json(await readPage(req, select, params, { student_id: "student", student_name: "student", course_id: "course", course_title: "course", date: "date", status: "status", topic: "topic" }, "date",
+    `jsonb_build_object('totalPresent',COUNT(*) FILTER(WHERE status='Present'),'uniqueStudents',COUNT(DISTINCT student_id) FILTER(WHERE status='Present'),'activeCourses',COUNT(DISTINCT course_id) FILTER(WHERE status='Present'),'todayCount',COUNT(*) FILTER(WHERE status='Present' AND date=DATE '${today}'))`));
+});
 export default router;

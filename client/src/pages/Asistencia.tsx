@@ -1,3 +1,6 @@
+import { useSearchParams } from "react-router-dom";
+import { usePagedList } from "../hooks/usePagedList";
+import { businessDate } from "../utils/utilidadesFecha";
 import { useEffect, useState, useMemo } from "react";
 import api from "../api";
 import {
@@ -24,24 +27,24 @@ import "../styles/Asistencia.css";
 const ITEMS_PER_PAGE = 7;
 
 export default function Attendance() {
-  const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
+
   const [students, setStudents] = useState<Student[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
   const [allTopics, setAllTopics] = useState<Topic[]>([]);
   const [role, setRole] = useState<string>("");
-  const [userId, setUserId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const [form, setForm] = useState({
     student_id: "",
     course_id: "",
     topic_id: "",
-    date: toYMD(new Date().toISOString()),
+    date: businessDate(),
     status: "Present",
   });
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [studentFilter, setStudentFilter] = useState("");
+  const [searchParams] = useSearchParams();
+  const [studentFilter, setStudentFilter] = useState(searchParams.get("student_id") || "");
   const [courseFilter, setCourseFilter] = useState("");
   const [dateFilter, setDateFilter] = useState("");
 
@@ -67,17 +70,14 @@ export default function Attendance() {
     }
 
     try {
-      const [userRes, attRes, stdData, crsData, topData] = await Promise.all([
+      const [userRes, stdData, crsData, topData] = await Promise.all([
         Promise.resolve({ data: JSON.parse(localStorage.getItem("user") || "{}") }),
-        api.get("/attendance"),
         obtenerEstudiantes(),
         obtenerCursos(),
         obtenerTemas(),
       ]);
 
       setRole(userRes.data.role);
-      setUserId(userRes.data.id);
-      setAttendance(attRes.data || []);
       setStudents(stdData || []);
       setCourses(crsData || []);
       setAllTopics(topData || []);
@@ -93,82 +93,18 @@ export default function Attendance() {
     return allTopics.filter((t) => t.course_id === Number(form.course_id));
   }, [allTopics, form.course_id]);
 
-  const stats = useMemo(() => {
-    const presentRecords = attendance.filter((a) => a.status === "Present");
-    const totalPresent = presentRecords.length;
-    const uniqueStudents = new Set(presentRecords.map((a) => a.student_id)).size;
-    const activeCourses = new Set(presentRecords.map((a) => a.course_id)).size;
-    const todayStr = toYMD(new Date().toISOString());
-    const todayCount = presentRecords.filter((a) => toYMD(a.date) === todayStr).length;
-
-    return {
-      totalPresent,
-      uniqueStudents,
-      activeCourses,
-      todayCount,
-    };
-  }, [attendance]);
-
-  const filteredAttendance = useMemo(() => {
-    let data = attendance.filter((a) => {
-
-      if (studentFilter && String(a.student_id) !== String(studentFilter)) return false;
-      if (courseFilter && String(a.course_id) !== String(courseFilter)) return false;
-      if (dateFilter && toYMD(a.date) !== dateFilter) return false;
-      return true;
-    });
-
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      data = data.filter((a) => {
-        const student = students.find((s) => s.id === a.student_id);
-        const course = courses.find((c) => c.id === a.course_id);
-        const studentName = (student?.name || "").toLowerCase();
-        const courseTitle = (course?.title || "").toLowerCase();
-        const topicTitle = (a.topic || "").toLowerCase();
-        return studentName.includes(q) || courseTitle.includes(q) || topicTitle.includes(q);
-      });
-    }
-
-    return data;
-  }, [attendance, studentFilter, courseFilter, dateFilter, searchQuery, role, userId, students, courses]);
-
-  const sortedAttendance = useMemo(() => {
-    if (!sortConfig) return filteredAttendance;
-    const { key, direction } = sortConfig;
-
-    return [...filteredAttendance].sort((a, b) => {
-      let aVal: any = a[key as keyof AttendanceRecord];
-      let bVal: any = b[key as keyof AttendanceRecord];
-
-      if (key === "student_id" || key === "student_name") {
-        aVal = students.find((s) => s.id === a.student_id)?.name || "";
-        bVal = students.find((s) => s.id === b.student_id)?.name || "";
-      } else if (key === "course_id" || key === "course_title") {
-        aVal = courses.find((c) => c.id === a.course_id)?.title || "";
-        bVal = courses.find((c) => c.id === b.course_id)?.title || "";
-      } else if (key === "date") {
-        aVal = new Date(aVal).getTime();
-        bVal = new Date(bVal).getTime();
-      }
-
-      if (typeof aVal === "string") {
-        return direction === "asc" ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
-      }
-
-      if (aVal < bVal) return direction === "asc" ? -1 : 1;
-      if (aVal > bVal) return direction === "asc" ? 1 : -1;
-      return 0;
-    });
-  }, [filteredAttendance, sortConfig, students, courses]);
-
-  const totalPages = Math.ceil(sortedAttendance.length / ITEMS_PER_PAGE) || 1;
-  const currentRecords = useMemo(() => {
-    const start = (currentPage - 1) * ITEMS_PER_PAGE;
-    return sortedAttendance.slice(start, start + ITEMS_PER_PAGE);
-  }, [sortedAttendance, currentPage]);
+  const listParams={page:currentPage,limit:ITEMS_PER_PAGE,student_id:studentFilter||undefined,course_id:courseFilter||undefined,date:dateFilter||undefined,search:searchQuery||undefined,sort:sortConfig?.key,direction:sortConfig?.direction};
+  const page=usePagedList<AttendanceRecord>("/attendance",listParams);
+  const attendance=page.items;
+  const currentRecords=attendance;
+  const totalPages=Math.max(1,Math.ceil(page.total/ITEMS_PER_PAGE));
+  const stats={totalPresent:0,uniqueStudents:0,activeCourses:0,todayCount:0,...page.summary};
+  const studentsById=useMemo(()=>new Map(students.map(student=>[student.id,student])),[students]);
+  const coursesById=useMemo(()=>new Map(courses.map(course=>[course.id,course])),[courses]);
+  useEffect(()=>{if(currentPage>totalPages)setCurrentPage(totalPages);},[currentPage,totalPages]);
 
   const handleSort = (key: string) => {
+    setCurrentPage(1);
     setSortConfig((prev) =>
       prev?.key === key
         ? { key, direction: prev.direction === "asc" ? "desc" : "asc" }
@@ -184,16 +120,12 @@ export default function Attendance() {
     }
 
     try {
-      const res = await api.post("/attendance", {
+      await api.post("/attendance", {
         ...form,
         status: "Present",
       });
 
-      const topic = allTopics.find((t) => t.id === Number(form.topic_id));
-      setAttendance((prev) => [
-        { ...res.data, topic: topic?.title || "—" },
-        ...prev.filter(a => a.id !== res.data.id),
-      ]);
+      page.refresh();
 
       setForm({ ...form, student_id: "", topic_id: "", status: "Present" });
       alert("Asistencia registrada exitosamente.");
@@ -202,8 +134,11 @@ export default function Attendance() {
     }
   };
 
-  const handlePrintAttendanceReport = () => {
-    const presentRecords = attendance.filter((a) => a.status === "Present");
+  const handlePrintAttendanceReport = async () => {
+    const printWindow=window.open("","_blank");if(!printWindow)return;
+    try {
+    const {data:reportRows}=await api.get<AttendanceRecord[]>("/attendance/report",{params:listParams});
+    const presentRecords = reportRows.filter((a) => a.status === "Present");
 
     const countsByCourse = presentRecords.reduce((acc, a) => {
       if (!acc[a.course_id]) acc[a.course_id] = {};
@@ -227,8 +162,8 @@ export default function Attendance() {
       const courseStudents = Object.keys(courseCounts)
         .map(Number)
         .sort((a, b) => {
-          const nameA = students.find((s) => s.id === a)?.name || "";
-          const nameB = students.find((s) => s.id === b)?.name || "";
+          const nameA = studentsById.get(a)?.name || "";
+          const nameB = studentsById.get(b)?.name || "";
           return nameA.localeCompare(nameB);
         });
 
@@ -248,7 +183,7 @@ export default function Attendance() {
       `;
 
       courseStudents.forEach((studentId, idx) => {
-        const studentName = students.find((s) => s.id === studentId)?.name || "Desconocido";
+        const studentName = studentsById.get(studentId)?.name || "Desconocido";
         const count = courseCounts[studentId];
         body += `
           <tr>
@@ -278,8 +213,9 @@ export default function Attendance() {
     openPrintWindow(
       "Reporte de Asistencias",
       subtitle,
-      body
+      body, printWindow
     );
+    } catch {printWindow.close();setError("No se pudo generar el reporte");}
   };
 
   const getStudentAvatar = (name: string, index: number) => {
@@ -288,7 +224,7 @@ export default function Attendance() {
     return <div className={`student-avatar-circle ${gradientClass}`}>{initial}</div>;
   };
 
-  if (loading) {
+  if (loading || (!page.loaded && page.loading)) {
     return (
       <div className="asistencia-page">
         <Skeleton width="240px" height="2rem" />
@@ -319,6 +255,8 @@ export default function Attendance() {
 
   return (
     <div className="asistencia-page">
+      {page.error && <p role="alert">{page.error}</p>}
+      {page.loading && page.loaded && <p role="status">Actualizando resultados...</p>}
       <div className="asistencia-header">
         <div className="asistencia-header-info">
           <h1>
@@ -577,8 +515,8 @@ export default function Attendance() {
           <tbody>
             {currentRecords.length > 0 ? (
               currentRecords.map((a, index) => {
-                const student = students.find((s) => s.id === a.student_id);
-                const course = courses.find((c) => c.id === a.course_id);
+                const student = studentsById.get(a.student_id);
+                const course = coursesById.get(a.course_id);
 
                 return (
                   <tr key={a.id}>

@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { IoCreateOutline, IoTrashOutline } from "react-icons/io5";
+import { IoCreateOutline, IoTrashOutline, IoArchiveOutline } from "react-icons/io5";
 import { FiBriefcase } from "react-icons/fi";
 import { TbPlus, TbPencil, TbAlertTriangle, TbBuilding } from "react-icons/tb";
 import api from "../api";
@@ -99,9 +99,15 @@ export default function TemplosMaintenance() {
     try {
       await api.delete(`/temples/${id}`);
       setTemplos(prev => prev.filter(t => t.id !== id));
-    } catch {
-      setError("Error al eliminar el templo. Puede que tenga viajes asociados.");
+    } catch (error: any) {
+      setError(error.response?.data?.message || "Error al eliminar el templo");
     }
+  };
+
+  const handleArchive = async (id: number) => {
+    if (!window.confirm("¿Archivar conservando todas las reservas y pagos?")) return;
+    try { await api.patch(`/temples/${id}/archive`); setTemplos(prev=>prev.filter(row=>row.id!==id)); }
+    catch (error: any) { window.alert(error.response?.data?.message || "No se pudo archivar"); }
   };
 
   const handleSort = (key: string) => {
@@ -281,7 +287,8 @@ export default function TemplosMaintenance() {
                     <button className="btn secondary extracted-style-4" onClick={() => handleEdit(t)} aria-label="Editar">
                       <IoCreateOutline />
                     </button>
-                    <button className="btn secondary extracted-style-5" onClick={() => handleDelete(t.id)} aria-label="Eliminar">
+                    <button className="btn secondary" onClick={() => handleArchive(t.id)} aria-label="Archivar" title="Archivar"><IoArchiveOutline /></button>
+<button className="btn secondary extracted-style-5" onClick={() => handleDelete(t.id)} aria-label="Eliminar">
                       <IoTrashOutline />
                     </button>
                   </td>

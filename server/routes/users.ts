@@ -1,37 +1,34 @@
+import { academicDetails, findMember, listMembers, memberInput, memberSelect, saveProfiles, removeStudentProfile, hasAcademicHistory } from "../services/members";
+import { positiveId } from "../utils/validation";
 import { prepareRoleChange } from "../utils/roles";
 import { InputError } from "../utils/validation";
 import { asyncRouter } from "../middleware/asyncRouter";
 import express, { Response } from "express";
 import bcrypt from "bcryptjs";
-import rateLimit from "express-rate-limit";
+import { loginIpLimiter, loginAccountLimiter, registrationLimiter } from "../middleware/loginLimits";
 import { pool } from "../models/db";
 import { registerUser, loginUser } from "../controllers/users";
 import { verifyToken, isAdmin, AuthRequest } from "../middleware/auth";
 
 const router = asyncRouter();
 
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 10,
-  message: { message: "Demasiados intentos. Intenta de nuevo en 15 minutos." },
-  standardHeaders: true,
-  legacyHeaders: false,
+router.post("/register", registrationLimiter, registerUser);
+router.post("/login", loginIpLimiter, loginAccountLimiter, loginUser);
+
+router.get("/me",verifyToken,async(req:AuthRequest,res:Response)=>{
+  const member=await findMember(req.user!.id,req.user!);
+  if(!member)return res.status(404).json({message:"Miembro no encontrado"});
+  res.json(member);
 });
-
-router.post("/register", authLimiter, registerUser);
-router.post("/login", authLimiter, loginUser);
-
-router.get("/me", verifyToken, async (req: AuthRequest, res: Response) => {
-  try {
-    const result = await pool.query(
-      "SELECT id, name, email, telefono, role, document FROM users WHERE id = $1",
-      [req.user?.id]
-    );
-    if (result.rows.length === 0) return res.status(404).json({ message: "Miembro no encontrado" });
-    res.json(result.rows[0]);
-  } catch {
-    res.status(500).json({ message: "Error obteniendo miembro" });
-  }
+router.get("/organizations",verifyToken,isAdmin,async(_req,res:Response)=>{
+  const result=await pool.query("SELECT DISTINCT grade FROM students WHERE grade IS NOT NULL AND grade<>'' ORDER BY grade");
+  res.json(result.rows.map(row=>row.grade));
+});
+router.get("/members",verifyToken,async(req:AuthRequest,res:Response)=>res.json(await listMembers(req)));
+router.get("/:id/academic",verifyToken,async(req:AuthRequest,res:Response)=>{
+  const details=await academicDetails(positiveId(req.params.id),req.user!);
+  if(!details)return res.status(404).json({message:"Miembro no encontrado"});
+  res.json(details);
 });
 
 router.put("/me/password", verifyToken, async (req: AuthRequest, res: Response) => {
@@ -60,155 +57,69 @@ router.put("/me/password", verifyToken, async (req: AuthRequest, res: Response) 
   }
 });
 
-router.get("/", verifyToken, isAdmin, async (_req, res) => {
-  try {
-    const result = await pool.query(`
-      SELECT u.id, u.name, u.email, u.telefono, u.role, u.document, t.specialty, s.grade
-      FROM users u
-      LEFT JOIN teachers t ON u.id = t.user_id
-      LEFT JOIN students s ON u.id = s.user_id
-      ORDER BY u.name ASC
-    `);
-    res.json(result.rows);
-  } catch {
-    res.status(500).json({ message: "Error fetching users" });
-  }
+router.get("/",verifyToken,isAdmin,async(req:AuthRequest,res:Response)=>{
+  const result=await pool.query(memberSelect+" ORDER BY u.name,u.id",[req.user!.role,req.user!.id]);res.json(result.rows);
 });
-
-router.post("/", verifyToken, isAdmin, async (req: AuthRequest, res: Response) => {
-  const client = await pool.connect();
-  try {
-    const { name, email, password, telefono, role, specialty, grade, document } = req.body;
-
-    if (!name || !email || !password || !role) {
-      return res.status(400).json({ message: "Campos requeridos faltantes" });
-    }
-    if (typeof password !== "string" || password.length < 6) {
-      return res.status(400).json({ message: "La contraseña debe tener al menos 6 caracteres" });
-    }
-
-    if (!["admin", "student", "teacher"].includes(role)) return res.status(400).json({ message: "Rol inválido" });
-    const existingEmail = await client.query("SELECT id FROM users WHERE email = $1", [email]);
-    if (existingEmail.rows.length > 0) {
-      return res.status(400).json({ message: "El correo ya está registrado" });
-    }
-    if (document) {
-      const existingDoc = await client.query("SELECT id FROM users WHERE document = $1", [document]);
-      if (existingDoc.rows.length > 0) {
-        return res.status(400).json({ message: "El número de documento ya está registrado" });
-      }
-    }
-
+router.post("/",verifyToken,isAdmin,async(req:AuthRequest,res:Response)=>{
+  const input=memberInput(req.body,true);
+  const hashed=await bcrypt.hash(input.password,10);
+  const client=await pool.connect();
+  try{
     await client.query("BEGIN");
-
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
-    const userRes = await client.query(
-      "INSERT INTO users (name, email, password, telefono, role, document) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, name, email, telefono, role, document",
-      [name, email, hashedPassword, telefono, role, document || null]
-    );
-    const newUser = userRes.rows[0];
-
-    if (role === "teacher") {
-      await client.query("INSERT INTO teachers (user_id, specialty) VALUES ($1, $2)", [newUser.id, specialty]);
-    } else if (role === "student") {
-      await client.query("INSERT INTO students (user_id, grade) VALUES ($1, $2)", [newUser.id, grade]);
-    }
-
-    await client.query("COMMIT");
-    res.status(201).json({ user: { ...newUser, specialty, grade } });
-  } catch (err: any) {
-    await client.query("ROLLBACK");
-    res.status(400).json({ message: err.code === "23505" ? "Email o documento duplicado" : "Error al crear" });
-  } finally {
-    client.release();
-  }
+    const created=await client.query("INSERT INTO users(name,email,password,telefono,role,document) VALUES($1,$2,$3,$4,$5,$6) RETURNING id",[input.name,input.email,hashed,input.telefono,input.role,input.document]);
+    const id=created.rows[0].id;
+    await saveProfiles(client,id,input);
+    const member=await findMember(id,req.user!,client);
+    await client.query("COMMIT");res.status(201).json({user:member});
+  }catch(error:any){await client.query("ROLLBACK");if(error.code==='23505')return res.status(409).json({message:"El correo o documento ya está registrado"});throw error;}finally{client.release();}
 });
-
-router.put("/:id", verifyToken, isAdmin, async (req: AuthRequest, res: Response) => {
-  const client = await pool.connect();
-  try {
-    const { id } = req.params;
-    const { name, email, telefono, role, password, specialty, grade, document } = req.body;
+router.put("/:id",verifyToken,isAdmin,async(req:AuthRequest,res:Response)=>{
+  const id=positiveId(req.params.id),input=memberInput(req.body,false);
+  const hashed=input.password?await bcrypt.hash(input.password,10):null;
+  const client=await pool.connect();
+  try{
     await client.query("BEGIN");
-
-    await prepareRoleChange(client, id, role);
-    if (password && (typeof password !== "string" || password.length < 6)) throw new InputError("La contraseña debe tener al menos 6 caracteres");
-    const setClauses = ["name=$1", "email=$2", "telefono=$3", "role=$4", "document=$5"];
-    const params: any[] = [name, email, telefono, role, document || null];
-
-    if (password && password.trim() !== "") {
-      const salt = await bcrypt.genSalt(10);
-      params.push(await bcrypt.hash(password, salt));
-      setClauses.push(`password=$${params.length}`);
-    }
-
-    params.push(id);
-    const result = await client.query(
-      `UPDATE users SET ${setClauses.join(", ")} WHERE id=$${params.length} RETURNING id, name, email, telefono, role, document`,
-      params
-    );
-
-    if (role === "teacher") {
-      await client.query("INSERT INTO teachers (user_id, specialty) VALUES ($1, $2) ON CONFLICT (user_id) DO UPDATE SET specialty = $2", [id, specialty]);
-    } else if (role === "student") {
-      await client.query("INSERT INTO students (user_id, grade) VALUES ($1, $2) ON CONFLICT (user_id) DO UPDATE SET grade = $2", [id, grade]);
-    }
-
-    await client.query("COMMIT");
-    res.json(result.rows[0]);
-  } catch (err) {
-    await client.query("ROLLBACK");
-    if (err instanceof InputError) return res.status(err.status).json({ message: err.message });
-    console.error("Error actualizando miembro:", err);
-    res.status(500).json({ message: "Error actualizando" });
-  } finally {
-    client.release();
-  }
+    await prepareRoleChange(client,id,input.role);
+    await client.query(`UPDATE users SET name=$1,email=$2,telefono=$3,role=$4,document=$5,
+      password=COALESCE($6,password),auth_version=auth_version+CASE WHEN role<>$4 OR $6::text IS NOT NULL THEN 1 ELSE 0 END
+      WHERE id=$7`,[input.name,input.email,input.telefono,input.role,input.document,hashed,id]);
+    await saveProfiles(client,id,input);
+    const member=await findMember(id,req.user!,client);
+    await client.query("COMMIT");res.json(member);
+  }catch(error:any){await client.query("ROLLBACK");if(error.code==='23505')return res.status(409).json({message:"El correo o documento ya está registrado"});throw error;}finally{client.release();}
 });
-
-router.delete("/:id", verifyToken, isAdmin, async (req: AuthRequest, res: Response) => {
-  const client = await pool.connect();
-  try {
-    const { id } = req.params;
+router.delete("/:id/student-profile",verifyToken,isAdmin,async(req:AuthRequest,res:Response)=>{
+  const client=await pool.connect();
+  try{
+    await client.query("BEGIN");await removeStudentProfile(client,positiveId(req.params.id));await client.query("COMMIT");
+    res.json({message:"Registro académico retirado; la cuenta se conserva"});
+  }catch(error){await client.query("ROLLBACK");throw error;}finally{client.release();}
+});
+router.delete("/:id",verifyToken,isAdmin,async(req:AuthRequest,res:Response)=>{
+  const id=positiveId(req.params.id),client=await pool.connect();
+  try{
     await client.query("BEGIN");
-
-    const userRes = await client.query("SELECT role FROM users WHERE id = $1", [id]);
-    if (userRes.rows.length === 0) {
-      await client.query("ROLLBACK");
-      return res.status(404).json({ message: "Miembro no encontrado" });
+    const user=await client.query("SELECT role FROM users WHERE id=$1 FOR UPDATE",[id]);
+    if(!user.rowCount){await client.query("ROLLBACK");return res.status(404).json({message:"Miembro no encontrado"});}
+    if(id===req.user!.id){await client.query("ROLLBACK");return res.status(409).json({message:"No puedes eliminar tu propia cuenta desde Miembros"});}
+    const student=await client.query("SELECT id FROM students WHERE user_id=$1 FOR UPDATE",[id]);
+    if(student.rowCount&&await hasAcademicHistory(client,student.rows[0].id)){
+      await client.query("ROLLBACK");return res.status(409).json({message:"El miembro tiene historial académico. Sus datos deben conservarse."});
     }
-
-    const role = userRes.rows[0].role;
-
-    if (role === "student") {
-      const studentRes = await client.query("SELECT id FROM students WHERE user_id = $1", [id]);
-      if (studentRes.rows.length > 0) {
-        const studentId = studentRes.rows[0].id;
-        await client.query("DELETE FROM attendance WHERE student_id = $1", [studentId]);
-        await client.query("DELETE FROM grades WHERE student_id = $1", [studentId]);
-        await client.query("DELETE FROM enrollments WHERE student_id = $1", [studentId]);
-        await client.query("DELETE FROM students WHERE id = $1", [studentId]);
-      }
-    } else if (role === "teacher") {
-      const teacherRes = await client.query("SELECT id FROM teachers WHERE user_id = $1", [id]);
-      if (teacherRes.rows.length > 0) {
-        const teacherId = teacherRes.rows[0].id;
-        await client.query("DELETE FROM courses WHERE teacher_id = $1", [teacherId]);
-        await client.query("DELETE FROM teachers WHERE id = $1", [teacherId]);
-      }
-    }
-
-    await client.query("DELETE FROM users WHERE id = $1", [id]);
-    await client.query("COMMIT");
-    res.json({ message: "Miembro eliminado" });
-  } catch (err) {
-    await client.query("ROLLBACK");
-    res.status(500).json({ message: "Error eliminando" });
-  } finally {
-    client.release();
-  }
+    await client.query("SELECT id FROM teachers WHERE user_id=$1 FOR UPDATE",[id]);
+    const references=await client.query(`SELECT 1 WHERE
+      EXISTS(SELECT 1 FROM courses c JOIN teachers t ON t.id=c.teacher_id WHERE t.user_id=$1)
+      OR EXISTS(SELECT 1 FROM temple_attendance WHERE user_id=$1)
+      OR EXISTS(SELECT 1 FROM financial_events WHERE actor_id=$1)
+      OR EXISTS(SELECT 1 FROM meetings WHERE created_by=$1)
+      OR EXISTS(SELECT 1 FROM meeting_attendees WHERE user_id=$1)
+      OR EXISTS(SELECT 1 FROM speakers WHERE member_id=$1)
+      OR EXISTS(SELECT 1 FROM activity_plans WHERE assigned_to=$1)`,[id]);
+    if(references.rowCount){await client.query("ROLLBACK");return res.status(409).json({message:"El miembro tiene cursos o historial asociado. Reasigna sus responsabilidades y conserva los registros históricos."});}
+    await client.query("DELETE FROM students WHERE user_id=$1",[id]);
+    await client.query("DELETE FROM teachers WHERE user_id=$1",[id]);
+    await client.query("DELETE FROM users WHERE id=$1",[id]);
+    await client.query("COMMIT");res.json({message:"Miembro eliminado"});
+  }catch(error){await client.query("ROLLBACK");throw error;}finally{client.release();}
 });
-
 export default router;

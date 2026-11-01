@@ -1,3 +1,4 @@
+import { readPage, addFilters, addSearch } from "../utils/pagination";
 import { Response } from "express";
 import { asyncRouter } from "../middleware/asyncRouter";
 import { pool } from "../models/db";
@@ -5,12 +6,22 @@ import { verifyToken, canTeach, AuthRequest } from "../middleware/auth";
 import { positiveId, InputError } from "../utils/validation";
 const router = asyncRouter();
 const owner = `(c.teacher_id IN (SELECT id FROM teachers WHERE user_id = $2))`;
-router.get("/", verifyToken, async (req: AuthRequest, res: Response) => {
-  const result = await pool.query(`SELECT g.*, u.name AS student_name, c.title AS course_title
-    FROM grades g JOIN students s ON s.id=g.student_id JOIN users u ON u.id=s.user_id JOIN courses c ON c.id=g.course_id
-    WHERE ($1 = 'admin' OR ($1 = 'teacher' AND ${owner}) OR ($1 = 'student' AND s.user_id=$2)) ORDER BY g.created_at DESC, g.id DESC`, [req.user!.role, req.user!.id]);
-  res.json(result.rows);
+function gradesQuery(req:AuthRequest){
+  const params:any[]=[req.user!.role,req.user!.id];
+  const where=[`($1='admin' OR ($1='teacher' AND ${owner}) OR ($1='student' AND s.user_id=$2))`,
+    ...addFilters(req,params,{student_id:"g.student_id",course_id:"g.course_id"}),...addSearch(req,params,["u.name","c.title"])];
+  if(req.query.grade_type){params.push(String(req.query.grade_type));where.push(`g.grade_type=$${params.length}`);}
+  return {params,select:`SELECT g.*,u.name AS student_name,c.title AS course_title FROM grades g JOIN students s ON s.id=g.student_id JOIN users u ON u.id=s.user_id JOIN courses c ON c.id=g.course_id WHERE ${where.join(" AND ")}`};
+}
+router.get("/report",verifyToken,async(req:AuthRequest,res:Response)=>{
+  const {select,params}=gradesQuery(req);res.json((await pool.query(select+" ORDER BY g.created_at DESC,g.id DESC",params)).rows);
 });
+router.get("/",verifyToken,async(req:AuthRequest,res:Response)=>{
+  const {select,params}=gradesQuery(req);
+  res.json(await readPage(req,select,params,{student_name:"student_name",course_title:"course_title",grade:"grade",grade_type:"grade_type",created_at:"created_at"},"created_at",
+    "jsonb_build_object('averageGrade',AVG(grade),'distinctCourses',COUNT(DISTINCT course_id),'distinctStudents',COUNT(DISTINCT student_id))"));
+});
+
 function gradeInput(body: any) {
   const student = positiveId(body.student_id), course = positiveId(body.course_id);
   const grade = Number(body.grade);

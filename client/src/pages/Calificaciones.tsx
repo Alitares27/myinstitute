@@ -1,3 +1,5 @@
+import { useSearchParams } from "react-router-dom";
+import { usePagedList } from "../hooks/usePagedList";
 import { useEffect, useState, useMemo } from "react";
 import api from "../api";
 import { FaPlus } from "react-icons/fa";
@@ -21,13 +23,14 @@ const getInitials = (name: string) =>
     .toUpperCase();
 
 export default function Grades() {
-  const [grades, setGrades] = useState<any[]>([]);
+
   const [students, setStudents] = useState<any[]>([]);
   const [courses, setCourses] = useState<any[]>([]);
   const [role, setRole] = useState<string>("");
   const [error, setError] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
-  const [filterStudent, setFilterStudent] = useState("");
+  const [searchParams] = useSearchParams();
+  const [filterStudent, setFilterStudent] = useState(searchParams.get("student_id") || "");
   const [filterType, setFilterType] = useState("");
   const [currentPage, setCurrentPage] = useState<number>(1);
   const recordsPerPage = 5;
@@ -51,8 +54,6 @@ export default function Grades() {
       const meRes = await Promise.resolve({ data: JSON.parse(localStorage.getItem("user") || "{}") });
       setRole(meRes.data.role);
 
-      const gradesRes = await api.get("/grades");
-      setGrades(gradesRes.data);
 
       if (meRes.data.role !== "student") {
         const [sData, cData] = await Promise.all([
@@ -69,38 +70,12 @@ export default function Grades() {
     }
   };
 
-  const filteredGrades = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
-    return grades.filter((g) => {
-      const matchStudent = filterStudent === "" || g.student_id?.toString() === filterStudent;
-      const matchType = filterType === "" || g.grade_type === filterType;
-      const matchSearch =
-        !q || `${g.student_name || ""} ${g.course_title || ""}`.toLowerCase().includes(q);
-      return matchStudent && matchType && matchSearch;
-    });
-  }, [grades, filterStudent, filterType, searchQuery]);
-
-  const sortedGrades = useMemo(() => {
-    if (!sortConfig) return filteredGrades;
-    return [...filteredGrades].sort((a, b) => {
-      const aVal = a[sortConfig.key];
-      const bVal = b[sortConfig.key];
-      if (aVal < bVal) return sortConfig.direction === "asc" ? -1 : 1;
-      if (aVal > bVal) return sortConfig.direction === "asc" ? 1 : -1;
-      return 0;
-    });
-  }, [filteredGrades, sortConfig]);
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [filterStudent, filterType, searchQuery, sortConfig]);
-
-  const totalPages = Math.ceil(sortedGrades.length / recordsPerPage);
-  const currentRecords = useMemo(() => {
-    const lastIdx = currentPage * recordsPerPage;
-    const firstIdx = lastIdx - recordsPerPage;
-    return sortedGrades.slice(firstIdx, lastIdx);
-  }, [sortedGrades, currentPage]);
+  const listParams={page:currentPage,limit:recordsPerPage,student_id:filterStudent||undefined,grade_type:filterType||undefined,search:searchQuery||undefined,sort:sortConfig?.key,direction:sortConfig?.direction};
+  const page=usePagedList<any>("/grades",listParams);
+  const currentRecords=page.items;
+  const totalPages=Math.max(1,Math.ceil(page.total/recordsPerPage));
+  useEffect(()=>{setCurrentPage(1);},[filterStudent,filterType,searchQuery,sortConfig]);
+  useEffect(()=>{if(currentPage>totalPages)setCurrentPage(totalPages);},[currentPage,totalPages]);
 
   const requestSort = (key: string) => {
     setSortConfig((prev) =>
@@ -122,7 +97,7 @@ export default function Grades() {
         await api.post("/grades", form);
       }
       resetForm();
-      fetchData();
+      page.refresh();
     } catch {
       setError("No se pudo procesar la operación.");
     }
@@ -143,28 +118,20 @@ export default function Grades() {
     if (!window.confirm("¿Seguro que deseas eliminar esta calificación?")) return;
     try {
       await api.delete(`/grades/${id}`);
-      setGrades(grades.filter((g) => g.id !== id));
+      page.refresh();
     } catch {
       setError("Error al eliminar el registro.");
     }
   };
 
-  const averageGrade = useMemo(() => {
-    const numeric = grades.map(g => parseFloat(g.grade)).filter(v => !isNaN(v));
-    return numeric.length ? (numeric.reduce((a, b) => a + b, 0) / numeric.length).toFixed(2) : "N/A";
-  }, [grades]);
+  const averageGrade=page.summary.averageGrade==null?"N/A":Number(page.summary.averageGrade).toFixed(2);
+  const distinctCourses=Number(page.summary.distinctCourses||0);
+  const distinctStudents=Number(page.summary.distinctStudents||0);
 
-  const distinctCourses = useMemo(
-    () => new Set(grades.map((g) => g.course_id || g.course_title).filter(Boolean)).size,
-    [grades]
-  );
-
-  const distinctStudents = useMemo(
-    () => new Set(grades.map((g) => g.student_id).filter((v) => v != null)).size,
-    [grades]
-  );
-
-  const handlePrintGradesReport = () => {
+  const handlePrintGradesReport = async () => {
+    const printWindow=window.open("","_blank");if(!printWindow)return;
+    try {
+    const {data:filteredGrades}=await api.get<any[]>("/grades/report",{params:listParams});
     let body = "";
     const hasData = filteredGrades.length > 0;
 
@@ -221,14 +188,17 @@ export default function Grades() {
     openPrintWindow(
       "Reporte de Calificaciones",
       subtitle,
-      body
+      body,printWindow
     );
+    }catch{printWindow.close();setError("No se pudo generar el reporte");}
   };
 
-  if (loading) {
+  if (loading || (!page.loaded && page.loading)) {
     return (
       <div className="calificaciones-page">
-        <div className="calificaciones-header">
+        {page.error && <p role="alert">{page.error}</p>}
+      {page.loading && page.loaded && <p role="status">Actualizando resultados...</p>}
+      <div className="calificaciones-header">
           <div className="calificaciones-header-info">
             <h1>
               <span className="page-title-icon">
@@ -321,7 +291,7 @@ export default function Grades() {
             <IoSchoolOutline />
           </div>
           <div className="asistencia-stat-content">
-            <h3>{grades.length}</h3>
+            <h3>{page.total}</h3>
             <p>{role !== "student" ? "Total Calificaciones" : "Mis Calificaciones"}</p>
           </div>
         </div>

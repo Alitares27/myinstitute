@@ -7,7 +7,9 @@ export const parseLocalDate = (dateString?: string | null): Date | null => {
   const [year, month, day] = datePart.split("-").map(Number);
   if (!year || !month || !day) return null;
 
-  return new Date(year, month - 1, day);
+  const parsed=new Date(year,month-1,day);
+  if(parsed.getFullYear()!==year||parsed.getMonth()!==month-1||parsed.getDate()!==day)return null;
+  return parsed;
 };
 
 export const formatDateTime = (dateString?: string | null): string => {
@@ -48,9 +50,15 @@ export const formatDate = (dateString?: string | null, options?: Intl.DateTimeFo
 
 export const toYMD = (dateString?: string | null): string => {
   const d = parseLocalDate(dateString);
-  if (!d || isNaN(d.getTime())) return new Date().toISOString().split("T")[0];
+  if (!d || isNaN(d.getTime())) return "";
   const year = d.getFullYear();
   const month = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
+};
+
+export const businessDate = (now = new Date()): string => {
+  const parts = new Intl.DateTimeFormat("en-CA", {timeZone:"America/Argentina/Buenos_Aires",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(now);
+  const part = (type: string) => parts.find(item => item.type === type)!.value;
+  return `${part("year")}-${part("month")}-${part("day")}`;
 };

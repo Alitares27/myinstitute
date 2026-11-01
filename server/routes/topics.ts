@@ -1,3 +1,5 @@
+import { courseAccess } from "../utils/courseAccess";
+import { positiveId } from "../utils/validation";
 import { asyncRouter } from "../middleware/asyncRouter";
 import express, { Response } from "express";
 import { pool } from "../models/db";
@@ -8,12 +10,12 @@ const router = asyncRouter();
 router.get("/", verifyToken, async (req: AuthRequest, res: Response) => {
   try {
     const { course_id } = req.query;
-    let query = "SELECT * FROM topics";
-    const params = [];
+    let query = `SELECT topics.* FROM topics JOIN courses c ON c.id=topics.course_id WHERE ${courseAccess("c", "$1", "$2")}`;
+    const params: any[] = [req.user!.role, req.user!.id];
 
     if (course_id) {
-      query += " WHERE course_id = $1";
-      params.push(course_id);
+      query += " AND topics.course_id = $3";
+      params.push(positiveId(course_id));
     }
 
     query += " ORDER BY course_id, order_index ASC";

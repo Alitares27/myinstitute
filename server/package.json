@@ -3,11 +3,12 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "dev": "nodemon --watch . --ext ts --exec ts-node index.ts",
+    "dev": "node --watch --require ts-node/register index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
-    "test": "npm run build && node --test tests/regression.cjs",
-    "test:readonly": "npm run build && node tests/readonly-smoke.cjs"
+    "test": "npm run build && node --test tests/regression.cjs tests/integration.cjs",
+    "test:readonly": "npm run build && node tests/readonly-smoke.cjs",
+    "migrate": "npm run build && node scripts/migrate.cjs"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -21,6 +22,7 @@
     "pg": "^8.11.3"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.14",
     "@types/bcryptjs": "^2.4.6",
     "@types/compression": "^1.8.1",
     "@types/cors": "^2.8.13",
@@ -28,8 +30,11 @@
     "@types/jsonwebtoken": "^9.0.2",
     "@types/node": "^20.10.5",
     "@types/pg": "^8.15.6",
-    "nodemon": "^3.0.1",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
+  },
+  "packageManager": "npm@11.6.0",
+  "engines": {
+    "node": ">=22.12.0"
   }
 }

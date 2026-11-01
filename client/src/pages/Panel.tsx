@@ -173,11 +173,11 @@ function Dashboard() {
               <p>Reservas y viajes al templo</p>
             </div>
           </div>
-          <div className="shortcut-card" onClick={() => navigate("/usuarios")} role="button" tabIndex={0} onKeyDown={(e) => e.key === "Enter" && navigate("/usuarios")}>
+          <div className="shortcut-card" onClick={() => navigate("/miembros")} role="button" tabIndex={0} onKeyDown={(e) => e.key === "Enter" && navigate("/miembros")}>
             <div className="shortcut-icon-bg"><TbSettings /></div>
             <div className="shortcut-info">
               <h3>Miembros</h3>
-              <p>Control de acceso al sistema</p>
+              <p>Datos personales y registros académicos</p>
             </div>
           </div>
         </div>
@@ -242,7 +242,7 @@ function Dashboard() {
             <p>Resumen de faltas y presencia</p>
           </div>
         </div>
-        <div className="shortcut-card" onClick={() => navigate("/usuarios")} role="button" tabIndex={0} onKeyDown={(e) => e.key === "Enter" && navigate("/usuarios")}>
+        <div className="shortcut-card" onClick={() => navigate("/miembros")} role="button" tabIndex={0} onKeyDown={(e) => e.key === "Enter" && navigate("/miembros")}>
             <div className="shortcut-icon-bg"><TbUser /></div>
             <div className="shortcut-info">
               <h3>Mi Perfil</h3>

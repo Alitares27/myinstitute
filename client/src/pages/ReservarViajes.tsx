@@ -1,3 +1,6 @@
+import { usePagedList } from "../hooks/usePagedList";
+import { useReservationOptions } from "../hooks/useReservationOptions";
+import { businessDate } from "../utils/utilidadesFecha";
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaPlus, FaMoneyBillWave, FaCalendarCheck } from "react-icons/fa";
@@ -12,13 +15,7 @@ import { Trip } from "../shared/types";
 import useAvailableTrips from "../hooks/usarViajesDisponibles";
 import type { BasicUser } from "../interfaces/Common";
 
-const getTodayYMD = () => {
-    const today = new Date();
-    const y = today.getFullYear();
-    const m = String(today.getMonth() + 1).padStart(2, "0");
-    const d = String(today.getDate()).padStart(2, "0");
-    return `${y}-${m}-${d}`;
-};
+const getTodayYMD = businessDate;
 
 const getInitials = (name: string = "") => {
     const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -40,10 +37,7 @@ export default function TripReservations() {
     const navigate = useNavigate();
     const [users, setUsers] = useState<BasicUser[]>([]);
     const [trips, setTrips] = useState<Trip[]>([]);
-    const [reservations, setReservations] = useState<any[]>([]);
-    const [reservationOptions, setReservationOptions] = useState<any[]>([]);
-    const [totalRecords, setTotalRecords] = useState(0);
-    const [reservationTotals, setReservationTotals] = useState({ totalPaid: 0, totalPending: 0 });
+    const [optionsRevision,setOptionsRevision]=useState(0);
     const [listError, setListError] = useState("");
     const [editingId, setEditingId] = useState<number | null>(null);
     const [role, setRole] = useState<string | null>(null);
@@ -108,37 +102,17 @@ export default function TripReservations() {
 
     const listParams = { page: currentPage, limit: recordsPerPage, trip_id: filterTripId || undefined,
         user_id: filterUserId || undefined, search: searchQuery || undefined, sort: sortConfig?.key, direction: sortConfig?.direction };
-    const fetchReservations = async () => {
-        const { data } = await api.get('/trip-reservations', { params: listParams });
-        setReservations(data.items);
-        setTotalRecords(data.total);
-        setReservationTotals({ totalPaid: Number(data.total_paid), totalPending: Number(data.total_pending) });
-        setListError("");
-    };
-    const fetchOptions = async () => {
-        const ids = [...new Set([formData.trip_id, paymentForm.trip_id].filter(Boolean))];
-        const data = await Promise.all(ids.map(trip_id => api.get('/trip-reservations/options', { params: { trip_id } })));
-        setReservationOptions(data.flatMap(res => res.data));
-    };
+    const page=usePagedList<any>("/trip-reservations",listParams,JSON.parse(localStorage.getItem("user")||"{}").role==="admin");
+    const reservations=page.items,totalRecords=page.total;
+    const reservationTotals={totalPaid:Number(page.summary.totalPaid||0),totalPending:Number(page.summary.totalPending||0)};
+    const fetchReservations=()=>page.refresh();
+    const options=useReservationOptions([formData.trip_id,paymentForm.trip_id],optionsRevision);
+    const reservationOptions=options.items;
+    const fetchOptions=()=>{setOptionsRevision(value=>value+1);};
     useEffect(() => {
         if (JSON.parse(localStorage.getItem("user") || "{}").role !== "admin") return;
-        Promise.all([fetchUsers(), fetchTrips()]).catch(() => setListError("Error al cargar los catálogos"));
+        Promise.all([fetchUsers(), fetchTrips()]).catch(() => setListError("Error al cargar los catálogos")).finally(()=>setLoading(false));
     }, []);
-    useEffect(() => {
-        if (JSON.parse(localStorage.getItem("user") || "{}").role !== "admin") return;
-        let active = true;
-        const timer = setTimeout(() => {
-            api.get('/trip-reservations', { params: listParams }).then(({ data }) => {
-                if (!active) return;
-                setReservations(data.items); setTotalRecords(data.total);
-                setReservationTotals({ totalPaid: Number(data.total_paid), totalPending: Number(data.total_pending) });
-                setListError("");
-            }).catch(() => { if (active) setListError("Error al cargar las reservas"); })
-              .finally(() => { if (active) setLoading(false); });
-        }, 200);
-        return () => { active = false; clearTimeout(timer); };
-    }, [currentPage, filterTripId, filterUserId, searchQuery, sortConfig]);
-    useEffect(() => { void fetchOptions().catch(() => setListError("Error al cargar las opciones")); }, [formData.trip_id, paymentForm.trip_id]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
@@ -370,7 +344,7 @@ export default function TripReservations() {
       } catch { printWindow.close(); setListError("No se pudo generar el reporte"); }
     }, [filterTripId, filterUserId, searchQuery]);
 
-    if (loading) {
+    if (loading || (!page.loaded && page.loading)) {
         return (
             <div>
                 <Skeleton width="240px" height="1.8rem" />
@@ -400,6 +374,7 @@ export default function TripReservations() {
 
     return (
         <div className="asistencia-page">
+      {page.loading && page.loaded && <p role="status">Actualizando resultados...</p>}
             <div className="asistencia-header">
                 <div className="asistencia-header-info">
                     <h1><span className="page-title-icon"><FiMapPin /></span> Reservar Viajes</h1>
@@ -411,7 +386,7 @@ export default function TripReservations() {
                 </div>
             </div>
 
-            {listError && <p role="alert" style={{ color: "var(--danger)" }}>{listError}</p>}
+            {(listError || options.error || page.error) && <p role="alert" style={{ color: "var(--danger)" }}>{listError || options.error || page.error}</p>}
             <div className="asistencia-stats-grid">
                 <div className="asistencia-stat-card">
                     <div className="asistencia-stat-icon blue"><FaCalendarCheck /></div>

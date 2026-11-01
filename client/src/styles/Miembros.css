@@ -1,0 +1,78 @@
+.miembros-page { width: 100%; min-width: 0; color: var(--text-main); }
+.miembros-header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem; }
+.miembros-header h1 { margin: 0; font-size: 1.75rem; font-weight: 700; }
+.miembros-header p { margin: .35rem 0 0; color: var(--text-muted); font-size: .95rem; }
+.miembros-actions, .miembros-form-actions, .miembros-row-actions { display: flex; align-items: center; flex-wrap: wrap; gap: .75rem; }
+.miembros-page button, .miembros-page .btn { margin: 0; }
+.miembros-card { background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: var(--shadow-sm); min-width: 0; }
+.miembros-card h2 { font-size: 1.2rem; font-weight: 600; margin: 0 0 1.25rem; padding-bottom: .75rem; border-bottom: 1px solid var(--border-color); }
+.miembros-fields { min-width: 0; margin: 0; border: 0; padding: 0; }
+.miembros-form-grid, .miembros-password { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 1.25rem; align-items: end; }
+.miembros-page label { display: flex; flex-direction: column; gap: .5rem; min-width: 0; font-size: .8125rem; font-weight: 600; color: var(--text-secondary); }
+.miembros-page input, .miembros-page select { min-width: 0; min-height: 44px; font-family: inherit; }
+.miembros-page .miembros-checkbox { flex-direction: row; align-items: center; align-self: center; cursor: pointer; line-height: 1.5; }
+.miembros-checkbox input[type="checkbox"] { width: 18px; height: 18px; min-height: 18px; margin: 0; flex-shrink: 0; accent-color: var(--primary); }
+.miembros-form-actions { margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--border-color); }
+.miembros-password > button { grid-column: 1 / -1; justify-self: start; }
+.miembros-toolbar { display: grid; grid-template-columns: minmax(240px, 2fr) repeat(2, minmax(180px, 1fr)); gap: 1rem; padding: 1.25rem; background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius); margin-bottom: 1rem; }
+.miembros-count { font-size: .875rem; color: var(--text-muted); margin: 1rem 0; }
+.miembros-page .table-container { width: 100%; max-width: 100%; overflow-x: auto; background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius); box-shadow: var(--shadow-xs); }
+.miembros-page table { width: 100%; border-collapse: collapse; margin: 0; font-size: .875rem; }
+.miembros-page th { text-align: left; background: var(--bg-body); font-size: .8125rem; font-weight: 600; color: var(--text-secondary); white-space: nowrap; }
+.miembros-page th, .miembros-page td { padding: 1rem; border-bottom: 1px solid var(--border-color); vertical-align: middle; }
+.miembros-page td { color: var(--text-main); line-height: 1.5; overflow-wrap: anywhere; min-width: 110px; }
+.miembros-page tbody tr:last-child td { border-bottom: 0; }
+.miembros-page tbody tr:hover { background: var(--primary-light); }
+.miembros-page .miembros-sort { padding: 0; background: transparent; border: 0; border-radius: 0; box-shadow: none; color: inherit; font: inherit; text-align: left; }
+.miembros-page .miembros-sort:hover { color: var(--primary); }
+.miembros-row-actions { flex-wrap: nowrap; gap: .5rem; }
+.miembros-row-actions .btn { padding: .5rem .75rem; font-size: .8125rem; white-space: nowrap; min-height: 36px; }
+.miembros-page .btn.miembros-delete { color: var(--danger); background: var(--bg-surface); border: 1.5px solid var(--danger); box-shadow: none; }
+.miembros-page .btn.miembros-delete:hover:not(:disabled) { background: var(--danger); color: white; }
+.miembros-page button:disabled { opacity: .45; cursor: not-allowed; box-shadow: none; }
+.miembros-page button:focus-visible, .miembros-academic-links a:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
+.miembros-pagination { display: flex; justify-content: flex-end; align-items: center; flex-wrap: wrap; gap: .75rem; margin: 1.25rem 0 1.5rem; }
+.miembros-pagination span { color: var(--text-secondary); font-size: .875rem; }
+.miembros-details > p { margin: .65rem 0; overflow-wrap: anywhere; color: var(--text-secondary); }
+.miembros-details > h3 { font-size: 1rem; margin: 1.5rem 0 .75rem; }
+.miembros-details > button { float: right; margin: 0 0 .75rem .75rem; }
+.miembros-academic-links { display: flex; flex-wrap: wrap; gap: .75rem; margin: 1.25rem 0; }
+.miembros-academic-links a { display: inline-flex; padding: .65rem 1rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--primary); font-size: .875rem; font-weight: 600; text-decoration: none; background: var(--bg-surface); }
+.miembros-academic-links a:hover { background: var(--primary-light); border-color: var(--primary); }
+.miembros-page [role="alert"] { padding: .875rem 1rem; border: 1px solid var(--danger); border-radius: var(--radius-sm); color: var(--danger); font-size: .875rem; }
+@media (max-width: 900px) { .miembros-toolbar { grid-template-columns: repeat(2, minmax(0, 1fr)); } .miembros-toolbar > label:first-child { grid-column: 1 / -1; } }
+@media (max-width: 600px) {
+ .miembros-header h1 { font-size: 1.5rem; }
+ .miembros-actions, .miembros-form-actions { width: 100%; }
+ .miembros-actions .btn, .miembros-form-actions .btn { flex: 1 1 160px; }
+ .miembros-card { padding: 1rem; }
+ .miembros-toolbar { grid-template-columns: minmax(0, 1fr); padding: 1rem; }
+ .miembros-pagination { justify-content: center; }
+ .miembros-details > button { float: none; margin: 0 0 1rem; }
+}
+
+/* Compact controls follow the same toolbar and form layout as Maestros. */
+.miembros-page .miembros-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem; padding: 0; border: 0; background: transparent; margin-bottom: 1.25rem; }
+.miembros-page .miembros-search { flex: 1 1 240px; display: flex; flex-direction: row; align-items: center; gap: .5rem; padding: .5rem .85rem; background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius); box-shadow: var(--shadow-xs); }
+.miembros-search > svg { width: 1.15rem; height: 1.15rem; flex-shrink: 0; color: var(--text-muted); }
+.miembros-page .miembros-search input { border: 0; background: transparent; padding: .25rem; min-height: 28px; font-size: .88rem; box-shadow: none; }
+.miembros-search:focus-within { outline: 2px solid var(--primary); outline-offset: 2px; }
+.miembros-filters { display: flex; gap: .6rem; flex-wrap: wrap; }
+.miembros-page .miembros-filters select { width: auto; max-width: 220px; padding: .5rem .85rem; border: 1px solid var(--border-color); border-radius: var(--radius); font-size: .88rem; box-shadow: var(--shadow-xs); cursor: pointer; }
+.miembros-page .miembros-name { background: transparent; color: var(--primary); border: 0; padding: .25rem 0; box-shadow: none; text-align: left; justify-content: flex-start; font-size: .95rem; font-weight: 600; }
+.miembros-name:hover { text-decoration: underline; }
+.miembros-row-actions .btn { width: 36px; height: 36px; padding: 0; flex-shrink: 0; }
+.miembros-form-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding-bottom: .75rem; margin-bottom: 1.25rem; border-bottom: 1px solid var(--border-color); }
+.miembros-form-header h2 { display: flex; align-items: center; gap: .5rem; margin: 0; padding: 0; border: 0; }
+.miembros-form-header .cancel-btn, .miembros-modal-header .cancel-btn { padding: .5rem; width: 36px; height: 36px; }
+.miembros-modal-overlay { position: fixed; inset: 0; z-index: 10000; display: flex; align-items: center; justify-content: center; padding: 1.25rem; background: rgba(0,0,0,.4); backdrop-filter: blur(8px); }
+.miembros-modal { width: 100%; max-width: 760px; max-height: calc(100dvh - 2.5rem); overflow-y: auto; padding: 1.5rem; background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); }
+.miembros-modal-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding-bottom: 1rem; margin-bottom: 1rem; border-bottom: 1px solid var(--border-color); }
+.miembros-modal-header h2 { margin: 0; font-size: 1.2rem; }
+.miembros-modal .miembros-details { padding: 0; border: 0; box-shadow: none; margin-bottom: 0; }
+@media(max-width:600px) {
+ .miembros-filters { width: 100%; }
+ .miembros-page .miembros-filters select { flex: 1 1 140px; max-width: 100%; min-width: 0; }
+ .miembros-modal-overlay { padding: .75rem; }
+ .miembros-modal { padding: 1rem; max-height: calc(100dvh - 1.5rem); }
+}

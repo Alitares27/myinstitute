@@ -230,7 +230,7 @@ export async function updateMeeting(req: Request, res: Response) {
 
         await client.query("BEGIN");
 
-        await client.query(
+        const updated = await client.query(
             `
             UPDATE meetings
             SET
@@ -241,7 +241,7 @@ export async function updateMeeting(req: Request, res: Response) {
                 topics=$5,
                 notes=$6,
                 status=$7
-            WHERE id=$8
+            WHERE id=$8 RETURNING id
             `,
             [
                 title,
@@ -254,6 +254,11 @@ export async function updateMeeting(req: Request, res: Response) {
                 id
             ]
         );
+
+        if (!updated.rowCount) {
+            await client.query("ROLLBACK");
+            return res.status(404).json({ message: "Consejo no encontrado" });
+        }
 
         await client.query(
             `
@@ -298,14 +303,15 @@ export async function updateMeeting(req: Request, res: Response) {
 
 export async function deleteMeeting(req: Request, res: Response) {
     try {
-        await pool.query(
+        const deleted = await pool.query(
             `
             DELETE FROM meetings
-            WHERE id=$1
+            WHERE id=$1 RETURNING id
             `,
             [req.params.id]
         );
 
+        if (!deleted.rowCount) return res.status(404).json({ message: "Consejo no encontrado" });
         res.json({
             message: "Consejo eliminado"
         });

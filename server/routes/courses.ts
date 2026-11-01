@@ -1,3 +1,4 @@
+import { courseAccess } from "../utils/courseAccess";
 import { asyncRouter } from "../middleware/asyncRouter";
 import express, { Response } from "express";
 import { pool } from "../models/db";
@@ -9,11 +10,11 @@ router.get("/:id/topics", verifyToken, async (req: AuthRequest, res: Response) =
   try {
     const { id } = req.params;
     const result = await pool.query(
-      `SELECT id, title, description, order_index
-       FROM topics
-       WHERE course_id = $1
+      `SELECT topics.id, topics.title, topics.description, topics.order_index
+       FROM topics JOIN courses c ON c.id=topics.course_id
+       WHERE course_id = $1 AND ${courseAccess("c", "$2", "$3")}
        ORDER BY order_index ASC, id ASC`,
-      [id]
+      [id, req.user!.role, req.user!.id]
     );
     res.json(result.rows);
   } catch (err) {

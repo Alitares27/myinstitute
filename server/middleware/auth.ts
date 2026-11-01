@@ -8,6 +8,7 @@ export type UserRole = "admin" | "student" | "teacher";
 export interface AuthPayload extends JwtPayload {
   id: number;
   role: UserRole;
+  version: number;
 }
 
 export interface AuthRequest extends Request {
@@ -32,12 +33,12 @@ export async function verifyToken(req: AuthRequest, res: Response, next: NextFun
     }
 
     const decoded = jwt.verify(token, secret) as AuthPayload;
-    if (!Number.isSafeInteger(decoded.id) || !["admin", "teacher", "student"].includes(decoded.role)) {
+    if (!Number.isSafeInteger(decoded.version) || !Number.isSafeInteger(decoded.id) || !["admin", "teacher", "student"].includes(decoded.role)) {
       return res.status(401).json({ message: "Invalid token" });
     }
-    const result = await pool.query("SELECT role, password FROM users WHERE id = $1", [decoded.id]);
+    const result = await pool.query("SELECT role, password, auth_version FROM users WHERE id = $1", [decoded.id]);
     const current = result.rows[0];
-    if (!current || current.role !== decoded.role || decoded.session !== sessionFingerprint(current.password)) {
+    if (!current || Number(current.auth_version) !== decoded.version || current.role !== decoded.role || decoded.session !== sessionFingerprint(current.password)) {
       return res.status(401).json({ message: "La sesión expiró. Inicia sesión nuevamente." });
     }
     req.user = decoded;
