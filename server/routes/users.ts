@@ -80,8 +80,8 @@ router.put("/:id",verifyToken,isAdmin,async(req:AuthRequest,res:Response)=>{
   try{
     await client.query("BEGIN");
     await prepareRoleChange(client,id,input.role);
-    await client.query(`UPDATE users SET name=$1,email=$2,telefono=$3,role=$4,document=$5,
-      password=COALESCE($6,password),auth_version=auth_version+CASE WHEN role<>$4 OR $6::text IS NOT NULL THEN 1 ELSE 0 END
+    await client.query(`UPDATE users SET name=$1,email=$2,telefono=$3,role=$4::varchar,document=$5,
+      password=COALESCE($6,password),auth_version=auth_version+CASE WHEN role<>$4::varchar OR $6::text IS NOT NULL THEN 1 ELSE 0 END
       WHERE id=$7`,[input.name,input.email,input.telefono,input.role,input.document,hashed,id]);
     await saveProfiles(client,id,input);
     const member=await findMember(id,req.user!,client);

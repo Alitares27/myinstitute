@@ -31,8 +31,6 @@
 .miembros-page .btn.miembros-delete:hover:not(:disabled) { background: var(--danger); color: white; }
 .miembros-page button:disabled { opacity: .45; cursor: not-allowed; box-shadow: none; }
 .miembros-page button:focus-visible, .miembros-academic-links a:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
-.miembros-pagination { display: flex; justify-content: flex-end; align-items: center; flex-wrap: wrap; gap: .75rem; margin: 1.25rem 0 1.5rem; }
-.miembros-pagination span { color: var(--text-secondary); font-size: .875rem; }
 .miembros-details > p { margin: .65rem 0; overflow-wrap: anywhere; color: var(--text-secondary); }
 .miembros-details > h3 { font-size: 1rem; margin: 1.5rem 0 .75rem; }
 .miembros-details > button { float: right; margin: 0 0 .75rem .75rem; }
@@ -47,7 +45,6 @@
  .miembros-actions .btn, .miembros-form-actions .btn { flex: 1 1 160px; }
  .miembros-card { padding: 1rem; }
  .miembros-toolbar { grid-template-columns: minmax(0, 1fr); padding: 1rem; }
- .miembros-pagination { justify-content: center; }
  .miembros-details > button { float: none; margin: 0 0 1rem; }
 }
 
