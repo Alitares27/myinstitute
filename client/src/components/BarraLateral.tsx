@@ -5,7 +5,7 @@ import {useEffect,useRef,useState} from "react";
 import {Link,NavLink,useLocation,useNavigate} from "react-router-dom";
 import {useTheme} from "../context/ContextoTema";
 import "../styles/BarraLateral.css";
-import {IoSchoolOutline,IoPersonOutline,IoClipboardOutline,IoCalendarOutline,IoRibbonOutline,IoBriefcaseOutline,IoMicOutline,IoPeopleOutline,IoDocumentTextOutline,IoBusinessOutline,IoSettingsOutline,IoLogOutOutline,IoMoonOutline,IoSunnyOutline,IoCashOutline,IoChevronUp} from "react-icons/io5";
+import {IoHomeOutline,IoSchoolOutline,IoPersonOutline,IoClipboardOutline,IoCalendarOutline,IoRibbonOutline,IoBriefcaseOutline,IoMicOutline,IoPeopleOutline,IoDocumentTextOutline,IoBusinessOutline,IoSettingsOutline,IoLogOutOutline,IoMoonOutline,IoSunnyOutline,IoCashOutline,IoChevronUp} from "react-icons/io5";
 
 export default function Sidebar(){
  const navigate=useNavigate(),location=useLocation();
@@ -45,7 +45,13 @@ export default function Sidebar(){
    </div>
   </header>
   <nav ref={nav} className="floating-nav" aria-label="Menú principal" onBlur={event=>{if(!event.currentTarget.contains(event.relatedTarget as Node))setOpen(null);}}>
-   <ul className="floating-nav-groups">{groups.map(group=>{
+   <ul className="floating-nav-groups">
+    <li className="floating-nav-home-item">
+     <NavLink to="/panel" end className="floating-nav-home" aria-label="Inicio" title="Inicio" onClick={()=>setOpen(null)}>
+      <IoHomeOutline aria-hidden="true"/><span className="floating-nav-label">Inicio</span>
+     </NavLink>
+    </li>
+    {groups.map(group=>{
     const active=group.links.some(link=>location.pathname===link.to||location.pathname.startsWith(link.to+'/'));
     return <li key={group.id}>
      <button ref={element=>{triggers.current[group.id]=element;}} type="button" className={`floating-nav-trigger ${active?'is-active':''} ${open===group.id?'is-open':''}`} aria-label={group.label} title={group.label} aria-expanded={open===group.id} aria-controls={`nav-${group.id}`} onClick={()=>setOpen(previous=>previous===group.id?null:group.id)}>

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { updateAndroidSystemColors } from "../native/androidShell";
+import { hideAndroidSplash, updateAndroidSystemColors } from "../native/androidShell";
 
 type Theme = "light" | "dark";
 
@@ -25,7 +25,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const accent = getComputedStyle(probe).color;
     probe.remove();
     document.querySelector('meta[name="theme-color"]')?.setAttribute("content", accent);
-    void updateAndroidSystemColors(accent, theme === "dark");
+    void updateAndroidSystemColors(accent, theme === "dark").finally(() => hideAndroidSplash());
   }, [theme]);
 
   const toggleTheme = () => {

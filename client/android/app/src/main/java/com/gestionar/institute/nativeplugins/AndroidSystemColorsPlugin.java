@@ -13,7 +13,7 @@ public class AndroidSystemColorsPlugin extends Plugin {
     public void getColors(PluginCall call) {
         int primary = MaterialColors.getColor(
             getActivity(),
-            com.google.android.material.R.attr.colorPrimary,
+            androidx.appcompat.R.attr.colorPrimary,
             0xFF6750A4
         );
         int onPrimary = MaterialColors.getColor(

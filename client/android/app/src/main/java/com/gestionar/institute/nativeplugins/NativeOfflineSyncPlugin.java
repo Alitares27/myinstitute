@@ -57,7 +57,14 @@ public class NativeOfflineSyncPlugin extends Plugin {
                     break;
                 }
             }
-            if (!exists) queue.put(new JSONObject(operation.toString()));
+            if (!exists) {
+                try {
+                    queue.put(new JSONObject(operation.toString()));
+                } catch (JSONException error) {
+                    call.reject("No se pudo guardar la operación local.", error);
+                    return;
+                }
+            }
             OfflineQueueStore.writeQueue(getContext(), queue);
         }
         OfflineQueueStore.schedule(getContext());

@@ -11,8 +11,13 @@
 .app-topbar button:disabled { opacity: .5; cursor: wait; }
 .floating-nav { --glass-bg: rgba(235,244,255,.94); --glass-border: #587ca8; position: fixed; z-index: 500; bottom: max(1rem, env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); width: max-content; max-width: calc(100% - 2rem); padding: .5rem; border-radius: 24px; background: var(--glass-bg); border: 2px solid var(--glass-border); box-shadow: 0 8px 32px rgba(0,0,0,.14), inset 0 1px 0 rgba(255,255,255,.4); backdrop-filter: blur(24px) saturate(160%); -webkit-backdrop-filter: blur(24px) saturate(160%); }
 [data-theme="dark"] .floating-nav { --glass-bg: rgba(23,37,57,.94); --glass-border: #829fc5; box-shadow: 0 8px 32px rgba(0,0,0,.35); }
+.native-android .floating-nav { --glass-bg: color-mix(in srgb, Canvas 88%, transparent); --glass-border: color-mix(in srgb, CanvasText 16%, transparent); box-shadow: 0 -8px 28px rgba(0,0,0,.12); }
+.native-android[data-theme="dark"] .floating-nav { --glass-bg: color-mix(in srgb, Canvas 88%, transparent); --glass-border: color-mix(in srgb, CanvasText 22%, transparent); box-shadow: 0 -8px 28px rgba(0,0,0,.3); }
+.native-android .floating-nav button, .native-android .floating-nav a { -webkit-tap-highlight-color: transparent; transition: background-color .2s ease, color .2s ease, transform .15s ease; }
+.native-android .floating-nav button:active, .native-android .floating-nav a:active { transform: scale(.94); }
 .floating-nav ul { list-style: none; padding: 0; margin: 0; }
 .floating-nav-groups { display: flex; gap: .25rem; }
+.floating-nav .floating-nav-home { min-width: 52px; }
 .floating-nav button, .floating-nav a { font-family: inherit; font-size: .875rem; font-weight: 600; color: var(--text-secondary); text-decoration: none; display: flex; align-items: center; justify-content: center; gap: .6rem; padding: .85rem 1rem; margin: 0; border: 0; border-radius: 16px; background: transparent; box-shadow: none; cursor: pointer; white-space: nowrap; min-height: 48px; }
 .floating-nav svg { width: 22px; height: 22px; flex-shrink: 0; }
 .floating-nav .floating-nav-chevron { width: 12px; height: 12px; transition: transform .18s ease; }
@@ -27,11 +32,21 @@
  .app-topbar { padding: .75rem 1rem .25rem; }
  .app-brand img { width: 54px; height: 54px; }
  .app-brand span { font-size: 1rem; }
- .floating-nav { max-width: calc(100% - 1.5rem); padding: .4rem; border-radius: 22px; }
+ .floating-nav { left: 0; right: 0; bottom: 0; transform: none; width: 100%; max-width: none; box-sizing: border-box; padding: .4rem max(.4rem, env(safe-area-inset-right, 0px)) calc(.4rem + env(safe-area-inset-bottom, 0px)) max(.4rem, env(safe-area-inset-left, 0px)); border-radius: 22px 22px 0 0; border-bottom: 0; }
+ .floating-nav-groups { width: 100%; gap: .2rem; }
+ .floating-nav-groups > li { flex: 1 1 0; min-width: 0; }
+ .floating-nav-groups > li > .floating-nav-home { width: 100%; min-width: 0; }
  .floating-nav .floating-nav-label, .floating-nav .floating-nav-chevron { display: none; }
  .floating-nav button, .floating-nav a { width: 52px; height: 48px; padding: .75rem; }
+ .floating-nav-groups > li > .floating-nav-trigger { width: 100%; }
  .floating-nav .floating-nav-submenu { gap: .25rem; }
 }
+.native-android .floating-nav { left: 0; right: 0; bottom: 0; transform: none; width: 100%; max-width: none; box-sizing: border-box; padding: .4rem max(.4rem, env(safe-area-inset-right, 0px)) calc(.4rem + env(safe-area-inset-bottom, 0px)) max(.4rem, env(safe-area-inset-left, 0px)); border-radius: 22px 22px 0 0; border-bottom: 0; }
+.native-android .floating-nav-groups { width: 100%; gap: .2rem; }
+.native-android .floating-nav-groups > li { flex: 1 1 0; min-width: 0; }
+.native-android .floating-nav-groups > li > .floating-nav-home { width: 100%; min-width: 0; }
+.native-android .floating-nav .floating-nav-label, .native-android .floating-nav .floating-nav-chevron { display: none; }
+.native-android .floating-nav-groups > li > .floating-nav-trigger { width: 100%; }
 @media(prefers-reduced-transparency: reduce) { .floating-nav, .floating-nav .floating-nav-submenu { background: var(--bg-surface); backdrop-filter: none; -webkit-backdrop-filter: none; } }
 @media(max-width:700px) {
   @supports (color: AccentColor) {

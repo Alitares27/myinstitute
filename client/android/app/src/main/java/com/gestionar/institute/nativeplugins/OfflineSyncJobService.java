@@ -86,7 +86,6 @@ public class OfflineSyncJobService extends JobService {
                 } catch (Exception error) {
                     Log.w(TAG, "Se reintentará la sincronización local", error);
                     try { entry.put("lastError", "Sin conexión con el servidor; se reintentará automáticamente."); } catch (JSONException ignored) {}
-                    queue.put(index, entry);
                     OfflineQueueStore.writeQueue(this, queue);
                     return true;
                 }
