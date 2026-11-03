@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">GestionAR</string>
+    <string name="title_activity_main">GestionAR</string>
+    <string name="package_name">com.gestionar.institute</string>
+    <string name="custom_url_scheme">com.gestionar.institute</string>
+</resources>

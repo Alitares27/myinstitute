@@ -6,7 +6,7 @@ Sistema de gestión integral para institutos religiosos. Administración de miem
 
 **Frontend:** React 18 + Vite 7 + TypeScript, React Router, Axios, Tabler Icons, react-icons
 **Backend:** Node.js + Express + TypeScript, PostgreSQL, JWT, bcryptjs
-**PWA:** manifiesto y service worker generado por `client/pwa.ts`; instalación y caché offline de recursos estáticos.
+**Android:** aplicación nativa basada en Capacitor, con la misma interfaz y módulos que la web, almacenamiento local offline y sincronización en segundo plano mediante Android JobScheduler.
 
 ## Módulos
 
@@ -57,6 +57,53 @@ npm run dev               # http://localhost:5173
 - **Backend:** Render / Railway / VPS
 - **Base de datos:** Neon PostgreSQL
 
+## Aplicación móvil para Android
+
+`client/android` contiene el proyecto Android nativo de Capacitor. La app carga el mismo frontend y ofrece las mismas rutas y módulos que la versión web; su interfaz móvil mantiene el estilo redondeado y adapta la paleta al tema dinámico de Android en dispositivos compatibles. La compilación web móvil no incorpora service worker ni se instala desde el navegador como PWA.
+
+Android apunta a `https://myinstitute-1.onrender.com/api`; la URL está en `client/.env.android.example` y en el archivo local ignorado `client/.env.android.local`. Comprueba esa dirección antes de compilar; usa HTTPS para distribuir la app. Capacitor sirve el frontend desde `https://localhost`, origen que también debe estar permitido por CORS en el backend. Tras actualizar `server/index.ts`, despliega el backend para que acepte las solicitudes de la app.
+
+Desde PowerShell, prepara los recursos nativos y abre Android Studio:
+
+```powershell
+Set-Location client
+Copy-Item .env.android.example .env.android.local -Force
+notepad .env.android.local
+npm ci
+npm run android:sync
+npm run android:open
+```
+
+Se requiere Node.js >=22.12, Android Studio 2025.2.1 o posterior, Android SDK y un JDK compatible con Android Gradle Plugin. Para preparar un APK de lanzamiento firmado, crea una clave privada y un almacén de claves que conservarás de forma segura; no los subas al repositorio. Desde `client/android`, ejecuta `keytool -genkeypair -v -keystore app/gestionar-release.jks -keyalg RSA -keysize 2048 -validity 10000 -alias gestionar` y crea `keystore.properties` con `storeFile=app/gestionar-release.jks`, `storePassword`, `keyAlias=gestionar` y `keyPassword`. El archivo y la clave ya están excluidos de Git. La configuración de firma se activa cuando existe ese archivo.
+
+Los comandos para generar el APK cuando se autorice se indican por separado más abajo; no se debe ejecutar `assembleRelease` sin haber configurado la firma.
+
+### Generar el APK (no ejecutar durante la preparación)
+
+Después de completar los pasos anteriores, desde PowerShell:
+
+```powershell
+Set-Location client/android
+
+# APK de depuración, firmado automáticamente con la clave de desarrollo
+.\gradlew.bat assembleDebug
+
+# APK de lanzamiento, firmado con keystore.properties
+.\gradlew.bat assembleRelease
+```
+
+Los archivos se guardan en `client/android/app/build/outputs/apk/debug/app-debug.apk` y `client/android/app/build/outputs/apk/release/app-release.apk`. Si no existe la configuración de firma privada, Gradle puede producir un APK de lanzamiento sin firmar, que no sirve para distribuir como actualización. Conserva siempre la misma clave para publicar actualizaciones de la app.
+
+### Uso sin conexión
+
+- Inicia sesión con conexión al menos una vez en el dispositivo.
+- Abre con conexión los módulos y filtros que necesitarás: las respuestas consultadas se guardan localmente y se aíslan por cuenta.
+- Sin conexión, la app muestra las consultas guardadas y conserva altas, ediciones y eliminaciones en una cola local.
+- Al volver la conexión, Android JobScheduler reintenta los cambios pendientes en segundo plano, sujeto a las políticas de batería y red del sistema. Al abrir la app también se actualiza el estado y se reconcilian los identificadores locales.
+- La barra superior informa si no hay conexión, cuántos cambios siguen pendientes y cuándo una operación no pudo sincronizarse. Los cambios rechazados por validaciones del servidor permanecen guardados para que no se pierdan.
+
+El inicio de sesión, el registro y el cambio de contraseña requieren conexión. La base local no puede mostrar datos de un módulo o filtro que nunca se haya consultado mientras había conexión. Las escrituras se reenvían en el orden en que se hicieron; si dos usuarios modifican el mismo registro sin conexión, el servidor aplica sus validaciones al sincronizar y puede dejar una operación pendiente para revisión.
+
 ## Seguridad
 
 - Autenticación JWT con expiry 1h
@@ -65,7 +112,7 @@ npm run dev               # http://localhost:5173
 - Contraseñas hasheadas con bcryptjs
 - Escrituras administrativas protegidas con `isAdmin`; asistencia y calificaciones con permisos de administrador o docente asignado
 - SQL parametrizado (sin inyección SQL)
-- PWA con service worker propio; las respuestas privadas nunca entran a Cache Storage.
+- La versión web usa un service worker propio; Android no incluye ese service worker. Las respuestas privadas nunca entran a Cache Storage.
 
 ## Licencia
 

@@ -5,8 +5,10 @@ import "./styles/Global.css";
 import "./styles/Tablas.css";
 import "./styles/Impresion.css";
 import { ThemeProvider } from "./context/ContextoTema";
+import { initializeAndroidShell } from "./native/androidShell";
 
 if ("caches" in window) void caches.delete("api-cache").catch(() => undefined);
+void initializeAndroidShell();
 
 const chunkReloadKey = "vite:preload-error-reload";
 window.addEventListener("vite:preloadError", (event) => {

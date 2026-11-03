@@ -5,6 +5,7 @@ import api from "../api";
 import { useNavigate } from "react-router-dom";
 import Layout from "../components/Disposicion";
 import { TbLogin, TbAlertTriangle } from "react-icons/tb";
+import { synchronizePendingChanges } from "../services/offlineSync";
 
 export default function Login() {
   const [form, setForm] = useState({ email: "", password: "" });
@@ -29,6 +30,7 @@ export default function Login() {
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("user", JSON.stringify(res.data.user));
       localStorage.setItem("role", res.data.user.role);
+      void synchronizePendingChanges();
 
       navigate("/panel");
     } catch (err: any) {

@@ -1313,6 +1313,59 @@ button:disabled {
   gap: 12px;
 }
 
+/* On Android, use the browser's system palette (including Material You's
+   AccentColor) while keeping the compact, rounded mobile layout. */
+@media (max-width: 700px) {
+  :root,
+  [data-theme="light"],
+  [data-theme="dark"] {
+    color-scheme: light dark;
+    --primary: var(--android-primary, #6750a4);
+    --primary-hover: color-mix(in srgb, var(--android-primary, #6750a4) 82%, CanvasText);
+    --primary-dark: var(--android-primary, #6750a4);
+    --primary-light: color-mix(in srgb, var(--android-primary, #6750a4) 12%, Canvas);
+    --bg-body: var(--android-surface, Canvas);
+    --bg-surface: var(--android-surface, color-mix(in srgb, Canvas 96%, CanvasText 4%));
+    --bg-surface-elevated: color-mix(in srgb, var(--android-surface, Canvas) 92%, CanvasText 8%);
+    --bg-sidebar: color-mix(in srgb, Canvas 92%, CanvasText 8%);
+    --text-main: CanvasText;
+    --text-secondary: color-mix(in srgb, CanvasText 82%, Canvas 18%);
+    --text-muted: GrayText;
+    --border-color: color-mix(in srgb, CanvasText 16%, Canvas 84%);
+    --sidebar-text: CanvasText;
+    --sidebar-text-muted: GrayText;
+    --sidebar-hover-bg: color-mix(in srgb, CanvasText 6%, transparent);
+    --sidebar-active-bg: var(--android-primary, #6750a4);
+    --sidebar-active-text: var(--android-on-primary, #ffffff);
+    --sidebar-border: color-mix(in srgb, CanvasText 20%, Canvas 80%);
+    --radius: 18px;
+    --radius-sm: 12px;
+    --radius-lg: 24px;
+  }
+
+  @supports (color: AccentColor) {
+    :root,
+    [data-theme="light"],
+    [data-theme="dark"] {
+      --primary: var(--android-primary, AccentColor);
+      --primary-hover: color-mix(in srgb, var(--android-primary, AccentColor) 82%, CanvasText);
+      --primary-dark: var(--android-primary, AccentColor);
+      --primary-light: color-mix(in srgb, var(--android-primary, AccentColor) 12%, Canvas);
+      --sidebar-active-bg: var(--android-primary, AccentColor);
+      --sidebar-active-text: var(--android-on-primary, AccentColorText);
+    }
+  }
+
+  body {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .content {
+    padding-left: max(1rem, env(safe-area-inset-left, 0px));
+    padding-right: max(1rem, env(safe-area-inset-right, 0px));
+  }
+}
+
 .reservations-filter-row {
   display: flex;
   gap: 12px;

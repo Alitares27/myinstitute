@@ -1,4 +1,5 @@
 import { Navigate } from "react-router-dom";
+import { forgetOfflineSession } from "../services/offlineSync";
 
 interface PrivateRouteProps {
   children: JSX.Element;
@@ -16,8 +17,11 @@ function isTokenExpired(token: string): boolean {
 
 export default function PrivateRoute({ children }: PrivateRouteProps) {
   const token = localStorage.getItem("token");
+  const savedUser = localStorage.getItem("user");
+  const expiredOfflineSession = !navigator.onLine && !!savedUser && !!token && isTokenExpired(token);
 
-  if (!token || isTokenExpired(token)) {
+  if (!token || (isTokenExpired(token) && !expiredOfflineSession)) {
+    void forgetOfflineSession();
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     localStorage.removeItem("role");

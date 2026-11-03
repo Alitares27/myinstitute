@@ -38,7 +38,8 @@ app.use(cors({
   origin: [
     "http://localhost:5173",
     "http://localhost:5174",
-    "https://gestionar-three.vercel.app"
+    "https://gestionar-three.vercel.app",
+    "https://localhost"
   ],
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
   allowedHeaders: ["Content-Type", "Authorization"],

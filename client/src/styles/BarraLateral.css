@@ -33,3 +33,8 @@
  .floating-nav .floating-nav-submenu { gap: .25rem; }
 }
 @media(prefers-reduced-transparency: reduce) { .floating-nav, .floating-nav .floating-nav-submenu { background: var(--bg-surface); backdrop-filter: none; -webkit-backdrop-filter: none; } }
+@media(max-width:700px) {
+  @supports (color: AccentColor) {
+    .floating-nav { --glass-bg: color-mix(in srgb, Canvas 92%, var(--android-primary, AccentColor) 8%); --glass-border: color-mix(in srgb, CanvasText 24%, Canvas 76%); }
+  }
+}
