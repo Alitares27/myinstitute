@@ -77,7 +77,10 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       if (!error.config?.url?.includes("/login")) {
         await limpiarSesion();
-        window.location.href = "/iniciar-sesion";
+        if (window.location.pathname !== "/iniciar-sesion") {
+          window.history.replaceState(window.history.state, "", "/iniciar-sesion");
+          window.dispatchEvent(new PopStateEvent("popstate"));
+        }
       }
     }
 

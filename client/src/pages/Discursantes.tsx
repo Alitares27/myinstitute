@@ -1,3 +1,4 @@
+import { confirmAppAction } from "../components/AppDialogHost";
 import { useEffect, useState, useMemo, useRef } from "react";
 import api from "../api";
 import { FaPlus } from "react-icons/fa";
@@ -154,7 +155,7 @@ export default function Speakers() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!window.confirm("¿Eliminar este registro?")) return;
+    if (!await confirmAppAction("¿Eliminar este registro?")) return;
     try {
       await api.delete(`/speakers/${id}`);
       setSpeakers(prev => prev.filter(s => s.id !== id));
@@ -175,7 +176,7 @@ export default function Speakers() {
   };
 
   const handleDeleteTema = async (id: number) => {
-    if (!window.confirm("¿Eliminar este tema?")) return;
+    if (!await confirmAppAction("¿Eliminar este tema?")) return;
     try {
       await api.delete(`/temas/${id}`);
       setAllTemas(prev => prev.filter(t => t.id !== id));

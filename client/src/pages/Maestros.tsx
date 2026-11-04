@@ -1,3 +1,4 @@
+import { confirmAppAction } from "../components/AppDialogHost";
 import React, { useEffect, useState, useMemo } from "react";
 import api from "../api";
 import {
@@ -188,7 +189,7 @@ export default function Maestros() {
   };
 
   const handleDelete = async (id: number, name: string) => {
-    if (!window.confirm(`¿Seguro que deseas eliminar al maestro "${name}"? Sus cursos asignados quedarán liberados.`)) {
+    if (!await confirmAppAction(`¿Seguro que deseas eliminar al maestro "${name}"? Sus cursos asignados quedarán liberados.`)) {
       return;
     }
 

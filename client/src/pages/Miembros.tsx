@@ -1,3 +1,4 @@
+import { confirmAppAction } from "../components/AppDialogHost";
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import api from "../api";
@@ -34,7 +35,7 @@ export default function Miembros() {
         if (member.id === me?.id) { setMe(member); localStorage.setItem('user', JSON.stringify(member)); }
         setEditorOpen(false); setEditing(null); changed();
     }
-    async function removeMember(member: Member) { if (!window.confirm(`¿Eliminar la cuenta de ${member.name}? Solo se permite si no tiene historial ni responsabilidades asociadas.`)) return; try { await api.delete(`/users/${member.id}`); if (selected === member.id) setSelected(null); changed(); } catch (error: any) { setError(error.response?.data?.message || 'No se pudo eliminar el miembro'); } }
+    async function removeMember(member: Member) { if (!await confirmAppAction(`¿Eliminar la cuenta de ${member.name}? Solo se permite si no tiene historial ni responsabilidades asociadas.`)) return; try { await api.delete(`/users/${member.id}`); if (selected === member.id) setSelected(null); changed(); } catch (error: any) { setError(error.response?.data?.message || 'No se pudo eliminar el miembro'); } }
     async function removeStudent() { if (!editing) return; await api.delete(`/users/${editing.id}/student-profile`); setEditorOpen(false); setEditing(null); changed(); }
     async function changePassword(event: React.FormEvent) { event.preventDefault(); setError(''); if (password.next !== password.confirm) { setError('Las contraseñas nuevas no coinciden'); return; } setPasswordBusy(true); try { await api.put('/users/me/password', { currentPassword: password.current, newPassword: password.next }); invalidarCache(); await limpiarSesion(); window.location.assign('/iniciar-sesion'); } catch (error: any) { setError(error.response?.data?.message || 'No se pudo cambiar la contraseña'); } finally { setPasswordBusy(false); } }
     if (loading) return <p role="status">Cargando miembros...</p>;

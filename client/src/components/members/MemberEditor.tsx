@@ -1,3 +1,4 @@
+import { confirmAppAction } from "../AppDialogHost";
 import { IoPersonAddOutline, IoCreateOutline, IoCloseOutline, IoSaveOutline } from "react-icons/io5";
 import { useState } from "react";
 import type { Member, MemberRole } from "../../interfaces/User";
@@ -15,7 +16,7 @@ export default function MemberEditor({ member, onSave, onCancel, onRemoveStudent
     const academic = form.role === 'student' || !!member?.student_id || form.include_student_profile;
     const set = (key: keyof MemberForm, value: string | boolean) => setForm(previous => ({ ...previous, [key]: value }));
     async function submit(event: React.FormEvent) { event.preventDefault(); setSaving(true); setError(""); try { await onSave({ ...form, include_student_profile: academic }); } catch (error: any) { setError(error.response?.data?.message || "No se pudo guardar el miembro"); } finally { setSaving(false); } }
-    async function remove() { if (!onRemoveStudent || !window.confirm("¿Quitar solo el registro de estudiante? La cuenta se conserva. No se permite si hay matrículas, asistencias o notas.")) return; setSaving(true); setError(""); try { await onRemoveStudent(); } catch (error: any) { setError(error.response?.data?.message || "No se pudo retirar el registro académico"); } finally { setSaving(false); } }
+    async function remove() { if (!onRemoveStudent || !await confirmAppAction("¿Quitar solo el registro de estudiante? La cuenta se conserva. No se permite si hay matrículas, asistencias o notas.")) return; setSaving(true); setError(""); try { await onRemoveStudent(); } catch (error: any) { setError(error.response?.data?.message || "No se pudo retirar el registro académico"); } finally { setSaving(false); } }
     return <section className="miembros-card" aria-label="Formulario de miembro"><div className="miembros-form-header"><h2>{member ? <IoCreateOutline aria-hidden="true" /> : <IoPersonAddOutline aria-hidden="true" />}{member ? "Editar" : "Registrar"}</h2><button type="button" className="btn cancel-btn" onClick={onCancel} aria-label="Cerrar formulario" title="Cerrar formulario" disabled={saving}><IoCloseOutline aria-hidden="true" /></button></div>
         <form onSubmit={submit}><fieldset disabled={saving} className="miembros-fields"><div className="miembros-form-grid">
             <label>Nombre completo<input name="name" required maxLength={100} value={form.name} onChange={e => set('name', e.target.value)} /></label>

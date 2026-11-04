@@ -4,6 +4,7 @@ import Inicio from "./pages/Inicio";
 import IniciarSesion from "./pages/IniciarSesion";
 import RutaPrivada from "./components/RutaPrivada";
 import Disposicion from "./components/Disposicion";
+import AppDialogHost from "./components/AppDialogHost";
 
 const Registrarse = lazy(() => import("./pages/Registrarse"));
 const Consejos = lazy(() => import("./pages/Consejos"));
@@ -31,6 +32,7 @@ const PagosTemplos = lazy(() => import("./pages/PagosTemplos"));
 function App() {
   return (
     <BrowserRouter>
+      <AppDialogHost />
       <Suspense fallback={
         <div className="loading-container">
           <div className="loading-spinner"></div>

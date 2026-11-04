@@ -5,11 +5,13 @@ import android.app.job.JobScheduler;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.util.Log;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 
 final class OfflineQueueStore {
+    private static final String TAG = "GestionARSync";
     static final String PREFS = "gestionar-offline-sync";
     static final String QUEUE_KEY = "outbox";
     static final int JOB_ID = 50721;
@@ -42,6 +44,12 @@ final class OfflineQueueStore {
             .setBackoffCriteria(30_000L, JobInfo.BACKOFF_POLICY_EXPONENTIAL)
             .build();
         JobScheduler scheduler = (JobScheduler) context.getSystemService(Context.JOB_SCHEDULER_SERVICE);
-        if (scheduler != null) scheduler.schedule(job);
+        if (scheduler != null) {
+            try {
+                scheduler.schedule(job);
+            } catch (SecurityException error) {
+                Log.e(TAG, "No se pudo programar la sincronización en segundo plano.", error);
+            }
+        }
     }
 }

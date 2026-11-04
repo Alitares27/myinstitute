@@ -1,3 +1,4 @@
+import { confirmAppAction } from "../components/AppDialogHost";
 import { useSearchParams } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import api from "../api";
@@ -215,7 +216,7 @@ export default function Enrollments() {
   };
 
   const handleDelete = async (id: string | number) => {
-    if (!confirm("¿Seguro que deseas eliminar esta matrícula?")) return;
+    if (!await confirmAppAction("¿Seguro que deseas eliminar esta matrícula?")) return;
     try {
       await api.delete(`/enrollments/${id}`);
       setEnrollments((prev) => prev.filter((e) => e.id !== id));
@@ -251,7 +252,7 @@ export default function Enrollments() {
   };
 
   const handleDeleteCurso = async (id: number) => {
-    if (!confirm("¿Eliminar este curso? Se cancelarán las matrículas asociadas.")) return;
+    if (!await confirmAppAction("¿Eliminar este curso? Se cancelarán las matrículas asociadas.")) return;
     try {
       await api.delete(`/courses/${id}`);
       invalidarCursos();
@@ -330,7 +331,7 @@ export default function Enrollments() {
   };
 
   const handleDeleteTopic = async (id: number) => {
-    if (!confirm("¿Eliminar este tema?")) return;
+    if (!await confirmAppAction("¿Eliminar este tema?")) return;
     try {
       await api.delete(`/topics/${id}`);
       setTopics((prev) => prev.filter((t) => t.id !== id));

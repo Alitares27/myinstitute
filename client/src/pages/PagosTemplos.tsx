@@ -1,3 +1,4 @@
+import { confirmAppAction } from "../components/AppDialogHost";
 import {useTripStatistics} from "../hooks/useTripStatistics";
 import TripStatisticsScope from "../components/TripStatisticsScope";
 import { usePagedList } from "../hooks/usePagedList";
@@ -140,7 +141,7 @@ export default function PagosTemplos() {
   };
 
   const handleDeletePayment = async (pago: any) => {
-    if (!window.confirm(`¿Eliminar el pago de $${Number(pago.payment_amount).toLocaleString()} de ${pago.miembro_nombre}?`)) return;
+    if (!await confirmAppAction(`¿Eliminar el pago de $${Number(pago.payment_amount).toLocaleString()} de ${pago.miembro_nombre}?`)) return;
     setIsDeletingId(pago.id);
     try {
       await api.delete(`/temple-amortizations/${pago.id}`);

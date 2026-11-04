@@ -1,3 +1,4 @@
+import { confirmAppAction } from "../components/AppDialogHost";
 import {useTripStatistics} from "../hooks/useTripStatistics";
 import TripStatisticsScope from "../components/TripStatisticsScope";
 import { usePagedList } from "../hooks/usePagedList";
@@ -202,7 +203,7 @@ export default function TripReservations() {
         formData.advance_payment !== "";
 
     const handleDelete = async (id: number) => {
-        if (!window.confirm("¿Eliminar esta reserva?")) return;
+        if (!await confirmAppAction("¿Eliminar esta reserva?")) return;
         await api.delete(`/trip-reservations/${id}`)
             .catch(() => { alert('Error al eliminar la reserva'); });
         await Promise.all([fetchReservations(), fetchOptions()]).catch(() => setListError("Error al actualizar las reservas"));

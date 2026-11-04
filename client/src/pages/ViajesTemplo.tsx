@@ -1,3 +1,4 @@
+import { confirmAppAction } from "../components/AppDialogHost";
 import { useEffect, useState, useMemo } from "react";
 import api from "../api";
 import { IoCreateOutline, IoTrashOutline, IoArchiveOutline, IoCalendarOutline } from "react-icons/io5";
@@ -155,7 +156,7 @@ export default function TempleTrip() {
     };
 
     const handleDelete = async (id: number) => {
-        if (!window.confirm("¿Eliminar este viaje?")) return;
+        if (!await confirmAppAction("¿Eliminar este viaje?")) return;
         try {
             await api.delete(`/temple-trips/${id}`);
             setTrips(prev => prev.filter(t => t.id !== id));
@@ -165,7 +166,7 @@ export default function TempleTrip() {
     };
 
     const handleArchive = async (id: number) => {
-      if (!window.confirm("¿Archivar conservando todas las reservas y pagos?")) return;
+      if (!await confirmAppAction("¿Archivar conservando todas las reservas y pagos?")) return;
       try { await api.patch(`/temple-trips/${id}/archive`); setTrips(prev=>prev.filter(row=>row.id!==id)); }
       catch (error: any) { window.alert(error.response?.data?.message || "No se pudo archivar"); }
     };

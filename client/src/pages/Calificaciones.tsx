@@ -1,3 +1,4 @@
+import { confirmAppAction } from "../components/AppDialogHost";
 import { useSearchParams } from "react-router-dom";
 import { usePagedList } from "../hooks/usePagedList";
 import { useEffect, useState, useMemo } from "react";
@@ -115,7 +116,7 @@ export default function Grades() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!window.confirm("¿Seguro que deseas eliminar esta calificación?")) return;
+    if (!await confirmAppAction("¿Seguro que deseas eliminar esta calificación?")) return;
     try {
       await api.delete(`/grades/${id}`);
       page.refresh();

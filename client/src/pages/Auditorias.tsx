@@ -31,10 +31,11 @@ export default function Auditorias() {
   };
 
   return (
-    <div className="dashboard-container">
+    <div className="dashboard-container audit-page">
       <h1>Historial financiero</h1>
       {page.error && <p role="alert">{page.error}</p>}
       {page.loading && <p role="status">Cargando auditorías...</p>}
+      <div className="audit-table-scroll table-container" role="region" aria-label="Movimientos de auditoría" tabIndex={0}>
       <table>
         <thead>
           <tr>
@@ -57,6 +58,7 @@ export default function Auditorias() {
           ))}
         </tbody>
       </table>
+      </div>
       {!page.items.length && !page.loading && <p>No hay movimientos de auditoría.</p>}
 
       {totalPages > 1 && (

@@ -1,3 +1,4 @@
+import { confirmAppAction } from "../components/AppDialogHost";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import api from "../api";
@@ -31,7 +32,7 @@ export default function Actividades() {
   }, []);
 
   async function handleDelete(id: string) {
-    if (!confirm("¿Eliminar esta actividad?")) return;
+    if (!await confirmAppAction("¿Eliminar esta actividad?")) return;
     try {
       await api.delete(`/activities/${id}`);
       setActivities(prev => prev.filter(a => a.id !== id));

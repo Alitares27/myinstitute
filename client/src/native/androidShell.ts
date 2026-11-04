@@ -60,7 +60,6 @@ export async function updateAndroidSystemColors(accent: string, dark: boolean): 
   if (systemIsDark === dark) {
     root.style.setProperty("--android-surface", colors.surface);
   } else {
-    // Keep an explicit in-app theme from inheriting a surface color for the opposite Android mode.
     root.style.removeProperty("--android-surface");
   }
   document.querySelector('meta[name="theme-color"]')?.setAttribute("content", colors.primary);

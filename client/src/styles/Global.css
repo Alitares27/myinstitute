@@ -196,6 +196,21 @@ h1 {
   background-color: var(--bg-body);
 }
 
+.audit-table-scroll { width: 100%; max-width: 100%; overflow-x: auto; overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch; }
+.audit-table-scroll table { min-width: 820px; }
+
+.ios-dialog-backdrop { position: fixed; inset: 0; z-index: 2000; display: grid; place-items: center; padding: 1.25rem; background: rgba(15, 20, 32, .34); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); animation: iosDialogFade .18s ease-out; }
+.ios-dialog { width: min(100%, 360px); padding: 1.35rem 1.2rem 1rem; border: 1px solid color-mix(in srgb, var(--border-color) 70%, transparent); border-radius: 24px; color: var(--text-main); text-align: center; background: color-mix(in srgb, var(--bg-surface-elevated) 88%, transparent); box-shadow: 0 24px 70px rgba(0,0,0,.24), inset 0 1px rgba(255,255,255,.35); backdrop-filter: blur(28px) saturate(170%); -webkit-backdrop-filter: blur(28px) saturate(170%); animation: iosDialogPop .22s cubic-bezier(.2,.8,.2,1); }
+.ios-dialog p { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.45; font-size: 1rem; }
+.ios-dialog-actions { display: flex; gap: .55rem; margin-top: 1.2rem; }
+.ios-dialog-actions button { flex: 1 1 0; min-height: 44px; margin: 0; padding: .65rem .75rem; border: 0; border-radius: 14px; font: inherit; font-weight: 650; cursor: pointer; }
+.ios-dialog-primary { color: var(--primary); background: var(--primary-light); }
+.ios-dialog-cancel { color: var(--text-secondary); background: color-mix(in srgb, var(--text-muted) 12%, transparent); }
+.ios-dialog-destructive { color: white; background: var(--danger); }
+.native-android .ios-dialog { border-radius: 26px; background: color-mix(in srgb, Canvas 82%, transparent); }
+@keyframes iosDialogFade { from { opacity: 0 } to { opacity: 1 } }
+@keyframes iosDialogPop { from { opacity: .5; transform: scale(.94) translateY(8px) } to { opacity: 1; transform: scale(1) translateY(0) } }
+
 main.content {
   flex: 1;
   width: 100%;

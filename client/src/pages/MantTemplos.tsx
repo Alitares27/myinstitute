@@ -1,3 +1,4 @@
+import { confirmAppAction } from "../components/AppDialogHost";
 import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { IoCreateOutline, IoTrashOutline, IoArchiveOutline } from "react-icons/io5";
@@ -95,7 +96,7 @@ export default function TemplosMaintenance() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!window.confirm("¿Seguro que deseas eliminar este templo?")) return;
+    if (!await confirmAppAction("¿Seguro que deseas eliminar este templo?")) return;
     try {
       await api.delete(`/temples/${id}`);
       setTemplos(prev => prev.filter(t => t.id !== id));
@@ -105,7 +106,7 @@ export default function TemplosMaintenance() {
   };
 
   const handleArchive = async (id: number) => {
-    if (!window.confirm("¿Archivar conservando todas las reservas y pagos?")) return;
+    if (!await confirmAppAction("¿Archivar conservando todas las reservas y pagos?")) return;
     try { await api.patch(`/temples/${id}/archive`); setTemplos(prev=>prev.filter(row=>row.id!==id)); }
     catch (error: any) { window.alert(error.response?.data?.message || "No se pudo archivar"); }
   };

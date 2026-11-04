@@ -1,3 +1,4 @@
+import { confirmAppAction } from "../components/AppDialogHost";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { TbCalendar, TbCheck, TbX, TbClock, TbPrinter } from "react-icons/tb";
@@ -53,7 +54,7 @@ export default function Meetings() {
   }
 
   async function handleDelete(id: number) {
-    const ok = window.confirm("¿Desea eliminar este consejo?");
+    const ok = await confirmAppAction("¿Desea eliminar este consejo?");
     if (!ok) return;
     try {
       await deleteMeeting(id);
