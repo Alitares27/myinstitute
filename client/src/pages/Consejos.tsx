@@ -18,6 +18,7 @@ import {
   etiquetaEstadoConsejo,
   generarPDFConsejos,
 } from "../utils/pdfConsejos";
+import { formatDate } from "../utils/utilidadesFecha";
 import "../styles/Consejos.css";
 
 export default function Meetings() {
@@ -264,7 +265,7 @@ export default function Meetings() {
                       {meeting.title}
                     </button>
                   </td>
-                  <td>{new Date(meeting.meeting_date).toLocaleDateString()}</td>
+                  <td>{formatDate(meeting.meeting_date)}</td>
                   <td>{meeting.start_time}{" - "}{meeting.end_time || "--"}</td>
                   <td>{meeting.created_by_name}</td>
                   <td>
@@ -320,7 +321,7 @@ export default function Meetings() {
                 <div className="meeting-details-header">
                   <div>
                     <h1>{selectedMeeting.title}</h1>
-                    <p><strong>Fecha:</strong> {new Date(selectedMeeting.meeting_date).toLocaleDateString("es-AR")}</p>
+                    <p><strong>Fecha:</strong> {formatDate(selectedMeeting.meeting_date)}</p>
                     <p><strong>Horario:</strong> {formatTime(selectedMeeting.start_time)} - {formatTime(selectedMeeting.end_time)}</p>
                     <p><strong>Creada por:</strong> {selectedMeeting.created_by_name}</p>
                     {selectedMeeting.status && (
@@ -434,7 +435,7 @@ export default function Meetings() {
                       <span className="print-option-title">{meeting.title}</span>
                       <span className="print-option-meta">
                         <TbCalendar />
-                        {new Date(meeting.meeting_date).toLocaleDateString("es-AR")}
+                        {formatDate(meeting.meeting_date)}
                         <span className="print-meta-separator">·</span>
                         {formatTime(meeting.start_time)} - {formatTime(meeting.end_time)}
                         <span className="print-meta-separator">·</span>

@@ -4,6 +4,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { Meeting } from "../../interfaces/Meeting";
 import { getMeeting } from "../../services/consejos";
 import { TbCheck, TbX, TbClock } from "react-icons/tb";
+import { formatDate } from "../../utils/utilidadesFecha";
 import "../../styles/Consejos.css";
 
 export default function MeetingDetails() {
@@ -34,10 +35,6 @@ export default function MeetingDetails() {
         } finally {
             setLoading(false);
         }
-    }
-
-    function formatDate(date: string) {
-        return new Date(date).toLocaleDateString("es-AR");
     }
 
     function formatTime(time?: string | null) {

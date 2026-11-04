@@ -1330,15 +1330,15 @@ button:disabled {
 
 /* On Android, use the browser's system palette (including Material You's
    AccentColor) while keeping the compact, rounded mobile layout. */
-@media (max-width: 700px) {
-  :root,
-  [data-theme="light"],
-  [data-theme="dark"] {
+  @media (max-width: 700px) {
+  :root.native-android,
+  :root.native-android[data-theme="light"],
+  :root.native-android[data-theme="dark"] {
     color-scheme: light dark;
     --primary: var(--android-primary, #6750a4);
-    --primary-hover: color-mix(in srgb, var(--android-primary, #6750a4) 82%, CanvasText);
+    --primary-hover: color-mix(in srgb, var(--android-primary, #6750a4) 90%, CanvasText 10%);
     --primary-dark: var(--android-primary, #6750a4);
-    --primary-light: color-mix(in srgb, var(--android-primary, #6750a4) 12%, Canvas);
+    --primary-light: color-mix(in srgb, var(--android-primary, #6750a4) 20%, Canvas 80%);
     --bg-body: var(--android-surface, Canvas);
     --bg-surface: var(--android-surface, color-mix(in srgb, Canvas 96%, CanvasText 4%));
     --bg-surface-elevated: color-mix(in srgb, var(--android-surface, Canvas) 92%, CanvasText 8%);
@@ -1359,16 +1359,33 @@ button:disabled {
   }
 
   @supports (color: AccentColor) {
-    :root,
-    [data-theme="light"],
-    [data-theme="dark"] {
+    :root.native-android,
+    :root.native-android[data-theme="light"],
+    :root.native-android[data-theme="dark"] {
       --primary: var(--android-primary, AccentColor);
-      --primary-hover: color-mix(in srgb, var(--android-primary, AccentColor) 82%, CanvasText);
+      --primary-hover: color-mix(in srgb, var(--android-primary, AccentColor) 90%, CanvasText 10%);
       --primary-dark: var(--android-primary, AccentColor);
-      --primary-light: color-mix(in srgb, var(--android-primary, AccentColor) 12%, Canvas);
+      --primary-light: color-mix(in srgb, var(--android-primary, AccentColor) 20%, Canvas 80%);
       --sidebar-active-bg: var(--android-primary, AccentColor);
       --sidebar-active-text: var(--android-on-primary, AccentColorText);
     }
+  }
+
+  .native-android .btn.primary,
+  .native-android .btn-login {
+    color: var(--android-on-primary, #fff);
+  }
+
+  .native-android .btn.secondary:hover,
+  .native-android .btn-cancel:hover {
+    background-color: var(--primary-light);
+  }
+
+  .native-android button:focus-visible,
+  .native-android input:focus-visible,
+  .native-android select:focus-visible,
+  .native-android textarea:focus-visible {
+    outline-color: var(--android-primary, AccentColor);
   }
 
   body {

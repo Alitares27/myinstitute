@@ -15,6 +15,7 @@ import {
 import MeetingForm from "../components/meetings/FormularioConsejo";
 import { Skeleton } from "../components/Esqueleto";
 import { TbCalendarExclamation } from "react-icons/tb";
+import { toYMD } from "../utils/utilidadesFecha";
 import "../styles/Consejos.css";
 
 export default function EditMeeting() {
@@ -51,7 +52,7 @@ export default function EditMeeting() {
 
             const formData: MeetingRequest = {
                 title: data.title || "",
-                meeting_date: data.meeting_date,
+                meeting_date: toYMD(data.meeting_date),
                 start_time: data.start_time,
                 end_time: data.end_time ?? "",
                 topics: data.topics,

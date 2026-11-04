@@ -4,6 +4,7 @@
 
 import type { jsPDF as JsPDFDocumento } from "jspdf";
 import type { Meeting, MeetingUser } from "../interfaces/Meeting";
+import { formatDate, parseLocalDate } from "./utilidadesFecha";
 import {
   COLOR_INK,
   COLOR_MUTED,
@@ -43,14 +44,7 @@ export function etiquetaEstadoConsejo(estado?: string | null): string {
 }
 
 function formatearFecha(fecha?: string | null): string {
-  if (!fecha) return "--";
-  const valor = new Date(fecha);
-  if (Number.isNaN(valor.getTime())) return String(fecha).slice(0, 10);
-  return valor.toLocaleDateString("es-AR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
+  return fecha ? formatDate(fecha, { day: "2-digit", month: "2-digit", year: "numeric" }) : "--";
 }
 
 function formatearHora(hora?: string | null): string {
@@ -75,13 +69,13 @@ function nombreArchivo(consejos: Meeting[]): string {
 
 function rangoDeFechas(consejos: Meeting[]): string {
   const fechas = consejos
-    .map((consejo) => new Date(consejo.meeting_date))
-    .filter((fecha) => !Number.isNaN(fecha.getTime()))
-    .sort((a, b) => a.getTime() - b.getTime());
+    .map((consejo) => consejo.meeting_date?.slice(0, 10))
+    .filter((fecha): fecha is string => Boolean(fecha && parseLocalDate(fecha)))
+    .sort();
 
   if (fechas.length === 0) return "";
-  const primera = formatearFecha(fechas[0].toISOString());
-  const ultima = formatearFecha(fechas[fechas.length - 1].toISOString());
+  const primera = formatearFecha(fechas[0]);
+  const ultima = formatearFecha(fechas[fechas.length - 1]);
 
   return primera === ultima ? primera : `Del ${primera} al ${ultima}`;
 }

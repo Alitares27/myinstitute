@@ -5,7 +5,7 @@ import { FaPlus } from "react-icons/fa";
 import { IoCreateOutline, IoTrashOutline, IoCheckmarkCircleOutline, IoTimeOutline, IoSaveOutline } from "react-icons/io5";
 import { FiMic } from "react-icons/fi";
 import { TbAlertTriangle, TbList } from "react-icons/tb";
-import { formatDate, toYMD } from "../utils/utilidadesFecha";
+import { businessDate, formatDate, parseLocalDate, toYMD } from "../utils/utilidadesFecha";
 import { Skeleton } from "../components/Esqueleto";
 import type { SpeakerRecord } from "../interfaces/Speaker";
 import type { Member, Tema } from "../interfaces/Common";
@@ -49,7 +49,7 @@ export default function Speakers() {
     tema_id: "",
     speech_title: "",
     time: "10",
-    date: new Date().toISOString().split("T")[0],
+    date: businessDate(),
     completed: "No",
   });
 
@@ -135,7 +135,7 @@ export default function Speakers() {
           completed: "No"
         }, ...prev]);
       }
-      setForm({ member_id: "", tema_id: "", speech_title: "", time: "10", date: new Date().toISOString().split("T")[0], completed: "No" });
+      setForm({ member_id: "", tema_id: "", speech_title: "", time: "10", date: businessDate(), completed: "No" });
     } catch {
       alert("Error al procesar la solicitud.");
     }
@@ -195,14 +195,15 @@ export default function Speakers() {
 
     const recentSpeeches = speakers.filter(s => {
       if (s.member_id !== memberIdNum || s.completed !== "Si") return false;
-      const speechDate = new Date(s.date);
+      const speechDate = parseLocalDate(s.date);
+      if (!speechDate) return false;
       return speechDate >= sixtyDaysAgo && speechDate <= today;
     });
 
     if (recentSpeeches.length > 0) {
-      recentSpeeches.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      recentSpeeches.sort((a, b) => b.date.localeCompare(a.date));
       const mostRecent = recentSpeeches[0];
-      const daysAgo = Math.floor((today.getTime() - new Date(mostRecent.date).getTime()) / (1000 * 3600 * 24));
+      const daysAgo = Math.floor((today.setHours(0, 0, 0, 0) - (parseLocalDate(mostRecent.date)?.getTime() ?? today.getTime())) / (1000 * 3600 * 24));
       const msg = `Alerta: Este miembro discursó hace ${daysAgo} días (${formatDate(mostRecent.date, { weekday: 'short', day: 'numeric', month: 'short' })}).`;
       setSpeechWarning(msg);
       speechTimerRef.current = setTimeout(() => setSpeechWarning(null), 5000);
@@ -220,10 +221,10 @@ export default function Speakers() {
     const pastTopics = speakers.filter(s => s.tema_id === temaIdNum && s.id !== editingId);
 
     if (pastTopics.length > 0) {
-      pastTopics.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      pastTopics.sort((a, b) => b.date.localeCompare(a.date));
       const mostRecent = pastTopics[0];
       const today = new Date();
-      const daysAgo = Math.floor((today.getTime() - new Date(mostRecent.date).getTime()) / (1000 * 3600 * 24));
+      const daysAgo = Math.floor((new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime() - (parseLocalDate(mostRecent.date)?.getTime() ?? today.getTime())) / (1000 * 3600 * 24));
 
       const timeStr = daysAgo >= 0
         ? `hace ${daysAgo} días`
@@ -334,7 +335,7 @@ export default function Speakers() {
                 {editingId ? <>Guardar</> : <>Asignar</>}
               </button>
               {(editingId || form.member_id || form.tema_id || form.speech_title) && (
-                <button type="button" className="btn cancel-btn" onClick={() => { setEditingId(null); setForm({ member_id: "", tema_id: "", speech_title: "", time: "10", date: new Date().toISOString().split("T")[0], completed: "No" }); }} title="Cancelar" aria-label="Cancelar">✕</button>
+                <button type="button" className="btn cancel-btn" onClick={() => { setEditingId(null); setForm({ member_id: "", tema_id: "", speech_title: "", time: "10", date: businessDate(), completed: "No" }); }} title="Cancelar" aria-label="Cancelar">✕</button>
               )}
             </div>
           </form>
