@@ -5,7 +5,7 @@ interface PrivateRouteProps {
   children: JSX.Element;
 }
 
-function isTokenExpired(token: string): boolean {
+export function isTokenExpired(token: string): boolean {
   try {
     const encodedPayload = token.split(".")[1];
     if (!encodedPayload) return true;

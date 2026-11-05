@@ -4,11 +4,13 @@ import {limpiarSesion} from "../utils/sesion";
 import {useEffect,useRef,useState} from "react";
 import {Link,NavLink,useLocation,useNavigate} from "react-router-dom";
 import {useTheme} from "../context/ContextoTema";
+import {isTokenExpired} from "./RutaPrivada";
+import appMetadata from "../../package.json";
 import "../styles/BarraLateral.css";
 import type { IconType } from "react-icons";
-import {IoHomeOutline,IoSchoolOutline,IoPersonOutline,IoClipboardOutline,IoCalendarOutline,IoRibbonOutline,IoBriefcaseOutline,IoMicOutline,IoPeopleOutline,IoDocumentTextOutline,IoBusinessOutline,IoSettingsOutline,IoLogOutOutline,IoMoonOutline,IoSunnyOutline,IoCashOutline,IoChevronUp,IoEllipsisHorizontalOutline} from "react-icons/io5";
+import {IoHomeOutline,IoSchoolOutline,IoPersonOutline,IoClipboardOutline,IoCalendarOutline,IoRibbonOutline,IoBriefcaseOutline,IoMicOutline,IoPeopleOutline,IoDocumentTextOutline,IoBusinessOutline,IoSettingsOutline,IoLogOutOutline,IoMoonOutline,IoSunnyOutline,IoCashOutline,IoChevronUp,IoEllipsisHorizontalOutline,IoInformationCircleOutline} from "react-icons/io5";
 
-type NavItem = {to:string;label:string;Icon:IconType;state?:Record<string,boolean>};
+type NavItem = {to?:string;label:string;Icon:IconType;state?:Record<string,boolean>;action?:"about"};
 type NavGroup = {id:string;label:string;Icon:IconType;links:NavItem[]};
 
 export default function Sidebar(){
@@ -16,6 +18,7 @@ export default function Sidebar(){
  const role=JSON.parse(localStorage.getItem("user")||"{}").role||"";
  const {theme,toggleTheme}=useTheme();
  const [open,setOpen]=useState<string|null>(null),[loggingOut,setLoggingOut]=useState(false);
+ const [showAbout,setShowAbout]=useState(false);
  const [isMobile,setIsMobile]=useState(()=>window.matchMedia('(max-width: 700px)').matches);
  const nav=useRef<HTMLElement>(null);
  const triggers=useRef<Record<string,HTMLButtonElement|null>>({});
@@ -37,7 +40,8 @@ export default function Sidebar(){
    {to:'/inscripciones',label:role==='admin'?'Administrar cursos':'Matrículas',Icon:IoClipboardOutline,...(role==='admin'?{state:{openCourseManager:true}}:{})},
    ...(role==='admin'?[{to:'/discursantes',label:'Temas para Discursantes',Icon:IoMicOutline,state:{openTopicManager:true}}]:[]),
    {to:'/viajes-templo',label:'Viajes al templo',Icon:IoCalendarOutline},{to:'/reservar-viajes',label:'Reservas del templo',Icon:IoPeopleOutline},{to:'/pagos',label:'Pagos del templo',Icon:IoCashOutline},
-   ...(role==='admin'?[{to:'/templos',label:'Administrar templos',Icon:IoBusinessOutline},{to:'/miembros',label:'Miembros',Icon:IoPersonOutline}]:[])
+   ...(role==='admin'?[{to:'/templos',label:'Administrar templos',Icon:IoBusinessOutline},{to:'/miembros',label:'Miembros',Icon:IoPersonOutline}]:[]),
+   {label:'Acerca de',Icon:IoInformationCircleOutline,action:'about'}
   ]}
  ];
  useEffect(()=>{
@@ -61,6 +65,9 @@ export default function Sidebar(){
   catch{window.alert('Se cerrará la sesión local, pero no se pudo confirmar la revocación en el servidor. Si perdiste tu dispositivo, cambia la contraseña al recuperar conexión.');}
   invalidarCache();await limpiarSesion();navigate('/');
  }
+ const token=localStorage.getItem("token");
+ const hasActiveSession=!!token&&(!isTokenExpired(token)||(!navigator.onLine&&!!localStorage.getItem("user")));
+ if(!hasActiveSession)return null;
  return <>
   <header className="app-topbar">
    <Link to="/panel" className="app-brand" aria-label="GestionAR, ir al inicio"><img src="/temple.webp" alt="" width="65" height="65"/><span>GestionAR</span></Link>
@@ -69,6 +76,7 @@ export default function Sidebar(){
     <button type="button" className="app-icon-button app-logout" onClick={logout} disabled={loggingOut} aria-label="Cerrar sesión" title="Cerrar sesión"><IoLogOutOutline aria-hidden="true"/></button>
    </div>
   </header>
+  {isMobile&&open==='more'&&<button type="button" className="floating-nav-backdrop" aria-label="Cerrar el menú Más" onClick={()=>setOpen(null)}/>}
   <nav ref={nav} className="floating-nav" aria-label="Menú principal" onBlur={event=>{if(!event.currentTarget.contains(event.relatedTarget as Node))setOpen(null);}}>
    <ul className="floating-nav-groups">
     <li className="floating-nav-home-item">
@@ -82,9 +90,22 @@ export default function Sidebar(){
      <button ref={element=>{triggers.current[group.id]=element;}} type="button" className={`floating-nav-trigger ${active?'is-active':''} ${open===group.id?'is-open':''}`} aria-label={group.label} title={group.label} aria-expanded={open===group.id} aria-controls={`nav-${group.id}`} onClick={()=>setOpen(previous=>previous===group.id?null:group.id)}>
       <group.Icon aria-hidden="true"/><span className="floating-nav-label">{group.label}</span><IoChevronUp className="floating-nav-chevron" aria-hidden="true"/>
      </button>
-     {open===group.id&&<ul className="floating-nav-submenu" id={`nav-${group.id}`} aria-label={group.label}>{group.links.map(link=><li key={link.label}><NavLink to={link.to} state={link.state} aria-label={link.label} title={link.label} onClick={()=>setOpen(null)}><link.Icon aria-hidden="true"/><span className="floating-nav-label">{link.label}</span></NavLink></li>)}</ul>}
+     {open===group.id&&<ul className="floating-nav-submenu" id={`nav-${group.id}`} aria-label={group.label}>{group.links.map(link=><li key={link.label}>{link.action==='about'?<button type="button" className="floating-nav-submenu-action" aria-label={link.label} title={link.label} onClick={()=>{setOpen(null);setShowAbout(true);}}><link.Icon aria-hidden="true"/><span className="floating-nav-label">{link.label}</span></button>:<NavLink to={link.to!} state={link.state} aria-label={link.label} title={link.label} onClick={()=>setOpen(null)}><link.Icon aria-hidden="true"/><span className="floating-nav-label">{link.label}</span></NavLink>}</li>)}</ul>}
     </li>;
    })}</ul>
   </nav>
+  {showAbout&&<div className="ios-dialog-backdrop" onMouseDown={event=>{if(event.target===event.currentTarget)setShowAbout(false);}}>
+   <section className="ios-dialog about-app-dialog" role="dialog" aria-modal="true" aria-labelledby="about-app-title">
+    <IoInformationCircleOutline className="about-app-icon" aria-hidden="true"/>
+    <h2 id="about-app-title">Acerca de GestionAR</h2>
+    <p>GestionAR ayuda a organizar cursos, miembros, asistencia, calificaciones y actividades del instituto en un solo lugar.</p>
+    <dl className="about-app-details">
+     <div><dt>Versión</dt><dd>{appMetadata.version}</dd></div>
+     <div><dt>Desarrollador</dt><dd>PayLab</dd></div>
+    </dl>
+    <p className="about-app-copyright">© {new Date().getFullYear()} GestionAR. Todos los derechos reservados.</p>
+    <div className="ios-dialog-actions"><button type="button" className="ios-dialog-primary" onClick={()=>setShowAbout(false)}>Cerrar</button></div>
+   </section>
+  </div>}
  </>;
 }
