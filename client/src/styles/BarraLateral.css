@@ -48,6 +48,12 @@
 .native-android .floating-nav-groups > li > .floating-nav-home { width: 100%; min-width: 0; }
 .native-android .floating-nav .floating-nav-label, .native-android .floating-nav .floating-nav-chevron { display: none; }
 .native-android .floating-nav-groups > li > .floating-nav-trigger { width: 100%; }
+.floating-nav-more-item > .floating-nav-submenu { max-height: min(62dvh, calc(100dvh - 170px)); }
+.floating-nav-more-item > .floating-nav-trigger { gap: .3rem; padding: .45rem; }
+.floating-nav-more-item > .floating-nav-trigger .floating-nav-label { display: inline; font-size: .76rem; }
+.floating-nav-more-item > .floating-nav-submenu > li { flex: 1 1 100%; min-width: 0; }
+.floating-nav-more-item > .floating-nav-submenu a { width: 100%; justify-content: flex-start; min-height: 46px; padding: .65rem .85rem; }
+.floating-nav-more-item > .floating-nav-submenu .floating-nav-label { display: inline; overflow: hidden; text-overflow: ellipsis; }
 @media(prefers-reduced-transparency: reduce) { .floating-nav, .floating-nav .floating-nav-submenu { background: var(--bg-surface); backdrop-filter: none; -webkit-backdrop-filter: none; } }
 @media(max-width:700px) {
   @supports (color: AccentColor) {

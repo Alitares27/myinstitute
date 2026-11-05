@@ -1,5 +1,5 @@
 import { confirmAppAction } from "../components/AppDialogHost";
-import { useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import api from "../api";
 import {
@@ -23,6 +23,8 @@ import "../styles/Inscripciones.css";
 const ITEMS_PER_PAGE = 7;
 
 export default function Enrollments() {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [enrollments, setEnrollments] = useState<any[]>([]);
   const [students, setStudents] = useState<any[]>([]);
   const [courses, setCourses] = useState<any[]>([]);
@@ -55,6 +57,13 @@ export default function Enrollments() {
   const [topicForm, setTopicForm] = useState({ title: "", description: "", order_index: "" });
   const [editingTopicId, setEditingTopicId] = useState<number | null>(null);
   const [topicError, setTopicError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (location.state?.openCourseManager) {
+      setShowCursosModal(true);
+      navigate(location.pathname, { replace: true, state: null });
+    }
+  }, [location.key, location.pathname, location.state, navigate]);
 
   useEffect(() => {
     loadData();

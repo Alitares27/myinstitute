@@ -9,8 +9,11 @@ import { businessDate, formatDate, parseLocalDate, toYMD } from "../utils/utilid
 import { Skeleton } from "../components/Esqueleto";
 import type { SpeakerRecord } from "../interfaces/Speaker";
 import type { Member, Tema } from "../interfaces/Common";
+import { useLocation, useNavigate } from "react-router-dom";
 
 export default function Speakers() {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [speakers, setSpeakers] = useState<SpeakerRecord[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
   const [allTemas, setAllTemas] = useState<Tema[]>([]);
@@ -35,6 +38,13 @@ export default function Speakers() {
   const [showTemasModal, setShowTemasModal] = useState(false);
   const [temaTitle, setTemaTitle] = useState("");
   const [temaError, setTemaError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (location.state?.openTopicManager) {
+      setShowTemasModal(true);
+      navigate(location.pathname, { replace: true, state: null });
+    }
+  }, [location.key, location.pathname, location.state, navigate]);
 
   const handleSort = (key: string) => {
     setSortConfig(prev =>
