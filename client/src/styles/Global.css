@@ -5,7 +5,7 @@
   --primary: #007AFF;
   --primary-hover: #0056CC;
   --primary-dark: #0A84FF;
-  --primary-light: rgba(0, 122, 255, 0.08);
+  --primary-light: rgba(0, 122, 255, 0.07);
 
   --secondary: #34C759;
   --secondary-dark: #30D158;
@@ -30,7 +30,7 @@
   --text-secondary: #3C3C43;
   --text-muted: #8E8E93;
 
-  --border-color: #E5E5EA;
+  --border-color: #E7E7ED;
 
 
   --sidebar-text: #1C1C1E;
@@ -40,14 +40,14 @@
   --sidebar-active-text: #FFFFFF;
   --sidebar-border: #D1D1D6;
 
-  --radius: 12px;
-  --radius-sm: 8px;
-  --radius-lg: 16px;
+  --radius: 14px;
+  --radius-sm: 10px;
+  --radius-lg: 22px;
 
   --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
-  --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.12);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.045), 0 1px 2px rgba(0, 0, 0, 0.025);
+  --shadow-md: 0 6px 20px rgba(0, 0, 0, 0.075);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.12);
 
   --transition: 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
   --transition-fast: 0.15s ease;
@@ -60,7 +60,7 @@
   --primary: #0A84FF;
   --primary-hover: #409CFF;
   --primary-dark: #0A84FF;
-  --primary-light: rgba(10, 132, 255, 0.12);
+  --primary-light: rgba(10, 132, 255, 0.14);
 
   --secondary: #30D158;
   --secondary-dark: #30D158;
@@ -84,7 +84,7 @@
   --text-secondary: #EBEBF5;
   --text-muted: #8E8E93;
 
-  --border-color: #38383A;
+  --border-color: #343438;
 
   --sidebar-text: #F5F5F7;
   --sidebar-text-muted: #8E8E93;
@@ -1922,5 +1922,65 @@ html:root[data-theme="dark"] body :is(.modal-overlay, .course-modal-overlay, .mi
     background: var(--bg-surface-elevated);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
+  }
+}
+
+/* GestionAR visual language refresh inspired by Paywall: calmer surfaces and clearer type. */
+h1 {
+  font-size: clamp(1.8rem, 3vw, 2.125rem);
+  font-weight: 800;
+  line-height: 1.12;
+  letter-spacing: -0.04em;
+}
+
+input:not([type="checkbox"]):not([type="radio"]),
+select,
+textarea { border-radius: 13px; }
+
+@media (max-width: 700px) { h1 { font-size: 1.9rem; } }
+
+/* Mobile glass finish shared by every app modal and alert. */
+@media (max-width: 700px) {
+  html:root body :is(.modal-overlay, .course-modal-overlay, .miembros-modal-overlay, .ios-dialog-backdrop) {
+    background: rgba(10, 16, 28, .28);
+    backdrop-filter: blur(18px) saturate(145%);
+    -webkit-backdrop-filter: blur(18px) saturate(145%);
+  }
+
+  html:root body :is(.modal-content, .course-modal-content, .miembros-modal, .report-filter-modal, .print-modal, .ios-dialog) {
+    background: color-mix(in srgb, var(--bg-surface-elevated) 76%, transparent);
+    border-color: color-mix(in srgb, var(--border-color) 64%, transparent);
+    box-shadow: 0 22px 60px rgba(0, 0, 0, .2), inset 0 1px 0 rgba(255, 255, 255, .3);
+    backdrop-filter: blur(30px) saturate(175%);
+    -webkit-backdrop-filter: blur(30px) saturate(175%);
+  }
+
+  html:root.native-android body :is(.modal-content, .course-modal-content, .miembros-modal, .report-filter-modal, .print-modal, .ios-dialog) {
+    background: color-mix(in srgb, Canvas 74%, transparent);
+    border-color: color-mix(in srgb, CanvasText 18%, transparent);
+  }
+
+  html:root.native-android body :is(.modal-overlay, .course-modal-overlay, .miembros-modal-overlay, .ios-dialog-backdrop) {
+    background: color-mix(in srgb, Canvas 30%, transparent);
+  }
+
+  html:root[data-theme="dark"] body :is(.modal-overlay, .course-modal-overlay, .miembros-modal-overlay, .ios-dialog-backdrop) {
+    background: rgba(0, 0, 0, .4);
+  }
+
+  html:root[data-theme="dark"] body :is(.modal-content, .course-modal-content, .miembros-modal, .report-filter-modal, .print-modal, .ios-dialog) {
+    box-shadow: 0 22px 60px rgba(0, 0, 0, .38), inset 0 1px 0 rgba(255, 255, 255, .08);
+  }
+
+  @media (prefers-reduced-transparency: reduce) {
+    html:root body :is(.modal-overlay, .course-modal-overlay, .miembros-modal-overlay, .ios-dialog-backdrop) {
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+    }
+    html:root body :is(.modal-content, .course-modal-content, .miembros-modal, .report-filter-modal, .print-modal, .ios-dialog) {
+      background: var(--bg-surface-elevated);
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+    }
   }
 }

@@ -54,3 +54,54 @@
     .floating-nav { --glass-bg: color-mix(in srgb, Canvas 92%, var(--android-primary, AccentColor) 8%); --glass-border: color-mix(in srgb, CanvasText 24%, Canvas 76%); }
   }
 }
+
+/* Compact, safe-area-aware floating navigation in the Paywall style. */
+.floating-nav {
+  padding: .4rem;
+  border-radius: 35px;
+  box-shadow: 0 8px 28px rgba(20, 35, 60, .12), inset 0 1px 0 rgba(255,255,255,.48);
+}
+
+.floating-nav button,
+.floating-nav a {
+  min-height: 52px;
+  border-radius: 28px;
+  transition: background-color .18s ease, color .18s ease, transform .16s ease;
+}
+
+.floating-nav button.is-active,
+.floating-nav button.is-open,
+.floating-nav a.active {
+  background: color-mix(in srgb, var(--primary) 12%, transparent);
+}
+
+@media(max-width:700px) {
+  .floating-nav button,
+  .floating-nav a { height: 54px; min-height: 54px; }
+}
+
+[data-theme="dark"] .floating-nav {
+  box-shadow: 0 8px 28px rgba(0,0,0,.32), inset 0 1px 0 rgba(255,255,255,.08);
+}
+
+/* Keep the mobile dock visibly translucent in both color schemes. */
+@media(max-width:700px) {
+  .floating-nav,
+  .floating-nav .floating-nav-submenu {
+    --glass-bg: color-mix(in srgb, var(--bg-surface-elevated) 72%, transparent);
+    --glass-border: color-mix(in srgb, var(--border-color) 72%, transparent);
+    backdrop-filter: blur(30px) saturate(180%);
+    -webkit-backdrop-filter: blur(30px) saturate(180%);
+  }
+
+  .native-android .floating-nav,
+  .native-android .floating-nav .floating-nav-submenu {
+    --glass-bg: color-mix(in srgb, Canvas 72%, transparent);
+    --glass-border: color-mix(in srgb, CanvasText 20%, transparent);
+  }
+
+  @supports not (backdrop-filter: blur(1px)) {
+    .floating-nav,
+    .floating-nav .floating-nav-submenu { background: var(--bg-surface-elevated); }
+  }
+}
