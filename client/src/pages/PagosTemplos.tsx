@@ -13,6 +13,7 @@ import { TbAlertTriangle } from "react-icons/tb";
 import { formatDate } from "../utils/utilidadesFecha";
 import { Skeleton } from "../components/Esqueleto";
 import { openPrintWindow } from "../utils/utilidadesReportes";
+import ReportFilterModal from "../components/ReportFilterModal";
 import api from "../api";
 import useAvailableTrips from "../hooks/usarViajesDisponibles";
 
@@ -56,6 +57,7 @@ export default function PagosTemplos() {
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: "asc" | "desc" } | null>(null);
 
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
   const [paymentError, setPaymentError] = useState("");
   const [isSubmittingPayment, setIsSubmittingPayment] = useState(false);
   const [editingPayment, setEditingPayment] = useState<any | null>(null);
@@ -205,10 +207,15 @@ export default function PagosTemplos() {
   const filteredTotals={totalPagado:Number(statistics.summary.totalPagado||0),totalAdeudado:Number(statistics.summary.totalAdeudado||0)};
   const totalSaldados=Number(statistics.summary.totalSaldados||0);
 
-  const handlePrintReport = async () => {
+  const handlePrintReport = async (selectedTripId: string) => {
     const printWindow=window.open("","_blank");if(!printWindow)return;
     try {
-    const {data:report}=await api.get("/temple-amortizations/report",{params:listParams});
+    const {data:report}=await api.get("/temple-amortizations/report",{params:{
+      trip_id: selectedTripId || undefined,
+      member_id: filterUserId || undefined,
+      payment_type: filterPaymentType || undefined,
+      search: searchQuery || undefined,
+    }});
     const filteredPagos:any[]=report.items;
     const filteredTotals={totalPagado:Number(report.summary.totalPagado||0),totalAdeudado:Number(report.summary.totalAdeudado||0)};
     const totalPagadoEfectivo = filteredPagos.reduce((acc, p) => acc + (p.payment_type === "efectivo" ? Number(p.payment_amount) : 0), 0);
@@ -229,7 +236,9 @@ export default function PagosTemplos() {
         <div><span style="font-size:12px;text-transform:uppercase;color:#888;letter-spacing:0.5px;">Donación</span><br><strong style="font-size:18px;">$${totalPagadoDonacion.toLocaleString()}</strong></div>
     </div>`;
 
-    openPrintWindow("Reporte de Pagos al Templo", "Rama Arroyo Seco", body,printWindow);
+    const selectedTrip = trips.find(trip => String(trip.id) === selectedTripId);
+    const subtitle = selectedTrip ? `Viaje: ${formatDate(selectedTrip.date)}${selectedTrip.temple_name ? ` · ${selectedTrip.temple_name}` : ""}` : "Todos los viajes";
+    openPrintWindow("Reporte de Pagos al Templo", subtitle, body,printWindow);
     }catch{printWindow.close();setPaymentError("No se pudo generar el reporte");}
   };
 
@@ -275,7 +284,7 @@ export default function PagosTemplos() {
         </div>
         <div className="asistencia-header-actions">
           <button className="btn primary" onClick={handleOpenPaymentModal}><FaPlus /> Pagar</button>
-          <button type="button" onClick={handlePrintReport} className="btn secondary"><IoPrintOutline /> Imprimir</button>
+          <button type="button" onClick={() => setShowReportModal(true)} className="btn secondary"><IoPrintOutline /> Imprimir</button>
         </div>
       </div>
 
@@ -595,6 +604,16 @@ export default function PagosTemplos() {
           </select>
         </div>
       )}
+      {showReportModal && <ReportFilterModal
+        title="Imprimir pagos"
+        description="Elige el viaje cuyos pagos quieres incluir en el informe."
+        label="Viaje"
+        allLabel="Todos los viajes"
+        initialValue={filterTripId}
+        options={trips.map(trip => ({ value: String(trip.id), label: `${formatDate(trip.date)}${trip.temple_name ? ` · ${trip.temple_name}` : ""}` }))}
+        onClose={() => setShowReportModal(false)}
+        onPrint={handlePrintReport}
+      />}
     </div>
   );
 }

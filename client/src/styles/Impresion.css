@@ -24,6 +24,21 @@
   font-size: 1.15rem;
 }
 
+.report-filter-overlay { z-index: 15000; padding: max(1rem, env(safe-area-inset-top, 0px)) max(1rem, env(safe-area-inset-right, 0px)) max(1rem, env(safe-area-inset-bottom, 0px)) max(1rem, env(safe-area-inset-left, 0px)); }
+.report-filter-modal { width: min(100%, 440px); padding: 1.5rem; border: 1px solid var(--border-color); border-radius: 26px; color: var(--text-main); background: var(--bg-surface-elevated); box-shadow: var(--shadow-lg); }
+.report-filter-icon { display: grid; place-items: center; width: 48px; height: 48px; margin: 0 auto .85rem; border-radius: 16px; color: var(--primary); background: var(--primary-light); font-size: 1.45rem; }
+.report-filter-modal h2 { margin: 0; color: var(--text-main); text-align: center; font-size: 1.2rem; }
+.report-filter-modal > p { margin: .4rem 0 1.2rem; color: var(--text-muted); text-align: center; font-size: .9rem; }
+.report-filter-modal form { display: flex; flex-direction: column; gap: .55rem; }
+.report-filter-modal label { color: var(--text-secondary); font-size: .86rem; font-weight: 650; }
+.report-filter-modal select { width: 100%; min-height: 48px; margin: 0; padding: .7rem .85rem; border: 1px solid var(--border-color); border-radius: 14px; color: var(--text-main); background: var(--bg-body); accent-color: var(--primary); }
+.report-filter-actions { display: flex; gap: .65rem; margin-top: .7rem; }
+.report-filter-actions button { flex: 1; min-height: 46px; margin: 0; padding: .65rem .8rem; border: 0; border-radius: 14px; font: inherit; font-weight: 650; }
+.report-filter-cancel { color: var(--text-secondary); background: var(--bg-body); }
+.report-filter-submit { color: var(--android-on-primary, #fff); background: var(--primary); }
+.native-android .report-filter-modal { border-radius: 28px; }
+.native-android .report-filter-submit { color: var(--android-on-primary, #fff); }
+
 /* -----------------------------------------
    2. Modal de impresión
    ----------------------------------------- */
@@ -244,6 +259,8 @@
   .print-modal {
     padding: 26px 16px 18px;
   }
+
+  .report-filter-modal { padding: 1.3rem 1rem 1rem; }
 
   .print-option {
     align-items: flex-start;

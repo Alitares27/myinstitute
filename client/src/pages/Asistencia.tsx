@@ -17,6 +17,7 @@ import {
 import { TbBooks } from "react-icons/tb";
 import { formatDate, toYMD } from "../utils/utilidadesFecha";
 import { openPrintWindow } from "../utils/utilidadesReportes";
+import ReportFilterModal from "../components/ReportFilterModal";
 import { Skeleton } from "../components/Esqueleto";
 import { TbAlertTriangle } from "react-icons/tb";
 import type { AttendanceRecord } from "../interfaces/Attendance";
@@ -47,6 +48,7 @@ export default function Attendance() {
   const [studentFilter, setStudentFilter] = useState(searchParams.get("student_id") || "");
   const [courseFilter, setCourseFilter] = useState("");
   const [dateFilter, setDateFilter] = useState("");
+  const [showReportModal, setShowReportModal] = useState(false);
 
   const [currentPage, setCurrentPage] = useState(1);
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: SortDirection } | null>({
@@ -134,10 +136,15 @@ export default function Attendance() {
     }
   };
 
-  const handlePrintAttendanceReport = async () => {
+  const handlePrintAttendanceReport = async (selectedCourseId: string) => {
     const printWindow=window.open("","_blank");if(!printWindow)return;
     try {
-    const {data:reportRows}=await api.get<AttendanceRecord[]>("/attendance/report",{params:listParams});
+    const {data:reportRows}=await api.get<AttendanceRecord[]>("/attendance/report",{params:{
+      student_id: studentFilter || undefined,
+      course_id: selectedCourseId || undefined,
+      date: dateFilter || undefined,
+      search: searchQuery || undefined,
+    }});
     const presentRecords = reportRows.filter((a) => a.status === "Present");
 
     const countsByCourse = presentRecords.reduce((acc, a) => {
@@ -147,8 +154,8 @@ export default function Attendance() {
     }, {} as Record<number, Record<number, number>>);
 
     let body = ``;
-    const relevantCourses = courseFilter
-      ? courses.filter((c) => String(c.id) === String(courseFilter))
+    const relevantCourses = selectedCourseId
+      ? courses.filter((c) => String(c.id) === String(selectedCourseId))
       : courses;
 
     const allUniqueStudentIds = new Set<number>();
@@ -207,7 +214,7 @@ export default function Attendance() {
       body += `<p style="text-align: center; color: #666; margin-top: 20px;">No hay asistencias registradas para los filtros seleccionados.</p>`;
     }
 
-    const courseObj = courses.find((c) => String(c.id) === String(courseFilter));
+    const courseObj = courses.find((c) => String(c.id) === String(selectedCourseId));
     const subtitle = courseObj ? `Curso: ${courseObj.title}` : "Todos los Cursos";
 
     openPrintWindow(
@@ -270,7 +277,7 @@ export default function Attendance() {
             <button
               type="button"
               className="btn primary"
-              onClick={handlePrintAttendanceReport}
+              onClick={() => setShowReportModal(true)}
             >
               <IoPrintOutline /> Imprimir
             </button>
@@ -579,6 +586,16 @@ export default function Attendance() {
           </select>
         </div>
       )}
+      {showReportModal && <ReportFilterModal
+        title="Imprimir asistencias"
+        description="Elige el curso para incluir sus asistencias en el informe."
+        label="Curso"
+        allLabel="Todos los cursos"
+        initialValue={courseFilter}
+        options={courses.map(course => ({ value: String(course.id), label: course.title }))}
+        onClose={() => setShowReportModal(false)}
+        onPrint={handlePrintAttendanceReport}
+      />}
     </div>
   );
 }

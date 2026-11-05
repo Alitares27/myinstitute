@@ -12,6 +12,7 @@ import { FiMapPin, FiSearch } from "react-icons/fi";
 import { TbAlertTriangle } from "react-icons/tb";
 import { formatDate, toYMD } from "../utils/utilidadesFecha";
 import { openPrintWindow } from "../utils/utilidadesReportes";
+import ReportFilterModal from "../components/ReportFilterModal";
 import { Skeleton } from "../components/Esqueleto";
 import api from "../api";
 import { Trip } from "../shared/types";
@@ -67,6 +68,7 @@ export default function TripReservations() {
     });
 
     const [filterTripId, setFilterTripId] = useState<string>("");
+    const [showReportModal, setShowReportModal] = useState(false);
     const [filterUserId, setFilterUserId] = useState<string>("");
     const [searchQuery, setSearchQuery] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
@@ -298,22 +300,24 @@ export default function TripReservations() {
         }
     }, [totalPages, currentPage]);
 
-    const handlePrintReport = useCallback(async () => {
+    const handlePrintReport = useCallback(async (selectedTripId: string) => {
       const printWindow = window.open("", "_blank");
       if (!printWindow) { setListError("Permite las ventanas emergentes para imprimir"); return; }
       try {
-        const { data } = await api.get('/trip-reservations/report', { params: listParams });
+        const { data } = await api.get('/trip-reservations/report', { params: {
+          trip_id: selectedTripId || undefined,
+          user_id: filterUserId || undefined,
+          search: searchQuery || undefined,
+        } });
         const reportRows = data.map((r: any) => ({ ...r, pagado: Number(r.advance_payment), saldo: Number(r.pending_payment) }));
-        const groupedByDate = reportRows.reduce((acc: Record<string, any[]>, r: any) => {
-            const dateStr = formatDate(r.trip_date);
-            if (!acc[dateStr]) acc[dateStr] = [];
-            acc[dateStr].push(r);
+        const groupedByDate = reportRows.reduce((acc: Record<string, { label: string; rows: any[] }>, r: any) => {
+            const dateKey = String(r.trip_date).slice(0, 10);
+            if (!acc[dateKey]) acc[dateKey] = { label: formatDate(dateKey), rows: [] };
+            acc[dateKey].rows.push(r);
             return acc;
-        }, {} as Record<string, any[]>);
+        }, {} as Record<string, { label: string; rows: any[] }>);
 
-        const sortedDates = Object.keys(groupedByDate).sort((a, b) =>
-            new Date(a).getTime() - new Date(b).getTime()
-        );
+        const sortedDates = Object.keys(groupedByDate).sort();
 
         let body = "";
         let totalRegistrados = 0;
@@ -321,7 +325,7 @@ export default function TripReservations() {
         let totalPendiente = 0;
 
         sortedDates.forEach(date => {
-            const dateGroup = groupedByDate[date];
+            const dateGroup = groupedByDate[date].rows;
             const sortedMembers = [...dateGroup].sort((a, b) => (a.user_name || "").localeCompare(b.user_name || ""));
 
             totalRegistrados += dateGroup.length;
@@ -330,7 +334,7 @@ export default function TripReservations() {
                 totalPendiente += r.saldo || 0;
             });
 
-            body += `<h2>Fecha de Viaje: ${date}</h2><table><thead><tr><th>Miembro</th><th>Documento</th><th>Pagado</th><th>Saldo</th></tr></thead><tbody>`;
+            body += `<h2>Fecha de Viaje: ${groupedByDate[date].label}</h2><table><thead><tr><th>Miembro</th><th>Documento</th><th>Pagado</th><th>Saldo</th></tr></thead><tbody>`;
             sortedMembers.forEach(res => {
                 body += `<tr><td>${res.user_name}</td><td>${res.user_document || "-"}</td><td>$${(res.pagado || 0).toLocaleString()}</td><td>${res.saldo > 0 ? `$${res.saldo.toLocaleString()}` : "Saldado"}</td></tr>`;
             });
@@ -347,7 +351,7 @@ export default function TripReservations() {
 
         openPrintWindow("Reporte de Viajes al Templo", "Rama Arroyo Seco", body, printWindow);
       } catch { printWindow.close(); setListError("No se pudo generar el reporte"); }
-    }, [filterTripId, filterUserId, searchQuery]);
+    }, [filterUserId, searchQuery]);
 
     if (loading || (!page.loaded && page.loading)) {
         return (
@@ -387,7 +391,7 @@ export default function TripReservations() {
                 </div>
                 <div className="asistencia-header-actions">
                     <button className="btn primary" onClick={handleOpenPaymentModal}><FaPlus /> Pagar</button>
-                    <button onClick={handlePrintReport} className="btn secondary"><IoPrintOutline /> Imprimir</button>
+                    <button onClick={() => setShowReportModal(true)} className="btn secondary"><IoPrintOutline /> Imprimir</button>
                 </div>
             </div>
 
@@ -681,6 +685,16 @@ export default function TripReservations() {
                     </select>
                 </div>
             )}
+            {showReportModal && <ReportFilterModal
+                title="Imprimir reservas"
+                description="Elige el viaje cuyas reservas quieres incluir en el informe."
+                label="Viaje"
+                allLabel="Todos los viajes"
+                initialValue={filterTripId}
+                options={trips.map(trip => ({ value: String(trip.id), label: `${formatDate(trip.date)}${trip.temple_name ? ` · ${trip.temple_name}` : ""}` }))}
+                onClose={() => setShowReportModal(false)}
+                onPrint={handlePrintReport}
+            />}
         </div>
     );
 }
