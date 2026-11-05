@@ -20,8 +20,8 @@ export default function Home() {
       </header>
       <main className="public-home-main">
         <section className="public-home-hero">
-          <span className="public-home-eyebrow">Gestión educativa, más simple</span>
-          <h1>Todo tu instituto, organizado en un solo lugar.</h1>
+          <span className="public-home-eyebrow">Gestión más simple</span>
+          <h1>Todo organizado en un solo lugar.</h1>
           <p>Administra cursos, miembros y actividades con GestionAR.</p>
           <div className="home-buttons public-home-actions">
             <button className="btn primary" onClick={() => navigate("/iniciar-sesion")}>
