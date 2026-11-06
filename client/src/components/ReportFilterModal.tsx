@@ -42,7 +42,7 @@ export default function ReportFilterModal({ title, description, label, allLabel,
   }
 
   return createPortal(
-    <div className="modal-overlay report-filter-overlay" onMouseDown={(event) => { if (event.target === event.currentTarget && !printing) onClose(); }}>
+    <div className="modal-overlay report-filter-overlay" onClick={(event) => { if (event.target === event.currentTarget && !printing) onClose(); }}>
       <section className="report-filter-modal" role="dialog" aria-modal="true" aria-labelledby="report-filter-title">
         <div className="report-filter-icon"><IoPrintOutline aria-hidden="true" /></div>
         <h2 id="report-filter-title">{title}</h2>

@@ -729,30 +729,7 @@ button:disabled {
   animation: modalFadeIn 0.3s var(--ease-out);
 }
 
-.modal-close {
-  position: absolute;
-  top: 14px;
-  left: 14px;
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: #ff5f57;
-  border: none;
-  cursor: pointer;
-  padding: 0;
-  z-index: 1;
-  box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.12);
-  transition: filter 0.15s ease;
-}
-
-.modal-close:hover {
-  filter: brightness(0.85);
-}
-
-[data-theme="dark"] .modal-close {
-  background: #ff453a;
-  box-shadow: 0 0 0 0.5px rgba(255, 255, 255, 0.1);
-}
+.modal-close { position: absolute; }
 
 @keyframes modalFadeIn {
   from {
@@ -1956,13 +1933,20 @@ html:root body :is(.modal-close, .course-modal-header .cancel-btn, .miembros-mod
   min-width: 36px;
   margin: 0;
   padding: 0;
-  border: 1px solid color-mix(in srgb, var(--danger) 26%, transparent);
-  border-radius: 50%;
-  color: var(--danger);
-  background: color-mix(in srgb, var(--danger) 10%, transparent);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  background: var(--bg-surface-elevated);
   box-shadow: none;
   font-size: 1.15rem;
   line-height: 1;
+}
+
+html:root body :is(.modal-close, .course-modal-header .cancel-btn, .miembros-modal-header .cancel-btn):hover:not(:disabled) {
+  color: var(--text-main);
+  background: var(--bg-body);
+  transform: none;
+  box-shadow: none;
 }
 
 html:root body .modal-close { top: 12px; left: 12px; z-index: 2; }

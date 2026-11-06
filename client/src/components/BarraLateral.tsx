@@ -22,12 +22,13 @@ export default function Sidebar(){
  const [isMobile,setIsMobile]=useState(()=>window.matchMedia('(max-width: 700px)').matches);
  const nav=useRef<HTMLElement>(null);
  const triggers=useRef<Record<string,HTMLButtonElement|null>>({});
+ const templeGroup:NavGroup={id:'temple',label:'Templo',Icon:IoBusinessOutline,links:[{to:'/viajes-templo',label:'Viajes',Icon:IoCalendarOutline},{to:'/reservar-viajes',label:'Reservas',Icon:IoPeopleOutline},{to:'/pagos',label:'Pagos',Icon:IoCashOutline}]};
  const groups:NavGroup[]=[
   {id:'teaching',label:'Enseñanza',Icon:IoSchoolOutline,links:[
    ...(role!=='admin'?[{to:'/miembros',label:role==='student'?'Mi perfil':'Miembros',Icon:IoPersonOutline}]:[]),
    {to:'/maestros',label:'Maestros',Icon:IoSchoolOutline},{to:'/inscripciones',label:'Matrículas',Icon:IoClipboardOutline},{to:'/asistencia',label:'Asistencia',Icon:IoCalendarOutline},{to:'/calificaciones',label:'Calificaciones',Icon:IoRibbonOutline}]},
   {id:'leadership',label:'Liderazgo',Icon:IoBriefcaseOutline,links:[{to:'/discursantes',label:'Discursantes',Icon:IoMicOutline},{to:'/consejos',label:'Consejos',Icon:IoPeopleOutline},{to:'/actividades',label:'Actividades',Icon:IoCalendarOutline},{to:'/auditorias',label:'Auditorías',Icon:IoDocumentTextOutline}]},
-  {id:'temple',label:'Templo',Icon:IoBusinessOutline,links:[{to:'/viajes-templo',label:'Viajes',Icon:IoCalendarOutline},{to:'/reservar-viajes',label:'Reservas',Icon:IoPeopleOutline},{to:'/pagos',label:'Pagos',Icon:IoCashOutline}]},
+  templeGroup,
   ...(role==='admin'?[{id:'maintenance',label:'Mantenimiento',Icon:IoSettingsOutline,links:[{to:'/miembros',label:'Miembros',Icon:IoPersonOutline},{to:'/templos',label:'Templos',Icon:IoBusinessOutline}]}]:[])
  ];
  const mobileGroups:NavGroup[]=[
@@ -35,11 +36,11 @@ export default function Sidebar(){
    ...(role!=='admin'?[{to:'/miembros',label:role==='student'?'Mi perfil':'Miembros',Icon:IoPersonOutline}]:[]),
    {to:'/asistencia',label:'Asistencia',Icon:IoCalendarOutline},{to:'/calificaciones',label:'Calificaciones',Icon:IoRibbonOutline}]},
   {id:'leadership',label:'Liderazgo',Icon:IoBriefcaseOutline,links:[{to:'/discursantes',label:'Discursantes',Icon:IoMicOutline},{to:'/consejos',label:'Consejos',Icon:IoPeopleOutline},{to:'/actividades',label:'Actividades',Icon:IoCalendarOutline},{to:'/auditorias',label:'Auditorías',Icon:IoDocumentTextOutline}]},
+  templeGroup,
   {id:'more',label:'Más',Icon:IoEllipsisHorizontalOutline,links:[
    {to:'/maestros',label:'Maestros y cursos',Icon:IoSchoolOutline},
    {to:'/inscripciones',label:role==='admin'?'Administrar cursos':'Matrículas',Icon:IoClipboardOutline,...(role==='admin'?{state:{openCourseManager:true}}:{})},
    ...(role==='admin'?[{to:'/discursantes',label:'Temas para Discursantes',Icon:IoMicOutline,state:{openTopicManager:true}}]:[]),
-   {to:'/viajes-templo',label:'Viajes al templo',Icon:IoCalendarOutline},{to:'/reservar-viajes',label:'Reservas del templo',Icon:IoPeopleOutline},{to:'/pagos',label:'Pagos del templo',Icon:IoCashOutline},
    ...(role==='admin'?[{to:'/templos',label:'Administrar templos',Icon:IoBusinessOutline},{to:'/miembros',label:'Miembros',Icon:IoPersonOutline}]:[]),
    {label:'Acerca de',Icon:IoInformationCircleOutline,action:'about'}
   ]}
@@ -76,7 +77,7 @@ export default function Sidebar(){
     <button type="button" className="app-icon-button app-logout" onClick={logout} disabled={loggingOut} aria-label="Cerrar sesión" title="Cerrar sesión"><IoLogOutOutline aria-hidden="true"/></button>
    </div>
   </header>
-  {isMobile&&open==='more'&&<button type="button" className="floating-nav-backdrop" aria-label="Cerrar el menú Más" onClick={()=>setOpen(null)}/>}
+  {isMobile&&(open==='more'||open==='temple')&&<button type="button" className="floating-nav-backdrop" aria-label={open==='temple'?'Cerrar el menú Templo':'Cerrar el menú Más'} onClick={()=>setOpen(null)}/>}
   <nav ref={nav} className="floating-nav" aria-label="Menú principal" onBlur={event=>{if(!event.currentTarget.contains(event.relatedTarget as Node))setOpen(null);}}>
    <ul className="floating-nav-groups">
     <li className="floating-nav-home-item">
@@ -94,7 +95,7 @@ export default function Sidebar(){
     </li>;
    })}</ul>
   </nav>
-  {showAbout&&<div className="ios-dialog-backdrop" onMouseDown={event=>{if(event.target===event.currentTarget)setShowAbout(false);}}>
+  {showAbout&&<div className="ios-dialog-backdrop" onClick={event=>{if(event.target===event.currentTarget)setShowAbout(false);}}>
    <section className="ios-dialog about-app-dialog" role="dialog" aria-modal="true" aria-labelledby="about-app-title">
     <IoInformationCircleOutline className="about-app-icon" aria-hidden="true"/>
     <h2 id="about-app-title">Acerca de GestionAR</h2>

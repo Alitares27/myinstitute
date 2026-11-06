@@ -48,7 +48,7 @@ export default function AppDialogHost() {
 
   if (!dialog) return null;
   return createPortal(
-    <div className="ios-dialog-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) close(false); }}>
+    <div className="ios-dialog-backdrop" onClick={(event) => { if (event.target === event.currentTarget) close(false); }}>
       <section className="ios-dialog" role="alertdialog" aria-modal="true" aria-describedby="ios-dialog-message" key={dialog.id}>
         <p id="ios-dialog-message">{dialog.message}</p>
         <div className="ios-dialog-actions">

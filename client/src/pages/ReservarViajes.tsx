@@ -492,9 +492,9 @@ export default function TripReservations() {
             </div>
 
             {showPaymentModal && (
-                <div className="modal-overlay">
+                <div className="modal-overlay" onClick={event => { if (event.target === event.currentTarget) handleClosePaymentModal(); }}>
                     <div className="modal-content" style={{ maxWidth: "460px" }}>
-                        <button className="modal-close" onClick={handleClosePaymentModal} title="Cerrar" />
+                        <button type="button" className="modal-close" onClick={handleClosePaymentModal} aria-label="Cerrar" />
                         <h2 style={{ marginBottom: "0.5rem", marginTop: "1.5rem" }}>Registrar Pago</h2>
                         <form onSubmit={handlePaymentSubmit} style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
                             <div className="form-group">

@@ -369,9 +369,9 @@ export default function PagosTemplos() {
       </div>
 
       {showPaymentModal && (
-        <div className="modal-overlay">
+        <div className="modal-overlay" onClick={event => { if (event.target === event.currentTarget) handleClosePaymentModal(); }}>
           <div className="modal-content" style={{ maxWidth: "440px" }}>
-            <button className="modal-close" onClick={handleClosePaymentModal} title="Cerrar" />
+            <button type="button" className="modal-close" onClick={handleClosePaymentModal} aria-label="Cerrar" />
             <h2 style={{ marginBottom: "0.5rem", marginTop: "1.5rem" }}>
               {editingPayment ? `Editar Pago — ${editingPayment.miembro_nombre}` : "Registrar Pago"}
             </h2>
