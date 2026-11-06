@@ -198,6 +198,9 @@ h1 {
 
 .audit-table-scroll { width: 100%; max-width: 100%; overflow-x: auto; overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch; }
 .audit-table-scroll table { min-width: 820px; }
+.audit-details { list-style: none; padding: 0; margin: 0; }
+.audit-details li + li { margin-top: .25rem; }
+.audit-reservation-id { display: block; color: var(--text-secondary); }
 
 .ios-dialog-backdrop { position: fixed; inset: 0; z-index: 2000; display: grid; place-items: center; padding: 1.25rem; background: rgba(15, 20, 32, .34); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); animation: iosDialogFade .18s ease-out; }
 .ios-dialog { width: min(100%, 360px); padding: 1.35rem 1.2rem 1rem; border: 1px solid color-mix(in srgb, var(--border-color) 70%, transparent); border-radius: 24px; color: var(--text-main); text-align: center; background: color-mix(in srgb, var(--bg-surface-elevated) 88%, transparent); box-shadow: 0 24px 70px rgba(0,0,0,.24), inset 0 1px rgba(255,255,255,.35); backdrop-filter: blur(28px) saturate(170%); -webkit-backdrop-filter: blur(28px) saturate(170%); animation: iosDialogPop .22s cubic-bezier(.2,.8,.2,1); }

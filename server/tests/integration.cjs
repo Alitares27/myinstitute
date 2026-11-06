@@ -98,7 +98,9 @@ test("payment creation and reversal reconcile balances and leave an immutable ev
     const deleted = await request('/api/temple-amortizations/' + paymentId, { method: 'DELETE' }); assert.equal(deleted.status, 200);
     assert.equal(Number((await db.query('SELECT pending_payment FROM temple_attendance WHERE id=11')).rows[0].pending_payment), 100);
     assert.equal((await request('/api/trip-reservations/11', { method: 'DELETE' })).status, 400);
-    const events = await request('/api/temple-amortizations/events'); assert.equal(events.status, 200); assert.ok(events.data.items.some(event => event.event_type === 'payment_reversed' && event.details.id === paymentId));
+    const events = await request('/api/temple-amortizations/events'); assert.equal(events.status, 200); const reversal = events.data.items.find(event => event.event_type === 'payment_reversed' && event.details.id === paymentId);
+    assert.equal(reversal?.reservation_member_name, 'Member 43');
+    assert.equal(reversal?.actor_name, 'Member 1');
 });
 test("reservation editing reconciles the initial payment without double-counting installments", async () => {
     const response = await request('/api/trip-reservations/10', { method: 'PUT', body: { user_id: 42, trip_id: 1, register_date: '2026-01-01', initial_payment: 20 } }); assert.equal(response.status, 200); assert.equal(Number(response.data.advance_payment), 50); assert.equal(Number(response.data.pending_payment), 50);

@@ -31,7 +31,15 @@ router.get("/report", verifyToken, isAdmin, async (req: AuthRequest, res: Respon
   res.json(result.rows[0]);
 });
 router.get("/events", verifyToken, isAdmin, async (req: AuthRequest, res: Response) => {
-  res.json(await readPage(req, `SELECT e.*,u.name AS actor_name FROM financial_events e LEFT JOIN users u ON u.id=e.actor_id`, [], { created_at: "created_at" }, "created_at"));
+  res.json(await readPage(req, `SELECT e.*,actor.name AS actor_name,member.name AS reservation_member_name
+    FROM financial_events e
+    LEFT JOIN users actor ON actor.id=e.actor_id
+    LEFT JOIN temple_attendance reservation ON reservation.id=e.reservation_id
+    LEFT JOIN users member ON member.id=CASE
+      WHEN (e.details #>> '{after,user_id}') ~ '^[0-9]{1,10}$'
+      THEN (e.details #>> '{after,user_id}')::bigint
+      ELSE reservation.user_id
+    END`, [], { created_at: "created_at" }, "created_at"));
 });
 router.get("/", verifyToken, isAdmin, async (req: AuthRequest, res: Response) => {
   const { select, params, summary } = paymentQuery(req);
