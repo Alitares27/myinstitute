@@ -2071,3 +2071,63 @@ html:root body .ios-dialog-backdrop { z-index: 15001; }
 @media (max-width: 600px) {
   .modal-content.form-modal { padding: 1rem; }
 }
+
+/* Page creation floats above the navigation; report actions stay in the header. */
+.btn > .mobile-only-action-icon { display: none; }
+
+@media (max-width: 700px) {
+  main.content:has(.mobile-add) { padding-bottom: calc(10rem + env(safe-area-inset-bottom, 0px)); }
+
+  .btn:is(.mobile-add, .mobile-header-action, .mobile-inline-add) {
+    flex: 0 0 auto;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    margin: 0;
+    border-radius: 50%;
+  }
+
+  .btn.mobile-add {
+    position: fixed;
+    right: calc(1rem + env(safe-area-inset-right, 0px));
+    bottom: calc(6rem + env(safe-area-inset-bottom, 0px));
+    z-index: 1180;
+    width: 56px;
+    height: 56px;
+    box-shadow: var(--shadow-md);
+  }
+
+  .btn:is(.mobile-add, .mobile-header-action, .mobile-inline-add) > span,
+  .btn.mobile-pay > .desktop-action-icon { display: none; }
+
+  .btn > .mobile-only-action-icon { display: block; }
+  .btn.mobile-add > svg { width: 1.65rem; height: 1.65rem; }
+  .btn.mobile-header-action > svg { width: 1.3rem; height: 1.3rem; }
+
+  :is(.asistencia-header, .calificaciones-header, .inscripciones-header, .maestros-header,
+    .actividades-header, .meetings-header):has(.mobile-print) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+    gap: .5rem;
+  }
+
+  :is(.asistencia-header-actions, .calificaciones-header-actions, .inscripciones-header-actions,
+    .maestros-header-actions, .page-actions):has(.mobile-print) {
+    display: flex;
+    flex-flow: row nowrap;
+    align-items: center;
+    justify-content: flex-end;
+    width: auto;
+    gap: .4rem;
+  }
+
+  .page-actions:has(.mobile-print) > .mobile-header-action { flex: none; }
+
+  .inscripciones-header-actions:has(.mobile-print) > .btn:not(.mobile-print) {
+    margin: 0;
+    padding-inline: .55rem;
+  }
+
+  .inscripciones-header-actions:has(.mobile-print) > .btn:not(.mobile-print) > svg { display: none; }
+}

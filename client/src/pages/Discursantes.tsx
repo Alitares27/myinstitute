@@ -1,4 +1,6 @@
+import { IoAddOutline } from "react-icons/io5";
 import FormModal from "../components/FormModal";
+import "../styles/Discursantes.css";
 import { confirmAppAction } from "../components/AppDialogHost";
 import { useEffect, useState, useMemo, useRef } from "react";
 import api from "../api";
@@ -12,10 +14,17 @@ import type { SpeakerRecord } from "../interfaces/Speaker";
 import type { Member, Tema } from "../interfaces/Common";
 import { useLocation, useNavigate } from "react-router-dom";
 
+function SpeakerStatus({ completed }: { completed: SpeakerRecord["completed"] }) {
+  return <span className={completed === "Si" ? "status-present" : "status-absent"}>
+    {completed === "Si" ? <><IoCheckmarkCircleOutline aria-hidden="true" /> Cumplido</> : "Pendiente"}
+  </span>;
+}
+
 export default function Speakers() {
   const location = useLocation();
   const navigate = useNavigate();
   const [formOpen, setFormOpen] = useState(false);
+  const [selectedSpeaker, setSelectedSpeaker] = useState<SpeakerRecord | null>(null);
   const [speakers, setSpeakers] = useState<SpeakerRecord[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
   const [allTemas, setAllTemas] = useState<Tema[]>([]);
@@ -284,9 +293,18 @@ export default function Speakers() {
 
   if (error) return <p className="error-message"><TbAlertTriangle /> {error}</p>;
 
+  const memberName = (speaker: SpeakerRecord) =>
+    speaker.member_name || members.find(member => member.id === speaker.member_id)?.name || "Miembro";
+
   return (
-    <div className="dashboard-container">
-      <h1><span className="page-title-icon"><FiMic /></span> Control de Discursantes</h1>
+    <div className="dashboard-container speakers-page">
+      <header className="speakers-header">
+        <h1><span className="page-title-icon"><FiMic /></span> Control de Discursantes</h1>
+        {role === "admin" && <button type="button" className="btn secondary mobile-header-action speakers-topics-mobile"
+          aria-label="Temas" onClick={() => setShowTemasModal(true)}>
+          <TbList aria-hidden="true" />
+        </button>}
+      </header>
 
       {(speechWarning || topicWarning) && (
         <div className="warning-toast-container">
@@ -301,7 +319,7 @@ export default function Speakers() {
 
       {role === "admin" && (
         <>
-          <button type="button" className="btn primary form-launch" onClick={() => setFormOpen(true)}>Agregar</button>
+          <button type="button" className="btn primary form-launch mobile-add" aria-label="Agregar discursante" onClick={() => setFormOpen(true)}><IoAddOutline className="mobile-only-action-icon" aria-hidden="true" /> <span>Agregar</span></button>
           {formOpen && <FormModal title={editingId ? "Editar discursante" : "Agregar discursante"} onClose={() => { setEditingId(null); setForm({ member_id: "", tema_id: "", speech_title: "", time: "10", date: businessDate(), completed: "No" }); setFormOpen(false); }}>
             <form className="grid-form" onSubmit={handleSubmit}>
               <div className="form-group">
@@ -363,7 +381,7 @@ export default function Speakers() {
         </select>
         <input type="date" value={dateFilter} onChange={e => { setDateFilter(e.target.value); setCurrentPage(1); }} />
         {role === "admin" && (
-          <button className="btn secondary" onClick={() => setShowTemasModal(true)}>
+          <button type="button" className="btn secondary speakers-topics-desktop" onClick={() => setShowTemasModal(true)}>
             <TbList /> Temas
           </button>
         )}
@@ -385,7 +403,7 @@ export default function Speakers() {
                   {sortConfig?.key === "completed" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
                 </span>
               </th>
-              <th onClick={() => handleSort("topic")} className="sortable-header">
+              <th onClick={() => handleSort("topic")} className="sortable-header speakers-desktop-detail">
                 Tema / Discurso
                 <span className="sort-icon">
                   {sortConfig?.key === "topic" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
@@ -398,22 +416,20 @@ export default function Speakers() {
             {currentRecords.map(s => (
               <tr key={s.id}>
                 <td>
-                  <div className="extracted-style-20">
-                    {s.member_name || members.find(m => m.id === s.member_id)?.name}
-                  </div>
+                  <button type="button" className="link-button" onClick={() => setSelectedSpeaker(s)}>
+                    {memberName(s)}
+                  </button>
                   <div className="text-muted-sm">
                     {formatDate(s.date, { weekday: 'short', day: 'numeric', month: 'short' })}
                   </div>
                 </td>
                 <td>
-                  <span className={s.completed === "Si" ? "status-present" : "status-absent"}>
-                    {s.completed === "Si" ? <><IoCheckmarkCircleOutline /> Cumplido</> : "Pendiente"}
-                  </span>
-                  <div className="flex-icon-text">
+                  <SpeakerStatus completed={s.completed} />
+                  <div className="flex-icon-text speakers-desktop-detail">
                     <IoTimeOutline /> {s.time || 0} min
                   </div>
                 </td>
-                <td>
+                <td className="speakers-desktop-detail">
                   <div className="flex-icon-text">{s.topic}</div>
                   <div className="extracted-style-24">
                     "{s.speech_title}"
@@ -421,12 +437,14 @@ export default function Speakers() {
                 </td>
                 {role === "admin" && (
                   <td>
-                    <button className="btn secondary btn-icon" onClick={() => handleEdit(s)} aria-label="Editar">
+                    <div className="speakers-row-actions">
+                    <button type="button" className="btn secondary btn-icon" onClick={() => handleEdit(s)} aria-label="Editar">
                       <IoCreateOutline />
                     </button>
-                    <button className="btn secondary btn-icon danger-outline" onClick={() => handleDelete(s.id)} aria-label="Eliminar">
+                    <button type="button" className="btn secondary btn-icon danger-outline" onClick={() => handleDelete(s.id)} aria-label="Eliminar">
                       <IoTrashOutline />
                     </button>
+                    </div>
                   </td>
                 )}
               </tr>
@@ -454,6 +472,21 @@ export default function Speakers() {
           </select>
         </div>
       )}
+      {selectedSpeaker && <FormModal title="Detalles del discursante" onClose={() => setSelectedSpeaker(null)}>
+        <dl className="speakers-details">
+          <div className="speakers-details-date">
+            <dt>Fecha</dt>
+            <dd>
+              <span>{formatDate(selectedSpeaker.date, { day: "numeric", month: "long", year: "numeric" })}</span>
+              <SpeakerStatus completed={selectedSpeaker.completed} />
+            </dd>
+          </div>
+          <div><dt>Miembro</dt><dd>{memberName(selectedSpeaker)}</dd></div>
+          <div><dt>Tema</dt><dd>{selectedSpeaker.topic || "Sin tema"}</dd></div>
+          <div><dt>Discurso</dt><dd>{selectedSpeaker.speech_title || "Sin título"}</dd></div>
+          <div><dt>Tiempo</dt><dd>{selectedSpeaker.time ?? 0} min</dd></div>
+        </dl>
+      </FormModal>}
       {showTemasModal && (
         <FormModal title="Temas para discursantes" onClose={() => setShowTemasModal(false)}>
           <form onSubmit={handleAddTema} style={{ display: "flex", gap: "0.5rem", marginBottom: "1rem" }}>
@@ -465,7 +498,7 @@ export default function Speakers() {
               style={{ flex: 1 }}
               required
             />
-            <button type="submit" className="btn primary"><FaPlus /></button>
+            <button type="submit" className="btn primary mobile-inline-add" aria-label="Agregar tema"><FaPlus aria-hidden="true" /></button>
           </form>
 
           {temaError && <div className="error-message" style={{ marginBottom: "0.5rem" }}>{temaError}</div>}

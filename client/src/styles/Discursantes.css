@@ -1,0 +1,32 @@
+.btn.speakers-topics-mobile { display: none; }
+
+.speakers-row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .25rem;
+}
+
+.speakers-details { display: grid; gap: .9rem; }
+.speakers-details dt { color: var(--text-secondary); font-weight: 600; }
+.speakers-details dd { margin: .2rem 0 0; overflow-wrap: anywhere; }
+.speakers-details-date dd {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: .5rem;
+}
+
+@media (max-width: 700px) {
+  .speakers-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+    gap: .5rem;
+  }
+
+  .btn.speakers-topics-mobile { display: inline-flex; }
+  .speakers-page :is(.speakers-desktop-detail, .btn.speakers-topics-desktop) { display: none; }
+  .speakers-page :is(th, td) { padding-inline: .4rem; }
+  .speakers-page .link-button { text-align: start; margin: 0; }
+  .speakers-page .speakers-row-actions { flex-wrap: nowrap; }
+}

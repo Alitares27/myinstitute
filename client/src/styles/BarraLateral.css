@@ -24,8 +24,8 @@
 .floating-nav .is-open .floating-nav-chevron { transform: rotate(180deg); }
 .floating-nav button:hover, .floating-nav a:hover { color: var(--primary); background: var(--primary-light); }
 .floating-nav button.is-active, .floating-nav button.is-open, .floating-nav a.active { color: var(--primary); background: var(--primary-light); }
-.floating-nav .floating-nav-submenu { position: absolute; bottom: calc(100% + .75rem); left: 0; right: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: .35rem; padding: .65rem; border: 2px solid var(--glass-border); border-radius: 20px; background: var(--glass-bg); box-shadow: var(--shadow-lg); backdrop-filter: blur(24px) saturate(160%); -webkit-backdrop-filter: blur(24px) saturate(160%); max-height: calc(100dvh - 200px); overflow-y: auto; }
-.floating-nav .floating-nav-submenu a { padding: .75rem; }
+.floating-nav .floating-nav-submenu { position: absolute; bottom: calc(100% + .75rem); left: 0; right: 0; display: grid; gap: .25rem; padding: .65rem; border: 2px solid var(--glass-border); border-radius: 20px; background: var(--glass-bg); box-shadow: var(--shadow-lg); backdrop-filter: blur(24px) saturate(160%); -webkit-backdrop-filter: blur(24px) saturate(160%); max-height: calc(100dvh - 200px); overflow-y: auto; }
+
 .floating-nav :focus-visible, .app-topbar :focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
 @supports not (backdrop-filter: blur(1px)) { .floating-nav, .floating-nav .floating-nav-submenu { background: var(--bg-surface); } }
 @media(max-width: 700px) {
@@ -48,12 +48,8 @@
 .native-android .floating-nav-groups > li > .floating-nav-home { width: 100%; min-width: 0; }
 .native-android .floating-nav .floating-nav-label, .native-android .floating-nav .floating-nav-chevron { display: none; }
 .native-android .floating-nav-groups > li > .floating-nav-trigger { width: 100%; }
-.floating-nav-more-item > .floating-nav-submenu { max-height: min(62dvh, calc(100dvh - 170px)); }
 .floating-nav-more-item > .floating-nav-trigger { gap: .3rem; padding: .45rem; }
 .floating-nav-more-item > .floating-nav-trigger .floating-nav-label { display: inline; font-size: .76rem; }
-.floating-nav-more-item > .floating-nav-submenu > li { flex: 1 1 100%; min-width: 0; }
-.floating-nav-more-item > .floating-nav-submenu a { width: 100%; justify-content: center; text-align: center; min-height: 46px; padding: .65rem .85rem; }
-.floating-nav-more-item > .floating-nav-submenu .floating-nav-label { display: inline; overflow: hidden; text-overflow: ellipsis; }
 @media(prefers-reduced-transparency: reduce) { .floating-nav, .floating-nav .floating-nav-submenu { background: var(--bg-surface); backdrop-filter: none; -webkit-backdrop-filter: none; } }
 @media(max-width:700px) {
   @supports (color: AccentColor) {
@@ -77,6 +73,12 @@
   -webkit-backdrop-filter: blur(9px) saturate(125%);
   cursor: default;
   animation: moreBackdropIn .16s ease-out;
+}
+
+.floating-nav-backdrop:hover:not(:disabled),
+.floating-nav-backdrop:active:not(:disabled) {
+  transform: none;
+  box-shadow: none;
 }
 
 @keyframes moreBackdropIn {
@@ -110,39 +112,6 @@
     text-align: center;
     text-overflow: ellipsis;
     white-space: nowrap;
-  }
-
-  .floating-nav .floating-nav-submenu {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    align-items: stretch;
-    gap: .2rem;
-  }
-
-  .floating-nav .floating-nav-submenu a,
-  .floating-nav .floating-nav-submenu button,
-  .floating-nav-more-item > .floating-nav-submenu a,
-  .floating-nav-more-item > .floating-nav-submenu button {
-    width: 100%;
-    min-height: 70px;
-    height: auto;
-    flex-direction: column;
-    justify-content: center;
-    gap: .3rem;
-    padding: .45rem .2rem;
-    white-space: normal;
-    text-align: center;
-  }
-
-  .floating-nav .floating-nav-submenu .floating-nav-label {
-    display: block;
-    max-width: 100%;
-    overflow: hidden;
-    font-size: .62rem;
-    line-height: 1.15;
-    text-align: center;
-    text-overflow: ellipsis;
-    white-space: normal;
   }
 
   .floating-nav-more-item > .floating-nav-trigger { gap: .15rem; padding: .35rem .2rem; }
@@ -198,4 +167,29 @@
     .floating-nav,
     .floating-nav .floating-nav-submenu { background: var(--bg-surface-elevated); }
   }
+}
+
+.floating-nav .floating-nav-submenu > li { min-width: 0; }
+
+.floating-nav .floating-nav-submenu :is(a, button) {
+  width: 100%;
+  justify-content: flex-start;
+  gap: .85rem;
+  padding: .65rem .85rem;
+  border-radius: 14px;
+  text-align: start;
+  white-space: normal;
+}
+
+.floating-nav-submenu-copy {
+  display: grid;
+  min-width: 0;
+  gap: .15rem;
+}
+
+.floating-nav-submenu-copy small {
+  color: var(--text-secondary);
+  font-size: .78rem;
+  font-weight: 400;
+  line-height: 1.25;
 }

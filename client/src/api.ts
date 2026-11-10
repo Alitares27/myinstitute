@@ -82,7 +82,6 @@ api.interceptors.response.use(
       const path = config?.url?.split("?")[0] || "";
       const accountAction = /\/(?:login|register|logout)$/.test(path);
       if (!accountAction && token && config?.headers?.Authorization === `Bearer ${token}`) {
-        // A server rejection requires fresh credentials. Local drafts stay queued.
         void limpiarSesion();
         if (window.location.pathname !== "/iniciar-sesion") {
           window.history.replaceState(window.history.state, "", "/iniciar-sesion?sesion=expirada");

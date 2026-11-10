@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import api from "../api";
 import "../styles/Panel.css";
 import { Skeleton } from "../components/Esqueleto";
@@ -8,12 +8,10 @@ import {
   TbBook, TbChartLine, TbStar, TbCircleCheck,
   TbBuilding, TbSettings, TbPencil,
   TbChartBar, TbRocket, TbAlertTriangle,
-  TbCalendarCheck
+  TbCalendarCheck, TbRefresh
 } from "react-icons/tb";
 
 function Dashboard() {
-  const navigate = useNavigate();
-
   const [stats, setStats] = useState<any>({
     students: 0,
     teachers: 0,
@@ -75,7 +73,7 @@ function Dashboard() {
             <div className="shortcuts-section">
                 <Skeleton width="180px" height="1.5rem" style={{ marginBottom: "16px" }} />
                 <div className="shortcuts-grid">
-                    {Array.from({ length: 3 }).map((_, i) => (
+                    {Array.from({ length: 4 }).map((_, i) => (
                         <div key={i} className="shortcut-card" style={{ display: "flex", alignItems: "center", gap: "12px", padding: "1rem" }}>
                             <Skeleton width="48px" height="48px" style={{ borderRadius: "12px", flexShrink: 0 }} />
                             <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "6px" }}>
@@ -155,103 +153,20 @@ function Dashboard() {
     </div>
   );
 
-  const renderShortcuts = () => {
-    if (user?.role === "admin") {
-      return (
-        <div className="shortcuts-grid">
-          <div className="shortcut-card" onClick={() => navigate("/consejos")} role="button" tabIndex={0} onKeyDown={(e) => e.key === "Enter" && navigate("/consejos")}>
-            <div className="shortcut-icon-bg"><TbCalendar /></div>
-            <div className="shortcut-info">
-              <h3>Consejos</h3>
-              <p>Programar y gestionar consejos</p>
-            </div>
-          </div>
-          <div className="shortcut-card" onClick={() => navigate("/reservar-viajes")} role="button" tabIndex={0} onKeyDown={(e) => e.key === "Enter" && navigate("/reservar-viajes")}>
-            <div className="shortcut-icon-bg"><TbBuilding /></div>
-            <div className="shortcut-info">
-              <h3>Templo</h3>
-              <p>Reservas y viajes al templo</p>
-            </div>
-          </div>
-          <div className="shortcut-card" onClick={() => navigate("/miembros")} role="button" tabIndex={0} onKeyDown={(e) => e.key === "Enter" && navigate("/miembros")}>
-            <div className="shortcut-icon-bg"><TbSettings /></div>
-            <div className="shortcut-info">
-              <h3>Miembros</h3>
-              <p>Datos personales y registros académicos</p>
-            </div>
-          </div>
-        </div>
-      );
-    }
-
-    if (user?.role === "teacher") {
-      return (
-        <div className="shortcuts-grid">
-          <div className="shortcut-card" onClick={() => navigate("/asistencia")} role="button" tabIndex={0} onKeyDown={(e) => e.key === "Enter" && navigate("/asistencia")}>
-            <div className="shortcut-icon-bg"><TbPencil /></div>
-            <div className="shortcut-info">
-              <h3>Tomar Asistencia</h3>
-              <p>Registrar alumnos presentes hoy</p>
-            </div>
-          </div>
-          <div className="shortcut-card" onClick={() => navigate("/calificaciones")} role="button" tabIndex={0} onKeyDown={(e) => e.key === "Enter" && navigate("/calificaciones")}>
-            <div className="shortcut-icon-bg"><TbChartBar /></div>
-            <div className="shortcut-info">
-              <h3>Calificaciones</h3>
-              <p>Registrar calificaciones</p>
-            </div>
-          </div>
-          <div className="shortcut-card" onClick={() => navigate("/inscripciones")} role="button" tabIndex={0} onKeyDown={(e) => e.key === "Enter" && navigate("/inscripciones")}>
-            <div className="shortcut-icon-bg"><TbBooks /></div>
-            <div className="shortcut-info">
-              <h3>Ver mis Cursos</h3>
-              <p>Detalle de mis materias</p>
-            </div>
-          </div>
-          <div className="shortcut-card" onClick={() => navigate("/miembros")} role="button" tabIndex={0} onKeyDown={(e) => e.key === "Enter" && navigate("/miembros")}>
-            <div className="shortcut-icon-bg"><TbUser /></div>
-            <div className="shortcut-info">
-              <h3>Lista de Miembros</h3>
-              <p>Consultar miembros asignados</p>
-            </div>
-          </div>
-        </div>
-      );
-    }
-
-    return (
-      <div className="shortcuts-grid">
-          <div className="shortcut-card" onClick={() => navigate("/inscripciones")} role="button" tabIndex={0} onKeyDown={(e) => e.key === "Enter" && navigate("/inscripciones")}>
-            <div className="shortcut-icon-bg"><TbBook /></div>
-            <div className="shortcut-info">
-              <h3>Mis Cursos</h3>
-            <p>Ver mis clases y horarios</p>
-          </div>
-        </div>
-        <div className="shortcut-card" onClick={() => navigate("/calificaciones")} role="button" tabIndex={0} onKeyDown={(e) => e.key === "Enter" && navigate("/calificaciones")}>
-            <div className="shortcut-icon-bg"><TbStar /></div>
-          <div className="shortcut-info">
-            <h3>Mis Notas</h3>
-            <p>Reporte de calificaciones</p>
-          </div>
-        </div>
-          <div className="shortcut-card" onClick={() => navigate("/asistencia")} role="button" tabIndex={0} onKeyDown={(e) => e.key === "Enter" && navigate("/asistencia")}>
-            <div className="shortcut-icon-bg"><TbCalendar /></div>
-          <div className="shortcut-info">
-            <h3>Mi Asistencia</h3>
-            <p>Resumen de faltas y presencia</p>
-          </div>
-        </div>
-        <div className="shortcut-card" onClick={() => navigate("/miembros")} role="button" tabIndex={0} onKeyDown={(e) => e.key === "Enter" && navigate("/miembros")}>
-            <div className="shortcut-icon-bg"><TbUser /></div>
-            <div className="shortcut-info">
-              <h3>Mi Perfil</h3>
-            <p>Datos personales y configuración</p>
-          </div>
-        </div>
-      </div>
-    );
-  };
+  const shortcuts = user?.role === "admin" ? [
+    { to: "/consejos", title: "Consejos", description: "Gestionar consejos", Icon: TbCalendar },
+    { to: "/reservar-viajes", title: "Templo", description: "Reservas y viajes", Icon: TbBuilding },
+    { to: "/miembros", title: "Miembros", description: "Directorio de miembros", Icon: TbSettings },
+  ] : user?.role === "teacher" ? [
+    { to: "/asistencia", title: "Asistencia", description: "Registrar asistencia", Icon: TbPencil },
+    { to: "/calificaciones", title: "Calificaciones", description: "Registrar notas", Icon: TbChartBar },
+    { to: "/inscripciones", title: "Mis cursos", description: "Ver mis cursos", Icon: TbBooks },
+  ] : [
+    { to: "/inscripciones", title: "Mis cursos", description: "Ver mis clases", Icon: TbBook },
+    { to: "/calificaciones", title: "Mis notas", description: "Consultar calificaciones", Icon: TbStar },
+    { to: "/asistencia", title: "Mi asistencia", description: "Ver mi asistencia", Icon: TbCalendar },
+  ];
+  shortcuts.push({ to: "/sincronizacion", title: "Sincronizar", description: "Cambios pendientes", Icon: TbRefresh });
 
   return (
     <div className="dashboard-page">
@@ -276,7 +191,17 @@ function Dashboard() {
         <h2 className="section-title">
           <span><TbRocket /></span> Accesos Rápidos
         </h2>
-        {renderShortcuts()}
+        <div className="shortcuts-grid">
+          {shortcuts.map(({ to, title, description, Icon }) => (
+            <Link className="shortcut-card" key={to} to={to}>
+              <span className="shortcut-icon-bg"><Icon aria-hidden="true" /></span>
+              <div className="shortcut-info">
+                <h3>{title}</h3>
+                <p>{description}</p>
+              </div>
+            </Link>
+          ))}
+        </div>
       </div>
     </div>
   );

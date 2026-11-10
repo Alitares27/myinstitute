@@ -1,3 +1,4 @@
+import { IoAddOutline } from "react-icons/io5";
 import FormModal from "../components/FormModal";
 import { confirmAppAction } from "../components/AppDialogHost";
 import { useEffect, useState, useMemo } from "react";
@@ -244,7 +245,7 @@ export default function TempleTrip() {
 
             {role === "admin" && (
                 <>
-                  <button type="button" className="btn primary form-launch" onClick={() => setFormOpen(true)}>Agregar</button>
+                  <button type="button" className="btn primary form-launch mobile-add" aria-label="Agregar viaje" onClick={() => setFormOpen(true)}><IoAddOutline className="mobile-only-action-icon" aria-hidden="true" /> <span>Agregar</span></button>
                   {formOpen && <FormModal title={editingId ? "Editar viaje" : "Agregar viaje"} onClose={() => { setEditingId(null); setFormData({ temple_id: "", date: "", status: "programado", cost: "" }); setFormOpen(false); }}>
                     <form onSubmit={handleSubmit} className="asistencia-form-grid">
                     <div className="form-group">

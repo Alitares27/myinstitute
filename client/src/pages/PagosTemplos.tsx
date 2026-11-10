@@ -1,3 +1,4 @@
+import { TbCoin } from "react-icons/tb";
 import { isAndroidApp } from "../utils/androidReports";
 import FormModal from "../components/FormModal";
 import { confirmAppAction } from "../components/AppDialogHost";
@@ -285,8 +286,8 @@ export default function PagosTemplos() {
           <p>Historial de amortizaciones de los viajes al templo</p>
         </div>
         <div className="asistencia-header-actions">
-          <button className="btn primary" onClick={handleOpenPaymentModal}><FaPlus /> Agregar</button>
-          <button type="button" onClick={() => setShowReportModal(true)} className="btn secondary"><IoPrintOutline /> Imprimir</button>
+          <button type="button" className="btn primary mobile-header-action mobile-pay" aria-label="Registrar pago" onClick={handleOpenPaymentModal}><FaPlus className="desktop-action-icon" aria-hidden="true" /><TbCoin className="mobile-only-action-icon" aria-hidden="true" /> <span>Agregar</span></button>
+          <button type="button" onClick={() => setShowReportModal(true)} className="btn secondary mobile-header-action mobile-print" aria-label="Imprimir"><IoPrintOutline aria-hidden="true" /> <span>Imprimir</span></button>
         </div>
       </div>
 

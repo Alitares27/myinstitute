@@ -367,6 +367,13 @@ test("every mobile submenu shows the backdrop until it closes", async () => {
   for(const category of ["Enseñanza","Liderazgo","Templo","Más"]){
    const trigger=view.node.querySelector(`.floating-nav-trigger[aria-label="${category}"]`);
    await view.act(async()=>Simulate.click(trigger));
+   const submenu = view.node.querySelector(".floating-nav-submenu");
+   assert.ok([...submenu.querySelectorAll("li small")].every(description => description.textContent.trim()));
+   if (category === "Enseñanza") {
+    assert.deepEqual([...submenu.querySelectorAll("a")].map(link => link.getAttribute("aria-label")),
+      ["Asistencia", "Calificaciones", "Maestros y cursos"]);
+   }
+   if (category === "Más") assert.equal(submenu.querySelector('a[href="/maestros"]'), null);
    const backdrop=view.node.querySelector(".floating-nav-backdrop");
    assert.equal(backdrop?.getAttribute("aria-label"),`Cerrar el menú ${category}`);
    await view.act(async()=>Simulate.click(backdrop));

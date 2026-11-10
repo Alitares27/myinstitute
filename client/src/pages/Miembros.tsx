@@ -45,7 +45,7 @@ export default function Miembros() {
     if (!me) return <p role="alert">{error || 'No hay una sesión válida'}</p>;
     return <div className="miembros-page"><header className="miembros-header"><div><h1>{profileView ? 'Mi perfil' : admin ? 'Miembros' : 'Estudiantes de mis cursos'}</h1><p>{profileView ? 'Información personal y seguimiento académico' : 'Consulta y gestiona la información personal y académica.'}</p></div>
         {me.role !== 'student' && <div className="miembros-actions"><button className="btn secondary" onClick={() => { setSearchParams(profileView ? {} : { view: 'profile' }); setEditorOpen(false); closePassword(); setSelected(null); }}>{profileView ? 'Miembros' : 'Mi perfil'}</button>
-            {admin && !profileView && <button className="btn primary" onClick={() => { setEditing(null); setEditorOpen(true); }}><IoAddOutline aria-hidden="true" /> Agregar</button>}</div>}</header>
+            {admin && !profileView && <button type="button" className="btn primary mobile-add" aria-label="Agregar miembro" onClick={() => { setEditing(null); setEditorOpen(true); }}><IoAddOutline aria-hidden="true" /> <span>Agregar</span></button>}</div>}</header>
         {error && !passwordOpen && <p role="alert">{error}</p>}
         {profileView ? <>
             <MemberDetails id={me.id} viewerId={me.id} viewerRole={me.role} revision={revision} />

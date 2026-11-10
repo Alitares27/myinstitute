@@ -1,3 +1,4 @@
+import { IoAddOutline } from "react-icons/io5";
 import { isAndroidApp } from "../utils/androidReports";
 import FormModal from "../components/FormModal";
 import { confirmAppAction } from "../components/AppDialogHost";
@@ -281,11 +282,11 @@ export default function Grades() {
         <div className="calificaciones-header-actions">
           <button
             type="button"
-            className="btn secondary"
+            className="btn secondary mobile-header-action mobile-print" aria-label="Imprimir"
             onClick={handlePrintGradesReport}
             title="Imprimir o Exportar Reporte"
           >
-            <IoPrintOutline /> Imprimir
+            <IoPrintOutline aria-hidden="true" /> <span>Imprimir</span>
           </button>
         </div>
       </div>
@@ -333,7 +334,7 @@ export default function Grades() {
 
       {role !== "student" && (
         <>
-          <button type="button" className="btn primary form-launch" onClick={() => setFormOpen(true)}>Agregar</button>
+          <button type="button" className="btn primary form-launch mobile-add" aria-label="Agregar calificación" onClick={() => setFormOpen(true)}><IoAddOutline className="mobile-only-action-icon" aria-hidden="true" /> <span>Agregar</span></button>
           {formOpen && <FormModal title={form.id ? "Editar calificación" : "Agregar calificación"} onClose={() => { resetForm(); setError(""); setFormOpen(false); }}>
             {error && <p role="alert">{error}</p>}
             <form onSubmit={handleSubmit}>

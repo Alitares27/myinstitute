@@ -415,11 +415,11 @@ export default function Maestros() {
         <div className="maestros-header-actions">
           <button
             type="button"
-            className="btn secondary"
+            className="btn secondary mobile-header-action mobile-print" aria-label="Imprimir"
             onClick={handlePrintReport}
             title="Imprimir o Exportar Reporte"
           >
-            <IoPrintOutline /> Imprimir
+            <IoPrintOutline aria-hidden="true" /> <span>Imprimir</span>
           </button>
         </div>
       </div>
@@ -468,7 +468,7 @@ export default function Maestros() {
 
       {role === "admin" && (
         <>
-          <button type="button" className="btn primary form-launch" onClick={() => setFormOpen(true)}>Agregar</button>
+          <button type="button" className="btn primary form-launch mobile-add" aria-label="Agregar maestro" onClick={() => setFormOpen(true)}><IoAddOutline className="mobile-only-action-icon" aria-hidden="true" /> <span>Agregar</span></button>
           {formOpen && <FormModal title={form.id ? "Editar maestro" : "Agregar maestro"} onClose={() => { resetForm(); setFormOpen(false); }}>
             <form onSubmit={handleSubmit}>
               <div className="form-row" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "1rem" }}>

@@ -10,6 +10,20 @@ const memberFields = [
 ];
 const fields = ["scheduled_at", "friend", "opening_hymn", "closing_hymn", ...memberFields];
 
+async function queryAgendas(sql: string, values?: unknown[]) {
+  try {
+    return await pool.query(sql, values);
+  } catch (error) {
+    if ((error as { code?: string }).code === "42P01") {
+      console.error("Agendas: falta aplicar migrations/baptism_agendas.sql", error);
+      const unavailable = new InputError("Agendas todavía no está habilitada en el servidor.");
+      unavailable.status = 503;
+      throw unavailable;
+    }
+    throw error;
+  }
+}
+
 const agendaSelect = `
   SELECT a.*, to_char(a.scheduled_at, 'YYYY-MM-DD"T"HH24:MI') AS scheduled_at,
     COALESCE((
@@ -49,7 +63,7 @@ function valuesFrom(body: Record<string, unknown>) {
 }
 
 router.get("/", verifyToken, async (_req, res) => {
-  const result = await pool.query(agendaSelect + " ORDER BY a.scheduled_at DESC, a.id DESC");
+  const result = await queryAgendas(agendaSelect + " ORDER BY a.scheduled_at DESC, a.id DESC");
   res.json(result.rows);
 });
 
@@ -61,7 +75,7 @@ router.get("/members", verifyToken, isAdmin, async (_req, res) => {
 router.post("/", verifyToken, isAdmin, async (req, res) => {
   const values = valuesFrom(req.body ?? {});
   try {
-    const result = await pool.query(`
+    const result = await queryAgendas(`
       WITH saved AS (
         INSERT INTO baptism_agendas (${fields.join(", ")})
         VALUES (${fields.map((_, i) => "$" + (i + 1)).join(", ")})
@@ -80,7 +94,7 @@ router.put("/:id", verifyToken, isAdmin, async (req, res) => {
   const id = positiveId(req.params.id);
   const values = valuesFrom(req.body ?? {});
   try {
-    const result = await pool.query(`
+    const result = await queryAgendas(`
       WITH saved AS (
         UPDATE baptism_agendas SET ${fields.map((field, i) => field + " = $" + (i + 1)).join(", ")}
         WHERE id = $${fields.length + 1}
@@ -97,7 +111,7 @@ router.put("/:id", verifyToken, isAdmin, async (req, res) => {
 });
 
 router.delete("/:id", verifyToken, isAdmin, async (req, res) => {
-  const result = await pool.query("DELETE FROM baptism_agendas WHERE id = $1", [positiveId(req.params.id)]);
+  const result = await queryAgendas("DELETE FROM baptism_agendas WHERE id = $1", [positiveId(req.params.id)]);
   if (!result.rowCount) return res.status(404).json({ message: "Agenda no encontrada." });
   res.json({ message: "Agenda eliminada." });
 });

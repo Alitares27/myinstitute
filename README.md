@@ -140,7 +140,7 @@ La prueba de solo lectura comprueba consultas y aislamiento con los roles dispon
 - La edición de una reserva recibe `initial_payment` como adelanto inicial; el total pagado incorpora los abonos existentes. No se puede cambiar miembro o viaje si existen abonos.
 - Las reservas se consultan con `page`, `limit` (máximo 100), `trip_id`, `user_id`, `search`, `sort` y `direction`. La respuesta contiene `items`, `total`, `total_paid`, `total_pending`, `page` y `limit`. `/options?trip_id=...` carga opciones y `/report` exporta el conjunto filtrado; ambos requieren administrador.
 - Los cambios de rol con historial académico o cursos asignados se rechazan para preservar los datos. Reasigna o resuelve esas dependencias primero.
-- `npm run migrate --prefix server` aplica `security_and_history.sql`: versión de sesión, archivado, historial financiero e índices. Es idempotente y no elimina registros. Aplica esta migración antes de desplegar el backend. Las migraciones anteriores de índices/restricciones pueden aplicarse por separado.
+- `npm run migrate --prefix server` aplica `security_and_history.sql` y `baptism_agendas.sql`: versión de sesión, archivado, historial financiero, índices y tabla de Agendas. Es idempotente y no elimina registros. Aplica esta migración antes de desplegar el backend. Las migraciones anteriores de índices/restricciones pueden aplicarse por separado.
 
 ## Correcciones de la auditoría del 31/10/2026
 
@@ -160,3 +160,7 @@ La prueba de solo lectura comprueba consultas y aislamiento con los roles dispon
 ## Miembros y perfiles académicos
 
 La administración unificada se encuentra en `/miembros`; `/usuarios` redirige a esta pantalla. El filtro «Tipo de registro → Estudiantes» consulta también perfiles académicos de miembros con otro rol de acceso. La ficha permite consultar cursos, asistencia y notas. `students` y `teachers` se conservan como extensiones de `users`, con sus claves e historial. Docentes ven estudiantes de sus cursos; estudiantes ven su propia ficha. Detalles y validación en [UNIFICACION-MIEMBROS.md](UNIFICACION-MIEMBROS.md).
+
+### Agendas en Render
+
+Si el log de PostgreSQL indica `relation "baptism_agendas" does not exist`, aplica la migración en la base que usa el servicio de Render. Desde la raíz del proyecto, ejecuta `npm run migrate --prefix server` con el entorno de ese servicio. Si el servicio tiene configurada la carpeta raíz `server`, ejecuta `npm run migrate` allí. Si el rol del servidor no tiene permiso para crear tablas, aplica `server/migrations/baptism_agendas.sql` con el rol encargado de las migraciones.

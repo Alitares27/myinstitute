@@ -216,20 +216,19 @@ export default function Meetings() {
         <div className="page-actions">
           <button
             type="button"
-            className="btn secondary print-trigger"
+            className="btn secondary print-trigger mobile-header-action mobile-print" aria-label="Imprimir"
             onClick={openPrintModal}
             disabled={meetings.length === 0}
             title="Imprimir consejos en un archivo PDF"
           >
-            <TbPrinter /> Imprimir
+            <TbPrinter aria-hidden="true" /> <span>Imprimir</span>
           </button>
 
           {role === "admin" && (
             <Link
               to="/consejos/nuevo"
-              className="btn primary"
-            >
-              Agregar
+              className="btn primary mobile-add" aria-label="Agregar consejo">
+              <IoAddOutline className="mobile-only-action-icon" aria-hidden="true" /> <span>Agregar</span>
             </Link>
           )}
         </div>

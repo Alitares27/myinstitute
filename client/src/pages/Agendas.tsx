@@ -56,7 +56,13 @@ export default function Agendas() {
     const { signal } = controller;
     api.get<Agenda[]>("/agendas", { signal })
       .then(({ data }) => { if (!signal.aborted) setAgendas(data); })
-      .catch(() => { if (!signal.aborted) setError("No se pudieron cargar las agendas."); })
+      .catch(error => {
+        if (!signal.aborted) {
+          setError(error.response?.status === 503
+            ? "Agendas todavía no está habilitada en el servidor."
+            : "No se pudieron cargar las agendas.");
+        }
+      })
       .finally(() => { if (!signal.aborted) setLoading(false); });
     if (admin) {
       api.get<Member[]>("/agendas/members", { signal })
@@ -129,8 +135,8 @@ export default function Agendas() {
           <h1>Agendas</h1>
           <p>Programación de bautismos y confirmaciones.</p>
         </div>
-        {admin && <button type="button" className="btn primary" disabled={busy || loading} onClick={() => openEditor()}>
-          <IoAddOutline aria-hidden="true" /> Agregar
+        {admin && <button type="button" className="btn primary mobile-add" aria-label="Agregar agenda" disabled={busy || loading} onClick={() => openEditor()}>
+          <IoAddOutline aria-hidden="true" /> <span>Agregar</span>
         </button>}
       </div>
 

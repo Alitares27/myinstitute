@@ -1,3 +1,4 @@
+import { IoAddOutline } from "react-icons/io5";
 import FormModal from "../components/FormModal";
 import { confirmAppAction } from "../components/AppDialogHost";
 import { useEffect, useState, useMemo } from "react";
@@ -177,7 +178,7 @@ export default function TemplosMaintenance() {
       {error && !formOpen && <div className="error"><TbAlertTriangle /> {error}</div>}
 
       <>
-        <button type="button" className="btn primary form-launch" onClick={() => setFormOpen(true)}>Agregar</button>
+        <button type="button" className="btn primary form-launch mobile-add" aria-label="Agregar templo" onClick={() => setFormOpen(true)}><IoAddOutline className="mobile-only-action-icon" aria-hidden="true" /> <span>Agregar</span></button>
         {formOpen && <FormModal title={form.id ? "Editar templo" : "Agregar templo"} onClose={() => { setForm({ id: "", name: "", city: "", province: "", address: "", dedicated_date: "", status: "operating" }); setError(null); setFormOpen(false); }}>
           {error && <p role="alert">{error}</p>}
           <form onSubmit={handleSubmit} className="grid-form">

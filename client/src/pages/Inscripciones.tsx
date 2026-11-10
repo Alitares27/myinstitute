@@ -477,10 +477,10 @@ export default function Enrollments() {
 
           <button
             type="button"
-            className="btn primary"
+            className="btn primary mobile-header-action mobile-print" aria-label="Imprimir"
             onClick={handlePrintEnrollmentsReport}
           >
-            <IoPrintOutline /> Imprimir
+            <IoPrintOutline aria-hidden="true" /> <span>Imprimir</span>
           </button>
         </div>
       </div>
@@ -529,7 +529,7 @@ export default function Enrollments() {
 
       {role === "admin" && (
         <>
-          <button type="button" className="btn primary form-launch" onClick={() => setFormOpen(true)}>Agregar</button>
+          <button type="button" className="btn primary form-launch mobile-add" aria-label="Agregar inscripción" onClick={() => setFormOpen(true)}><IoAddOutline className="mobile-only-action-icon" aria-hidden="true" /> <span>Agregar</span></button>
           {formOpen && <FormModal title={form.id ? "Editar inscripción" : "Agregar inscripción"} onClose={() => { resetForm(); setFormOpen(false); }}>
             <form onSubmit={handleSubmit}>
               <div className="inscripcion-form-grid">
@@ -762,8 +762,8 @@ export default function Enrollments() {
                 style={{ flex: 1 }}
                 required
               />
-              <button type="submit" className="btn primary">
-                {editingCursoId !== null ? "Guardar" : <><IoAddOutline /> Agregar</>}
+              <button type="submit" className={`btn primary ${editingCursoId === null ? "mobile-inline-add" : ""}`} aria-label={editingCursoId === null ? "Agregar curso" : "Guardar curso"}>
+                {editingCursoId !== null ? "Guardar" : <><IoAddOutline aria-hidden="true" /> <span>Agregar</span></>}
               </button>
               {editingCursoId !== null && (
                 <button
@@ -849,8 +849,8 @@ export default function Enrollments() {
                 style={{ flex: 1 }}
                 required
               />
-              <button type="submit" className="btn primary">
-                {editingTopicId !== null ? "Guardar" : <><IoAddOutline /> Agregar</>}
+              <button type="submit" className={`btn primary ${editingTopicId === null ? "mobile-inline-add" : ""}`} aria-label={editingTopicId === null ? "Agregar tema" : "Guardar tema"}>
+                {editingTopicId !== null ? "Guardar" : <><IoAddOutline aria-hidden="true" /> <span>Agregar</span></>}
               </button>
               {editingTopicId !== null && (
                 <button

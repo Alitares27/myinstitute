@@ -12,6 +12,38 @@ import {IoHomeOutline,IoSchoolOutline,IoPersonOutline,IoClipboardOutline,IoCalen
 type NavItem = {to?:string;label:string;Icon:IconType;state?:Record<string,boolean>;action?:"about"};
 type NavGroup = {id:string;label:string;Icon:IconType;links:NavItem[]};
 
+const descriptions: Record<string, string> = {
+ "/agendas": "Programación de bautismos",
+ "/discursantes": "Asignaciones de discursos",
+ "/consejos": "Reuniones y participantes",
+ "/actividades": "Planificación de actividades",
+ "/auditorias": "Historial de movimientos",
+ "/maestros": "Docentes y cursos asignados",
+ "/inscripciones": "Matrículas y seguimiento",
+ "/asistencia": "Registros de asistencia",
+ "/calificaciones": "Notas y reportes",
+ "/miembros": "Datos y perfiles",
+ "/viajes-templo": "Calendario de viajes",
+ "/reservar-viajes": "Inscripción a viajes",
+ "/pagos": "Pagos de viajes",
+ "/templos": "Directorio de templos",
+ "/sincronizacion": "Cambios pendientes de enviar",
+};
+
+function SubmenuLabel({ item }: { item: NavItem }) {
+ const description = item.action === "about" ? "Información de la aplicación"
+  : item.state?.openCourseManager ? "Catálogo y temas de los cursos"
+  : item.state?.openTopicManager ? "Catálogo de temas para discursos"
+  : descriptions[item.to ?? ""];
+ return <>
+  <item.Icon aria-hidden="true" />
+  <span className="floating-nav-submenu-copy">
+   <span>{item.label}</span>
+   <small>{description}</small>
+  </span>
+ </>;
+}
+
 export default function Sidebar(){
  const navigate=useNavigate(),location=useLocation();
  const role=JSON.parse(localStorage.getItem("user")||"{}").role||"";
@@ -32,12 +64,14 @@ export default function Sidebar(){
  ];
  const mobileGroups:NavGroup[]=[
   {id:'teaching',label:'Enseñanza',Icon:IoSchoolOutline,links:[
-   ...(role!=='admin'?[{to:'/miembros',label:role==='student'?'Mi perfil':'Miembros',Icon:IoPersonOutline}]:[]),
-   {to:'/asistencia',label:'Asistencia',Icon:IoCalendarOutline},{to:'/calificaciones',label:'Calificaciones',Icon:IoRibbonOutline}]},
+   {to:'/asistencia',label:'Asistencia',Icon:IoCalendarOutline},{to:'/calificaciones',label:'Calificaciones',Icon:IoRibbonOutline},
+   {to:'/maestros',label:'Maestros y cursos',Icon:IoSchoolOutline},
+  ]},
   {id:'leadership',label:'Liderazgo',Icon:IoBriefcaseOutline,links:[{to:'/agendas',label:'Agendas',Icon:IoCalendarOutline},{to:'/discursantes',label:'Discursantes',Icon:IoMicOutline},{to:'/consejos',label:'Consejos',Icon:IoPeopleOutline},{to:'/actividades',label:'Actividades',Icon:IoCalendarOutline},{to:'/auditorias',label:'Auditorías',Icon:IoDocumentTextOutline}]},
   templeGroup,
   {id:'more',label:'Más',Icon:IoEllipsisHorizontalOutline,links:[
-   {to:'/maestros',label:'Maestros y cursos',Icon:IoSchoolOutline},
+   ...(role!=='admin'?[{to:'/miembros',label:role==='student'?'Mi perfil':'Miembros',Icon:IoPersonOutline}]:[]),
+
    {to:'/inscripciones',label:role==='admin'?'Administrar cursos':'Matrículas',Icon:IoClipboardOutline,...(role==='admin'?{state:{openCourseManager:true}}:{})},
    ...(role==='admin'?[{to:'/discursantes',label:'Temas para Discursantes',Icon:IoMicOutline,state:{openTopicManager:true}}]:[]),
    ...(role==='admin'?[{to:'/templos',label:'Administrar templos',Icon:IoBusinessOutline},{to:'/miembros',label:'Miembros',Icon:IoPersonOutline}]:[]),
@@ -79,7 +113,7 @@ export default function Sidebar(){
     <button type="button" className="app-icon-button app-logout" onClick={logout} disabled={loggingOut} aria-label="Cerrar sesión" title="Cerrar sesión"><IoLogOutOutline aria-hidden="true"/></button>
    </div>
   </header>
-  {isMobile && openGroup && <button type="button" className="floating-nav-backdrop" aria-label={`Cerrar el menú ${openGroup.label}`} onClick={() => setOpen(null)} />}
+  {openGroup && <button type="button" className="floating-nav-backdrop" aria-label={`Cerrar el menú ${openGroup.label}`} onClick={() => setOpen(null)} />}
   <nav ref={nav} className="floating-nav" aria-label="Menú principal" onBlur={event=>{if(!event.currentTarget.contains(event.relatedTarget as Node))setOpen(null);}}>
    <ul className="floating-nav-groups">
     <li className="floating-nav-home-item">
@@ -93,7 +127,21 @@ export default function Sidebar(){
      <button ref={element=>{triggers.current[group.id]=element;}} type="button" className={`floating-nav-trigger ${active?'is-active':''} ${open===group.id?'is-open':''}`} aria-label={group.label} title={group.label} aria-expanded={open===group.id} aria-controls={`nav-${group.id}`} onClick={()=>setOpen(previous=>previous===group.id?null:group.id)}>
       <group.Icon aria-hidden="true"/><span className="floating-nav-label">{group.label}</span><IoChevronUp className="floating-nav-chevron" aria-hidden="true"/>
      </button>
-     {open===group.id&&<ul className="floating-nav-submenu" id={`nav-${group.id}`} aria-label={group.label}>{group.links.map(link=><li key={link.label}>{link.action==='about'?<button type="button" className="floating-nav-submenu-action" aria-label={link.label} title={link.label} onClick={()=>{setOpen(null);setShowAbout(true);}}><link.Icon aria-hidden="true"/><span className="floating-nav-label">{link.label}</span></button>:<NavLink to={link.to!} state={link.state} aria-label={link.label} title={link.label} onClick={()=>setOpen(null)}><link.Icon aria-hidden="true"/><span className="floating-nav-label">{link.label}</span></NavLink>}</li>)}</ul>}
+     {open === group.id && <ul className="floating-nav-submenu" id={`nav-${group.id}`} aria-label={group.label}>
+      {group.links.map(link => (
+       <li key={link.label}>
+        {link.action === "about" ? (
+         <button type="button" aria-label={link.label} onClick={() => { setOpen(null); setShowAbout(true); }}>
+          <SubmenuLabel item={link} />
+         </button>
+        ) : (
+         <NavLink to={link.to!} state={link.state} aria-label={link.label} onClick={() => setOpen(null)}>
+          <SubmenuLabel item={link} />
+         </NavLink>
+        )}
+       </li>
+      ))}
+     </ul>}
     </li>;
    })}</ul>
   </nav>

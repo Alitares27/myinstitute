@@ -159,17 +159,17 @@ export default function Actividades() {
         <div className="page-actions">
           <button
             type="button"
-            className="btn secondary print-trigger"
+            className="btn secondary print-trigger mobile-header-action mobile-print" aria-label="Imprimir"
             onClick={openPrintModal}
             disabled={activities.length === 0}
             title="Imprimir actividades en un archivo PDF"
           >
-            <FiPrinter /> Imprimir
+            <FiPrinter aria-hidden="true" /> <span>Imprimir</span>
           </button>
 
           {role === "admin" && (
-            <Link to="/actividades/nueva" className="btn primary">
-              Agregar
+            <Link to="/actividades/nueva" className="btn primary mobile-add" aria-label="Agregar actividad">
+              <IoAddOutline className="mobile-only-action-icon" aria-hidden="true" /> <span>Agregar</span>
             </Link>
           )}
         </div>
