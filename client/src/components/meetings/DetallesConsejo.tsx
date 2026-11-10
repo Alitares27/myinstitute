@@ -91,7 +91,7 @@ export default function MeetingDetails() {
 
                     {role === "admin" && (
                         <Link
-                            className="btn-warning"
+                            className="btn primary"
                             to={`/consejos/editar/${meeting.id}`}
                         >
                             Editar
@@ -99,7 +99,7 @@ export default function MeetingDetails() {
                     )}
 
                     <button
-                        className="btn-secondary"
+                        className="btn secondary"
                         onClick={() => navigate("/consejos")}
                     >
                         Cancelar

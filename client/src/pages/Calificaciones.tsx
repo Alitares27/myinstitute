@@ -1,3 +1,5 @@
+import { isAndroidApp } from "../utils/androidReports";
+import FormModal from "../components/FormModal";
 import { confirmAppAction } from "../components/AppDialogHost";
 import { useSearchParams } from "react-router-dom";
 import { usePagedList } from "../hooks/usePagedList";
@@ -25,6 +27,7 @@ const getInitials = (name: string) =>
 
 export default function Grades() {
 
+  const [formOpen, setFormOpen] = useState(false);
   const [students, setStudents] = useState<any[]>([]);
   const [courses, setCourses] = useState<any[]>([]);
   const [role, setRole] = useState<string>("");
@@ -97,6 +100,7 @@ export default function Grades() {
       } else {
         await api.post("/grades", form);
       }
+      setFormOpen(false);
       resetForm();
       page.refresh();
     } catch {
@@ -105,6 +109,7 @@ export default function Grades() {
   };
 
   const handleEditClick = (record: any) => {
+      setFormOpen(true);
     setForm({
       id: record.id,
       student_id: record.student_id.toString(),
@@ -112,7 +117,6 @@ export default function Grades() {
       grade: record.grade.toString(),
       grade_type: record.grade_type,
     });
-    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleDelete = async (id: number) => {
@@ -130,7 +134,7 @@ export default function Grades() {
   const distinctStudents=Number(page.summary.distinctStudents||0);
 
   const handlePrintGradesReport = async () => {
-    const printWindow=window.open("","_blank");if(!printWindow)return;
+    const printWindow=isAndroidApp() ? null : window.open("","_blank");if (!printWindow && !isAndroidApp()) return;
     try {
     const {data:filteredGrades}=await api.get<any[]>("/grades/report",{params:listParams});
     let body = "";
@@ -186,12 +190,12 @@ export default function Grades() {
     const typeLabel = filterType ? filterType : "Todos los tipos";
     const subtitle = role !== "student" ? `Estudiante: ${studentName} | Tipo: ${typeLabel}` : `Tipo: ${typeLabel}`;
 
-    openPrintWindow(
+    await openPrintWindow(
       "Reporte de Calificaciones",
       subtitle,
       body,printWindow
     );
-    }catch{printWindow.close();setError("No se pudo generar el reporte");}
+    }catch{printWindow?.close();setError("No se pudo generar el reporte");}
   };
 
   if (loading || (!page.loaded && page.loading)) {
@@ -214,7 +218,7 @@ export default function Grades() {
           </div>
         </div>
 
-        <div className="asistencia-stats-grid">
+        <div className="asistencia-stats-grid desktop-statistics">
           {Array.from({ length: role !== "student" ? 4 : 3 }).map((_, i) => (
             <div key={i} className="asistencia-stat-card">
               <Skeleton width="48px" height="48px" />
@@ -286,7 +290,7 @@ export default function Grades() {
         </div>
       </div>
 
-      <div className="asistencia-stats-grid">
+      <div className="asistencia-stats-grid desktop-statistics">
         <div className="asistencia-stat-card">
           <div className="asistencia-stat-icon blue">
             <IoSchoolOutline />
@@ -328,89 +332,69 @@ export default function Grades() {
       </div>
 
       {role !== "student" && (
-        <div className="asistencia-form-card">
-          <div className="asistencia-form-header">
-            <h2>
-              {form.id ? (
-                <>
-                  <IoCreateOutline /> Actualizar Calificación
-                </>
-              ) : (
-                <>
-                  <FaPlus /> Calificar Miembro
-                </>
-              )}
-            </h2>
-            {(form.id || form.student_id || form.course_id || form.grade) && (
-              <button
-                type="button"
-                onClick={resetForm}
-                className="btn cancel-btn"
-                title="Cancelar"
-                aria-label="Cancelar"
-              >
-                ✕
-              </button>
-            )}
-          </div>
-          <form onSubmit={handleSubmit}>
-            <div className="asistencia-form-grid">
-              <div className="form-group">
-                <label>Estudiante / Miembro:</label>
-                <select
-                  value={form.student_id}
-                  onChange={e => setForm({ ...form, student_id: e.target.value })}
-                  required
-                >
-                  <option value="">Elegir Estudiante</option>
-                  {students.map(s => (
-                    <option key={s.id} value={s.id}>{s.name}</option>
-                  ))}
-                </select>
+        <>
+          <button type="button" className="btn primary form-launch" onClick={() => setFormOpen(true)}>Agregar</button>
+          {formOpen && <FormModal title={form.id ? "Editar calificación" : "Agregar calificación"} onClose={() => { resetForm(); setError(""); setFormOpen(false); }}>
+            {error && <p role="alert">{error}</p>}
+            <form onSubmit={handleSubmit}>
+              <div className="asistencia-form-grid">
+                <div className="form-group">
+                  <label>Estudiante / Miembro:</label>
+                  <select
+                    value={form.student_id}
+                    onChange={e => setForm({ ...form, student_id: e.target.value })}
+                    required
+                  >
+                    <option value="">Elegir Estudiante</option>
+                    {students.map(s => (
+                      <option key={s.id} value={s.id}>{s.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Curso:</label>
+                  <select
+                    value={form.course_id}
+                    onChange={e => setForm({ ...form, course_id: e.target.value })}
+                    required
+                  >
+                    <option value="">Elegir Curso</option>
+                    {courses.map(c => (
+                      <option key={c.id} value={c.id}>{c.title}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Calificación:</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    placeholder="0 - 100"
+                    value={form.grade}
+                    onChange={e => setForm({ ...form, grade: e.target.value })}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Tipo:</label>
+                  <select
+                    value={form.grade_type}
+                    onChange={e => setForm({ ...form, grade_type: e.target.value })}
+                  >
+                    <option value="examen">Examen</option>
+                    <option value="Lectura">Lectura</option>
+                    <option value="participacion">Participación</option>
+                  </select>
+                </div>
+                <div className="asistencia-form-actions">
+                  <button type="submit" className="btn primary">
+                    {form.id ? "Actualizar" : "Calificar"}
+                  </button>
+                </div>
               </div>
-              <div className="form-group">
-                <label>Curso:</label>
-                <select
-                  value={form.course_id}
-                  onChange={e => setForm({ ...form, course_id: e.target.value })}
-                  required
-                >
-                  <option value="">Elegir Curso</option>
-                  {courses.map(c => (
-                    <option key={c.id} value={c.id}>{c.title}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="form-group">
-                <label>Calificación:</label>
-                <input
-                  type="number"
-                  step="0.1"
-                  placeholder="0 - 100"
-                  value={form.grade}
-                  onChange={e => setForm({ ...form, grade: e.target.value })}
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label>Tipo:</label>
-                <select
-                  value={form.grade_type}
-                  onChange={e => setForm({ ...form, grade_type: e.target.value })}
-                >
-                  <option value="examen">Examen</option>
-                  <option value="Lectura">Lectura</option>
-                  <option value="participacion">Participación</option>
-                </select>
-              </div>
-              <div className="asistencia-form-actions">
-                <button type="submit" className="btn primary">
-                  {form.id ? "Actualizar" : "Calificar"}
-                </button>
-              </div>
-            </div>
-          </form>
-        </div>
+            </form>
+          </FormModal>}
+        </>
       )}
 
       <div className="asistencia-toolbar">
@@ -514,8 +498,8 @@ export default function Grades() {
 
                   {role !== "student" && (
                     <td>
-                      <button className="btn secondary extracted-style-4" onClick={() => handleEditClick(g)} aria-label="Editar"><IoCreateOutline /></button>
-                      <button className="btn secondary extracted-style-5" onClick={() => handleDelete(g.id)} aria-label="Eliminar"><IoTrashOutline /></button>
+                      <button className="btn secondary btn-icon" onClick={() => handleEditClick(g)} aria-label="Editar"><IoCreateOutline /></button>
+                      <button className="btn secondary btn-icon danger-outline" onClick={() => handleDelete(g.id)} aria-label="Eliminar"><IoTrashOutline /></button>
                     </td>
                   )}
                 </tr>
@@ -543,7 +527,7 @@ export default function Grades() {
         </div>
       )}
 
-      {error && <p>{error}</p>}
+      {error && !formOpen && <p>{error}</p>}
     </div>
   );
 }

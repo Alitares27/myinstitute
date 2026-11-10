@@ -1,3 +1,4 @@
+import FormModal from "../components/FormModal";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axios, { isAxiosError } from "axios";
@@ -13,8 +14,6 @@ import {
 } from "../services/consejos";
 
 import MeetingForm from "../components/meetings/FormularioConsejo";
-import { Skeleton } from "../components/Esqueleto";
-import { TbCalendarExclamation } from "react-icons/tb";
 import { toYMD } from "../utils/utilidadesFecha";
 import "../styles/Consejos.css";
 
@@ -29,7 +28,7 @@ export default function EditMeeting() {
     useEffect(() => {
         const user = JSON.parse(localStorage.getItem("user") || "{}");
         if (user.role !== "admin") {
-            navigate("/consejos");
+            navigate("/consejos", { replace: true });
         }
     }, [navigate]);
 
@@ -68,7 +67,7 @@ export default function EditMeeting() {
             }
 
             alert("No fue posible cargar el consejo.");
-            navigate("/consejos");
+            navigate("/consejos", { replace: true });
         } finally {
             setLoading(false);
         }
@@ -82,7 +81,7 @@ export default function EditMeeting() {
             await updateMeeting(Number(id), meetingData);
 
             alert("Consejo actualizado correctamente.");
-            navigate("/consejos");
+            navigate("/consejos", { replace: true });
         } catch (error: any) {
             if (isAxiosError(error) && error.response?.status === 401) {
                 return;
@@ -98,50 +97,20 @@ export default function EditMeeting() {
         }
     }
 
-    if (loading) {
-        return (
-            <div className="page-container">
-                <div className="page-header">
-                    <div>
-                        <Skeleton width="220px" height="1.8rem" />
-                        <Skeleton width="280px" height="0.9rem" style={{ marginTop: "8px" }} />
-                    </div>
-                </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: "1rem", marginTop: "1rem" }}>
-                    <Skeleton height="2.5rem" />
-                    <div style={{ display: "flex", gap: "1rem" }}>
-                        <Skeleton height="2.5rem" />
-                        <Skeleton height="2.5rem" />
-                        <Skeleton height="2.5rem" />
-                    </div>
-                    <Skeleton height="8rem" />
-                    <Skeleton height="6rem" />
-                </div>
-            </div>
-        );
-    }
+    if (loading) return <FormModal title="Editar consejo" onClose={() => navigate("/consejos", { replace: true })}><p role="status">Cargando…</p></FormModal>;
 
     if (!meeting) {
         return <p>No se encontró el consejo.</p>;
     }
 
     return (
-        <div className="page-container">
-
-            <div className="page-header">
-                <div>
-                    <h1><span className="page-title-icon"><TbCalendarExclamation /></span> Editar Consejo</h1>
-                    <p>Modifica la información del consejo.</p>
-                </div>
-            </div>
-
-            <MeetingForm
-                initialValues={meeting}
-                onSubmit={handleUpdate}
-                onCancel={() => navigate("/consejos")}
-                loading={saving}
-            />
-
-        </div>
+      <FormModal title="Editar consejo" onClose={() => navigate("/consejos", { replace: true })} busy={saving}>
+        <MeetingForm
+          initialValues={meeting}
+          onSubmit={handleUpdate}
+          onCancel={() => navigate("/consejos", { replace: true })}
+          loading={saving}
+        />
+      </FormModal>
     );
 }

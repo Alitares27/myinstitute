@@ -14,9 +14,7 @@
   flex-wrap: wrap;
 }
 
-.page-actions .btn,
-.page-actions .btn-primary,
-.page-actions .btn-secondary {
+.page-actions .btn {
   margin-right: 0;
 }
 
@@ -35,9 +33,8 @@
 .report-filter-actions { display: flex; gap: .65rem; margin-top: .7rem; }
 .report-filter-actions button { flex: 1; min-height: 46px; margin: 0; padding: .65rem .8rem; border: 0; border-radius: 14px; font: inherit; font-weight: 650; }
 .report-filter-cancel { color: var(--text-secondary); background: var(--bg-body); }
-.report-filter-submit { color: var(--android-on-primary, #fff); background: var(--primary); }
+.report-filter-submit { color: var(--button-on-primary); background: var(--button-primary); }
 .native-android .report-filter-modal { border-radius: 28px; }
-.native-android .report-filter-submit { color: var(--android-on-primary, #fff); }
 
 /* -----------------------------------------
    2. Modal de impresión
@@ -250,9 +247,7 @@
     width: 100%;
   }
 
-  .page-actions .btn,
-  .page-actions .btn-primary,
-  .page-actions .btn-secondary {
+  .page-actions .btn {
     flex: 1;
   }
 

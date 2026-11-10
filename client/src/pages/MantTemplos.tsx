@@ -1,3 +1,4 @@
+import FormModal from "../components/FormModal";
 import { confirmAppAction } from "../components/AppDialogHost";
 import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
@@ -32,6 +33,7 @@ const getStatusClass = (status: string) => {
 
 export default function TemplosMaintenance() {
   const navigate = useNavigate();
+  const [formOpen, setFormOpen] = useState(false);
   const [templos, setTemplos] = useState<Templo[]>([]);
   const [search, setSearch] = useState("");
   const [form, setForm] = useState({ id: "", name: "", city: "", province: "", address: "", dedicated_date: "", status: "operating" });
@@ -75,6 +77,7 @@ export default function TemplosMaintenance() {
         const res = await api.post("/temples", payload);
         setTemplos(prev => [...prev, res.data]);
       }
+      setFormOpen(false);
       setForm({ id: "", name: "", city: "", province: "", address: "", dedicated_date: "", status: "operating" });
       setError(null);
     } catch {
@@ -83,6 +86,7 @@ export default function TemplosMaintenance() {
   };
 
   const handleEdit = (t: Templo) => {
+      setFormOpen(true);
     setForm({
       id: String(t.id),
       name: t.name,
@@ -92,7 +96,6 @@ export default function TemplosMaintenance() {
       dedicated_date: toYMD(t.dedicated_date),
       status: t.status || "operating"
     });
-    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleDelete = async (id: number) => {
@@ -171,10 +174,13 @@ export default function TemplosMaintenance() {
     <div className="dashboard-container">
       <h1><span className="page-title-icon"><FiBriefcase /></span> Gestión de Templos</h1>
 
-      {error && <div className="error"><TbAlertTriangle /> {error}</div>}
+      {error && !formOpen && <div className="error"><TbAlertTriangle /> {error}</div>}
 
-      <h2 className="dashboard-subtitle">{form.id ? <><TbPencil /> Editar Templo</> : <><TbPlus /> Agregar Templo</>}</h2>
-      <form onSubmit={handleSubmit} className="grid-form">
+      <>
+        <button type="button" className="btn primary form-launch" onClick={() => setFormOpen(true)}>Agregar</button>
+        {formOpen && <FormModal title={form.id ? "Editar templo" : "Agregar templo"} onClose={() => { setForm({ id: "", name: "", city: "", province: "", address: "", dedicated_date: "", status: "operating" }); setError(null); setFormOpen(false); }}>
+          {error && <p role="alert">{error}</p>}
+          <form onSubmit={handleSubmit} className="grid-form">
         <input
           type="text"
           placeholder="Nombre del templo"
@@ -219,10 +225,9 @@ export default function TemplosMaintenance() {
           <button type="submit" className="btn primary">
             {form.id ? "Actualizar" : "Agregar"}
           </button>
-          {(form.id || form.name || form.city || form.province) && (
-            <button type="button" className="btn cancel-btn" onClick={() => setForm({ id: "", name: "", city: "", province: "", address: "", dedicated_date: "", status: "operating" })} title="Cancelar" aria-label="Cancelar">✕</button>
-          )}
         </div>      </form>
+        </FormModal>}
+      </>
 
       <div className="grid-form" style={{ marginBottom: "1rem" }}>
         <input
@@ -285,11 +290,11 @@ export default function TemplosMaintenance() {
                     </span>
                   </td>
                   <td>
-                    <button className="btn secondary extracted-style-4" onClick={() => handleEdit(t)} aria-label="Editar">
+                    <button className="btn secondary btn-icon" onClick={() => handleEdit(t)} aria-label="Editar">
                       <IoCreateOutline />
                     </button>
                     <button className="btn secondary" onClick={() => handleArchive(t.id)} aria-label="Archivar" title="Archivar"><IoArchiveOutline /></button>
-<button className="btn secondary extracted-style-5" onClick={() => handleDelete(t.id)} aria-label="Eliminar">
+<button className="btn secondary btn-icon danger-outline" onClick={() => handleDelete(t.id)} aria-label="Eliminar">
                       <IoTrashOutline />
                     </button>
                   </td>
@@ -325,7 +330,6 @@ export default function TemplosMaintenance() {
             style={{ minWidth: "320px", maxWidth: "480px" }}
             onClick={e => e.stopPropagation()}
           >
-            <button className="modal-close" onClick={() => setSelectedTemplo(null)} title="Cerrar" />
 
             <h2 style={{ marginBottom: "1.2rem", color: "var(--text-main)", fontSize: "1.2rem", marginTop: '8px' }}>
               <TbBuilding /> {selectedTemplo.name}

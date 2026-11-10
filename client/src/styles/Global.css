@@ -3,6 +3,10 @@
    ========================================= */
 :root {
   --primary: #007AFF;
+  --button-primary: #0066D6;
+  --button-on-primary: #fff;
+  --button-on-danger: #210402;
+  --button-danger-text: #B3261E;
   --primary-hover: #0056CC;
   --primary-dark: #0A84FF;
   --primary-light: rgba(0, 122, 255, 0.07);
@@ -58,6 +62,9 @@
 
 [data-theme="dark"] {
   --primary: #0A84FF;
+  --button-primary: var(--primary);
+  --button-on-primary: #071522;
+  --button-danger-text: #FF6961;
   --primary-hover: #409CFF;
   --primary-dark: #0A84FF;
   --primary-light: rgba(10, 132, 255, 0.14);
@@ -209,7 +216,7 @@ h1 {
 .ios-dialog-actions button { flex: 1 1 0; min-height: 44px; margin: 0; padding: .65rem .75rem; border: 0; border-radius: 14px; font: inherit; font-weight: 650; cursor: pointer; }
 .ios-dialog-primary { color: var(--primary); background: var(--primary-light); }
 .ios-dialog-cancel { color: var(--text-secondary); background: color-mix(in srgb, var(--text-muted) 12%, transparent); }
-.ios-dialog-destructive { color: white; background: var(--danger); }
+.ios-dialog-destructive { color: var(--button-on-danger); background: var(--danger); }
 .native-android .ios-dialog { border-radius: 26px; background: color-mix(in srgb, Canvas 82%, transparent); }
 @keyframes iosDialogFade { from { opacity: 0 } to { opacity: 1 } }
 @keyframes iosDialogPop { from { opacity: .5; transform: scale(.94) translateY(8px) } to { opacity: 1; transform: scale(1) translateY(0) } }
@@ -496,21 +503,32 @@ textarea:focus {
    6. BUTTONS
    ========================================= */
 button,
-.btn {
+.btn,
+.btn-login,
+.btn-cancel {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 0.75rem 1.5rem;
+  gap: .5rem;
+  max-width: 100%;
+  padding: .7rem 1rem;
+  border: 1px solid transparent;
   border-radius: var(--radius);
+  background: var(--button-primary);
+  color: var(--button-on-primary);
+  font: inherit;
   font-weight: 600;
+  line-height: 1.25;
+  text-align: center;
+  text-decoration: none;
+  overflow-wrap: anywhere;
   cursor: pointer;
-  transition: background-color 0.2s var(--ease-out), transform 0.15s var(--ease-out), box-shadow 0.2s var(--ease-out);
-  border: none;
-  background-color: var(--primary);
-  color: white;
-  font-family: inherit;
-  margin-right: 0.5rem;
+  transition: background-color var(--transition-fast), color var(--transition-fast), box-shadow var(--transition-fast);
+  margin-right: .5rem;
+}
+
+:is(button, .btn) > svg {
+  flex-shrink: 0;
 }
 
 .btn svg {
@@ -518,64 +536,57 @@ button,
   height: 1.1rem;
 }
 
-.btn.primary,
-.btn-login {
-  background-color: var(--primary);
-  color: white;
-  box-shadow: 0 2px 8px rgba(0, 122, 255, 0.25);
-}
-
-.btn.primary:hover,
-.btn-login:hover {
+:is(.btn.primary, .btn-login):hover:not(:disabled) {
   background-color: var(--primary-hover);
-  box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
 }
 
 .btn.danger {
   background-color: var(--danger);
-  color: white;
-  border: none;
-  box-shadow: 0 2px 8px rgba(255, 59, 48, 0.25);
+  color: var(--button-on-danger);
 }
 
-.btn.danger:hover {
+.btn.danger:hover:not(:disabled) {
   background-color: var(--danger-hover);
-  box-shadow: 0 4px 12px rgba(255, 59, 48, 0.3);
 }
 
 .btn.secondary,
-.btn-cancel {
-  background-color: var(--bg-surface);
-  color: var(--primary);
-  border: 1.5px solid var(--primary);
+.btn-cancel,
+.btn.cancel-btn {
+  background: var(--bg-surface);
+  color: var(--text-main);
+  border-color: var(--border-color);
   box-shadow: none;
 }
 
-.btn.secondary:hover,
-.btn-cancel:hover {
-  background-color: rgba(0, 122, 255, 0.06);
+:is(.btn.secondary, .btn-cancel, .btn.cancel-btn):hover:not(:disabled) {
+  background: var(--primary-light);
+  border-color: var(--primary);
 }
 
-.btn.cancel-btn {
-  background-color: var(--danger);
-  color: white;
-  border: none;
-  padding: 0.75rem 1.2rem;
-  border-radius: var(--radius);
-  font-size: 1.1rem;
-  font-weight: 700;
-  line-height: 1;
-  box-shadow: 0 2px 8px rgba(255, 59, 48, 0.25);
+.btn.btn-icon {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  margin: 0;
+  border-radius: var(--radius-sm);
 }
 
-.btn.cancel-btn:hover {
-  background-color: var(--danger-hover);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 16px rgba(255, 59, 48, 0.35);
+.btn.danger-outline {
+  color: var(--button-danger-text);
 }
 
-.btn.cancel-btn:active {
-  transform: translateY(0) scale(0.97);
+.btn.danger-outline:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--danger) 10%, var(--bg-surface));
+  border-color: var(--danger);
+}
+
+:is(button, .btn, .btn-login, .btn-cancel):focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+@media (max-width: 700px) {
+  .btn.btn-icon { width: 44px; height: 44px; }
 }
 
 button:hover:not(:disabled) {
@@ -623,10 +634,9 @@ button:disabled {
 }
 
 .pagination button.active {
-  background-color: var(--primary);
-  color: white;
+  background-color: var(--button-primary);
+  color: var(--button-on-primary);
   border-color: var(--primary);
-  box-shadow: 0 2px 8px rgba(0, 122, 255, 0.3);
   transform: scale(1.05);
 }
 
@@ -728,8 +738,6 @@ button:disabled {
   border: 1px solid var(--border-color);
   animation: modalFadeIn 0.3s var(--ease-out);
 }
-
-.modal-close { position: absolute; }
 
 @keyframes modalFadeIn {
   from {
@@ -883,7 +891,7 @@ button:disabled {
   font-weight: 600;
   cursor: pointer;
   padding: 0;
-  text-align: left;
+  text-align: center;
   font-size: inherit;
   font-family: inherit;
   text-decoration: underline;
@@ -930,26 +938,6 @@ button:disabled {
 /* =========================================
    12. TABLE ACTION BUTTONS
    ========================================= */
-.extracted-style-4,
-.extracted-style-5 {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  padding: 0;
-  border-radius: var(--radius-sm);
-  font-size: 1.25rem;
-  line-height: 1;
-  margin-right: 4px;
-}
-
-.extracted-style-4 svg,
-.extracted-style-5 svg {
-  width: 1.25rem;
-  height: 1.25rem;
-  flex-shrink: 0;
-}
 
 /* =========================================
    13. ANIMATIONS
@@ -1074,13 +1062,6 @@ button:disabled {
 [data-theme="dark"] .btn.secondary,
 [data-theme="dark"] .btn-cancel {
   background-color: var(--bg-surface-elevated);
-}
-
-[data-theme="dark"] .btn.primary,
-[data-theme="dark"] .btn-primary,
-[data-theme="dark"] a.btn-primary {
-  background-color: var(--primary);
-  color: #fff;
 }
 
 .error-message {
@@ -1330,7 +1311,7 @@ button:disabled {
   font-size: 0.88rem;
   cursor: pointer;
   padding: 0;
-  text-align: left;
+  text-align: center;
   text-decoration: none;
   transition: color 0.15s ease;
 }
@@ -1367,64 +1348,50 @@ button:disabled {
 
 /* On Android, use the browser's system palette (including Material You's
    AccentColor) while keeping the compact, rounded mobile layout. */
-  @media (max-width: 700px) {
+:root.native-android,
+:root.native-android[data-theme="light"],
+:root.native-android[data-theme="dark"] {
+  color-scheme: light dark;
+  --primary: var(--android-primary, #6750a4);
+  --button-primary: var(--primary);
+  --button-on-primary: var(--android-on-primary, #fff);
+  --primary-hover: color-mix(in srgb, var(--android-primary, #6750a4) 90%, CanvasText 10%);
+  --primary-dark: var(--android-primary, #6750a4);
+  --primary-light: color-mix(in srgb, var(--android-primary, #6750a4) 20%, Canvas 80%);
+  --bg-body: var(--android-surface, Canvas);
+  --bg-surface: var(--android-surface, color-mix(in srgb, Canvas 96%, CanvasText 4%));
+  --bg-surface-elevated: color-mix(in srgb, var(--android-surface, Canvas) 92%, CanvasText 8%);
+  --bg-sidebar: color-mix(in srgb, Canvas 92%, CanvasText 8%);
+  --text-main: CanvasText;
+  --text-secondary: color-mix(in srgb, CanvasText 82%, Canvas 18%);
+  --text-muted: GrayText;
+  --border-color: color-mix(in srgb, CanvasText 16%, Canvas 84%);
+  --sidebar-text: CanvasText;
+  --sidebar-text-muted: GrayText;
+  --sidebar-hover-bg: color-mix(in srgb, CanvasText 6%, transparent);
+  --sidebar-active-bg: var(--android-primary, #6750a4);
+  --sidebar-active-text: var(--android-on-primary, #ffffff);
+  --sidebar-border: color-mix(in srgb, CanvasText 20%, Canvas 80%);
+  --radius: 18px;
+  --radius-sm: 12px;
+  --radius-lg: 24px;
+}
+
+@supports (color: AccentColor) {
   :root.native-android,
   :root.native-android[data-theme="light"],
   :root.native-android[data-theme="dark"] {
-    color-scheme: light dark;
-    --primary: var(--android-primary, #6750a4);
-    --primary-hover: color-mix(in srgb, var(--android-primary, #6750a4) 90%, CanvasText 10%);
-    --primary-dark: var(--android-primary, #6750a4);
-    --primary-light: color-mix(in srgb, var(--android-primary, #6750a4) 20%, Canvas 80%);
-    --bg-body: var(--android-surface, Canvas);
-    --bg-surface: var(--android-surface, color-mix(in srgb, Canvas 96%, CanvasText 4%));
-    --bg-surface-elevated: color-mix(in srgb, var(--android-surface, Canvas) 92%, CanvasText 8%);
-    --bg-sidebar: color-mix(in srgb, Canvas 92%, CanvasText 8%);
-    --text-main: CanvasText;
-    --text-secondary: color-mix(in srgb, CanvasText 82%, Canvas 18%);
-    --text-muted: GrayText;
-    --border-color: color-mix(in srgb, CanvasText 16%, Canvas 84%);
-    --sidebar-text: CanvasText;
-    --sidebar-text-muted: GrayText;
-    --sidebar-hover-bg: color-mix(in srgb, CanvasText 6%, transparent);
-    --sidebar-active-bg: var(--android-primary, #6750a4);
-    --sidebar-active-text: var(--android-on-primary, #ffffff);
-    --sidebar-border: color-mix(in srgb, CanvasText 20%, Canvas 80%);
-    --radius: 18px;
-    --radius-sm: 12px;
-    --radius-lg: 24px;
+    --primary: var(--android-primary, AccentColor);
+    --button-on-primary: var(--android-on-primary, AccentColorText);
+    --primary-hover: color-mix(in srgb, var(--android-primary, AccentColor) 90%, CanvasText 10%);
+    --primary-dark: var(--android-primary, AccentColor);
+    --primary-light: color-mix(in srgb, var(--android-primary, AccentColor) 20%, Canvas 80%);
+    --sidebar-active-bg: var(--android-primary, AccentColor);
+    --sidebar-active-text: var(--android-on-primary, AccentColorText);
   }
+}
 
-  @supports (color: AccentColor) {
-    :root.native-android,
-    :root.native-android[data-theme="light"],
-    :root.native-android[data-theme="dark"] {
-      --primary: var(--android-primary, AccentColor);
-      --primary-hover: color-mix(in srgb, var(--android-primary, AccentColor) 90%, CanvasText 10%);
-      --primary-dark: var(--android-primary, AccentColor);
-      --primary-light: color-mix(in srgb, var(--android-primary, AccentColor) 20%, Canvas 80%);
-      --sidebar-active-bg: var(--android-primary, AccentColor);
-      --sidebar-active-text: var(--android-on-primary, AccentColorText);
-    }
-  }
-
-  .native-android .btn.primary,
-  .native-android .btn-login {
-    color: var(--android-on-primary, #fff);
-  }
-
-  .native-android .btn.secondary:hover,
-  .native-android .btn-cancel:hover {
-    background-color: var(--primary-light);
-  }
-
-  .native-android button:focus-visible,
-  .native-android input:focus-visible,
-  .native-android select:focus-visible,
-  .native-android textarea:focus-visible {
-    outline-color: var(--android-primary, AccentColor);
-  }
-
+@media (max-width: 700px) {
   body {
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
@@ -1924,34 +1891,6 @@ html:root body .course-modal-footer {
   background: color-mix(in srgb, var(--bg-surface-elevated) 64%, transparent);
 }
 
-html:root body :is(.modal-close, .course-modal-header .cancel-btn, .miembros-modal-header .cancel-btn) {
-  display: inline-grid;
-  place-items: center;
-  flex: 0 0 36px;
-  width: 36px;
-  height: 36px;
-  min-width: 36px;
-  margin: 0;
-  padding: 0;
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-sm);
-  color: var(--text-secondary);
-  background: var(--bg-surface-elevated);
-  box-shadow: none;
-  font-size: 1.15rem;
-  line-height: 1;
-}
-
-html:root body :is(.modal-close, .course-modal-header .cancel-btn, .miembros-modal-header .cancel-btn):hover:not(:disabled) {
-  color: var(--text-main);
-  background: var(--bg-body);
-  transform: none;
-  box-shadow: none;
-}
-
-html:root body .modal-close { top: 12px; left: 12px; z-index: 2; }
-html:root body .modal-close::before { content: "×"; font-size: 1.5rem; line-height: 1; }
-
 html:root[data-theme="dark"] body :is(.modal-overlay, .course-modal-overlay, .miembros-modal-overlay, .ios-dialog-backdrop) {
   background: rgba(0, 0, 0, .48);
 }
@@ -2027,4 +1966,108 @@ textarea { border-radius: 13px; }
       -webkit-backdrop-filter: none;
     }
   }
+}
+
+.login-password-field { position: relative; }
+.auth-form .login-password-field input { padding-inline-end: 3rem; }
+.auth-form .login-password-toggle {
+  position: absolute;
+  inset-inline-end: .2rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--text-secondary);
+  font-size: 1.25rem;
+}
+.auth-form .login-password-toggle:hover { color: var(--text-main); }
+.auth-form .login-password-toggle:focus-visible { outline: 2px solid var(--primary); }
+
+/* Reservation statistics are intentionally available on every screen size. */
+html.native-android .desktop-statistics { display: none !important; }
+@media (max-width: 700px) {
+  .desktop-statistics { display: none !important; }
+}
+
+/* Shared mobile surfaces for the dashboard, directories, forms and account screens. */
+@media screen and (max-width: 700px) {
+  body :is(.dashboard-header, .page-header, .auth-header, .asistencia-header,
+    .calificaciones-header, .inscripciones-header, .maestros-header,
+    .actividades-header, .meetings-header, .miembros-header) h1 {
+    font-size: clamp(1.75rem, 7vw, 2.25rem);
+    line-height: 1.1;
+    letter-spacing: -.045em;
+    overflow-wrap: anywhere;
+  }
+
+  body :is(.card, .shortcut-card, .stat-card, .miembros-card, .asistencia-stat-card,
+    .maestro-stat-card, .inscripcion-stat-card, .asistencia-form-card,
+    .maestro-form-card, .inscripcion-form-card, .payment-info-card, .participant-card) {
+    border-radius: 22px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-surface);
+    box-shadow: none;
+  }
+
+  body .table-container {
+    border: 1px solid var(--border-color);
+    border-radius: 18px;
+    background: var(--bg-surface);
+    overflow-x: auto;
+  }
+
+  body :is(.btn, .btn-login, .auth-form input, .form-group select,
+    .form-group input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"])) {
+    min-height: 44px;
+    border-radius: 14px;
+  }
+
+  body :is(.auth-form input, .form-group select, .form-group textarea,
+    .form-group input:not([type="checkbox"]):not([type="radio"])) {
+    font-size: max(1rem, 16px);
+  }
+}
+
+.modal-content.form-modal {
+  width: min(100%, 52rem);
+  max-width: 52rem;
+  max-height: calc(100dvh - 2rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.form-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.form-modal-header h2 { margin: 0; }
+.form-modal-header button { flex: none; }
+.form-launch { margin-bottom: 1rem; }
+.form-modal :is(.asistencia-form-grid, .grid-form, .form-row) { min-width: 0; }
+
+@media (max-width: 600px) {
+  .form-modal :is(.asistencia-form-grid, .grid-form, .form-row) {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
+
+html:root body .ios-dialog-backdrop { z-index: 15001; }
+
+.form-modal-overlay {
+  padding: max(1rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right))
+    max(1rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left));
+}
+
+.form-modal-overlay .form-modal { max-height: 100%; }
+
+@media (max-width: 600px) {
+  .modal-content.form-modal { padding: 1rem; }
 }

@@ -1,3 +1,4 @@
+import { isTokenExpired } from "./components/RutaPrivada";
 import { limpiarSesion } from "./utils/sesion";
 import axios from "axios";
 import {
@@ -41,13 +42,16 @@ api.interceptors.request.use((config) => {
 });
 
 api.interceptors.response.use(
-  (response) => {
+  async (response) => {
     if (!(response.config as typeof response.config & { __offlineAdapter?: boolean }).__offlineAdapter && ["get", "head"].includes((response.config.method || "get").toLowerCase())) {
       const userId = (() => {
         try { return String(JSON.parse(localStorage.getItem("user") || "null")?.id ?? ""); }
         catch { return ""; }
       })();
-      if (userId) void cacheSuccessfulGet(userId, response.config, response.data);
+      const token = localStorage.getItem("token");
+      if (userId && token && response.config.headers.Authorization === `Bearer ${token}`) {
+        await cacheSuccessfulGet(userId, response.config, response.data);
+      }
     }
     return response;
   },
@@ -75,7 +79,19 @@ api.interceptors.response.use(
     }
 
     if (error.response?.status === 401) {
-      if (!error.config?.url?.includes("/login")) {
+      const token = localStorage.getItem("token");
+      if (token && config?.headers?.Authorization === `Bearer ${token}` && isTokenExpired(token) && !config.url?.includes("/login")) {
+        if (config && method === "get") {
+          try {
+            const cached = await readOfflineGet(config);
+            return { data: cached.data, status: 200, statusText: "OK (local cache)", headers: {}, config, request: {} };
+          } catch {
+            throw new Error("No hay una copia local. Vuelve a iniciar sesión con conexión para actualizarla.");
+          }
+        }
+        throw new Error("Vuelve a iniciar sesión con conexión para realizar esta acción.");
+      }
+      if (!error.config?.url?.includes("/login") && token && config?.headers?.Authorization === `Bearer ${token}`) {
         await limpiarSesion();
         if (window.location.pathname !== "/iniciar-sesion") {
           window.history.replaceState(window.history.state, "", "/iniciar-sesion");

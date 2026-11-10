@@ -168,8 +168,8 @@ export default function Actividades() {
           </button>
 
           {role === "admin" && (
-            <Link to="/actividades/nueva" className="btn-primary">
-              Programar
+            <Link to="/actividades/nueva" className="btn primary">
+              Agregar
             </Link>
           )}
         </div>
@@ -213,10 +213,10 @@ export default function Actividades() {
                   </td>
                   {role === "admin" && (
                     <td>
-                      <Link to={`/actividades/editar/${a.id}`} className="btn secondary extracted-style-4" aria-label="Editar">
+                      <Link to={`/actividades/editar/${a.id}`} className="btn secondary btn-icon" aria-label="Editar">
                         <IoCreateOutline />
                       </Link>
-                      <button className="btn secondary extracted-style-5" onClick={() => handleDelete(a.id)} aria-label="Eliminar">
+                      <button className="btn secondary btn-icon danger-outline" onClick={() => handleDelete(a.id)} aria-label="Eliminar">
                         <IoTrashOutline />
                       </button>
                     </td>
@@ -242,7 +242,6 @@ export default function Actividades() {
       {selectedActivity && (
         <div className="modal-overlay" onClick={() => setSelectedActivity(null)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <button className="modal-close" onClick={() => setSelectedActivity(null)} title="Cerrar" />
             <h2 style={{ marginTop: "8px", marginBottom: "1rem" }}>{selectedActivity.activity_name}</h2>
             <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
               <DetailRow label="Fecha y hora" value={formatDateTimeLong(selectedActivity.activity_datetime)} />
@@ -272,12 +271,6 @@ export default function Actividades() {
             aria-labelledby="print-modal-title"
             onClick={(e) => e.stopPropagation()}
           >
-            <button
-              className="modal-close"
-              onClick={closePrintModal}
-              title="Cerrar"
-              disabled={generatingPDF}
-            />
 
             <div className="print-modal-header">
               <h2 id="print-modal-title"><FiPrinter /> Imprimir actividades</h2>
@@ -356,7 +349,7 @@ export default function Actividades() {
                 onClick={handleGenerarPDF}
                 disabled={selectedToPrint.length === 0 || generatingPDF}
               >
-                {generatingPDF ? "Generando PDF…" : "Generar PDF"}
+                {generatingPDF ? "Preparando…" : "Guardar PDF"}
               </button>
             </div>
           </div>

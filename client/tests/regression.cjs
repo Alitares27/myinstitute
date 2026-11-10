@@ -6,15 +6,15 @@ const ts=require("typescript");
 const {JSDOM}=require("jsdom");
 const dom=new JSDOM("<!doctype html><div id='root'></div>",{url:"https://example.test"});
 global.window=dom.window;global.document=dom.window.document;global.localStorage=dom.window.localStorage;
-function load(file, api={get:async()=>({data:[]})}) {
+function load(file, api={get:async()=>({data:[]})}, modules={}) {
   const filename=path.resolve(__dirname,"../src",file), mod={exports:{}};
   const js=ts.transpileModule(fs.readFileSync(filename,"utf8"),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2020,esModuleInterop:true}}).outputText;
   const localRequire=createRequire(filename);
-  vm.runInNewContext(js,{exports:mod.exports,module:mod,require:name=>name==="../api"?{__esModule:true,default:api}:localRequire(name),window,document,localStorage,Map,Date,setTimeout,Promise,console},{filename});
+  vm.runInNewContext(js,{exports:mod.exports,module:mod,require:name=>name==="../api"?{__esModule:true,default:api}:modules[name] ?? localRequire(name),window,document,localStorage,Map,Date,setTimeout,Promise,console},{filename});
   return mod.exports;
 }
 test("report sanitizer removes stored XSS from names, documents, URLs and nested SVG",()=>{
-  const {buildReportDocument}=load("utils/utilidadesReportes.ts");
+  const {buildReportDocument}=load("utils/utilidadesReportes.ts", undefined, { "./androidReports": { isAndroidApp: () => false } });
   const attacks=[`<img src=x onerror="alert(1)">`,`<script>alert(1)</script>`,`<svg><g onload="alert(1)"></g></svg>`,`<a href="javascript:alert(1)">x</a>`,`<iframe srcdoc="<script>alert(1)</script>"></iframe>`];
   for(const attack of attacks) {
     const html=buildReportDocument(attack,attack,`<table><tr><td>${attack}</td></tr></table>`);
@@ -24,6 +24,25 @@ test("report sanitizer removes stored XSS from names, documents, URLs and nested
     assert.ok(doc.querySelector("table"));
     assert.equal(doc.title,attack);
     assert.match(doc.querySelector('meta[http-equiv="Content-Security-Policy"]').content,/default-src 'none'/);
+  }
+});
+test("Android prints sanitized reports without opening a browser window",async()=>{
+  let printed;
+  const {openPrintWindow}=load("utils/utilidadesReportes.ts",undefined,{
+    "./androidReports": {
+      isAndroidApp:()=>true,
+      AndroidReports:{printHtml:async report=>{printed=report;}}
+    }
+  });
+  const originalOpen=window.open;
+  window.open=()=>assert.fail("Android must not open a report window");
+  try {
+    await openPrintWindow("Reporte","Asistencia","<table><tr><td>Presentes</td></tr></table><script>alert(1)</script>");
+    assert.equal(printed.title,"Reporte");
+    assert.match(printed.html,/<td>Presentes<\/td>/);
+    assert.doesNotMatch(printed.html,/<script>/);
+  } finally {
+    window.open=originalOpen;
   }
 });
 test("cache never shares private catalogs between tokens and invalidates prefixes",async()=>{
@@ -39,7 +58,7 @@ test("logout removes authentication and legacy API cache while retaining theme",
   const filename=path.resolve(__dirname,"../src/utils/sesion.ts"),mod={exports:{}};
   const js=ts.transpileModule(fs.readFileSync(filename,"utf8"),{compilerOptions:{module:ts.ModuleKind.CommonJS}}).outputText;
   localStorage.setItem("theme","dark");localStorage.setItem("token","secret");localStorage.setItem("user","private");localStorage.setItem("role","admin");
-  vm.runInNewContext(js,{exports:mod.exports,module:mod,window,localStorage,caches:window.caches,Promise});
+  vm.runInNewContext(js,{exports:mod.exports,module:mod,window,localStorage,caches:window.caches,Promise,require:()=>({forgetOfflineSession:async()=>{}})});
   await mod.exports.limpiarSesion();
   for(const key of ["token","user","role"]) assert.equal(localStorage.getItem(key),null);
   assert.equal(localStorage.getItem("theme"),"dark");assert.deepEqual(deleted,["api-cache"]);
@@ -48,6 +67,7 @@ test("logout removes authentication and legacy API cache while retaining theme",
 function loadComponent(relativeFile,api,withTheme=false) {
   const modules=new Map();
   function compile(filename) {
+    if(filename.endsWith(".json"))return JSON.parse(fs.readFileSync(filename,"utf8"));
     if(modules.has(filename))return modules.get(filename).exports;
     const mod={exports:{}};modules.set(filename,mod);
     const js=ts.transpileModule(fs.readFileSync(filename,"utf8"),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2020,jsx:ts.JsxEmit.ReactJSX,esModuleInterop:true}}).outputText;
@@ -56,6 +76,7 @@ function loadComponent(relativeFile,api,withTheme=false) {
       if(name.endsWith(".css"))return {};
       if(name.startsWith(".")) {
         const target=path.resolve(path.dirname(filename),name);
+        if(target.endsWith(path.sep+"offlineSync"))return {forgetOfflineSession:async()=>{}};
         if(target.endsWith(path.sep+"api"))return {__esModule:true,default:api};
         const source=[target,target+".ts",target+".tsx"].find(file=>fs.existsSync(file)&&fs.statSync(file).isFile());
         return compile(source);
@@ -88,6 +109,10 @@ test("reservation form keeps entered values after server rejection and consumes 
   await act(async()=>{await new Promise(resolve=>setTimeout(resolve,260));});
   assert.ok(container.textContent.includes("20"));
   assert.equal(calls.find(([url,config])=>url==="/trip-reservations"&&!config.params.trip_id)[1].params.limit,5);
+  assert.equal(container.querySelector('form'),null);
+  const addReservation = container.querySelector('.form-launch');
+  await act(async()=>Simulate.click(addReservation));
+  assert.ok(container.querySelector('.modal-overlay [role="dialog"] form'));
   await act(async()=>{Simulate.change(container.querySelector('select[name="trip_id"]'),{target:{name:"trip_id",value:"1"}});});
   await act(async()=>{Simulate.change(container.querySelector('select[name="user_id"]'),{target:{name:"user_id",value:"5"}});});
   await act(async()=>{Simulate.change(container.querySelector('input[name="advance_payment"]'),{target:{name:"advance_payment",value:"20"}});});
@@ -113,6 +138,8 @@ test("concurrent catalog loads share a request and invalidation rejects late sta
 async function mountPage(filename,api,user={id:1,role:"admin"},withTheme=false) {
  const React=require("react"),{act}=React,{createRoot}=require("react-dom/client"),{MemoryRouter}=require("react-router-dom");
  global.IS_REACT_ACT_ENVIRONMENT=true;
+ global.getComputedStyle=window.getComputedStyle.bind(window);
+ window.matchMedia ||= ()=>({matches:false,addEventListener(){},removeEventListener(){}});
  localStorage.setItem("token","test-"+user.id);localStorage.setItem("user",JSON.stringify(user));
  const Component=loadComponent(filename,api,withTheme),node=document.createElement("div");document.body.appendChild(node);const root=createRoot(node);
  await act(async()=>root.render(React.createElement(MemoryRouter,null,React.createElement(Component))));
@@ -281,4 +308,39 @@ test('header keeps icon-only theme and logout controls in order and preserves lo
   await view.act(async()=>Simulate.click(nav.querySelector('[aria-label="Enseñanza"]')));assert.ok(nav.querySelector('a[aria-label="Mi perfil"][href="/miembros"]'));
   await view.act(async()=>Simulate.click(actions.children[1]));assert.deepEqual(posts,['/logout']);assert.equal(localStorage.getItem('token'),null);assert.equal(localStorage.getItem('user'),null);assert.equal(localStorage.getItem('theme'),'dark');
  }finally{await view.close();document.documentElement.setAttribute('data-theme','light');localStorage.setItem('theme','light');}
+});
+
+test("an expired token keeps the previously authenticated local session available",()=>{
+ const React=require("react");
+ const PrivateRoute=loadComponent("components/RutaPrivada.tsx",{});
+ const token="header."+Buffer.from(JSON.stringify({exp:1})).toString("base64url")+".signature";
+ localStorage.setItem("token",token);
+ localStorage.setItem("user",JSON.stringify({id:42,role:"student"}));
+ const protectedPage=React.createElement("p",null,"Datos locales");
+ assert.equal(PrivateRoute({children:protectedPage}),protectedPage);
+ assert.equal(localStorage.getItem("token"),token);
+ localStorage.removeItem("user");
+ assert.equal(PrivateRoute({children:protectedPage}).props.to,"/iniciar-sesion");
+ localStorage.removeItem("token");
+});
+
+test("every mobile submenu shows the backdrop until it closes", async () => {
+ const {Simulate}=require("react-dom/test-utils");
+ const previous=window.matchMedia;
+ window.matchMedia=()=>({matches:true,addEventListener(){},removeEventListener(){}});
+ const view=await mountPage("components/BarraLateral.tsx",{}, {id:1,role:"admin"},true);
+ try {
+  assert.equal(view.node.querySelector(".floating-nav-backdrop"),null);
+  for(const category of ["Enseñanza","Liderazgo","Templo","Más"]){
+   const trigger=view.node.querySelector(`.floating-nav-trigger[aria-label="${category}"]`);
+   await view.act(async()=>Simulate.click(trigger));
+   const backdrop=view.node.querySelector(".floating-nav-backdrop");
+   assert.equal(backdrop?.getAttribute("aria-label"),`Cerrar el menú ${category}`);
+   await view.act(async()=>Simulate.click(backdrop));
+   assert.equal(view.node.querySelector(".floating-nav-backdrop"),null);
+  }
+ } finally {
+  await view.close();
+  window.matchMedia=previous;
+ }
 });

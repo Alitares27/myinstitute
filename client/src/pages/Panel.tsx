@@ -63,7 +63,7 @@ function Dashboard() {
                 <Skeleton width="240px" height="2rem" style={{ marginTop: "8px" }} />
                 <Skeleton width="400px" height="0.9rem" style={{ marginTop: "8px" }} />
             </div>
-            <div className="stats-grid">
+            <div className="stats-grid desktop-statistics">
                 {Array.from({ length: 4 }).map((_, i) => (
                     <div key={i} className="stat-card" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px", padding: "1.5rem" }}>
                         <Skeleton width="40px" height="40px" style={{ borderRadius: "50%" }} />
@@ -91,7 +91,7 @@ function Dashboard() {
   }
 
   const renderAdminStats = () => (
-    <div className="stats-grid">
+    <div className="stats-grid desktop-statistics">
       <div className="stat-card">
         <div className="stat-icon"><TbSchool /></div>
         <div className="stat-value">{stats.students}</div>
@@ -116,7 +116,7 @@ function Dashboard() {
   );
 
   const renderTeacherStats = () => (
-    <div className="stats-grid">
+    <div className="stats-grid desktop-statistics">
       <div className="stat-card">
         <div className="stat-icon"><TbSchool /></div>
         <div className="stat-value">{stats.students}</div>
@@ -136,7 +136,7 @@ function Dashboard() {
   );
 
   const renderStudentStats = () => (
-    <div className="stats-grid">
+    <div className="stats-grid desktop-statistics">
       <div className="stat-card">
         <div className="stat-icon"><TbBook /></div>
         <div className="stat-value">{stats.courses}</div>
@@ -262,7 +262,7 @@ function Dashboard() {
           Bienvenido de nuevo. Aquí tienes un resumen de lo que está sucediendo en tu cuenta hoy.
         </p>
         {error && (
-          <p className="error-message" role="status">
+          <p className="error-message desktop-statistics" role="status">
             <TbAlertTriangle /> {error} Se muestra el panel sin estadísticas actualizadas.
           </p>
         )}

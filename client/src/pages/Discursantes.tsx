@@ -1,3 +1,4 @@
+import FormModal from "../components/FormModal";
 import { confirmAppAction } from "../components/AppDialogHost";
 import { useEffect, useState, useMemo, useRef } from "react";
 import api from "../api";
@@ -14,6 +15,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 export default function Speakers() {
   const location = useLocation();
   const navigate = useNavigate();
+  const [formOpen, setFormOpen] = useState(false);
   const [speakers, setSpeakers] = useState<SpeakerRecord[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
   const [allTemas, setAllTemas] = useState<Tema[]>([]);
@@ -145,6 +147,7 @@ export default function Speakers() {
           completed: "No"
         }, ...prev]);
       }
+      setFormOpen(false);
       setForm({ member_id: "", tema_id: "", speech_title: "", time: "10", date: businessDate(), completed: "No" });
     } catch {
       alert("Error al procesar la solicitud.");
@@ -152,6 +155,7 @@ export default function Speakers() {
   };
 
   const handleEdit = (s: SpeakerRecord) => {
+      setFormOpen(true);
     setEditingId(s.id);
     setForm({
       member_id: String(s.member_id),
@@ -161,7 +165,6 @@ export default function Speakers() {
       date: toYMD(s.date),
       completed: s.completed || "No",
     });
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleDelete = async (id: number) => {
@@ -297,59 +300,58 @@ export default function Speakers() {
       )}
 
       {role === "admin" && (
-        <section>
-          <h2 className="dashboard-subtitle">{editingId ? <><IoCreateOutline /> Actualizar</> : <><FaPlus /> Asignar</>}</h2>
-          <form className="grid-form" onSubmit={handleSubmit}>
-            <div className="form-group">
-
-              <select required value={form.member_id} onChange={e => setForm({ ...form, member_id: e.target.value })}>
-                <option value="">Elegir Miembro</option>
-                {members.map(m => <option key={m.id} value={String(m.id)}>{m.name}</option>)}
-              </select>
-            </div>
-
-            <div className="form-group">
-
-              <select required value={form.tema_id} onChange={e => setForm({ ...form, tema_id: e.target.value })}>
-                <option value="">Elegir Tema</option>
-                {allTemas.map(t => <option key={t.id} value={String(t.id)}>{t.title}</option>)}
-              </select>
-            </div>
-
-            <div className="form-group">
-
-              <input type="text" placeholder="Ej. El valor de la perseverancia" value={form.speech_title} onChange={e => setForm({ ...form, speech_title: e.target.value })} required />
-            </div>
-
-            <div className="form-group">
-
-              <input type="number" placeholder="Ingresa tiempo" value={form.time} onChange={e => setForm({ ...form, time: e.target.value })} />
-            </div>
-            <div className="form-group">
-              <input type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} />
-            </div>
-
-
-            {editingId && (
+        <>
+          <button type="button" className="btn primary form-launch" onClick={() => setFormOpen(true)}>Agregar</button>
+          {formOpen && <FormModal title={editingId ? "Editar discursante" : "Agregar discursante"} onClose={() => { setEditingId(null); setForm({ member_id: "", tema_id: "", speech_title: "", time: "10", date: businessDate(), completed: "No" }); setFormOpen(false); }}>
+            <form className="grid-form" onSubmit={handleSubmit}>
               <div className="form-group">
-                <label>Estado</label>
-                <select value={form.completed} onChange={e => setForm({ ...form, completed: e.target.value })}>
-                  <option value="No">No</option>
-                  <option value="Si">Si</option>
+
+                <select required value={form.member_id} onChange={e => setForm({ ...form, member_id: e.target.value })}>
+                  <option value="">Elegir Miembro</option>
+                  {members.map(m => <option key={m.id} value={String(m.id)}>{m.name}</option>)}
                 </select>
               </div>
-            )}
 
-            <div className="form-group full-width">
-              <button type="submit" className="btn primary">
-                {editingId ? <>Guardar</> : <>Asignar</>}
-              </button>
-              {(editingId || form.member_id || form.tema_id || form.speech_title) && (
-                <button type="button" className="btn cancel-btn" onClick={() => { setEditingId(null); setForm({ member_id: "", tema_id: "", speech_title: "", time: "10", date: businessDate(), completed: "No" }); }} title="Cancelar" aria-label="Cancelar">✕</button>
+              <div className="form-group">
+
+                <select required value={form.tema_id} onChange={e => setForm({ ...form, tema_id: e.target.value })}>
+                  <option value="">Elegir Tema</option>
+                  {allTemas.map(t => <option key={t.id} value={String(t.id)}>{t.title}</option>)}
+                </select>
+              </div>
+
+              <div className="form-group">
+
+                <input type="text" placeholder="Ej. El valor de la perseverancia" value={form.speech_title} onChange={e => setForm({ ...form, speech_title: e.target.value })} required />
+              </div>
+
+              <div className="form-group">
+
+                <input type="number" placeholder="Ingresa tiempo" value={form.time} onChange={e => setForm({ ...form, time: e.target.value })} />
+              </div>
+              <div className="form-group">
+                <input type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} />
+              </div>
+
+
+              {editingId && (
+                <div className="form-group">
+                  <label>Estado</label>
+                  <select value={form.completed} onChange={e => setForm({ ...form, completed: e.target.value })}>
+                    <option value="No">No</option>
+                    <option value="Si">Si</option>
+                  </select>
+                </div>
               )}
-            </div>
-          </form>
-        </section>
+
+              <div className="form-group full-width">
+                <button type="submit" className="btn primary">
+                  {editingId ? <>Guardar</> : <>Asignar</>}
+                </button>
+              </div>
+            </form>
+          </FormModal>}
+        </>
       )}
 
       <h2 className="dashboard-subtitle">Historial de Discursos</h2>
@@ -362,7 +364,7 @@ export default function Speakers() {
         <input type="date" value={dateFilter} onChange={e => { setDateFilter(e.target.value); setCurrentPage(1); }} />
         {role === "admin" && (
           <button className="btn secondary" onClick={() => setShowTemasModal(true)}>
-            <TbList /> Ver Temas
+            <TbList /> Temas
           </button>
         )}
       </div>
@@ -419,10 +421,10 @@ export default function Speakers() {
                 </td>
                 {role === "admin" && (
                   <td>
-                    <button className="btn secondary extracted-style-4" onClick={() => handleEdit(s)} aria-label="Editar">
+                    <button className="btn secondary btn-icon" onClick={() => handleEdit(s)} aria-label="Editar">
                       <IoCreateOutline />
                     </button>
-                    <button className="btn secondary extracted-style-5" onClick={() => handleDelete(s.id)} aria-label="Eliminar">
+                    <button className="btn secondary btn-icon danger-outline" onClick={() => handleDelete(s.id)} aria-label="Eliminar">
                       <IoTrashOutline />
                     </button>
                   </td>
@@ -453,43 +455,38 @@ export default function Speakers() {
         </div>
       )}
       {showTemasModal && (
-        <div className="modal-overlay" onClick={() => setShowTemasModal(false)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <button className="modal-close" onClick={() => setShowTemasModal(false)} aria-label="Cerrar" />
-            <h2 style={{ marginTop: 0, marginBottom: "1rem" }}>Temas para Discursantes</h2>
+        <FormModal title="Temas para discursantes" onClose={() => setShowTemasModal(false)}>
+          <form onSubmit={handleAddTema} style={{ display: "flex", gap: "0.5rem", marginBottom: "1rem" }}>
+            <input
+              type="text"
+              placeholder="Nuevo tema..."
+              value={temaTitle}
+              onChange={e => setTemaTitle(e.target.value)}
+              style={{ flex: 1 }}
+              required
+            />
+            <button type="submit" className="btn primary"><FaPlus /></button>
+          </form>
 
-            <form onSubmit={handleAddTema} style={{ display: "flex", gap: "0.5rem", marginBottom: "1rem" }}>
-              <input
-                type="text"
-                placeholder="Nuevo tema..."
-                value={temaTitle}
-                onChange={e => setTemaTitle(e.target.value)}
-                style={{ flex: 1 }}
-                required
-              />
-              <button type="submit" className="btn primary"><FaPlus /></button>
-            </form>
+          {temaError && <div className="error-message" style={{ marginBottom: "0.5rem" }}>{temaError}</div>}
 
-            {temaError && <div className="error-message" style={{ marginBottom: "0.5rem" }}>{temaError}</div>}
-
-            <div style={{ maxHeight: "50vh", overflowY: "auto" }}>
-              {allTemas.length > 0 ? (
-                <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-                  {allTemas.map(t => (
-                    <li key={t.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0.5rem 0", borderBottom: "1px solid var(--border-color)" }}>
-                      <span>{t.title}</span>
-                      <button className="btn secondary extracted-style-5" onClick={() => handleDeleteTema(t.id)} aria-label="Eliminar">
-                        <IoTrashOutline />
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p style={{ textAlign: "center", color: "var(--text-muted)" }}>No hay temas registrados.</p>
-              )}
-            </div>
+          <div style={{ maxHeight: "50vh", overflowY: "auto" }}>
+            {allTemas.length > 0 ? (
+              <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+                {allTemas.map(t => (
+                  <li key={t.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0.5rem 0", borderBottom: "1px solid var(--border-color)" }}>
+                    <span>{t.title}</span>
+                    <button className="btn secondary btn-icon danger-outline" onClick={() => handleDeleteTema(t.id)} aria-label="Eliminar">
+                      <IoTrashOutline />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p style={{ textAlign: "center", color: "var(--text-muted)" }}>No hay temas registrados.</p>
+            )}
           </div>
-        </div>
+        </FormModal>
       )}
     </div>
   );

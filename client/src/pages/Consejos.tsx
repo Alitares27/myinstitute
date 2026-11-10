@@ -227,9 +227,9 @@ export default function Meetings() {
           {role === "admin" && (
             <Link
               to="/consejos/nuevo"
-              className="btn-primary"
+              className="btn primary"
             >
-              Programar
+              Agregar
             </Link>
           )}
         </div>
@@ -275,11 +275,11 @@ export default function Meetings() {
                   </td>
                   {role === "admin" && (
                     <td>
-                      <Link to={`/consejos/editar/${meeting.id}`} className="btn secondary extracted-style-4" aria-label="Editar">
+                      <Link to={`/consejos/editar/${meeting.id}`} className="btn secondary btn-icon" aria-label="Editar">
                         <IoCreateOutline />
                       </Link>
                       <button
-                        className="btn secondary extracted-style-5"
+                        className="btn secondary btn-icon danger-outline"
                         onClick={() => handleDelete(meeting.id!)}
                         aria-label="Eliminar"
                       >
@@ -312,7 +312,6 @@ export default function Meetings() {
       {selectedMeeting && (
         <div className="modal-overlay" onClick={() => setSelectedMeeting(null)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <button className="modal-close" onClick={() => setSelectedMeeting(null)} title="Cerrar" />
             {loadingDetail ? (
               <p>Cargando consejo...</p>
             ) : (
@@ -384,12 +383,6 @@ export default function Meetings() {
             aria-labelledby="print-modal-title"
             onClick={(e) => e.stopPropagation()}
           >
-            <button
-              className="modal-close"
-              onClick={closePrintModal}
-              title="Cerrar"
-              disabled={generatingPDF}
-            />
 
             <div className="print-modal-header">
               <h2 id="print-modal-title"><TbPrinter /> Imprimir consejos</h2>
@@ -467,7 +460,7 @@ export default function Meetings() {
                 onClick={handleGenerarPDF}
                 disabled={selectedToPrint.length === 0 || generatingPDF}
               >
-                {generatingPDF ? "Generando PDF…" : "Generar PDF"}
+                {generatingPDF ? "Preparando…" : "Guardar PDF"}
               </button>
             </div>
           </div>

@@ -19,6 +19,8 @@ before(async () => {
     db = new PGlite(); await db.exec(fs.readFileSync(path.join(__dirname, "schema.sql"), "utf8"));
     const migration = fs.readFileSync(path.join(__dirname, "../migrations/security_and_history.sql"), "utf8");
     await db.exec(migration); await db.exec(migration);
+    const agendasMigration = fs.readFileSync(path.join(__dirname, "../migrations/baptism_agendas.sql"), "utf8");
+    await db.exec(agendasMigration); await db.exec(agendasMigration);
     for (const [id, user] of Object.entries(fixtures)) await db.query("INSERT INTO users(id,name,email,password,role) VALUES($1,$2,$3,$4,$5)", [Number(id), `Member ${id}`, `user${id}@test.invalid`, hash, user.role]);
     await db.exec(`INSERT INTO teachers(id,user_id,specialty) VALUES(5,2,'A'),(6,3,'B');
  INSERT INTO students(id,user_id) VALUES(7,42),(8,43);
@@ -40,6 +42,35 @@ after(async () => { if (server) await new Promise(resolve => server.close(resolv
 test("real PostgreSQL migration is idempotent and adds revocation, archive and audit fields", async () => {
     const result = await db.query("SELECT auth_version FROM users WHERE id=1"); assert.equal(result.rows[0].auth_version, 0);
     assert.equal((await db.query("SELECT COUNT(*)::int AS count FROM financial_events")).rows[0].count, 0);
+});
+test("baptism agendas persist participant assignments and enforce administrator writes", async () => {
+    const route = "/api/agendas";
+    const body = {
+        scheduled_at: "2026-12-06T17:30", friend: "  Amigo de prueba  ", opening_hymn: "Primer himno",
+        opening_prayer_id: 2, baptism_talk_id: 3, baptism_id: 1, witness_one_id: 2,
+        witness_two_id: 42, holy_ghost_talk_id: 43, confirmation_id: 3,
+        closing_hymn: "Segundo himno", closing_prayer_id: 42,
+    };
+    assert.equal((await request(route, { id: null })).status, 401);
+    assert.equal((await request(route, { id: 2, method: "POST", body })).status, 403);
+    assert.equal((await request(route, { method: "POST", body: { ...body, scheduled_at: "2026-02-30T17:30" } })).status, 400);
+    assert.equal((await request(route, { method: "POST", body: { ...body, witness_one_id: 9000 } })).status, 400);
+    const members = await request(route + "/members");
+    assert.deepEqual(members.data.find(member => member.id === 42), { id: 42, name: "Member 42" });
+    const created = await request(route, { method: "POST", body });
+    assert.equal(created.status, 201);
+    assert.equal(created.data.friend, "Amigo de prueba");
+    assert.equal(created.data.scheduled_at, body.scheduled_at);
+    assert.equal(created.data.member_names[1], "Member 1");
+    const list = await request(route, { id: 42 });
+    assert.equal(list.data[0].holy_ghost_talk_id, 43);
+    const item = route + "/" + created.data.id;
+    assert.equal((await request(item, { id: 42, method: "DELETE" })).status, 403);
+    const updated = await request(item, { method: "PUT", body: { ...body, confirmation_id: null } });
+    assert.equal(updated.status, 200);
+    assert.equal(updated.data.confirmation_id, null);
+    assert.equal((await request(item, { method: "DELETE" })).status, 200);
+    assert.equal((await request(route)).data.length, 0);
 });
 test("student identity and course access isolate enrollments, topics, attendance and grades", async () => {
     assert.equal((await request('/api/enrollments', { id: 42 })).data[0].student_id, 7);

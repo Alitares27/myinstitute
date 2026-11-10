@@ -23,6 +23,7 @@ import tripReservationsRoutes from "./routes/tripReservations";
 import templeAmortizationsRoutes from "./routes/templeAmortizations";
 import meetingsRoutes from "./routes/meetings";
 
+import agendasRoutes from "./routes/agendas";
 import speakersRoutes from "./routes/speakers";
 import temasRoutes from "./routes/temas";
 import activitiesRoutes from "./routes/activities";
@@ -68,6 +69,7 @@ app.use("/api/temples", templesRoutes);
 app.use("/api/temple-trips", templeTripsRoutes);
 app.use("/api/trip-reservations", tripReservationsRoutes);
 app.use("/api/temple-amortizations", templeAmortizationsRoutes);
+app.use("/api/agendas", agendasRoutes);
 app.use("/api/speakers", speakersRoutes);
 app.use("/api/temas", temasRoutes);
 app.use("/api/meetings", meetingsRoutes);

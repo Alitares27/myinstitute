@@ -1,5 +1,6 @@
+import FormModal from "../FormModal";
 import { confirmAppAction } from "../AppDialogHost";
-import { IoPersonAddOutline, IoCreateOutline, IoCloseOutline, IoSaveOutline } from "react-icons/io5";
+import { IoSaveOutline } from "react-icons/io5";
 import { useState } from "react";
 import type { Member, MemberRole } from "../../interfaces/User";
 import { MEMBER_ROLES } from "../../interfaces/User";
@@ -17,7 +18,7 @@ export default function MemberEditor({ member, onSave, onCancel, onRemoveStudent
     const set = (key: keyof MemberForm, value: string | boolean) => setForm(previous => ({ ...previous, [key]: value }));
     async function submit(event: React.FormEvent) { event.preventDefault(); setSaving(true); setError(""); try { await onSave({ ...form, include_student_profile: academic }); } catch (error: any) { setError(error.response?.data?.message || "No se pudo guardar el miembro"); } finally { setSaving(false); } }
     async function remove() { if (!onRemoveStudent || !await confirmAppAction("¿Quitar solo el registro de estudiante? La cuenta se conserva. No se permite si hay matrículas, asistencias o notas.")) return; setSaving(true); setError(""); try { await onRemoveStudent(); } catch (error: any) { setError(error.response?.data?.message || "No se pudo retirar el registro académico"); } finally { setSaving(false); } }
-    return <section className="miembros-card" aria-label="Formulario de miembro"><div className="miembros-form-header"><h2>{member ? <IoCreateOutline aria-hidden="true" /> : <IoPersonAddOutline aria-hidden="true" />}{member ? "Editar" : "Registrar"}</h2><button type="button" className="btn cancel-btn" onClick={onCancel} aria-label="Cerrar formulario" title="Cerrar formulario" disabled={saving}><IoCloseOutline aria-hidden="true" /></button></div>
+    return <FormModal title={member ? "Editar miembro" : "Agregar miembro"} onClose={onCancel} busy={saving}>
         <form onSubmit={submit}><fieldset disabled={saving} className="miembros-fields"><div className="miembros-form-grid">
             <label>Nombre completo<input name="name" required maxLength={100} value={form.name} onChange={e => set('name', e.target.value)} /></label>
             <label>Correo electrónico<input name="email" type="email" required maxLength={150} value={form.email} onChange={e => set('email', e.target.value)} /></label>
@@ -33,6 +34,6 @@ export default function MemberEditor({ member, onSave, onCancel, onRemoveStudent
             {error && <p role="alert">{error}</p>}
             <div className="miembros-form-actions"><button className="btn primary" type="submit"><IoSaveOutline aria-hidden="true" />{saving ? "Guardando..." : "Guardar"}</button>
                 <button className="btn secondary" type="button" onClick={onCancel}>Cancelar</button>
-                {member?.student_id && member.role !== 'student' && onRemoveStudent && <button className="btn miembros-delete" type="button" onClick={remove}>Quitar registro de estudiante</button>}
-            </div></fieldset></form></section>;
+                {member?.student_id && member.role !== 'student' && onRemoveStudent && <button className="btn miembros-delete" type="button" onClick={remove}>Quitar perfil</button>}
+            </div></fieldset></form></FormModal>;
 }

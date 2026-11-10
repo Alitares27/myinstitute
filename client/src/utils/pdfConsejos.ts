@@ -1,3 +1,4 @@
+import { saveReportPdf } from "./androidReports";
 /**
  * Generación del archivo PDF de consejos.
  */
@@ -220,5 +221,5 @@ export async function construirPDFConsejos(
 export async function generarPDFConsejos(meetings: Meeting[]): Promise<void> {
   const consejos = (meetings || []).filter(Boolean);
   const doc = await construirPDFConsejos(consejos);
-  doc.save(nombreArchivo(consejos));
+  await saveReportPdf(doc, nombreArchivo(consejos));
 }

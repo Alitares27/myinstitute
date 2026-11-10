@@ -1,3 +1,5 @@
+import { isAndroidApp } from "../utils/androidReports";
+import FormModal from "../components/FormModal";
 import { confirmAppAction } from "../components/AppDialogHost";
 import {useTripStatistics} from "../hooks/useTripStatistics";
 import TripStatisticsScope from "../components/TripStatisticsScope";
@@ -39,6 +41,7 @@ const avatarGradient = (index: number) => {
 
 export default function TripReservations() {
     const navigate = useNavigate();
+    const [formOpen, setFormOpen] = useState(false);
     const [users, setUsers] = useState<BasicUser[]>([]);
     const [trips, setTrips] = useState<Trip[]>([]);
     const [optionsRevision,setOptionsRevision]=useState(0);
@@ -147,6 +150,7 @@ export default function TripReservations() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setListError("");
         const selectedTrip = trips.find(trip => trip.id === Number(formData.trip_id));
         if (selectedTrip && Number(formData.advance_payment) > selectedTrip.cost) {
             alert("El pago no puede ser mayor que el costo del viaje");
@@ -163,6 +167,7 @@ export default function TripReservations() {
             return;
         }
 
+        setFormOpen(false);
         setEditingId(null);
         setFormData({
             user_id: "",
@@ -176,6 +181,7 @@ export default function TripReservations() {
     };
 
     const handleEdit = (res: any) => {
+        setFormOpen(true);
         setFormData({
             user_id: res.user_id.toString(),
             trip_id: res.trip_id.toString(),
@@ -199,10 +205,6 @@ export default function TripReservations() {
         });
     };
 
-    const isFormDirty = editingId !== null ||
-        formData.user_id !== "" ||
-        formData.trip_id !== "" ||
-        formData.advance_payment !== "";
 
     const handleDelete = async (id: number) => {
         if (!await confirmAppAction("¿Eliminar esta reserva?")) return;
@@ -301,8 +303,8 @@ export default function TripReservations() {
     }, [totalPages, currentPage]);
 
     const handlePrintReport = useCallback(async (selectedTripId: string) => {
-      const printWindow = window.open("", "_blank");
-      if (!printWindow) { setListError("Permite las ventanas emergentes para imprimir"); return; }
+      const printWindow = isAndroidApp() ? null : window.open("", "_blank");
+      if (!printWindow && !isAndroidApp()) { setListError("Permite las ventanas emergentes para imprimir"); return; }
       try {
         const { data } = await api.get('/trip-reservations/report', { params: {
           trip_id: selectedTripId || undefined,
@@ -349,8 +351,8 @@ export default function TripReservations() {
             </div>
         </div>`;
 
-        openPrintWindow("Reporte de Viajes al Templo", "Rama Arroyo Seco", body, printWindow);
-      } catch { printWindow.close(); setListError("No se pudo generar el reporte"); }
+        await openPrintWindow("Reporte de Viajes al Templo", "Rama Arroyo Seco", body, printWindow);
+      } catch { printWindow?.close(); setListError("No se pudo generar el reporte"); }
     }, [filterUserId, searchQuery]);
 
     if (loading || (!page.loaded && page.loading)) {
@@ -390,7 +392,7 @@ export default function TripReservations() {
                     <p>Gestión de reservas y pagos a los viajes al templo</p>
                 </div>
                 <div className="asistencia-header-actions">
-                    <button className="btn primary" onClick={handleOpenPaymentModal}><FaPlus /> Pagar</button>
+                    <button className="btn primary" onClick={handleOpenPaymentModal}><FaPlus /> Pago</button>
                     <button onClick={() => setShowReportModal(true)} className="btn secondary"><IoPrintOutline /> Imprimir</button>
                 </div>
             </div>
@@ -428,10 +430,10 @@ export default function TripReservations() {
                 </div>
             </div>
 
-            <div className="asistencia-form-card">
-                <div className="asistencia-form-header">
-                    <h2>{editingId ? <><IoCreateOutline /> Actualizar Reserva</> : <><FaPlus /> Asignar Viaje</>}</h2>
-                </div>
+            <>
+              <button type="button" className="btn primary form-launch" onClick={() => setFormOpen(true)}>Agregar</button>
+              {formOpen && <FormModal title={editingId ? "Editar reserva" : "Agregar reserva"} onClose={() => { handleCancel(); setListError(""); setFormOpen(false); }}>
+                {listError && <p role="alert">{listError}</p>}
                 <form onSubmit={handleSubmit} className="asistencia-form-grid">
                     <div className="form-group">
                         <label>Viaje</label>
@@ -453,10 +455,10 @@ export default function TripReservations() {
                     </div>
                     <div className="asistencia-form-actions">
                         <button type="submit" className="btn primary">{editingId ? "Actualizar" : "Reservar"}</button>
-                        {isFormDirty && <button type="button" onClick={handleCancel} className="btn cancel-btn" title="Cancelar" aria-label="Cancelar">✕</button>}
                     </div>
                 </form>
-            </div>
+              </FormModal>}
+            </>
 
             <div className="asistencia-toolbar">
                 <div className="asistencia-search-container">
@@ -492,92 +494,88 @@ export default function TripReservations() {
             </div>
 
             {showPaymentModal && (
-                <div className="modal-overlay" onClick={event => { if (event.target === event.currentTarget) handleClosePaymentModal(); }}>
-                    <div className="modal-content" style={{ maxWidth: "460px" }}>
-                        <button type="button" className="modal-close" onClick={handleClosePaymentModal} aria-label="Cerrar" />
-                        <h2 style={{ marginBottom: "0.5rem", marginTop: "1.5rem" }}>Registrar Pago</h2>
-                        <form onSubmit={handlePaymentSubmit} style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                            <div className="form-group">
-                                <label htmlFor="trip_id">Viaje</label>
-                                <select name="trip_id" id="trip_id" value={paymentForm.trip_id} onChange={handlePaymentChange} required>
-                                    <option value="">Elegir viaje</option>
-                                    {availableTripsForReservation.map(trip => (
-                                        <option key={trip.id} value={trip.id}>{formatDate(trip.date)}</option>
-                                    ))}
-                                </select>
-                            </div>
+                <FormModal title="Agregar pago" onClose={handleClosePaymentModal} busy={isSubmittingPayment}>
+                  <form onSubmit={handlePaymentSubmit} style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                      <div className="form-group">
+                          <label htmlFor="trip_id">Viaje</label>
+                          <select name="trip_id" id="trip_id" value={paymentForm.trip_id} onChange={handlePaymentChange} required>
+                              <option value="">Elegir viaje</option>
+                              {availableTripsForReservation.map(trip => (
+                                  <option key={trip.id} value={trip.id}>{formatDate(trip.date)}</option>
+                              ))}
+                          </select>
+                      </div>
 
-                            {paymentForm.trip_id && (
-                                <div className="form-group">
-                                    <label htmlFor="attendance_id">Miembro</label>
-                                    <select name="attendance_id" id="attendance_id" value={paymentForm.attendance_id} onChange={handlePaymentChange} required>
-                                        <option value="">Elegir miembro</option>
-                                        {availableReservationsForSelectedTrip.map(res => (
-                                            <option key={res.id} value={res.id}>{res.user_name}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                            )}
+                      {paymentForm.trip_id && (
+                          <div className="form-group">
+                              <label htmlFor="attendance_id">Miembro</label>
+                              <select name="attendance_id" id="attendance_id" value={paymentForm.attendance_id} onChange={handlePaymentChange} required>
+                                  <option value="">Elegir miembro</option>
+                                  {availableReservationsForSelectedTrip.map(res => (
+                                      <option key={res.id} value={res.id}>{res.user_name}</option>
+                                  ))}
+                              </select>
+                          </div>
+                      )}
 
-                            {selectedReservationForPayment && (
-                                <div className="payment-info-card">
-                                    <p><strong>{selectedReservationForPayment.user_name}</strong></p>
-                                    <div className="payment-info-grid">
-                                        <span>Pagado: <strong>${Number(selectedReservationForPayment.advance_payment).toLocaleString()}</strong></span>
-                                        <span>Saldo: <strong>${Number(selectedReservationForPayment.pending_payment).toLocaleString()}</strong></span>
-                                    </div>
-                                </div>
-                            )}
+                      {selectedReservationForPayment && (
+                          <div className="payment-info-card">
+                              <p><strong>{selectedReservationForPayment.user_name}</strong></p>
+                              <div className="payment-info-grid">
+                                  <span>Pagado: <strong>${Number(selectedReservationForPayment.advance_payment).toLocaleString()}</strong></span>
+                                  <span>Saldo: <strong>${Number(selectedReservationForPayment.pending_payment).toLocaleString()}</strong></span>
+                              </div>
+                          </div>
+                      )}
 
-                            <div className="form-group">
-                                <label htmlFor="payment_amount">Monto de Pago</label>
-                                <input
-                                    id="payment_amount"
-                                    name="payment_amount"
-                                    type="number"
-                                    min="0.01"
-                                    step="0.01"
-                                    value={paymentForm.payment_amount}
-                                    onChange={handlePaymentChange}
-                                    placeholder="Ingrese el monto a pagar"
-                                    required
-                                />
-                            </div>
+                      <div className="form-group">
+                          <label htmlFor="payment_amount">Monto de Pago</label>
+                          <input
+                              id="payment_amount"
+                              name="payment_amount"
+                              type="number"
+                              min="0.01"
+                              step="0.01"
+                              value={paymentForm.payment_amount}
+                              onChange={handlePaymentChange}
+                              placeholder="Ingrese el monto a pagar"
+                              required
+                          />
+                      </div>
 
-                            <div className="form-group">
-                                <label htmlFor="payment_type">Medio de Pago</label>
-                                <select name="payment_type" id="payment_type" value={paymentForm.payment_type} onChange={handlePaymentChange}>
-                                    <option value="efectivo">Efectivo</option>
-                                    <option value="transferencia">Transferencia</option>
-                                    <option value="donacion">Donación</option>
-                                </select>
-                            </div>
+                      <div className="form-group">
+                          <label htmlFor="payment_type">Medio de Pago</label>
+                          <select name="payment_type" id="payment_type" value={paymentForm.payment_type} onChange={handlePaymentChange}>
+                              <option value="efectivo">Efectivo</option>
+                              <option value="transferencia">Transferencia</option>
+                              <option value="donacion">Donación</option>
+                          </select>
+                      </div>
 
-                            <div className="form-group">
-                                <label htmlFor="payment_date">Fecha de Pago</label>
-                                <input
-                                    id="payment_date"
-                                    name="payment_date"
-                                    type="date"
-                                    value={paymentForm.payment_date}
-                                    readOnly
-                                    style={{ background: "var(--bg-body, #f5f5f5)", cursor: "not-allowed", opacity: 0.8 }}
-                                />
-                            </div>
+                      <div className="form-group">
+                          <label htmlFor="payment_date">Fecha de Pago</label>
+                          <input
+                              id="payment_date"
+                              name="payment_date"
+                              type="date"
+                              value={paymentForm.payment_date}
+                              readOnly
+                              style={{ background: "var(--bg-body, #f5f5f5)", cursor: "not-allowed", opacity: 0.8 }}
+                          />
+                      </div>
 
-                            {paymentError && (
-                                <p style={{ color: "var(--danger)", margin: 0 }}>{paymentError}</p>
-                            )}
+                      {paymentError && (
+                          <p style={{ color: "var(--danger)", margin: 0 }}>{paymentError}</p>
+                      )}
 
-                            <div className="form-group full-width" style={{ marginTop: "0.5rem" }}>
-                                <button type="submit" className="btn primary" disabled={isSubmittingPayment || !selectedReservationForPayment}>
-                                    {isSubmittingPayment ? "Pagando..." : "Pagar"}
-                                </button>
-                                <button type="button" onClick={handleClosePaymentModal} className="btn cancel-btn">Cancelar</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
+                      <div className="form-group full-width" style={{ marginTop: "0.5rem" }}>
+                          <button type="submit" className="btn primary" disabled={isSubmittingPayment || !selectedReservationForPayment}>
+                              {isSubmittingPayment ? "Pagando..." : "Pagar"}
+                          </button>
+                          <button type="button" onClick={handleClosePaymentModal} className="btn cancel-btn">Cancelar</button>
+                      </div>
+                  </form>
+                </FormModal>
             )}
 
             <div className="table-container">
@@ -663,8 +661,8 @@ export default function TripReservations() {
                                     )}
                                 </td>
                                 <td>
-                                    <button className="btn secondary extracted-style-4" onClick={() => handleEdit(res)} aria-label="Editar"><IoCreateOutline /></button>
-                                    <button className="btn secondary extracted-style-5" onClick={() => handleDelete(res.id)} aria-label="Eliminar"><IoTrashOutline /></button>
+                                    <button className="btn secondary btn-icon" onClick={() => handleEdit(res)} aria-label="Editar"><IoCreateOutline /></button>
+                                    <button className="btn secondary btn-icon danger-outline" onClick={() => handleDelete(res.id)} aria-label="Eliminar"><IoTrashOutline /></button>
                                 </td>
                             </tr>
                         ))}

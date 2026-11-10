@@ -216,7 +216,7 @@
 .shortcut-icon-bg {
   width: 60px;
   height: 60px;
-  background: rgba(0, 97, 132, 0.05);
+  background: var(--primary-light);
   border-radius: 15px;
   display: flex;
   align-items: center;
@@ -313,6 +313,8 @@
   transition: border-color .2s ease, background-color .2s ease, transform .2s ease, box-shadow .2s ease;
 }
 
+.shortcut-card[role="button"] { justify-content: center; text-align: center; }
+.shortcut-card[role="button"]:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 .shortcut-card::after { display: none; }
 .shortcut-card:hover { transform: translateY(-2px); border-color: color-mix(in srgb, var(--primary) 28%, var(--border-color)); color: var(--text-main); background: var(--primary-light); box-shadow: var(--shadow-sm); }
 .shortcut-card:hover .shortcut-icon-bg { background: color-mix(in srgb, var(--primary) 14%, transparent); color: var(--primary); }

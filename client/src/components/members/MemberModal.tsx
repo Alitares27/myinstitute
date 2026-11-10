@@ -1,6 +1,5 @@
 import {useEffect,useRef} from "react";
 import type {ReactNode} from "react";
-import {IoCloseOutline} from "react-icons/io5";
 export default function MemberModal({children,onClose}:{children:ReactNode;onClose:()=>void}){
  const ref=useRef<HTMLDivElement>(null);
  const close=useRef(onClose);close.current=onClose;
@@ -22,7 +21,7 @@ export default function MemberModal({children,onClose}:{children:ReactNode;onClo
  },[]);
  return <div className="miembros-modal-overlay" onClick={event=>{if(event.target===event.currentTarget)onClose();}}>
   <div className="miembros-modal" role="dialog" aria-modal="true" aria-labelledby="miembros-modal-title" tabIndex={-1} ref={ref}>
-   <header className="miembros-modal-header"><h2 id="miembros-modal-title">Información del miembro</h2><button type="button" className="btn cancel-btn" aria-label="Cerrar ficha" title="Cerrar ficha" onClick={onClose}><IoCloseOutline aria-hidden="true"/></button></header>
+   <header className="miembros-modal-header"><h2 id="miembros-modal-title">Información del miembro</h2></header>
    {children}
   </div>
  </div>;

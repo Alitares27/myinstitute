@@ -3,6 +3,7 @@ package com.gestionar.institute.nativeplugins;
 import android.app.job.JobParameters;
 import android.app.job.JobService;
 import android.content.SharedPreferences;
+import android.content.Context;
 import android.util.Log;
 
 import org.json.JSONArray;
@@ -37,7 +38,7 @@ public class OfflineSyncJobService extends JobService {
     @Override
     public boolean onStartJob(JobParameters parameters) {
         EXECUTOR.execute(() -> {
-            boolean retry = syncQueue();
+            boolean retry = syncQueue(this);
             jobFinished(parameters, retry);
         });
         return true;
@@ -48,18 +49,26 @@ public class OfflineSyncJobService extends JobService {
         return true;
     }
 
-    private boolean syncQueue() {
-        SharedPreferences prefs = OfflineQueueStore.preferences(this);
+    static void synchronizeNow(Context context, Runnable finished) {
+        EXECUTOR.execute(() -> {
+            try { syncQueue(context); }
+            finally { finished.run(); }
+        });
+    }
+
+    private static boolean syncQueue(Context context) {
+        SharedPreferences prefs = OfflineQueueStore.preferences(context);
         String userId = prefs.getString("activeUserId", "");
         String token = prefs.getString("token", "");
         String apiBase = prefs.getString("apiBase", "");
         if (userId.isEmpty() || token.isEmpty() || apiBase.isEmpty()) return false;
 
         synchronized (OfflineQueueStore.class) {
-            JSONArray queue = OfflineQueueStore.readQueue(this);
+            JSONArray queue = OfflineQueueStore.readQueue(context);
             for (int index = 0; index < queue.length(); index++) {
                 JSONObject entry = queue.optJSONObject(index);
                 if (entry == null || !userId.equals(entry.optString("userId"))) continue;
+                if (!userId.equals(prefs.getString("activeUserId", "")) || !token.equals(prefs.getString("token", ""))) return false;
                 try {
                     HttpResult http = send(entry, apiBase, token);
                     int status = http.status;
@@ -67,7 +76,7 @@ public class OfflineSyncJobService extends JobService {
                         String error = readError(status, http.body);
                         entry.put("lastError", error);
                         queue.put(index, entry);
-                        OfflineQueueStore.writeQueue(this, queue);
+                        OfflineQueueStore.writeQueue(context, queue);
                         return status == 429 || status >= 500;
                     }
 
@@ -77,16 +86,16 @@ public class OfflineSyncJobService extends JobService {
                     long localId = entry.optLong("localId", 0);
                     Object serverId = result.has("id") ? result.opt("id") : result.optJSONObject("user") != null ? result.optJSONObject("user").opt("id") : null;
                     if (localId < 0 && serverId != null && serverId != JSONObject.NULL) {
-                        storeMapping(userId, localId, serverId);
+                        storeMapping(context, userId, localId, serverId);
                         applyMapping(queue, index, localId, serverId);
                     }
                     queue.remove(index);
                     index--;
-                    OfflineQueueStore.writeQueue(this, queue);
+                    OfflineQueueStore.writeQueue(context, queue);
                 } catch (Exception error) {
                     Log.w(TAG, "Se reintentará la sincronización local", error);
                     try { entry.put("lastError", "Sin conexión con el servidor; se reintentará automáticamente."); } catch (JSONException ignored) {}
-                    OfflineQueueStore.writeQueue(this, queue);
+                    OfflineQueueStore.writeQueue(context, queue);
                     return true;
                 }
             }
@@ -94,7 +103,7 @@ public class OfflineSyncJobService extends JobService {
         return false;
     }
 
-    private HttpResult send(JSONObject entry, String apiBase, String token) throws Exception {
+    private static HttpResult send(JSONObject entry, String apiBase, String token) throws Exception {
         String endpoint = apiBase.replaceAll("/+$", "") + entry.getString("url");
         HttpURLConnection connection = (HttpURLConnection) new URL(endpoint).openConnection();
         connection.setRequestMethod(entry.optString("method", "POST"));
@@ -117,7 +126,7 @@ public class OfflineSyncJobService extends JobService {
         return new HttpResult(status, responseBody);
     }
 
-    private String readAll(InputStream input) throws Exception {
+    private static String readAll(InputStream input) throws Exception {
         try (InputStream stream = input; ByteArrayOutputStream output = new ByteArrayOutputStream()) {
             byte[] buffer = new byte[4096];
             int length;
@@ -126,7 +135,7 @@ public class OfflineSyncJobService extends JobService {
         }
     }
 
-    private String readError(int status, String body) {
+    private static String readError(int status, String body) {
         try {
             String message = new JSONObject(body).optString("message", "");
             if (!message.isEmpty()) return message;
@@ -137,8 +146,8 @@ public class OfflineSyncJobService extends JobService {
         return "El servidor rechazó el cambio (HTTP " + status + "). Se conserva en este dispositivo.";
     }
 
-    private void storeMapping(String userId, long localId, Object serverId) throws JSONException {
-        SharedPreferences prefs = OfflineQueueStore.preferences(this);
+    private static void storeMapping(Context context, String userId, long localId, Object serverId) throws JSONException {
+        SharedPreferences prefs = OfflineQueueStore.preferences(context);
         JSONArray mappings = new JSONArray(prefs.getString("idMappings", "[]"));
         JSONObject mapping = new JSONObject();
         mapping.put("userId", userId);
@@ -148,7 +157,7 @@ public class OfflineSyncJobService extends JobService {
         prefs.edit().putString("idMappings", mappings.toString()).commit();
     }
 
-    private void applyMapping(JSONArray queue, int completedIndex, long localId, Object serverId) throws JSONException {
+    private static void applyMapping(JSONArray queue, int completedIndex, long localId, Object serverId) throws JSONException {
         String id = String.valueOf(localId);
         String replacement = String.valueOf(serverId);
         Pattern pattern = Pattern.compile("(?<!\\d)" + Pattern.quote(id) + "(?!\\d)");
@@ -163,7 +172,7 @@ public class OfflineSyncJobService extends JobService {
         }
     }
 
-    private Object replaceValue(Object value, long localId, Object serverId) throws JSONException {
+    private static Object replaceValue(Object value, long localId, Object serverId) throws JSONException {
         if (value instanceof Number && ((Number) value).longValue() == localId) return serverId;
         if (String.valueOf(localId).equals(value)) return serverId;
         if (value instanceof JSONObject) {

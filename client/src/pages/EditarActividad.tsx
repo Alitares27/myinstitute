@@ -1,10 +1,9 @@
+import FormModal from "../components/FormModal";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../api";
 import ActivityForm from "../components/activities/FormularioActividad";
 import type { ActivityFormData } from "../interfaces/Activity";
-import { Skeleton } from "../components/Esqueleto";
-import { TbCalendarExclamation } from "react-icons/tb";
 
 export default function EditActividad() {
   const { id } = useParams<{ id: string }>();
@@ -16,7 +15,7 @@ export default function EditActividad() {
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("user") || "{}");
     if (user.role !== "admin") {
-      navigate("/actividades");
+      navigate("/actividades", { replace: true });
     }
   }, [navigate]);
 
@@ -24,10 +23,10 @@ export default function EditActividad() {
     if (!id) return;
     api.get("/activities")
       .then(res => {
-        const act = res.data.find((a: any) => a.id === id);
+        const act = res.data.find((a: any) => String(a.id) === id);
         if (!act) {
           alert("Actividad no encontrada.");
-          navigate("/actividades");
+          navigate("/actividades", { replace: true });
           return;
         }
         setInitial({
@@ -47,7 +46,7 @@ export default function EditActividad() {
       })
       .catch(() => {
         alert("Error al cargar la actividad.");
-        navigate("/actividades");
+        navigate("/actividades", { replace: true });
       })
       .finally(() => setLoading(false));
   }, [id, navigate]);
@@ -61,7 +60,7 @@ export default function EditActividad() {
         assigned_to: data.assigned_to ? Number(data.assigned_to) : null,
       });
       alert("Actividad actualizada correctamente.");
-      navigate("/actividades");
+      navigate("/actividades", { replace: true });
     } catch {
       alert("No fue posible actualizar la actividad.");
     } finally {
@@ -69,44 +68,18 @@ export default function EditActividad() {
     }
   }
 
-  if (loading) {
-    return (
-      <div className="page-container">
-        <div className="page-header">
-          <div>
-            <Skeleton width="220px" height="1.8rem" />
-            <Skeleton width="280px" height="0.9rem" style={{ marginTop: "8px" }} />
-          </div>
-        </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: "1rem", marginTop: "1rem" }}>
-          <Skeleton height="2.5rem" />
-          <div style={{ display: "flex", gap: "1rem" }}>
-            <Skeleton height="2.5rem" style={{ flex: 1 }} />
-            <Skeleton height="2.5rem" style={{ flex: 1 }} />
-          </div>
-          <Skeleton height="8rem" />
-        </div>
-      </div>
-    );
-  }
+  if (loading) return <FormModal title="Editar actividad" onClose={() => navigate("/actividades", { replace: true })}><p role="status">Cargando…</p></FormModal>;
 
   if (!initial) return null;
 
   return (
-    <div className="page-container">
-      <div className="page-header">
-        <div>
-          <h1><span className="page-title-icon"><TbCalendarExclamation /></span> Editar Actividad</h1>
-          <p>Modifica la información de la actividad.</p>
-        </div>
-      </div>
-
+    <FormModal title="Editar actividad" onClose={() => navigate("/actividades", { replace: true })} busy={saving}>
       <ActivityForm
         initialValues={initial}
         onSubmit={handleUpdate}
-        onCancel={() => navigate("/actividades")}
+        onCancel={() => navigate("/actividades", { replace: true })}
         loading={saving}
       />
-    </div>
+    </FormModal>
   );
 }

@@ -1,3 +1,4 @@
+import FormModal from "../components/FormModal";
 import { confirmAppAction } from "../components/AppDialogHost";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
@@ -8,7 +9,6 @@ import {
   IoSearchOutline,
   IoPrintOutline,
   IoAddOutline,
-  IoCloseOutline,
   IoPeopleOutline,
   IoSchoolOutline,
   IoClipboardOutline,
@@ -25,6 +25,7 @@ const ITEMS_PER_PAGE = 7;
 export default function Enrollments() {
   const location = useLocation();
   const navigate = useNavigate();
+  const [formOpen, setFormOpen] = useState(false);
   const [enrollments, setEnrollments] = useState<any[]>([]);
   const [students, setStudents] = useState<any[]>([]);
   const [courses, setCourses] = useState<any[]>([]);
@@ -199,6 +200,7 @@ export default function Enrollments() {
           course_id: form.course_id,
         });
         setEnrollments((prev) => prev.map((e) => (e.id === form.id ? res.data : e)));
+        setFormOpen(false);
         resetForm();
         alert("Matrícula actualizada exitosamente.");
       } else {
@@ -207,6 +209,7 @@ export default function Enrollments() {
           course_id: form.course_id,
         });
         setEnrollments((prev) => [...prev, res.data]);
+        setFormOpen(false);
         resetForm();
         alert("Matrícula registrada exitosamente.");
       }
@@ -216,12 +219,12 @@ export default function Enrollments() {
   };
 
   const handleEdit = (en: any) => {
+      setFormOpen(true);
     setForm({
       id: en.id,
       student_id: String(en.student_id),
       course_id: String(en.course_id),
     });
-    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleDelete = async (id: string | number) => {
@@ -417,11 +420,11 @@ export default function Enrollments() {
     const courseObj = courses.find((c) => String(c.id) === String(courseFilter));
     const subtitle = courseObj ? `Curso: ${courseObj.title}` : "Todos los Cursos";
 
-    openPrintWindow(
+    void openPrintWindow(
       "Reporte de Matrículas",
       subtitle,
       body
-    );
+    ).catch(() => alert("No se pudo abrir la impresión."));
   };
 
   const getStudentAvatar = (name: string, index: number) => {
@@ -435,7 +438,7 @@ export default function Enrollments() {
       <div className="inscripciones-page">
         <Skeleton width="220px" height="2rem" />
         <Skeleton width="340px" height="1.1rem" style={{ marginTop: "8px", marginBottom: "1.5rem" }} />
-        <div className="inscripciones-stats-grid">
+        <div className="inscripciones-stats-grid desktop-statistics">
           <Skeleton height="85px" />
           <Skeleton height="85px" />
           <Skeleton height="85px" />
@@ -468,7 +471,7 @@ export default function Enrollments() {
               className="btn secondary"
               onClick={() => setShowCursosModal(true)}
             >
-              <TbList /> Administrar Cursos
+              <TbList /> Cursos
             </button>
           )}
 
@@ -482,7 +485,7 @@ export default function Enrollments() {
         </div>
       </div>
 
-      <div className="inscripciones-stats-grid">
+      <div className="inscripciones-stats-grid desktop-statistics">
         <div className="inscripcion-stat-card">
           <div className="inscripcion-stat-icon blue">
             <IoClipboardOutline />
@@ -525,83 +528,62 @@ export default function Enrollments() {
       </div>
 
       {role === "admin" && (
-        <div className="inscripcion-form-card">
-          <div className="inscripcion-form-header">
-            <h2>
-              {form.id ? (
-                <>
-                  <IoCreateOutline /> Editar Matrícula
-                </>
-              ) : (
-                <>
-                  <IoAddOutline /> Matricular Miembro en Curso
-                </>
-              )}
-            </h2>
-            {form.id && (
-              <button
-                type="button"
-                className="btn cancel-btn"
-                onClick={resetForm}
-                title="Cancelar edición"
-              >
-                ✕ Cancelar
-              </button>
-            )}
-          </div>
-
-          <form onSubmit={handleSubmit}>
-            <div className="inscripcion-form-grid">
-              <div className="form-group">
-                <label>Estudiante / Miembro:</label>
-                <select
-                  value={form.student_id}
-                  onChange={(e) => setForm({ ...form, student_id: e.target.value })}
-                  required
-                >
-                  <option value="">-- Seleccionar Miembro --</option>
-                  {students.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label>Curso a Asignar:</label>
-                <select
-                  value={form.course_id}
-                  onChange={(e) => setForm({ ...form, course_id: e.target.value })}
-                  required
-                >
-                  <option value="">-- Seleccionar Curso --</option>
-                  {courses.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.title}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="inscripcion-form-actions">
-                <button type="submit" className="btn primary">
-                  {form.id ? "Actualizar" : "Matricular"}
-                </button>
-                {(form.id || form.student_id || form.course_id) && !form.id && (
-                  <button
-                    type="button"
-                    onClick={resetForm}
-                    className="btn cancel-btn"
-                    title="Limpiar formulario"
+        <>
+          <button type="button" className="btn primary form-launch" onClick={() => setFormOpen(true)}>Agregar</button>
+          {formOpen && <FormModal title={form.id ? "Editar inscripción" : "Agregar inscripción"} onClose={() => { resetForm(); setFormOpen(false); }}>
+            <form onSubmit={handleSubmit}>
+              <div className="inscripcion-form-grid">
+                <div className="form-group">
+                  <label>Estudiante / Miembro:</label>
+                  <select
+                    value={form.student_id}
+                    onChange={(e) => setForm({ ...form, student_id: e.target.value })}
+                    required
                   >
-                    ✕
+                    <option value="">-- Seleccionar Miembro --</option>
+                    {students.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label>Curso a Asignar:</label>
+                  <select
+                    value={form.course_id}
+                    onChange={(e) => setForm({ ...form, course_id: e.target.value })}
+                    required
+                  >
+                    <option value="">-- Seleccionar Curso --</option>
+                    {courses.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.title}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="inscripcion-form-actions">
+                  <button type="submit" className="btn primary">
+                    {form.id ? "Actualizar" : "Matricular"}
                   </button>
-                )}
+                  {(form.id || form.student_id || form.course_id) && !form.id && (
+                    <button
+                      type="button"
+                      onClick={resetForm}
+                      className="btn cancel-btn"
+                      title="Limpiar formulario"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
               </div>
-            </div>
-          </form>
-        </div>
+            </form>
+          </FormModal>}
+        </>
       )}
 
       <div className="inscripciones-toolbar">
@@ -717,7 +699,7 @@ export default function Enrollments() {
                       <td style={{ textAlign: "center" }}>
                         <div style={{ display: "inline-flex", gap: "0.5rem", justifyContent: "center" }}>
                           <button
-                            className="btn secondary extracted-style-4"
+                            className="btn secondary btn-icon"
                             onClick={() => handleEdit(en)}
                             aria-label="Editar Matrícula"
                             title="Editar Matrícula"
@@ -725,7 +707,7 @@ export default function Enrollments() {
                             <IoCreateOutline />
                           </button>
                           <button
-                            className="btn secondary extracted-style-5"
+                            className="btn secondary btn-icon danger-outline"
                             onClick={() => handleDelete(en.id)}
                             aria-label="Eliminar Matrícula"
                             title="Eliminar Matrícula"
@@ -768,229 +750,175 @@ export default function Enrollments() {
         </div>
       )}
 
-      {showCursosModal && (
-        <div className="course-modal-overlay" onClick={() => setShowCursosModal(false)}>
-          <div className="course-modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="course-modal-header">
-              <h3>
-                <TbBooks /> Catálogo de Cursos
-              </h3>
-              <button
-                type="button"
-                className="btn cancel-btn"
-                style={{ padding: "4px 8px", fontSize: "1rem" }}
-                onClick={() => setShowCursosModal(false)}
-                aria-label="Cerrar"
-              >
-                ✕
+      {showCursosModal && !selectedCurso && (
+        <FormModal title="Catálogo de cursos" onClose={() => setShowCursosModal(false)}>
+          <div className="course-modal-body">
+            <form onSubmit={handleAddCurso} style={{ display: "flex", gap: "0.5rem", marginBottom: "1.25rem" }}>
+              <input
+                type="text"
+                placeholder={editingCursoId !== null ? "Editar nombre del curso..." : "Nombre del nuevo curso..."}
+                value={cursoTitle}
+                onChange={(e) => setCursoTitle(e.target.value)}
+                style={{ flex: 1 }}
+                required
+              />
+              <button type="submit" className="btn primary">
+                {editingCursoId !== null ? "Guardar" : <><IoAddOutline /> Agregar</>}
               </button>
-            </div>
-
-            <div className="course-modal-body">
-              <form onSubmit={handleAddCurso} style={{ display: "flex", gap: "0.5rem", marginBottom: "1.25rem" }}>
-                <input
-                  type="text"
-                  placeholder={editingCursoId !== null ? "Editar nombre del curso..." : "Nombre del nuevo curso..."}
-                  value={cursoTitle}
-                  onChange={(e) => setCursoTitle(e.target.value)}
-                  style={{ flex: 1 }}
-                  required
-                />
-                <button type="submit" className="btn primary">
-                  {editingCursoId !== null ? "Guardar" : <><IoAddOutline /> Agregar</>}
+              {editingCursoId !== null && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditingCursoId(null);
+                    setCursoTitle("");
+                    setCursoError(null);
+                  }}
+                  className="btn cancel-btn"
+                  title="Cancelar"
+                >
+                  ✕
                 </button>
-                {editingCursoId !== null && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setEditingCursoId(null);
-                      setCursoTitle("");
-                      setCursoError(null);
-                    }}
-                    className="btn cancel-btn"
-                    title="Cancelar"
-                  >
-                    ✕
-                  </button>
-                )}
-              </form>
+              )}
+            </form>
 
-              {cursoError && <div className="error-message" style={{ marginBottom: "0.75rem" }}>{cursoError}</div>}
+            {cursoError && <div className="error-message" style={{ marginBottom: "0.75rem" }}>{cursoError}</div>}
 
-              <div style={{ maxHeight: "45vh", overflowY: "auto", paddingRight: "4px" }}>
-                {courses.length > 0 ? (
-                  courses.map((c) => (
-                    <div key={c.id} className="course-item-row">
-                      <div className="course-item-info">
-                        <button
-                          type="button"
-                          className="course-item-title"
-                          onClick={() => handleOpenTopics(c)}
-                          title={`Ver y administrar temas de ${c.title}`}
-                        >
-                          {c.title}
-                        </button>
-                        <span className="course-item-meta">
-                          {c.teacher_name ? `Maestro: ${c.teacher_name}` : "Sin maestro asignado"}
-                        </span>
-                      </div>
-
-                      <div style={{ display: "flex", gap: "0.4rem" }}>
-                        <button
-                          type="button"
-                          className="btn secondary extracted-style-4"
-                          onClick={() => handleEditCurso(c)}
-                          aria-label="Editar Curso"
-                          title="Editar nombre"
-                        >
-                          <IoCreateOutline />
-                        </button>
-                        <button
-                          type="button"
-                          className="btn secondary extracted-style-5"
-                          onClick={() => handleDeleteCurso(c.id)}
-                          aria-label="Eliminar Curso"
-                          title="Eliminar curso"
-                        >
-                          <IoTrashOutline />
-                        </button>
-                      </div>
+            <div style={{ maxHeight: "45vh", overflowY: "auto", paddingRight: "4px" }}>
+              {courses.length > 0 ? (
+                courses.map((c) => (
+                  <div key={c.id} className="course-item-row">
+                    <div className="course-item-info">
+                      <button
+                        type="button"
+                        className="course-item-title"
+                        onClick={() => handleOpenTopics(c)}
+                        title={`Ver y administrar temas de ${c.title}`}
+                      >
+                        {c.title}
+                      </button>
+                      <span className="course-item-meta">
+                        {c.teacher_name ? `Maestro: ${c.teacher_name}` : "Sin maestro asignado"}
+                      </span>
                     </div>
-                  ))
-                ) : (
-                  <p style={{ textAlign: "center", color: "var(--text-muted)", padding: "1.5rem" }}>
-                    No hay cursos registrados en el sistema.
-                  </p>
-                )}
-              </div>
-            </div>
 
-            <div className="course-modal-footer">
-              <button
-                type="button"
-                className="btn secondary"
-                onClick={() => setShowCursosModal(false)}
-              >
-                Cerrar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {selectedCurso && (
-        <div className="course-modal-overlay" onClick={handleCloseTopics}>
-          <div className="course-modal-content wide" onClick={(e) => e.stopPropagation()}>
-            <div className="course-modal-header">
-              <h3>
-                <TbList /> Temas: {selectedCurso.title}
-              </h3>
-              <button
-                type="button"
-                className="btn cancel-btn"
-                style={{ padding: "4px 8px", fontSize: "1rem" }}
-                onClick={handleCloseTopics}
-                aria-label="Cerrar"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="course-modal-body">
-              <p style={{ color: "var(--text-muted)", fontSize: "0.88rem", margin: "0 0 1rem 0" }}>
-                Organiza y registra los capítulos o unidades que se dictarán a los alumnos en este curso.
-              </p>
-
-              <form onSubmit={handleTopicSubmit} style={{ display: "flex", gap: "0.5rem", marginBottom: "1.25rem" }}>
-                <input
-                  type="text"
-                  placeholder={editingTopicId !== null ? "Editar tema o capítulo..." : "Nuevo tema o capítulo..."}
-                  value={topicForm.title}
-                  onChange={(e) => setTopicForm((prev) => ({ ...prev, title: e.target.value }))}
-                  style={{ flex: 1 }}
-                  required
-                />
-                <button type="submit" className="btn primary">
-                  {editingTopicId !== null ? "Guardar" : <><IoAddOutline /> Agregar</>}
-                </button>
-                {editingTopicId !== null && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setEditingTopicId(null);
-                      setTopicForm({ title: "", description: "", order_index: "" });
-                      setTopicError(null);
-                    }}
-                    className="btn cancel-btn"
-                    title="Cancelar"
-                  >
-                    ✕
-                  </button>
-                )}
-              </form>
-
-              {topicError && <div className="error-message" style={{ marginBottom: "0.75rem" }}>{topicError}</div>}
-
-              {loadingTopics ? (
-                <p style={{ textAlign: "center", color: "var(--text-muted)", padding: "1.5rem" }}>Cargando temas...</p>
-              ) : topics.length > 0 ? (
-                <div className="table-container" style={{ maxHeight: "40vh", overflowY: "auto" }}>
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>Tema / Capítulo</th>
-                        <th style={{ width: "100px", textAlign: "center" }}>Acciones</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {topics.map((t) => (
-                        <tr key={t.id}>
-                          <td><strong>{t.title}</strong></td>
-                          <td style={{ textAlign: "center" }}>
-                            <div style={{ display: "inline-flex", gap: "0.4rem", justifyContent: "center" }}>
-                              <button
-                                type="button"
-                                className="btn secondary extracted-style-4"
-                                onClick={() => handleEditTopic(t)}
-                                aria-label="Editar Tema"
-                                title="Editar"
-                              >
-                                <IoCreateOutline />
-                              </button>
-                              <button
-                                type="button"
-                                className="btn secondary extracted-style-5"
-                                onClick={() => handleDeleteTopic(t.id)}
-                                aria-label="Eliminar Tema"
-                                title="Eliminar"
-                              >
-                                <IoTrashOutline />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                    <div style={{ display: "flex", gap: "0.4rem" }}>
+                      <button
+                        type="button"
+                        className="btn secondary btn-icon"
+                        onClick={() => handleEditCurso(c)}
+                        aria-label="Editar Curso"
+                        title="Editar nombre"
+                      >
+                        <IoCreateOutline />
+                      </button>
+                      <button
+                        type="button"
+                        className="btn secondary btn-icon danger-outline"
+                        onClick={() => handleDeleteCurso(c.id)}
+                        aria-label="Eliminar Curso"
+                        title="Eliminar curso"
+                      >
+                        <IoTrashOutline />
+                      </button>
+                    </div>
+                  </div>
+                ))
               ) : (
                 <p style={{ textAlign: "center", color: "var(--text-muted)", padding: "1.5rem" }}>
-                  No hay temas registrados para este curso todavía.
+                  No hay cursos registrados en el sistema.
                 </p>
               )}
             </div>
-
-            <div className="course-modal-footer">
-              <button
-                type="button"
-                className="btn secondary"
-                onClick={handleCloseTopics}
-              >
-                Cerrar
-              </button>
-            </div>
           </div>
-        </div>
+        </FormModal>
+      )}
+
+      {selectedCurso && (
+        <FormModal title={`Temas de ${selectedCurso.title}`} onClose={handleCloseTopics}>
+          <div className="course-modal-body">
+            <p style={{ color: "var(--text-muted)", fontSize: "0.88rem", margin: "0 0 1rem 0" }}>
+              Organiza y registra los capítulos o unidades que se dictarán a los alumnos en este curso.
+            </p>
+
+            <form onSubmit={handleTopicSubmit} style={{ display: "flex", gap: "0.5rem", marginBottom: "1.25rem" }}>
+              <input
+                type="text"
+                placeholder={editingTopicId !== null ? "Editar tema o capítulo..." : "Nuevo tema o capítulo..."}
+                value={topicForm.title}
+                onChange={(e) => setTopicForm((prev) => ({ ...prev, title: e.target.value }))}
+                style={{ flex: 1 }}
+                required
+              />
+              <button type="submit" className="btn primary">
+                {editingTopicId !== null ? "Guardar" : <><IoAddOutline /> Agregar</>}
+              </button>
+              {editingTopicId !== null && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditingTopicId(null);
+                    setTopicForm({ title: "", description: "", order_index: "" });
+                    setTopicError(null);
+                  }}
+                  className="btn cancel-btn"
+                  title="Cancelar"
+                >
+                  ✕
+                </button>
+              )}
+            </form>
+
+            {topicError && <div className="error-message" style={{ marginBottom: "0.75rem" }}>{topicError}</div>}
+
+            {loadingTopics ? (
+              <p style={{ textAlign: "center", color: "var(--text-muted)", padding: "1.5rem" }}>Cargando temas...</p>
+            ) : topics.length > 0 ? (
+              <div className="table-container" style={{ maxHeight: "40vh", overflowY: "auto" }}>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Tema / Capítulo</th>
+                      <th style={{ width: "100px", textAlign: "center" }}>Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {topics.map((t) => (
+                      <tr key={t.id}>
+                        <td><strong>{t.title}</strong></td>
+                        <td style={{ textAlign: "center" }}>
+                          <div style={{ display: "inline-flex", gap: "0.4rem", justifyContent: "center" }}>
+                            <button
+                              type="button"
+                              className="btn secondary btn-icon"
+                              onClick={() => handleEditTopic(t)}
+                              aria-label="Editar Tema"
+                              title="Editar"
+                            >
+                              <IoCreateOutline />
+                            </button>
+                            <button
+                              type="button"
+                              className="btn secondary btn-icon danger-outline"
+                              onClick={() => handleDeleteTopic(t.id)}
+                              aria-label="Eliminar Tema"
+                              title="Eliminar"
+                            >
+                              <IoTrashOutline />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p style={{ textAlign: "center", color: "var(--text-muted)", padding: "1.5rem" }}>
+                No hay temas registrados para este curso todavía.
+              </p>
+            )}
+          </div>
+        </FormModal>
       )}
     </div>
   );

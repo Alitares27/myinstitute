@@ -4,22 +4,24 @@ import { useState } from "react";
 import api from "../api";
 import { useNavigate } from "react-router-dom";
 import Layout from "../components/Disposicion";
-import { TbLogin, TbAlertTriangle } from "react-icons/tb";
+import { TbLogin, TbAlertTriangle, TbEye, TbEyeOff } from "react-icons/tb";
 import { synchronizePendingChanges } from "../services/offlineSync";
 
 export default function Login() {
-  const [form, setForm] = useState({ email: "", password: "" });
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    const fields = new FormData(e.currentTarget);
+    const credentials = { email: String(fields.get("email") ?? ""), password: String(fields.get("password") ?? "") };
     setError("");
     setLoading(true);
 
     try {
-      const res = await api.post("/users/login", form);
+      const res = await api.post("/users/login", credentials);
 
       if (!res.data?.token) {
         throw new Error("No se recibió el token de autenticación.");
@@ -58,33 +60,45 @@ export default function Login() {
             <h2><TbLogin /> Iniciar Sesión</h2>
           </div>
 
-          <form onSubmit={handleSubmit} className="auth-form">
+          <form onSubmit={handleSubmit} className="auth-form" autoComplete="on">
             <div className="form-group">
               <label htmlFor="email">Correo Electrónico</label>
               <input
                 id="email"
+                name="email"
                 type="email"
                 placeholder="ejemplo@correo.com"
-                value={form.email}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
                 required
-                autoComplete="email"
+                autoComplete="username"
                 disabled={loading}
               />
             </div>
 
             <div className="form-group">
               <label htmlFor="password">Contraseña</label>
-              <input
-                id="password"
-                type="password"
-                placeholder="********"
-                value={form.password}
-                onChange={(e) => setForm({ ...form, password: e.target.value })}
-                required
-                autoComplete="current-password"
-                disabled={loading}
-              />
+              <div className="login-password-field">
+                <input
+                  id="password"
+                  name="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="********"
+                  required
+                  autoComplete="current-password"
+                  autoCapitalize="none"
+                  spellCheck={false}
+                  disabled={loading}
+                />
+                <button
+                  type="button"
+                  className="login-password-toggle"
+                  aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                  aria-controls="password"
+                  onClick={() => setShowPassword(!showPassword)}
+                  disabled={loading}
+                >
+                  {showPassword ? <TbEyeOff aria-hidden="true" /> : <TbEye aria-hidden="true" />}
+                </button>
+              </div>
             </div>
 
             {error && (

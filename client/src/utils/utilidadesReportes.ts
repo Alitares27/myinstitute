@@ -1,3 +1,4 @@
+import { AndroidReports, isAndroidApp } from "./androidReports";
 import DOMPurify from "dompurify";
 
 export const escapeHtml = (value: unknown): string => String(value ?? "").replace(/[&<>"\']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\'": "&#39;", '"': "&quot;" }[char]!));
@@ -124,10 +125,15 @@ export function buildReportDocument(title: string, subtitle: string, bodyContent
   `;
 }
 
-export function openPrintWindow(title: string, subtitle: string, bodyContent: string, existingWindow?: Window | null): void {
+export async function openPrintWindow(title: string, subtitle: string, bodyContent: string, existingWindow?: Window | null): Promise<void> {
+  const html = buildReportDocument(title, subtitle, bodyContent);
+  if (isAndroidApp()) {
+    await AndroidReports.printHtml({ title, html });
+    return;
+  }
   const printWindow = existingWindow || window.open("", "_blank");
   if (!printWindow) return;
-  printWindow.document.write(buildReportDocument(title, subtitle, bodyContent));
+  printWindow.document.write(html);
   printWindow.document.close();
   printWindow.focus();
   setTimeout(() => printWindow.print(), 300);

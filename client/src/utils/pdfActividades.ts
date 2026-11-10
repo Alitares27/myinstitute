@@ -1,3 +1,4 @@
+import { saveReportPdf } from "./androidReports";
 /**
  * Generación del archivo PDF de actividades.
  */
@@ -170,5 +171,5 @@ export async function generarPDFActividades(
 ): Promise<void> {
   const actividades = (activities || []).filter(Boolean);
   const doc = await construirPDFActividades(actividades);
-  doc.save(nombreArchivo(actividades));
+  await saveReportPdf(doc, nombreArchivo(actividades));
 }

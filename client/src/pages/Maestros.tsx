@@ -1,3 +1,4 @@
+import FormModal from "../components/FormModal";
 import { confirmAppAction } from "../components/AppDialogHost";
 import React, { useEffect, useState, useMemo } from "react";
 import api from "../api";
@@ -12,7 +13,6 @@ import {
   IoCheckmarkCircleOutline,
   IoWarningOutline,
   IoAddOutline,
-  IoCloseOutline,
 } from "react-icons/io5";
 import { TbChalkboard, TbBooks } from "react-icons/tb";
 import { Skeleton } from "../components/Esqueleto";
@@ -41,6 +41,7 @@ interface TeacherItem {
 }
 
 export default function Maestros() {
+  const [formOpen, setFormOpen] = useState(false);
   const [teachers, setTeachers] = useState<TeacherItem[]>([]);
   const [users, setUsers] = useState<any[]>([]);
   const [courses, setCourses] = useState<CourseItem[]>([]);
@@ -158,6 +159,7 @@ export default function Maestros() {
         alert("Maestro asignado correctamente.");
       }
 
+      setFormOpen(false);
       resetForm();
     } catch (err: any) {
       console.error("Error en submit maestro:", err);
@@ -177,6 +179,7 @@ export default function Maestros() {
   };
 
   const handleEdit = (teacher: TeacherItem) => {
+      setFormOpen(true);
     const courseIds = (teacher.courses || []).map((c) => c.id);
     setForm({
       id: String(teacher.id),
@@ -185,7 +188,6 @@ export default function Maestros() {
       specialty: teacher.specialty || "",
       selectedCourses: courseIds,
     });
-    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleDelete = async (id: number, name: string) => {
@@ -371,18 +373,18 @@ export default function Maestros() {
         )}</p>
       </div>
     `;
-    openPrintWindow(
+    void openPrintWindow(
       "Reporte de Maestros",
       "Listado general y cursos asignados",
       html
-    );
+    ).catch(() => alert("No se pudo abrir la impresión."));
   };
 
   if (loading) {
     return (
       <div className="maestros-page">
         <Skeleton width="220px" height="2rem" />
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "1rem", marginTop: "1.5rem" }}>
+        <div className="desktop-statistics" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "1rem", marginTop: "1.5rem" }}>
           {Array.from({ length: 4 }).map((_, i) => (
             <Skeleton key={i} height="80px" />
           ))}
@@ -422,7 +424,7 @@ export default function Maestros() {
         </div>
       </div>
 
-      <div className="maestros-stats-grid">
+      <div className="maestros-stats-grid desktop-statistics">
         <div className="maestro-stat-card">
           <div className="maestro-stat-icon blue">
             <TbChalkboard />
@@ -465,172 +467,151 @@ export default function Maestros() {
       </div>
 
       {role === "admin" && (
-        <div className="maestro-form-card">
-          <div className="maestro-form-header">
-            <h2>
-              {form.id ? (
-                <>
-                  <IoCreateOutline /> Editar Maestro
-                </>
-              ) : (
-                <>
-                  <IoAddOutline /> Asignar Miembro como Maestro
-                </>
-              )}
-            </h2>
-            {form.id && (
-              <button
-                type="button"
-                className="btn cancel-btn"
-                onClick={resetForm}
-                title="Cancelar edición"
-              >
-                ✕ Cancelar
-              </button>
-            )}
-          </div>
+        <>
+          <button type="button" className="btn primary form-launch" onClick={() => setFormOpen(true)}>Agregar</button>
+          {formOpen && <FormModal title={form.id ? "Editar maestro" : "Agregar maestro"} onClose={() => { resetForm(); setFormOpen(false); }}>
+            <form onSubmit={handleSubmit}>
+              <div className="form-row" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "1rem" }}>
+                <div className="form-group">
+                  <label style={{ fontSize: "0.85rem", fontWeight: 600, marginBottom: "4px", display: "block", color: "var(--text-secondary)" }}>
+                    Miembro:
+                  </label>
+                  {form.id ? (
+                    <input
+                      value={form.name}
+                      readOnly
+                      style={{ background: "var(--bg-body)", cursor: "not-allowed" }}
+                    />
+                  ) : (
+                    <select
+                      value={form.user_id}
+                      onChange={(e) => setForm({ ...form, user_id: e.target.value })}
+                      required
+                    >
+                      <option value="">-- Seleccionar Miembro --</option>
+                      {availableUsers.map((u) => (
+                        <option key={u.id} value={u.id}>
+                          {u.name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
 
-          <form onSubmit={handleSubmit}>
-            <div className="form-row" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "1rem" }}>
-              <div className="form-group">
-                <label style={{ fontSize: "0.85rem", fontWeight: 600, marginBottom: "4px", display: "block", color: "var(--text-secondary)" }}>
-                  Miembro:
-                </label>
-                {form.id ? (
+                <div className="form-group">
+                  <label style={{ fontSize: "0.85rem", fontWeight: 600, marginBottom: "4px", display: "block", color: "var(--text-secondary)" }}>
+                    Especialidad:
+                  </label>
                   <input
-                    value={form.name}
-                    readOnly
-                    style={{ background: "var(--bg-body)", cursor: "not-allowed" }}
-                  />
-                ) : (
-                  <select
-                    value={form.user_id}
-                    onChange={(e) => setForm({ ...form, user_id: e.target.value })}
+                    type="text"
+                    placeholder="Ej: Instituto, Doctrina del Evangelio, Seminario..."
+                    value={form.specialty}
+                    onChange={(e) => setForm({ ...form, specialty: e.target.value })}
+                    list="specialty-suggestions"
                     required
-                  >
-                    <option value="">-- Seleccionar Miembro --</option>
-                    {availableUsers.map((u) => (
-                      <option key={u.id} value={u.id}>
-                        {u.name}
-                      </option>
-                    ))}
-                  </select>
+                  />
+                  <datalist id="specialty-suggestions">
+                    <option value="Instituto" />
+                    <option value="Quorum de Elderes" />
+                    <option value="Sociedad de Socorro" />
+                  </datalist>
+                </div>
+              </div>
+
+              <div className="course-selection-box">
+                <div className="course-selection-header">
+                  <span>
+                    <IoBookOutline style={{ verticalAlign: "middle", marginRight: "4px" }} />
+                    Cursos que dictará el maestro ({form.selectedCourses.length} seleccionados):
+                  </span>
+
+                  <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+                    <input
+                      type="text"
+                      placeholder="Buscar curso..."
+                      value={courseSearch}
+                      onChange={(e) => setCourseSearch(e.target.value)}
+                      style={{
+                        padding: "0.25rem 0.6rem",
+                        fontSize: "0.8rem",
+                        borderRadius: "6px",
+                        border: "1px solid var(--border-color)",
+                      }}
+                    />
+                    <button
+                      type="button"
+                      className="btn secondary"
+                      style={{ padding: "0.25rem 0.6rem", fontSize: "0.78rem" }}
+                      onClick={() =>
+                        setForm({
+                          ...form,
+                          selectedCourses:
+                            form.selectedCourses.length === courses.length
+                              ? []
+                              : courses.map((c) => c.id),
+                        })
+                      }
+                    >
+                      {form.selectedCourses.length === courses.length
+                        ? "Desmarcar Todos"
+                        : "Seleccionar"}
+                    </button>
+                  </div>
+                </div>
+
+                {courses.length === 0 ? (
+                  <p style={{ color: "var(--text-muted)", fontSize: "0.85rem", margin: "0.5rem 0" }}>
+                    No hay cursos registrados en el sistema. Puedes registrarlos en la sección de Matrículas.
+                  </p>
+                ) : (
+                  <div className="course-badges-grid">
+                    {visibleFormCourses.map((course) => {
+                      const isSelected = form.selectedCourses.includes(course.id);
+                      const isAssignedToOther =
+                        course.teacher_id &&
+                        course.teacher_id !== Number(form.id) &&
+                        course.teacher_name;
+
+                      return (
+                        <label
+                          key={course.id}
+                          className={`course-badge-item ${isSelected ? "selected" : ""}`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => toggleFormCourse(course.id)}
+                          />
+                          <div className="course-badge-info">
+                            <span className="course-badge-title">{course.title}</span>
+                            <span className="course-badge-sub">
+                              {isSelected
+                                ? "✓ Dictará este curso"
+                                : isAssignedToOther
+                                  ? `Actual: ${course.teacher_name}`
+                                  : "Disponible"}
+                            </span>
+                          </div>
+                        </label>
+                      );
+                    })}
+                  </div>
                 )}
               </div>
 
-              <div className="form-group">
-                <label style={{ fontSize: "0.85rem", fontWeight: 600, marginBottom: "4px", display: "block", color: "var(--text-secondary)" }}>
-                  Especialidad:
-                </label>
-                <input
-                  type="text"
-                  placeholder="Ej: Instituto, Doctrina del Evangelio, Seminario..."
-                  value={form.specialty}
-                  onChange={(e) => setForm({ ...form, specialty: e.target.value })}
-                  list="specialty-suggestions"
-                  required
-                />
-                <datalist id="specialty-suggestions">
-                  <option value="Instituto" />
-                  <option value="Quorum de Elderes" />
-                  <option value="Sociedad de Socorro" />
-                </datalist>
-              </div>
-            </div>
-
-            <div className="course-selection-box">
-              <div className="course-selection-header">
-                <span>
-                  <IoBookOutline style={{ verticalAlign: "middle", marginRight: "4px" }} />
-                  Cursos que dictará el maestro ({form.selectedCourses.length} seleccionados):
-                </span>
-
-                <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-                  <input
-                    type="text"
-                    placeholder="Buscar curso..."
-                    value={courseSearch}
-                    onChange={(e) => setCourseSearch(e.target.value)}
-                    style={{
-                      padding: "0.25rem 0.6rem",
-                      fontSize: "0.8rem",
-                      borderRadius: "6px",
-                      border: "1px solid var(--border-color)",
-                    }}
-                  />
-                  <button
-                    type="button"
-                    className="btn secondary"
-                    style={{ padding: "0.25rem 0.6rem", fontSize: "0.78rem" }}
-                    onClick={() =>
-                      setForm({
-                        ...form,
-                        selectedCourses:
-                          form.selectedCourses.length === courses.length
-                            ? []
-                            : courses.map((c) => c.id),
-                      })
-                    }
-                  >
-                    {form.selectedCourses.length === courses.length
-                      ? "Desmarcar Todos"
-                      : "Seleccionar Todos"}
+              <div style={{ display: "flex", gap: "1rem", marginTop: "1.25rem", justifyContent: "flex-end" }}>
+                {form.id && (
+                  <button type="button" className="btn secondary" onClick={() => { resetForm(); setFormOpen(false); }}>
+                    Cancelar
                   </button>
-                </div>
-              </div>
-
-              {courses.length === 0 ? (
-                <p style={{ color: "var(--text-muted)", fontSize: "0.85rem", margin: "0.5rem 0" }}>
-                  No hay cursos registrados en el sistema. Puedes registrarlos en la sección de Matrículas.
-                </p>
-              ) : (
-                <div className="course-badges-grid">
-                  {visibleFormCourses.map((course) => {
-                    const isSelected = form.selectedCourses.includes(course.id);
-                    const isAssignedToOther =
-                      course.teacher_id &&
-                      course.teacher_id !== Number(form.id) &&
-                      course.teacher_name;
-
-                    return (
-                      <label
-                        key={course.id}
-                        className={`course-badge-item ${isSelected ? "selected" : ""}`}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={isSelected}
-                          onChange={() => toggleFormCourse(course.id)}
-                        />
-                        <div className="course-badge-info">
-                          <span className="course-badge-title">{course.title}</span>
-                          <span className="course-badge-sub">
-                            {isSelected
-                              ? "✓ Dictará este curso"
-                              : isAssignedToOther
-                                ? `Actual: ${course.teacher_name}`
-                                : "Disponible"}
-                          </span>
-                        </div>
-                      </label>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-
-            <div style={{ display: "flex", gap: "1rem", marginTop: "1.25rem", justifyContent: "flex-end" }}>
-              {form.id && (
-                <button type="button" className="btn secondary" onClick={resetForm}>
-                  Cancelar
+                )}
+                <button type="submit" className="btn primary">
+                  {form.id ? "Guardar" : "Asignar"}
                 </button>
-              )}
-              <button type="submit" className="btn primary">
-                {form.id ? "Guardar Cambios" : "Asignar Maestro"}
-              </button>
-            </div>
-          </form>
-        </div>
+              </div>
+            </form>
+          </FormModal>}
+        </>
       )}
 
       <div className="maestros-toolbar">
@@ -771,7 +752,7 @@ export default function Maestros() {
                       <td style={{ textAlign: "right" }}>
                         <div style={{ display: "inline-flex", gap: "4px" }}>
                           <button
-                            className="btn secondary extracted-style-4"
+                            className="btn secondary btn-icon"
                             onClick={() => openQuickAssign(teacher)}
                             title="Asignar / Gestionar cursos dictados"
                             aria-label="Gestionar Cursos"
@@ -779,7 +760,7 @@ export default function Maestros() {
                             <IoBookOutline />
                           </button>
                           <button
-                            className="btn secondary extracted-style-4"
+                            className="btn secondary btn-icon"
                             onClick={() => handleEdit(teacher)}
                             title="Editar maestro"
                             aria-label="Editar"
@@ -787,7 +768,7 @@ export default function Maestros() {
                             <IoCreateOutline />
                           </button>
                           <button
-                            className="btn secondary extracted-style-5"
+                            className="btn secondary btn-icon danger-outline"
                             onClick={() => handleDelete(teacher.id, teacher.name)}
                             title="Eliminar maestro"
                             aria-label="Eliminar"
@@ -865,13 +846,6 @@ export default function Maestros() {
                   Maestro: <strong>{quickTeacher.name}</strong> ({quickTeacher.specialty || "General"})
                 </p>
               </div>
-              <button
-                className="btn cancel-btn"
-                onClick={() => setQuickTeacher(null)}
-                style={{ fontSize: "1.2rem", padding: "0.2rem 0.5rem" }}
-              >
-                <IoCloseOutline />
-              </button>
             </div>
 
             <div className="course-modal-body">
@@ -926,7 +900,7 @@ export default function Maestros() {
                 onClick={saveQuickCourses}
                 disabled={savingQuickCourses}
               >
-                {savingQuickCourses ? "Guardando..." : "Guardar Cursos"}
+                {savingQuickCourses ? "Guardando..." : "Guardar"}
               </button>
             </div>
           </div>

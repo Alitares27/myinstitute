@@ -1,3 +1,4 @@
+import FormModal from "../components/FormModal";
 import { confirmAppAction } from "../components/AppDialogHost";
 import { useEffect, useState, useMemo } from "react";
 import api from "../api";
@@ -12,6 +13,7 @@ import type { Trip } from "../interfaces/Trip";
 
 export default function TempleTrip() {
 
+    const [formOpen, setFormOpen] = useState(false);
     const [temples, setTemples] = useState<Temple[]>([]);
     const [trips, setTrips] = useState<Trip[]>([]);
     const [editingId, setEditingId] = useState<number | null>(null);
@@ -131,6 +133,7 @@ export default function TempleTrip() {
 
             const res = await api.get("/temple-trips");
             setTrips(res.data);
+            setFormOpen(false);
             setEditingId(null);
 
             setFormData({
@@ -146,6 +149,7 @@ export default function TempleTrip() {
     };
 
     const handleEdit = (trip: Trip) => {
+        setFormOpen(true);
         setFormData({
             temple_id: trip.temple_id?.toString() || "",
             date: toYMD(trip.date),
@@ -207,7 +211,7 @@ export default function TempleTrip() {
                 </div>
             </div>
 
-            <div className="asistencia-stats-grid">
+            <div className="asistencia-stats-grid desktop-statistics">
                 <div className="asistencia-stat-card">
                     <div className="asistencia-stat-icon blue"><FiTruck /></div>
                     <div className="asistencia-stat-content">
@@ -239,12 +243,11 @@ export default function TempleTrip() {
             </div>
 
             {role === "admin" && (
-                <div className="asistencia-form-card">
-                    <div className="asistencia-form-header">
-                        <h2><TbPlus /> {editingId ? "Actualizar Viaje" : "Registrar Viaje"}</h2>
-                    </div>
+                <>
+                  <button type="button" className="btn primary form-launch" onClick={() => setFormOpen(true)}>Agregar</button>
+                  {formOpen && <FormModal title={editingId ? "Editar viaje" : "Agregar viaje"} onClose={() => { setEditingId(null); setFormData({ temple_id: "", date: "", status: "programado", cost: "" }); setFormOpen(false); }}>
                     <form onSubmit={handleSubmit} className="asistencia-form-grid">
-                        <div className="form-group">
+                    <div className="form-group">
                             <label>Templo</label>
                             <select
                                 name="temple_id"
@@ -300,12 +303,10 @@ export default function TempleTrip() {
                             <button type="submit" className="btn primary">
                                 {editingId ? "Actualizar" : "Registrar"}
                             </button>
-                            {(editingId !== null || formData.temple_id || formData.date || formData.cost) && (
-                                <button type="button" onClick={() => { setEditingId(null); setFormData({ temple_id: "", date: "", status: "programado", cost: "" }); }} className="btn cancel-btn" title="Cancelar" aria-label="Cancelar">✕</button>
-                            )}
                         </div>
                     </form>
-                </div>
+                  </FormModal>}
+                </>
             )}
 
             <div className="asistencia-toolbar">
@@ -380,7 +381,7 @@ export default function TempleTrip() {
                                     {role === "admin" && (
                                         <td>
                                             <button
-                                                className="btn secondary extracted-style-4"
+                                                className="btn secondary btn-icon"
                                                 onClick={() => handleEdit(trip)}
                                                 aria-label="Editar"
                                             >
@@ -388,7 +389,7 @@ export default function TempleTrip() {
                                             </button>
                                             <button className="btn secondary" onClick={() => handleArchive(trip.id)} aria-label="Archivar" title="Archivar"><IoArchiveOutline /></button>
 <button
-                                                className="btn secondary extracted-style-5"
+                                                className="btn secondary btn-icon danger-outline"
                                                 onClick={() => handleDelete(trip.id)}
                                                 aria-label="Eliminar"
                                             >

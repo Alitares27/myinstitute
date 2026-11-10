@@ -1,3 +1,5 @@
+import { isAndroidApp } from "../utils/androidReports";
+import FormModal from "../components/FormModal";
 import { useSearchParams } from "react-router-dom";
 import { usePagedList } from "../hooks/usePagedList";
 import { businessDate } from "../utils/utilidadesFecha";
@@ -29,6 +31,7 @@ const ITEMS_PER_PAGE = 7;
 
 export default function Attendance() {
 
+  const [formOpen, setFormOpen] = useState(false);
   const [students, setStudents] = useState<Student[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
   const [allTopics, setAllTopics] = useState<Topic[]>([]);
@@ -116,6 +119,7 @@ export default function Attendance() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
     if (!form.student_id || !form.course_id || !form.topic_id) {
       alert("Por favor completa todos los campos requeridos.");
       return;
@@ -129,6 +133,7 @@ export default function Attendance() {
 
       page.refresh();
 
+      setFormOpen(false);
       setForm({ ...form, student_id: "", topic_id: "", status: "Present" });
       alert("Asistencia registrada exitosamente.");
     } catch {
@@ -137,7 +142,7 @@ export default function Attendance() {
   };
 
   const handlePrintAttendanceReport = async (selectedCourseId: string) => {
-    const printWindow=window.open("","_blank");if(!printWindow)return;
+    const printWindow=isAndroidApp() ? null : window.open("","_blank");if (!printWindow && !isAndroidApp()) return;
     try {
     const {data:reportRows}=await api.get<AttendanceRecord[]>("/attendance/report",{params:{
       student_id: studentFilter || undefined,
@@ -217,12 +222,12 @@ export default function Attendance() {
     const courseObj = courses.find((c) => String(c.id) === String(selectedCourseId));
     const subtitle = courseObj ? `Curso: ${courseObj.title}` : "Todos los Cursos";
 
-    openPrintWindow(
+    await openPrintWindow(
       "Reporte de Asistencias",
       subtitle,
       body, printWindow
     );
-    } catch {printWindow.close();setError("No se pudo generar el reporte");}
+    } catch {printWindow?.close();setError("No se pudo generar el reporte");}
   };
 
   const getStudentAvatar = (name: string, index: number) => {
@@ -236,7 +241,7 @@ export default function Attendance() {
       <div className="asistencia-page">
         <Skeleton width="240px" height="2rem" />
         <Skeleton width="340px" height="1.1rem" style={{ marginTop: "8px", marginBottom: "1.5rem" }} />
-        <div className="asistencia-stats-grid">
+        <div className="asistencia-stats-grid desktop-statistics">
           <Skeleton height="85px" />
           <Skeleton height="85px" />
           <Skeleton height="85px" />
@@ -252,7 +257,7 @@ export default function Attendance() {
     );
   }
 
-  if (error) {
+  if (error && !formOpen) {
     return (
       <div className="error" style={{ margin: "2rem 0", display: "flex", alignItems: "center", gap: "8px" }}>
         <TbAlertTriangle /> {error}
@@ -285,7 +290,7 @@ export default function Attendance() {
         </div>
       </div>
 
-      <div className="asistencia-stats-grid">
+      <div className="asistencia-stats-grid desktop-statistics">
         <div className="asistencia-stat-card">
           <div className="asistencia-stat-icon green">
             <IoCheckmarkDoneOutline />
@@ -328,94 +333,92 @@ export default function Attendance() {
       </div>
 
       {(role === "admin" || role === "teacher") && (
-        <div className="asistencia-form-card">
-          <div className="asistencia-form-header">
-            <h2>
-              <IoAddOutline /> Registrar Nueva Asistencia
-            </h2>
-          </div>
-
-          <form onSubmit={handleSubmit}>
-            <div className="asistencia-form-grid">
-              <div className="form-group">
-                <label>Estudiante / Miembro:</label>
-                <select
-                  required
-                  value={form.student_id}
-                  onChange={(e) => setForm({ ...form, student_id: e.target.value })}
-                >
-                  <option value="">-- Seleccionar Estudiante --</option>
-                  {students.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label>Curso:</label>
-                <select
-                  required
-                  value={form.course_id}
-                  onChange={(e) => setForm({ ...form, course_id: e.target.value, topic_id: "" })}
-                >
-                  <option value="">-- Seleccionar Curso --</option>
-                  {courses.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.title}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label>Capítulo / Tema:</label>
-                <select
-                  required
-                  value={form.topic_id}
-                  onChange={(e) => setForm({ ...form, topic_id: e.target.value })}
-                  disabled={!form.course_id}
-                >
-                  <option value="">
-                    {form.course_id ? "-- Seleccionar Capítulo --" : "Primero elige un curso"}
-                  </option>
-                  {filteredTopics.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.title}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label>Fecha:</label>
-                <input
-                  type="date"
-                  value={form.date}
-                  onChange={(e) => setForm({ ...form, date: e.target.value })}
-                  required
-                />
-              </div>
-
-              <div className="asistencia-form-actions">
-                <button type="submit" className="btn primary">
-                  Marcar
-                </button>
-                {(form.student_id || form.topic_id) && (
-                  <button
-                    type="button"
-                    onClick={() => setForm({ ...form, student_id: "", topic_id: "", status: "Present" })}
-                    className="btn cancel-btn"
-                    title="Limpiar"
+        <>
+          <button type="button" className="btn primary form-launch" onClick={() => setFormOpen(true)}>Agregar</button>
+          {formOpen && <FormModal title="Agregar asistencia" onClose={() => { setForm({ ...form, student_id: "", topic_id: "", status: "Present" }); setError(null); setFormOpen(false); }}>
+            {error && <p role="alert">{error}</p>}
+            <form onSubmit={handleSubmit}>
+              <div className="asistencia-form-grid">
+                <div className="form-group">
+                  <label>Estudiante / Miembro:</label>
+                  <select
+                    required
+                    value={form.student_id}
+                    onChange={(e) => setForm({ ...form, student_id: e.target.value })}
                   >
-                    ✕
+                    <option value="">-- Seleccionar Estudiante --</option>
+                    {students.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label>Curso:</label>
+                  <select
+                    required
+                    value={form.course_id}
+                    onChange={(e) => setForm({ ...form, course_id: e.target.value, topic_id: "" })}
+                  >
+                    <option value="">-- Seleccionar Curso --</option>
+                    {courses.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.title}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label>Capítulo / Tema:</label>
+                  <select
+                    required
+                    value={form.topic_id}
+                    onChange={(e) => setForm({ ...form, topic_id: e.target.value })}
+                    disabled={!form.course_id}
+                  >
+                    <option value="">
+                      {form.course_id ? "-- Seleccionar Capítulo --" : "Primero elige un curso"}
+                    </option>
+                    {filteredTopics.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.title}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label>Fecha:</label>
+                  <input
+                    type="date"
+                    value={form.date}
+                    onChange={(e) => setForm({ ...form, date: e.target.value })}
+                    required
+                  />
+                </div>
+
+                <div className="asistencia-form-actions">
+                  <button type="submit" className="btn primary">
+                    Marcar
                   </button>
-                )}
+                  {(form.student_id || form.topic_id) && (
+                    <button
+                      type="button"
+                      onClick={() => setForm({ ...form, student_id: "", topic_id: "", status: "Present" })}
+                      className="btn cancel-btn"
+                      title="Limpiar"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
               </div>
-            </div>
-          </form>
-        </div>
+            </form>
+          </FormModal>}
+        </>
       )}
 
       <div className="asistencia-toolbar">

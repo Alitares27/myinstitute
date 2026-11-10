@@ -6,6 +6,7 @@ import RutaPrivada from "./components/RutaPrivada";
 import Disposicion from "./components/Disposicion";
 import AppDialogHost from "./components/AppDialogHost";
 
+const Agendas = lazy(() => import("./pages/Agendas"));
 const Registrarse = lazy(() => import("./pages/Registrarse"));
 const Consejos = lazy(() => import("./pages/Consejos"));
 const NuevoConsejo = lazy(() => import("./pages/NuevoConsejo"));
@@ -29,6 +30,8 @@ const MantTemplos = lazy(() => import("./pages/MantTemplos"));
 const PagosTemplos = lazy(() => import("./pages/PagosTemplos"));
 
 
+const Sincronizacion = lazy(() => import("./pages/Sincronizacion"));
+
 function App() {
   return (
     <BrowserRouter>
@@ -36,13 +39,13 @@ function App() {
       <Suspense fallback={
         <div className="loading-container">
           <div className="loading-spinner"></div>
-          <p>Cargando página...</p>
+          <p>Cargando pÃ¡gina...</p>
         </div>
       }>
         <Routes>
           <Route path="/" element={<Inicio />} />
           <Route path="/iniciar-sesion" element={<IniciarSesion />} />
-          <Route path="/registrarse" element={<Registrarse />} />
+          <Route path="/registrarse" element={<><IniciarSesion /><Registrarse /></>} />
 
           <Route path="/panel" element={<RutaPrivada><Disposicion><Panel /></Disposicion></RutaPrivada>} />
           <Route path="/miembros" element={<RutaPrivada><Disposicion><Miembros /></Disposicion></RutaPrivada>} />
@@ -53,19 +56,21 @@ function App() {
           <Route path="/calificaciones" element={<RutaPrivada><Disposicion><Calificaciones /></Disposicion></RutaPrivada>} />
           <Route path="/viajes-templo" element={<RutaPrivada><Disposicion><ViajesTemplo /></Disposicion></RutaPrivada>} />
           <Route path="/reservar-viajes" element={<RutaPrivada><Disposicion><ReservarViajes /></Disposicion></RutaPrivada>} />
+          <Route path="/agendas" element={<RutaPrivada><Disposicion><Agendas /></Disposicion></RutaPrivada>} />
           <Route path="/discursantes" element={<RutaPrivada><Disposicion><Discursantes /></Disposicion></RutaPrivada>} />
 
-          <Route path="/consejos" element={<RutaPrivada><Disposicion><Consejos /></Disposicion></RutaPrivada>} />
-          <Route path="/consejos/nuevo" element={<RutaPrivada><Disposicion><NuevoConsejo /></Disposicion></RutaPrivada>} />
+          <Route path="/consejos" element={<RutaPrivada><Disposicion><Consejos key="editor-background" /></Disposicion></RutaPrivada>} />
+          <Route path="/consejos/nuevo" element={<RutaPrivada><Disposicion><Consejos key="editor-background" /><NuevoConsejo /></Disposicion></RutaPrivada>} />
           <Route path="/consejos/:id" element={<RutaPrivada><Disposicion><DetallesConsejo /></Disposicion></RutaPrivada>} />
-          <Route path="/consejos/editar/:id" element={<RutaPrivada><Disposicion><EditarConsejo /></Disposicion></RutaPrivada>} />
+          <Route path="/consejos/editar/:id" element={<RutaPrivada><Disposicion><Consejos key="editor-background" /><EditarConsejo /></Disposicion></RutaPrivada>} />
 
-          <Route path="/actividades" element={<RutaPrivada><Disposicion><Actividades /></Disposicion></RutaPrivada>} />
-          <Route path="/actividades/nueva" element={<RutaPrivada><Disposicion><NuevaActividad /></Disposicion></RutaPrivada>} />
-          <Route path="/actividades/editar/:id" element={<RutaPrivada><Disposicion><EditarActividad /></Disposicion></RutaPrivada>} />
+          <Route path="/actividades" element={<RutaPrivada><Disposicion><Actividades key="editor-background" /></Disposicion></RutaPrivada>} />
+          <Route path="/actividades/nueva" element={<RutaPrivada><Disposicion><Actividades key="editor-background" /><NuevaActividad /></Disposicion></RutaPrivada>} />
+          <Route path="/actividades/editar/:id" element={<RutaPrivada><Disposicion><Actividades key="editor-background" /><EditarActividad /></Disposicion></RutaPrivada>} />
 
           <Route path="/auditorias" element={<RutaPrivada><Disposicion><Auditorias /></Disposicion></RutaPrivada>} />
           <Route path="/templos" element={<RutaPrivada><Disposicion><MantTemplos /></Disposicion></RutaPrivada>} />
+          <Route path="/sincronizacion" element={<RutaPrivada><Disposicion><Sincronizacion /></Disposicion></RutaPrivada>} />
           <Route path="/pagos" element={<RutaPrivada><Disposicion><PagosTemplos /></Disposicion></RutaPrivada>} />
 
           <Route path="*" element={
@@ -73,7 +78,7 @@ function App() {
               <Disposicion>
                 <div className="page-container" style={{ textAlign: "center", paddingTop: "4rem" }}>
                   <h1>404</h1>
-                  <p style={{ color: "var(--text-secondary)" }}>Página no encontrada</p>
+                  <p style={{ color: "var(--text-secondary)" }}>PÃ¡gina no encontrada</p>
                 </div>
               </Disposicion>
             </RutaPrivada>

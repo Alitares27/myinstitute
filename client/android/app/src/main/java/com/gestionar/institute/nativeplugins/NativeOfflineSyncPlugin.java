@@ -72,6 +72,11 @@ public class NativeOfflineSyncPlugin extends Plugin {
     }
 
     @PluginMethod
+    public void synchronizeNow(PluginCall call) {
+        OfflineSyncJobService.synchronizeNow(getContext().getApplicationContext(), () -> call.resolve());
+    }
+
+    @PluginMethod
     public void getState(PluginCall call) {
         android.content.SharedPreferences prefs = OfflineQueueStore.preferences(getContext());
         String userId = prefs.getString("activeUserId", "");

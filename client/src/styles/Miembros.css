@@ -23,12 +23,12 @@
 .miembros-page td { color: var(--text-main); line-height: 1.5; overflow-wrap: anywhere; min-width: 110px; }
 .miembros-page tbody tr:last-child td { border-bottom: 0; }
 .miembros-page tbody tr:hover { background: var(--primary-light); }
-.miembros-page .miembros-sort { padding: 0; background: transparent; border: 0; border-radius: 0; box-shadow: none; color: inherit; font: inherit; text-align: left; }
+.miembros-page .miembros-sort { padding: 0; background: transparent; border: 0; border-radius: 0; box-shadow: none; color: inherit; font: inherit; text-align: center; }
 .miembros-page .miembros-sort:hover { color: var(--primary); }
 .miembros-row-actions { flex-wrap: nowrap; gap: .5rem; }
 .miembros-row-actions .btn { padding: .5rem .75rem; font-size: .8125rem; white-space: nowrap; min-height: 36px; }
-.miembros-page .btn.miembros-delete { color: var(--danger); background: var(--bg-surface); border: 1.5px solid var(--danger); box-shadow: none; }
-.miembros-page .btn.miembros-delete:hover:not(:disabled) { background: var(--danger); color: white; }
+.miembros-page .btn.miembros-delete { color: var(--button-danger-text); background: var(--bg-surface); border: 1.5px solid var(--danger); box-shadow: none; }
+.miembros-page .btn.miembros-delete:hover:not(:disabled) { background: var(--danger); color: var(--button-on-danger); }
 .miembros-page button:disabled { opacity: .45; cursor: not-allowed; box-shadow: none; }
 .miembros-page button:focus-visible, .miembros-academic-links a:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
 .miembros-details > p { margin: .65rem 0; overflow-wrap: anywhere; color: var(--text-secondary); }
@@ -56,12 +56,12 @@
 .miembros-search:focus-within { outline: 2px solid var(--primary); outline-offset: 2px; }
 .miembros-filters { display: flex; gap: .6rem; flex-wrap: wrap; }
 .miembros-page .miembros-filters select { width: auto; max-width: 220px; padding: .5rem .85rem; border: 1px solid var(--border-color); border-radius: var(--radius); font-size: .88rem; box-shadow: var(--shadow-xs); cursor: pointer; }
-.miembros-page .miembros-name { background: transparent; color: var(--primary); border: 0; padding: .25rem 0; box-shadow: none; text-align: left; justify-content: flex-start; font-size: .95rem; font-weight: 600; }
+.miembros-page .miembros-name { background: transparent; color: var(--primary); border: 0; padding: .25rem 0; box-shadow: none; text-align: center; font-size: .95rem; font-weight: 600; }
 .miembros-name:hover { text-decoration: underline; }
 .miembros-row-actions .btn { width: 36px; height: 36px; padding: 0; flex-shrink: 0; }
 .miembros-form-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding-bottom: .75rem; margin-bottom: 1.25rem; border-bottom: 1px solid var(--border-color); }
 .miembros-form-header h2 { display: flex; align-items: center; gap: .5rem; margin: 0; padding: 0; border: 0; }
-.miembros-form-header .cancel-btn, .miembros-modal-header .cancel-btn { padding: .5rem; width: 36px; height: 36px; }
+.miembros-form-header .cancel-btn { padding: .5rem; width: 36px; height: 36px; }
 .miembros-modal-overlay { position: fixed; inset: 0; z-index: 10000; display: flex; align-items: center; justify-content: center; padding: 1.25rem; background: rgba(0,0,0,.4); backdrop-filter: blur(8px); }
 .miembros-modal { width: 100%; max-width: 760px; max-height: calc(100dvh - 2.5rem); overflow-y: auto; padding: 1.5rem; background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); }
 .miembros-modal-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding-bottom: 1rem; margin-bottom: 1rem; border-bottom: 1px solid var(--border-color); }

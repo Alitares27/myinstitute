@@ -37,6 +37,7 @@ const NativeOfflineSync = registerPlugin<{
   clearSession(options: { userId: string }): Promise<void>;
   enqueue(options: { operation: PendingMutation }): Promise<void>;
   getState(): Promise<NativeSyncState>;
+  synchronizeNow(): Promise<void>;
   acknowledgeMappings(options: { localIds: number[] }): Promise<void>;
 }>("NativeOfflineSync");
 
@@ -55,6 +56,7 @@ export interface PendingMutation {
 let databasePromise: Promise<IDBDatabase> | undefined;
 let syncing = false;
 let syncMessage = "";
+const enrollingNativeEntries = new Set<string>();
 
 function apiBaseUrl(): string {
   return (import.meta.env.VITE_API_URL || "http://localhost:5000/api").replace(/\/+$/, "");
@@ -106,7 +108,12 @@ function storeRequest<T>(request: IDBRequest<T>): Promise<T> {
 async function withStore<T>(name: string, mode: IDBTransactionMode, action: (store: IDBObjectStore) => Promise<T>): Promise<T> {
   const db = await openDatabase();
   const transaction = db.transaction(name, mode);
-  return action(transaction.objectStore(name));
+  const committed = new Promise<void>((resolve, reject) => {
+    transaction.oncomplete = () => resolve();
+    transaction.onabort = () => reject(transaction.error ?? new Error("No se pudo guardar el cambio local."));
+  });
+  const [result] = await Promise.all([action(transaction.objectStore(name)), committed]);
+  return result;
 }
 
 function stableParams(params: unknown): string {
@@ -196,13 +203,19 @@ export async function enqueueMutation(config: AxiosRequestConfig): Promise<{ dat
     id: crypto.randomUUID(), userId, method, url,
     data: parseRequestData(config.data), localId, createdAt: Date.now(),
   };
-  await withStore(OUTBOX_STORE, "readwrite", (store) => storeRequest(store.put(record)));
-  if (isNativeAndroid()) {
-    try { await NativeOfflineSync.enqueue({ operation: record }); }
-    catch (error) {
-      await removeMutation(record);
-      throw error;
+  const native = isNativeAndroid();
+  if (native) enrollingNativeEntries.add(record.id);
+  try {
+    await withStore(OUTBOX_STORE, "readwrite", (store) => storeRequest(store.put(record)));
+    if (native) {
+      try { await NativeOfflineSync.enqueue({ operation: record }); }
+      catch (error) {
+        await removeMutation(record);
+        throw error;
+      }
     }
+  } finally {
+    enrollingNativeEntries.delete(record.id);
   }
   notifyState();
   if (!isNativeAndroid()) {
@@ -220,7 +233,7 @@ export async function rememberOfflineSession(token: string): Promise<void> {
   const session = { userId, token, apiBase: apiBaseUrl() };
   try { await withStore(SESSION_STORE, "readwrite", (store) => storeRequest(store.put(session))); }
   catch { /* Authentication still works if local session storage is unavailable. */ }
-  if (isNativeAndroid()) {
+  if (isNativeAndroid() && currentUserId() === userId && localStorage.getItem("token") === token) {
     try { await NativeOfflineSync.setSession(session); }
     catch { syncMessage = "No se pudo preparar la sincronización nativa de Android."; }
   }
@@ -337,16 +350,58 @@ async function applyCachedIdMapping(localId: number, serverId: unknown, userId: 
   })));
 }
 
-async function synchronizeNativeQueue(): Promise<void> {
+export async function listPendingChanges(): Promise<PendingMutation[]> {
+  const userId = currentUserId();
+  if (!userId) return [];
+  const entries = await withStore(OUTBOX_STORE, "readonly", (store) =>
+    storeRequest<PendingMutation[]>(store.index("userId").getAll(userId)));
+  return entries.sort((left, right) => left.createdAt - right.createdAt);
+}
+
+async function refreshOfflineCopies(userId: string, token: string): Promise<void> {
+  const entries = await withStore(CACHE_STORE, "readonly", (store) =>
+    storeRequest<CachedResponse[]>(store.index("userId").getAll(userId)));
+  let failed = false;
+  for (const entry of entries) {
+    if (!navigator.onLine || currentUserId() !== userId || localStorage.getItem("token") !== token) {
+      throw new Error("La sesión o la conexión cambió durante la actualización local.");
+    }
+    try {
+      const response = await fetch(apiBaseUrl() + entry.url, {
+        headers: { Authorization: `Bearer ${token}` },
+        cache: "no-store",
+        signal: AbortSignal.timeout(15_000),
+      });
+      if (!response.ok) {
+        if (response.status === 404 || response.status === 403) {
+          await withStore(CACHE_STORE, "readwrite", (store) => storeRequest(store.delete(entry.key)));
+          continue;
+        }
+        if (response.status === 401) throw new Error("Sesión vencida");
+        failed = true;
+        continue;
+      }
+      await cacheGetResponse(userId, entry.url, await response.json());
+    } catch (error) {
+      if (error instanceof Error && error.message === "Sesión vencida") throw error;
+      failed = true;
+    }
+  }
+  if (failed) throw new Error("Quedaron copias locales pendientes de actualizar.");
+}
+
+async function synchronizeNativeQueue(manual: boolean): Promise<void> {
   const userId = currentUserId();
   const token = localStorage.getItem("token");
-  if (!userId || !token) return;
-  await rememberOfflineSession(token);
+  if (!userId || !token || syncing || !navigator.onLine) return;
   syncing = true;
   notifyState();
   try {
+    const localEntries = (await listPendingChanges()).filter(entry => !enrollingNativeEntries.has(entry.id));
+    await rememberOfflineSession(token);
+    if (manual) await NativeOfflineSync.synchronizeNow();
     const state = await NativeOfflineSync.getState();
-    if (state.activeUserId !== userId) return;
+    if (state.activeUserId !== userId || currentUserId() !== userId) return;
     for (const mapping of state.mappings || []) {
       if (mapping.userId !== userId) continue;
       await saveLocalIdMapping(mapping.localId, mapping.serverId, userId);
@@ -356,11 +411,15 @@ async function synchronizeNativeQueue(): Promise<void> {
       await NativeOfflineSync.acknowledgeMappings({ localIds: state.mappings.filter((mapping) => mapping.userId === userId).map((mapping) => mapping.localId) });
     }
     const pendingIds = new Set(state.pendingIds || []);
-    const localEntries = await withStore(OUTBOX_STORE, "readonly", (store) => storeRequest<PendingMutation[]>(store.index("userId").getAll(userId)));
-    await withStore(OUTBOX_STORE, "readwrite", (store) => Promise.all(localEntries.filter((entry) => !pendingIds.has(entry.id)).map((entry) => storeRequest(store.delete(entry.id)))));
+    const completed = localEntries.filter(entry => !pendingIds.has(entry.id));
+    if (manual || completed.length) await refreshOfflineCopies(userId, token);
+    await withStore(OUTBOX_STORE, "readwrite", (store) =>
+      Promise.all(completed.map(entry => storeRequest(store.delete(entry.id)))));
     syncMessage = state.message || "";
-  } catch {
-    syncMessage = "La cola nativa de Android se sincronizará cuando la app vuelva a conectarse.";
+  } catch (error) {
+    syncMessage = error instanceof Error && error.message === "Sesión vencida"
+      ? "Vuelve a iniciar sesión con conexión para actualizar los datos."
+      : "No se pudo actualizar la copia local. Puedes reintentar la sincronización.";
   } finally {
     syncing = false;
     notifyState();
@@ -371,9 +430,9 @@ async function removeMutation(record: PendingMutation): Promise<void> {
   await withStore(OUTBOX_STORE, "readwrite", (store) => storeRequest(store.delete(record.id)));
 }
 
-export async function synchronizePendingChanges(): Promise<void> {
+export async function synchronizePendingChanges(manual = false): Promise<void> {
   if (isNativeAndroid()) {
-    await synchronizeNativeQueue();
+    await synchronizeNativeQueue(manual);
     return;
   }
   if (syncing || !navigator.onLine) return;
@@ -388,6 +447,7 @@ export async function synchronizePendingChanges(): Promise<void> {
   try {
     const entries = await withStore(OUTBOX_STORE, "readonly", (store) => storeRequest<PendingMutation[]>(store.index("userId").getAll(userId)));
     entries.sort((left, right) => left.createdAt - right.createdAt);
+    let completed = false;
     for (const entry of entries) {
       if (!navigator.onLine || currentUserId() !== userId || localStorage.getItem("token") !== token) break;
       const response = await fetch(`${apiBaseUrl()}${entry.url}`, {
@@ -404,7 +464,9 @@ export async function synchronizePendingChanges(): Promise<void> {
       const createdId = responseData?.id ?? responseData?.user?.id;
       if (entry.localId && createdId != null) await saveLocalIdMapping(entry.localId, createdId, userId);
       await removeMutation(entry);
+      completed = true;
     }
+    if (completed || manual) await refreshOfflineCopies(userId, token);
   } catch {
     syncMessage = "La sincronización se reintentará cuando vuelva la conexión.";
   } finally {
@@ -418,6 +480,7 @@ export async function synchronizePendingChanges(): Promise<void> {
 
 if (typeof window !== "undefined") {
   window.addEventListener("online", () => { void synchronizePendingChanges(); });
+  window.addEventListener("offline", notifyState);
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible") void synchronizePendingChanges();
   });
@@ -426,7 +489,7 @@ if (typeof window !== "undefined") {
       if (isActive) void synchronizePendingChanges();
     });
     window.setInterval(() => {
-      if (document.visibilityState === "visible") notifyState();
+      if (document.visibilityState === "visible") void synchronizePendingChanges();
     }, 15_000);
   }
   navigator.serviceWorker?.addEventListener("message", (event: MessageEvent) => {

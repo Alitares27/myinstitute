@@ -4,11 +4,10 @@ import {limpiarSesion} from "../utils/sesion";
 import {useEffect,useRef,useState} from "react";
 import {Link,NavLink,useLocation,useNavigate} from "react-router-dom";
 import {useTheme} from "../context/ContextoTema";
-import {isTokenExpired} from "./RutaPrivada";
 import appMetadata from "../../package.json";
 import "../styles/BarraLateral.css";
 import type { IconType } from "react-icons";
-import {IoHomeOutline,IoSchoolOutline,IoPersonOutline,IoClipboardOutline,IoCalendarOutline,IoRibbonOutline,IoBriefcaseOutline,IoMicOutline,IoPeopleOutline,IoDocumentTextOutline,IoBusinessOutline,IoSettingsOutline,IoLogOutOutline,IoMoonOutline,IoSunnyOutline,IoCashOutline,IoChevronUp,IoEllipsisHorizontalOutline,IoInformationCircleOutline} from "react-icons/io5";
+import {IoHomeOutline,IoSchoolOutline,IoPersonOutline,IoClipboardOutline,IoCalendarOutline,IoRibbonOutline,IoBriefcaseOutline,IoMicOutline,IoPeopleOutline,IoDocumentTextOutline,IoBusinessOutline,IoSettingsOutline,IoLogOutOutline,IoMoonOutline,IoSunnyOutline,IoCashOutline,IoChevronUp,IoEllipsisHorizontalOutline,IoInformationCircleOutline,IoSyncOutline} from "react-icons/io5";
 
 type NavItem = {to?:string;label:string;Icon:IconType;state?:Record<string,boolean>;action?:"about"};
 type NavGroup = {id:string;label:string;Icon:IconType;links:NavItem[]};
@@ -27,7 +26,7 @@ export default function Sidebar(){
   {id:'teaching',label:'Enseñanza',Icon:IoSchoolOutline,links:[
    ...(role!=='admin'?[{to:'/miembros',label:role==='student'?'Mi perfil':'Miembros',Icon:IoPersonOutline}]:[]),
    {to:'/maestros',label:'Maestros',Icon:IoSchoolOutline},{to:'/inscripciones',label:'Matrículas',Icon:IoClipboardOutline},{to:'/asistencia',label:'Asistencia',Icon:IoCalendarOutline},{to:'/calificaciones',label:'Calificaciones',Icon:IoRibbonOutline}]},
-  {id:'leadership',label:'Liderazgo',Icon:IoBriefcaseOutline,links:[{to:'/discursantes',label:'Discursantes',Icon:IoMicOutline},{to:'/consejos',label:'Consejos',Icon:IoPeopleOutline},{to:'/actividades',label:'Actividades',Icon:IoCalendarOutline},{to:'/auditorias',label:'Auditorías',Icon:IoDocumentTextOutline}]},
+  {id:'leadership',label:'Liderazgo',Icon:IoBriefcaseOutline,links:[{to:'/agendas',label:'Agendas',Icon:IoCalendarOutline},{to:'/discursantes',label:'Discursantes',Icon:IoMicOutline},{to:'/consejos',label:'Consejos',Icon:IoPeopleOutline},{to:'/actividades',label:'Actividades',Icon:IoCalendarOutline},{to:'/auditorias',label:'Auditorías',Icon:IoDocumentTextOutline}]},
   templeGroup,
   ...(role==='admin'?[{id:'maintenance',label:'Mantenimiento',Icon:IoSettingsOutline,links:[{to:'/miembros',label:'Miembros',Icon:IoPersonOutline},{to:'/templos',label:'Templos',Icon:IoBusinessOutline}]}]:[])
  ];
@@ -35,13 +34,14 @@ export default function Sidebar(){
   {id:'teaching',label:'Enseñanza',Icon:IoSchoolOutline,links:[
    ...(role!=='admin'?[{to:'/miembros',label:role==='student'?'Mi perfil':'Miembros',Icon:IoPersonOutline}]:[]),
    {to:'/asistencia',label:'Asistencia',Icon:IoCalendarOutline},{to:'/calificaciones',label:'Calificaciones',Icon:IoRibbonOutline}]},
-  {id:'leadership',label:'Liderazgo',Icon:IoBriefcaseOutline,links:[{to:'/discursantes',label:'Discursantes',Icon:IoMicOutline},{to:'/consejos',label:'Consejos',Icon:IoPeopleOutline},{to:'/actividades',label:'Actividades',Icon:IoCalendarOutline},{to:'/auditorias',label:'Auditorías',Icon:IoDocumentTextOutline}]},
+  {id:'leadership',label:'Liderazgo',Icon:IoBriefcaseOutline,links:[{to:'/agendas',label:'Agendas',Icon:IoCalendarOutline},{to:'/discursantes',label:'Discursantes',Icon:IoMicOutline},{to:'/consejos',label:'Consejos',Icon:IoPeopleOutline},{to:'/actividades',label:'Actividades',Icon:IoCalendarOutline},{to:'/auditorias',label:'Auditorías',Icon:IoDocumentTextOutline}]},
   templeGroup,
   {id:'more',label:'Más',Icon:IoEllipsisHorizontalOutline,links:[
    {to:'/maestros',label:'Maestros y cursos',Icon:IoSchoolOutline},
    {to:'/inscripciones',label:role==='admin'?'Administrar cursos':'Matrículas',Icon:IoClipboardOutline,...(role==='admin'?{state:{openCourseManager:true}}:{})},
    ...(role==='admin'?[{to:'/discursantes',label:'Temas para Discursantes',Icon:IoMicOutline,state:{openTopicManager:true}}]:[]),
    ...(role==='admin'?[{to:'/templos',label:'Administrar templos',Icon:IoBusinessOutline},{to:'/miembros',label:'Miembros',Icon:IoPersonOutline}]:[]),
+   {to:'/sincronizacion',label:'Sincronización',Icon:IoSyncOutline},
    {label:'Acerca de',Icon:IoInformationCircleOutline,action:'about'}
   ]}
  ];
@@ -66,8 +66,10 @@ export default function Sidebar(){
   catch{window.alert('Se cerrará la sesión local, pero no se pudo confirmar la revocación en el servidor. Si perdiste tu dispositivo, cambia la contraseña al recuperar conexión.');}
   invalidarCache();await limpiarSesion();navigate('/');
  }
+ const visibleGroups = isMobile ? mobileGroups : groups;
+ const openGroup = visibleGroups.find(group => group.id === open);
  const token=localStorage.getItem("token");
- const hasActiveSession=!!token&&(!isTokenExpired(token)||(!navigator.onLine&&!!localStorage.getItem("user")));
+ const hasActiveSession=!!token&&!!localStorage.getItem("user");
  if(!hasActiveSession)return null;
  return <>
   <header className="app-topbar">
@@ -77,7 +79,7 @@ export default function Sidebar(){
     <button type="button" className="app-icon-button app-logout" onClick={logout} disabled={loggingOut} aria-label="Cerrar sesión" title="Cerrar sesión"><IoLogOutOutline aria-hidden="true"/></button>
    </div>
   </header>
-  {isMobile&&(open==='more'||open==='temple')&&<button type="button" className="floating-nav-backdrop" aria-label={open==='temple'?'Cerrar el menú Templo':'Cerrar el menú Más'} onClick={()=>setOpen(null)}/>}
+  {isMobile && openGroup && <button type="button" className="floating-nav-backdrop" aria-label={`Cerrar el menú ${openGroup.label}`} onClick={() => setOpen(null)} />}
   <nav ref={nav} className="floating-nav" aria-label="Menú principal" onBlur={event=>{if(!event.currentTarget.contains(event.relatedTarget as Node))setOpen(null);}}>
    <ul className="floating-nav-groups">
     <li className="floating-nav-home-item">
@@ -85,7 +87,7 @@ export default function Sidebar(){
       <IoHomeOutline aria-hidden="true"/><span className="floating-nav-label">Inicio</span>
      </NavLink>
     </li>
-    {(isMobile?mobileGroups:groups).map(group=>{
+    {visibleGroups.map(group=>{
     const active=group.links.some(link=>location.pathname===link.to||location.pathname.startsWith(link.to+'/'));
     return <li key={group.id} className={group.id==='more'?'floating-nav-more-item':undefined}>
      <button ref={element=>{triggers.current[group.id]=element;}} type="button" className={`floating-nav-trigger ${active?'is-active':''} ${open===group.id?'is-open':''}`} aria-label={group.label} title={group.label} aria-expanded={open===group.id} aria-controls={`nav-${group.id}`} onClick={()=>setOpen(previous=>previous===group.id?null:group.id)}>
@@ -105,7 +107,6 @@ export default function Sidebar(){
      <div><dt>Desarrollador</dt><dd>PayLab</dd></div>
     </dl>
     <p className="about-app-copyright">© {new Date().getFullYear()} GestionAR. Todos los derechos reservados.</p>
-    <div className="ios-dialog-actions"><button type="button" className="ios-dialog-primary" onClick={()=>setShowAbout(false)}>Cerrar</button></div>
    </section>
   </div>}
  </>;
