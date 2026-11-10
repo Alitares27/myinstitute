@@ -53,6 +53,39 @@ test("cache never shares private catalogs between tokens and invalidates prefixe
   cache.invalidarEstudiantes();assert.equal((await cache.obtenerEstudiantes())[0],3);
   cache.invalidarCache();assert.equal((await cache.obtenerEstudiantes())[0],4);
 });
+test("a protected 401 invalidates the rejected session once and prompts sign-in", async () => {
+  const filename = path.resolve(__dirname, "../src/api.ts");
+  const source = fs.readFileSync(filename, "utf8").replace("import.meta.env.VITE_API_URL", "undefined");
+  const js = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText;
+  let rejectResponse;
+  let cleanups = 0;
+  let redirect;
+  const api = { interceptors: {
+    request: { use() {} },
+    response: { use(_success, failure) { rejectResponse = failure; } }
+  } };
+  const modules = {
+    axios: { default: { create: () => api } },
+    "./utils/sesion": { limpiarSesion: async () => { cleanups++; localStorage.removeItem("token"); } },
+    "./services/offlineSync": {}
+  };
+  const browser = {
+    location: { pathname: "/agendas" },
+    history: { replaceState(_state, _title, url) { redirect = url; } },
+    dispatchEvent() {}
+  };
+  vm.runInNewContext(js, {
+    exports: {}, require: name => modules[name], window: browser, localStorage,
+    PopStateEvent: window.PopStateEvent, Promise
+  });
+  localStorage.setItem("token", "current");
+  const error = url => ({ config: { url, headers: { Authorization: "Bearer current" } }, response: { status: 401 } });
+  await assert.rejects(rejectResponse(error("/users/login")));
+  assert.equal(cleanups, 0);
+  await Promise.allSettled([rejectResponse(error("/agendas")), rejectResponse(error("/courses"))]);
+  assert.equal(cleanups, 1);
+  assert.equal(redirect, "/iniciar-sesion?sesion=expirada");
+});
 test("logout removes authentication and legacy API cache while retaining theme",async()=>{
   const deleted=[]; window.caches={delete:async name=>{deleted.push(name);return true;}};
   const filename=path.resolve(__dirname,"../src/utils/sesion.ts"),mod={exports:{}};

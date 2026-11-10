@@ -2,7 +2,7 @@ import { invalidarCache } from "../utils/clienteCache";
 import { limpiarSesion } from "../utils/sesion";
 import { useState } from "react";
 import api from "../api";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import Layout from "../components/Disposicion";
 import { TbLogin, TbAlertTriangle, TbEye, TbEyeOff } from "react-icons/tb";
 import { synchronizePendingChanges } from "../services/offlineSync";
@@ -12,6 +12,8 @@ export default function Login() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const expiredSession = searchParams.get("sesion") === "expirada";
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -34,7 +36,7 @@ export default function Login() {
       localStorage.setItem("role", res.data.user.role);
       void synchronizePendingChanges();
 
-      navigate("/panel");
+      navigate("/panel", { replace: true });
     } catch (err: any) {
       if (err.code === 'ERR_NETWORK' || err.message.includes('Network Error')) {
         setError("No se pudo conectar con el servidor. Verifica que el backend esté activo.");
@@ -59,6 +61,8 @@ export default function Login() {
           <div className="auth-header">
             <h2><TbLogin /> Iniciar Sesión</h2>
           </div>
+
+          {expiredSession && <p role="status">Vuelve a iniciar sesión para continuar y sincronizar tus cambios pendientes.</p>}
 
           <form onSubmit={handleSubmit} className="auth-form" autoComplete="on">
             <div className="form-group">

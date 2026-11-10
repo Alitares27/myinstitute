@@ -1,9 +1,13 @@
 import { forgetOfflineSession } from "../services/offlineSync";
 
-export async function limpiarSesion(): Promise<void> {
-  await forgetOfflineSession();
+let pendingCleanup: Promise<void> | undefined;
+
+export function limpiarSesion(): Promise<void> {
+  if (pendingCleanup) return pendingCleanup;
+  const forgetSession = forgetOfflineSession();
   for (const key of ["token", "user", "role"]) localStorage.removeItem(key);
-  if ("caches" in window) {
-    await Promise.all(["api-cache"].map(name => caches.delete(name))).catch(() => undefined);
-  }
+  pendingCleanup = forgetSession.then(async () => {
+    if ("caches" in window) await caches.delete("api-cache").catch(() => undefined);
+  }).finally(() => { pendingCleanup = undefined; });
+  return pendingCleanup;
 }

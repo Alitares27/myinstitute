@@ -1,4 +1,3 @@
-import { isTokenExpired } from "./components/RutaPrivada";
 import { limpiarSesion } from "./utils/sesion";
 import axios from "axios";
 import {
@@ -32,7 +31,7 @@ api.interceptors.request.use((config) => {
       }
       const path = offlineConfig.url || "";
       if (/\/users\/(login|register)|\/logout|\/password/.test(path)) {
-        throw new Error("Esta acciÃ³n requiere conexiÃ³n a internet.");
+        throw new Error("Esta acciÃƒÂ³n requiere conexiÃƒÂ³n a internet.");
       }
       const queued = await enqueueMutation(offlineConfig);
       return { data: queued.data, status: 202, statusText: "Guardado para sincronizar", headers: {}, config: offlineConfig, request: {} };
@@ -80,21 +79,13 @@ api.interceptors.response.use(
 
     if (error.response?.status === 401) {
       const token = localStorage.getItem("token");
-      if (token && config?.headers?.Authorization === `Bearer ${token}` && isTokenExpired(token) && !config.url?.includes("/login")) {
-        if (config && method === "get") {
-          try {
-            const cached = await readOfflineGet(config);
-            return { data: cached.data, status: 200, statusText: "OK (local cache)", headers: {}, config, request: {} };
-          } catch {
-            throw new Error("No hay una copia local. Vuelve a iniciar sesión con conexión para actualizarla.");
-          }
-        }
-        throw new Error("Vuelve a iniciar sesión con conexión para realizar esta acción.");
-      }
-      if (!error.config?.url?.includes("/login") && token && config?.headers?.Authorization === `Bearer ${token}`) {
-        await limpiarSesion();
+      const path = config?.url?.split("?")[0] || "";
+      const accountAction = /\/(?:login|register|logout)$/.test(path);
+      if (!accountAction && token && config?.headers?.Authorization === `Bearer ${token}`) {
+        // A server rejection requires fresh credentials. Local drafts stay queued.
+        void limpiarSesion();
         if (window.location.pathname !== "/iniciar-sesion") {
-          window.history.replaceState(window.history.state, "", "/iniciar-sesion");
+          window.history.replaceState(window.history.state, "", "/iniciar-sesion?sesion=expirada");
           window.dispatchEvent(new PopStateEvent("popstate"));
         }
       }
@@ -103,6 +94,7 @@ api.interceptors.response.use(
     if (
       !error.response &&
       config &&
+      !config.signal?.aborted &&
       !config.__isRetry &&
       ["get", "head", "options"].includes(config.method || "get")
     ) {
