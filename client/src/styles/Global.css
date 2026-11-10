@@ -2076,12 +2076,15 @@ html:root body .ios-dialog-backdrop { z-index: 15001; }
 .btn > .mobile-only-action-icon { display: none; }
 
 @media (max-width: 700px) {
+  .modal-content .modal-close-icon { display: none; }
+
   main.content:has(.mobile-add) { padding-bottom: calc(10rem + env(safe-area-inset-bottom, 0px)); }
 
   .btn:is(.mobile-add, .mobile-header-action, .mobile-inline-add) {
     flex: 0 0 auto;
     width: 44px;
     height: 44px;
+    aspect-ratio: 1;
     padding: 0;
     margin: 0;
     border-radius: 50%;

@@ -250,7 +250,7 @@ export default function MeetingForm({
                     {onCancel && (
                         <button
                             type="button"
-                            className="btn cancel-btn"
+                            className="btn cancel-btn modal-close-icon"
                             onClick={onCancel}
                             title="Cancelar"
                             aria-label="Cancelar"

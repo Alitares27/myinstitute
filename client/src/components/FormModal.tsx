@@ -46,7 +46,7 @@ export default function FormModal({ title, onClose, children, busy = false }: {
         }}>
         <header className="form-modal-header">
           <h2 id={titleId}>{title}</h2>
-          <button type="button" className="btn secondary btn-icon" aria-label="Cerrar formulario" disabled={busy} onClick={onClose}>×</button>
+          <button type="button" className="btn secondary btn-icon modal-close-icon" aria-label="Cerrar formulario" disabled={busy} onClick={onClose}>×</button>
         </header>
         {children}
       </div>
