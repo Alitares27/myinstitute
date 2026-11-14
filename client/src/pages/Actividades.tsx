@@ -1,7 +1,7 @@
 import ActivityCalendar from "../components/activities/CalendarioActividades";
 import { confirmAppAction } from "../components/AppDialogHost";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import api from "../api";
 import { FiCalendar, FiList, FiPrinter } from "react-icons/fi";
 import { IoCreateOutline, IoTrashOutline, IoAddOutline } from "react-icons/io5";
@@ -11,6 +11,7 @@ import { Skeleton } from "../components/Esqueleto";
 import type { Activity } from "../interfaces/Activity";
 
 export default function Actividades() {
+  const navigate = useNavigate();
   const [query, setQuery] = useSearchParams();
   const requestedMonth = query.get("mes") ?? "";
   const month = /^\d{4}-(0[1-9]|1[0-2])$/.test(requestedMonth) && requestedMonth >= "0100-01" ? requestedMonth : "";
@@ -39,6 +40,14 @@ export default function Actividades() {
       .catch(() => { })
       .finally(() => setLoading(false));
   }, []);
+
+  async function confirmCalendarEdit(id: string) {
+    if (!await confirmAppAction("¿Deseas editar esta actividad?")) return;
+    const calendarParams = new URLSearchParams({ mes: month });
+    if (week) calendarParams.set("semana", week);
+    setSelectedActivity(null);
+    navigate(`/actividades/editar/${id}?${calendarParams}`);
+  }
 
   async function handleDelete(id: string) {
     if (!await confirmAppAction("¿Eliminar esta actividad?")) return;
@@ -260,7 +269,15 @@ export default function Actividades() {
       {selectedActivity && (
         <div className="modal-overlay" onClick={() => setSelectedActivity(null)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <h2 style={{ marginTop: "8px", marginBottom: "1rem" }}>{selectedActivity.activity_name}</h2>
+            <header className="form-modal-header">
+              <h2>{selectedActivity.activity_name}</h2>
+              {month && role === "admin" && (
+                <button type="button" className="btn secondary btn-icon" aria-label="Editar actividad"
+                  onClick={() => void confirmCalendarEdit(selectedActivity.id)}>
+                  <IoCreateOutline aria-hidden="true" />
+                </button>
+              )}
+            </header>
             <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
               <DetailRow label="Fecha y hora" value={formatDateTimeLong(selectedActivity.activity_datetime)} />
               <DetailRow label="Encargado" value={selectedActivity.assigned_to_name} />

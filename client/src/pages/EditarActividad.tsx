@@ -11,7 +11,11 @@ export default function EditActividad() {
   const navigate = useNavigate();
   const [query] = useSearchParams();
   const month = query.get("mes");
-  const returnPath = month ? `/actividades?mes=${encodeURIComponent(month)}` : "/actividades";
+  const week = query.get("semana");
+  const calendarParams = new URLSearchParams();
+  if (month) calendarParams.set("mes", month);
+  if (month && week) calendarParams.set("semana", week);
+  const returnPath = month ? `/actividades?${calendarParams}` : "/actividades";
   const [initial, setInitial] = useState<ActivityFormData | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
