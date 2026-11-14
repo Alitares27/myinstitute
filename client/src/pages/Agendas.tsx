@@ -4,6 +4,7 @@ import { IoAddOutline, IoCreateOutline, IoTrashOutline } from "react-icons/io5";
 import api from "../api";
 import { confirmAppAction } from "../components/AppDialogHost";
 import FormModal from "../components/FormModal";
+import "../styles/Agendas.css";
 
 const agendaFields = [
   { key: "opening_hymn", label: "1.º Himno", kind: "text" },
@@ -160,7 +161,7 @@ export default function Agendas() {
                   <div>Confirmación: {memberName(agenda, agenda.confirmation_id)}</div>
                 </td>
                 {admin && <td><div className="miembros-row-actions">
-                  <button type="button" className="btn secondary btn-icon" disabled={busy} aria-label={`Editar agenda de ${agenda.friend}`} onClick={() => openEditor(agenda)}>
+                  <button type="button" className="btn secondary btn-icon" disabled={busy} aria-label={`Editar bautismo de ${agenda.friend}`} onClick={() => openEditor(agenda)}>
                     <IoCreateOutline aria-hidden="true" />
                   </button>
                   <button type="button" className="btn secondary btn-icon danger-outline" disabled={busy} aria-label={`Eliminar agenda de ${agenda.friend}`} onClick={() => void remove(agenda)}>
@@ -179,8 +180,8 @@ export default function Agendas() {
         {membersError && <p role="alert">{membersError}</p>}
         {formError && <p role="alert">{formError}</p>}
         <form onSubmit={save}>
-          <fieldset className="miembros-fields" disabled={busy}>
-            <div className="asistencia-form-grid">
+          <fieldset className="agenda-form-fields" disabled={busy}>
+            <div className="agenda-form-grid">
               <label className="form-group">Fecha y hora
                 <input type="datetime-local" required value={editor.draft.scheduled_at} onChange={event => update("scheduled_at", event.target.value)} />
               </label>
@@ -204,19 +205,21 @@ export default function Agendas() {
                 </label>;
               })}
             </div>
-            <div className="asistencia-form-actions">
+            <div className="agenda-form-actions">
               <button type="submit" className="btn primary">{busy ? "Guardando…" : "Guardar"}</button>
             </div>
           </fieldset>
         </form>
       </FormModal>}
 
-      {detail && <FormModal title={`Agenda de ${detail.friend}`} onClose={() => setDetail(null)}>
-        <dl className="asistencia-form-grid">
-          <div><dt><strong>Amigo</strong></dt><dd>{detail.friend}</dd></div>
-          <div><dt><strong>Fecha y hora</strong></dt><dd>{formatDate(detail.scheduled_at)}</dd></div>
+      {detail && <FormModal title={`Bautismo de ${detail.friend}`} onClose={() => setDetail(null)}>
+        <dl className="agenda-details">
+          <div className="agenda-details-date">
+            <dt>Fecha y hora</dt>
+            <dd><time dateTime={detail.scheduled_at}>{formatDate(detail.scheduled_at)}</time></dd>
+          </div>
           {agendaFields.map(({ key, label, kind }) => (
-            <div key={key}><dt><strong>{label}</strong></dt>
+            <div key={key}><dt>{label}</dt>
               <dd>{kind === "member" ? memberName(detail, detail[key]) : detail[key] || "Sin indicar"}</dd>
             </div>
           ))}

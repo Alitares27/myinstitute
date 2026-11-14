@@ -5,6 +5,10 @@ import { verifyToken, isAdmin, AuthRequest } from "../middleware/auth";
 
 const router = asyncRouter();
 
+function validColor(value: unknown): boolean {
+  return value === undefined || (typeof value === "string" && /^#[0-9a-f]{6}$/i.test(value));
+}
+
 router.get("/", verifyToken, async (req: AuthRequest, res: Response) => {
   try {
     const result = await pool.query(
@@ -24,8 +28,9 @@ router.post("/", verifyToken, isAdmin, async (req: AuthRequest, res: Response) =
     const {
       activity_name, activity_datetime, assigned_to,
       purpose, description, attendance, budget,
-      assignments, spiritual, social, physical, intellectual,
+      assignments, spiritual, social, physical, intellectual, color,
     } = req.body;
+    if (!validColor(color)) return res.status(400).json({ message: "Color inválido" });
 
     if (!activity_name) return res.status(400).json({ message: "El nombre es requerido" });
     if (!activity_datetime) return res.status(400).json({ message: "La fecha y hora son requeridas" });
@@ -34,8 +39,8 @@ router.post("/", verifyToken, isAdmin, async (req: AuthRequest, res: Response) =
       `INSERT INTO activity_plans
         (activity_name, activity_datetime, assigned_to,
          purpose, description, attendance, budget,
-         assignments, spiritual, social, physical, intellectual)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+         assignments, spiritual, social, physical, intellectual, color)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,COALESCE($13, '#2563eb'))
        RETURNING *`,
       [
         activity_name, activity_datetime, assigned_to || null,
@@ -43,7 +48,7 @@ router.post("/", verifyToken, isAdmin, async (req: AuthRequest, res: Response) =
         attendance ? Number(attendance) : null,
         budget ? Number(budget) : null,
         assignments || null,
-        spiritual || false, social || false, physical || false, intellectual || false,
+        spiritual || false, social || false, physical || false, intellectual || false, color ?? null,
       ]
     );
     res.status(201).json(result.rows[0]);
@@ -59,8 +64,9 @@ router.put("/:id", verifyToken, isAdmin, async (req: AuthRequest, res: Response)
     const {
       activity_name, activity_datetime, assigned_to,
       purpose, description, attendance, budget,
-      assignments, spiritual, social, physical, intellectual,
+      assignments, spiritual, social, physical, intellectual, color,
     } = req.body;
+    if (!validColor(color)) return res.status(400).json({ message: "Color inválido" });
 
     const result = await pool.query(
       `UPDATE activity_plans SET
@@ -69,7 +75,7 @@ router.put("/:id", verifyToken, isAdmin, async (req: AuthRequest, res: Response)
         attendance = $6, budget = $7,
         assignments = $8, spiritual = $9, social = $10,
         physical = $11, intellectual = $12,
-        updated_at = NOW()
+        color = COALESCE($14, color), updated_at = NOW()
        WHERE id = $13
        RETURNING *`,
       [
@@ -78,7 +84,7 @@ router.put("/:id", verifyToken, isAdmin, async (req: AuthRequest, res: Response)
         attendance ? Number(attendance) : null,
         budget ? Number(budget) : null,
         assignments || null,
-        spiritual || false, social || false, physical || false, intellectual || false, id,
+        spiritual || false, social || false, physical || false, intellectual || false, id, color ?? null,
       ]
     );
     if (result.rows.length === 0) return res.status(404).json({ message: "Actividad no encontrada" });

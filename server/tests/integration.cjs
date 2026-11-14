@@ -21,6 +21,8 @@ before(async () => {
     await db.exec(migration); await db.exec(migration);
     const agendasMigration = fs.readFileSync(path.join(__dirname, "../migrations/baptism_agendas.sql"), "utf8");
     await db.exec(agendasMigration); await db.exec(agendasMigration);
+    const activityColorMigration = fs.readFileSync(path.join(__dirname, "../migrations/activity_color.sql"), "utf8");
+    await db.exec(activityColorMigration); await db.exec(activityColorMigration);
     for (const [id, user] of Object.entries(fixtures)) await db.query("INSERT INTO users(id,name,email,password,role) VALUES($1,$2,$3,$4,$5)", [Number(id), `Member ${id}`, `user${id}@test.invalid`, hash, user.role]);
     await db.exec(`INSERT INTO teachers(id,user_id,specialty) VALUES(5,2,'A'),(6,3,'B');
  INSERT INTO students(id,user_id) VALUES(7,42),(8,43);
@@ -42,6 +44,18 @@ after(async () => { if (server) await new Promise(resolve => server.close(resolv
 test("real PostgreSQL migration is idempotent and adds revocation, archive and audit fields", async () => {
     const result = await db.query("SELECT auth_version FROM users WHERE id=1"); assert.equal(result.rows[0].auth_version, 0);
     assert.equal((await db.query("SELECT COUNT(*)::int AS count FROM financial_events")).rows[0].count, 0);
+});
+test("activity colors persist and legacy updates retain the assigned color", async () => {
+    const route = "/api/activities";
+    const body = { activity_name: "Actividad", activity_datetime: "2026-12-06T17:30" };
+    assert.equal((await request(route, { method: "POST", body: { ...body, color: "invalid" } })).status, 400);
+    const created = await request(route, { method: "POST", body: { ...body, color: "#12845a" } });
+    assert.equal(created.status, 201);
+    const item = route + "/" + created.data.id;
+    const updated = await request(item, { method: "PUT", body });
+    assert.equal(updated.data.color, "#12845a");
+    assert.equal((await request(route)).data.find(activity => activity.id === created.data.id).color, "#12845a");
+    assert.equal((await request(item, { method: "DELETE" })).status, 200);
 });
 test("baptism agendas persist participant assignments and enforce administrator writes", async () => {
     const route = "/api/agendas";

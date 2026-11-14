@@ -1,4 +1,7 @@
+export const DEFAULT_ACTIVITY_COLOR = "#2563eb";
+
 export interface Activity {
+  color?: string;
   id: string;
   activity_name: string;
   activity_datetime: string;
@@ -18,6 +21,7 @@ export interface Activity {
 }
 
 export interface ActivityFormData {
+  color: string;
   activity_name: string;
   activity_datetime: string;
   assigned_to: string;
@@ -33,6 +37,7 @@ export interface ActivityFormData {
 }
 
 export const emptyActivityFormData: ActivityFormData = {
+  color: DEFAULT_ACTIVITY_COLOR,
   activity_name: "",
   activity_datetime: "",
   assigned_to: "",

@@ -188,6 +188,11 @@ export default function ActivityForm({
 
 
 
+      <label className="form-group">
+        Color en el calendario
+        <input type="color" name="color" value={form.color} onChange={handleChange} />
+      </label>
+
       {showFooter && (
         <div className="form-footer">
           {onCancel && (

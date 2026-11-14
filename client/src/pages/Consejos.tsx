@@ -459,7 +459,7 @@ export default function Meetings() {
                 onClick={handleGenerarPDF}
                 disabled={selectedToPrint.length === 0 || generatingPDF}
               >
-                {generatingPDF ? "Preparando…" : "Guardar PDF"}
+                {generatingPDF ? "Preparando…" : "Guardar"}
               </button>
             </div>
           </div>

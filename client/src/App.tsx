@@ -64,7 +64,7 @@ function App() {
           <Route path="/consejos/:id" element={<RutaPrivada><Disposicion><DetallesConsejo /></Disposicion></RutaPrivada>} />
           <Route path="/consejos/editar/:id" element={<RutaPrivada><Disposicion><Consejos key="editor-background" /><EditarConsejo /></Disposicion></RutaPrivada>} />
 
-          <Route path="/actividades" element={<RutaPrivada><Disposicion><Actividades key="editor-background" /></Disposicion></RutaPrivada>} />
+          <Route path="/actividades" element={<RutaPrivada><Disposicion><Actividades /></Disposicion></RutaPrivada>} />
           <Route path="/actividades/nueva" element={<RutaPrivada><Disposicion><Actividades key="editor-background" /><NuevaActividad /></Disposicion></RutaPrivada>} />
           <Route path="/actividades/editar/:id" element={<RutaPrivada><Disposicion><Actividades key="editor-background" /><EditarActividad /></Disposicion></RutaPrivada>} />
 

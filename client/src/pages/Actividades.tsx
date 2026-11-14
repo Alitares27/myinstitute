@@ -1,8 +1,9 @@
+import ActivityCalendar from "../components/activities/CalendarioActividades";
 import { confirmAppAction } from "../components/AppDialogHost";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import api from "../api";
-import { FiCalendar, FiPrinter } from "react-icons/fi";
+import { FiCalendar, FiList, FiPrinter } from "react-icons/fi";
 import { IoCreateOutline, IoTrashOutline, IoAddOutline } from "react-icons/io5";
 import { formatDateTime, formatDateTimeLong } from "../utils/utilidadesFecha";
 import { generarPDFActividades } from "../utils/pdfActividades";
@@ -10,6 +11,14 @@ import { Skeleton } from "../components/Esqueleto";
 import type { Activity } from "../interfaces/Activity";
 
 export default function Actividades() {
+  const [query, setQuery] = useSearchParams();
+  const requestedMonth = query.get("mes") ?? "";
+  const month = /^\d{4}-(0[1-9]|1[0-2])$/.test(requestedMonth) && requestedMonth >= "0100-01" ? requestedMonth : "";
+  const requestedWeek = query.get("semana") ?? "";
+  const week = /^\d{4}-\d{2}-\d{2}$/.test(requestedWeek) && Number.isFinite(Date.parse(requestedWeek))
+    ? requestedWeek : "";
+  const now = new Date();
+  const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   const [activities, setActivities] = useState<Activity[]>([]);
   const [role, setRole] = useState("");
   const [loading, setLoading] = useState(true);
@@ -167,8 +176,14 @@ export default function Actividades() {
             <FiPrinter aria-hidden="true" /> <span>Imprimir</span>
           </button>
 
+          <button type="button" className="btn secondary btn-icon mobile-header-action"
+            aria-label={month ? "Ver lista" : "Ver calendario"} title={month ? "Ver lista" : "Ver calendario"}
+            onClick={() => setQuery(month ? {} : { mes: currentMonth })}>
+            {month ? <FiList aria-hidden="true" /> : <FiCalendar aria-hidden="true" />}
+          </button>
+
           {role === "admin" && (
-            <Link to="/actividades/nueva" className="btn primary mobile-add" aria-label="Agregar actividad">
+            <Link to={month ? `/actividades/nueva?mes=${month}${week ? "&semana=" + week : ""}` : "/actividades/nueva"} className="btn primary mobile-add" aria-label="Agregar actividad">
               <IoAddOutline className="mobile-only-action-icon" aria-hidden="true" /> <span>Agregar</span>
             </Link>
           )}
@@ -177,7 +192,10 @@ export default function Actividades() {
 
       <h2 className="dashboard-subtitle"><IoAddOutline /> Actividades programadas</h2>
 
-      {activities.length === 0 ? (
+      {month ? (
+        <ActivityCalendar month={month} week={week} activities={activities} canAdd={role === "admin"}
+          onPeriod={(date, weekly) => setQuery(weekly ? { mes: date.slice(0, 7), semana: date } : { mes: date.slice(0, 7) }, { replace: true })} onSelect={setSelectedActivity} />
+      ) : activities.length === 0 ? (
         <div className="empty">
           <h3>No hay actividades registradas.</h3>
         </div>
@@ -349,7 +367,7 @@ export default function Actividades() {
                 onClick={handleGenerarPDF}
                 disabled={selectedToPrint.length === 0 || generatingPDF}
               >
-                {generatingPDF ? "Preparando…" : "Guardar PDF"}
+                {generatingPDF ? "Preparando…" : "Guardar"}
               </button>
             </div>
           </div>
