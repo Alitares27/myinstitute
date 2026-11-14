@@ -393,9 +393,9 @@ export default function TripReservations() {
                     <h1><span className="page-title-icon"><FiMapPin /></span> Reservar Viajes</h1>
                     <p>Gestión de reservas y pagos a los viajes al templo</p>
                 </div>
-                <div className="asistencia-header-actions">
+                <div className="asistencia-header-actions reservation-header-actions">
                     <button type="button" className="btn primary mobile-header-action mobile-pay" aria-label="Registrar pago" onClick={handleOpenPaymentModal}><FaPlus className="desktop-action-icon" aria-hidden="true" /><TbCoin className="mobile-only-action-icon" aria-hidden="true" /> <span>Pago</span></button>
-                    <button type="button" className="btn primary form-launch mobile-add" aria-label="Reservar viaje" onClick={() => setFormOpen(true)}>
+                    <button type="button" className="btn primary mobile-add" aria-label="Reservar viaje" onClick={() => setFormOpen(true)}>
                         <IoAddOutline className="mobile-only-action-icon" aria-hidden="true" /> <span>Reservar</span>
                     </button>
                     <button onClick={() => setShowReportModal(true)} className="btn secondary mobile-header-action mobile-print" aria-label="Imprimir"><IoPrintOutline aria-hidden="true" /> <span>Imprimir</span></button>

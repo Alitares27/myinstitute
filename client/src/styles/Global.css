@@ -2051,6 +2051,11 @@ html.native-android .desktop-statistics { display: none !important; }
 .form-modal-header h2 { margin: 0; }
 .form-modal-header button { flex: none; }
 .form-launch { margin-bottom: 1rem; }
+
+@media (min-width: 701px) {
+  .asistencia-header-actions.reservation-header-actions { align-items: stretch; }
+  .reservation-header-actions > .btn { min-height: 44px; }
+}
 .form-modal :is(.asistencia-form-grid, .grid-form, .form-row) { min-width: 0; }
 
 @media (max-width: 600px) {

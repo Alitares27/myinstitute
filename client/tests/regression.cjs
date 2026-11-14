@@ -143,7 +143,7 @@ test("reservation form keeps entered values after server rejection and consumes 
   assert.ok(container.textContent.includes("20"));
   assert.equal(calls.find(([url,config])=>url==="/trip-reservations"&&!config.params.trip_id)[1].params.limit,5);
   assert.equal(container.querySelector('form'),null);
-  const addReservation = container.querySelector('.form-launch');
+  const addReservation = container.querySelector('.reservation-header-actions [aria-label="Reservar viaje"]');
   await act(async()=>Simulate.click(addReservation));
   assert.ok(container.querySelector('.modal-overlay [role="dialog"] form'));
   await act(async()=>{Simulate.change(container.querySelector('select[name="trip_id"]'),{target:{name:"trip_id",value:"1"}});});
