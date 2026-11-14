@@ -62,7 +62,28 @@ a.activity-calendar-date::after {
 }
 
 .activity-calendar-event time { color: var(--text-secondary); font-size: .72rem; }
-.activity-form input[type="color"] { width: 5rem; height: 44px; padding: .25rem; }
+.activity-color-picker { min-width: 0; border: 0; padding: 0; }
+.activity-color-options { display: flex; flex-wrap: wrap; gap: .35rem; margin: .5rem 0; }
+.activity-color-option {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  cursor: pointer;
+}
+.activity-color-option input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.activity-color-option span {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  color: transparent;
+  font-weight: 700;
+}
+.activity-color-option input:checked + span { color: white; text-shadow: 0 1px 3px #000; }
+.activity-color-option input:is(:checked, :focus-visible) + span { outline: 2px solid var(--text-main); outline-offset: 3px; }
 
 .activity-calendar-week {
   grid-template-columns: minmax(0, 1fr);

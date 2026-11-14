@@ -1,7 +1,19 @@
 import { useEffect, useState } from "react";
 import { BasicUser } from "../../interfaces/Common";
-import { ActivityFormData, emptyActivityFormData } from "../../interfaces/Activity";
+import { ActivityFormData, DEFAULT_ACTIVITY_COLOR, emptyActivityFormData } from "../../interfaces/Activity";
 import api from "../../api";
+import "../../styles/CalendarioActividades.css";
+
+const activityColors = [
+  { name: "Azul", value: DEFAULT_ACTIVITY_COLOR },
+  { name: "Verde", value: "#15803d" },
+  { name: "Turquesa", value: "#0f766e" },
+  { name: "Violeta", value: "#7c3aed" },
+  { name: "Rosa", value: "#db2777" },
+  { name: "Rojo", value: "#dc2626" },
+  { name: "Naranja", value: "#ea580c" },
+  { name: "Amarillo", value: "#ca8a04" },
+];
 
 interface Props {
   initialValues?: ActivityFormData;
@@ -188,10 +200,21 @@ export default function ActivityForm({
 
 
 
-      <label className="form-group">
-        Color en el calendario
-        <input type="color" name="color" value={form.color} onChange={handleChange} />
-      </label>
+      <fieldset className="activity-color-picker">
+        <legend>Color en el calendario</legend>
+        <div className="activity-color-options">
+          {activityColors.map(({ name, value }) => (
+            <label key={value} className="activity-color-option">
+              <input type="radio" name="color" value={value} aria-label={name}
+                checked={form.color.toLowerCase() === value} onChange={handleChange} />
+              <span aria-hidden="true" style={{ backgroundColor: value }}>✓</span>
+            </label>
+          ))}
+        </div>
+        {!activityColors.some(({ value }) => value === form.color.toLowerCase()) && (
+          <small>Se conservará el color guardado hasta que elijas uno de la paleta.</small>
+        )}
+      </fieldset>
 
       {showFooter && (
         <div className="form-footer">
