@@ -395,6 +395,9 @@ export default function TripReservations() {
                 </div>
                 <div className="asistencia-header-actions">
                     <button type="button" className="btn primary mobile-header-action mobile-pay" aria-label="Registrar pago" onClick={handleOpenPaymentModal}><FaPlus className="desktop-action-icon" aria-hidden="true" /><TbCoin className="mobile-only-action-icon" aria-hidden="true" /> <span>Pago</span></button>
+                    <button type="button" className="btn primary form-launch mobile-add" aria-label="Reservar viaje" onClick={() => setFormOpen(true)}>
+                        <IoAddOutline className="mobile-only-action-icon" aria-hidden="true" /> <span>Reservar</span>
+                    </button>
                     <button onClick={() => setShowReportModal(true)} className="btn secondary mobile-header-action mobile-print" aria-label="Imprimir"><IoPrintOutline aria-hidden="true" /> <span>Imprimir</span></button>
                 </div>
             </div>
@@ -433,7 +436,6 @@ export default function TripReservations() {
             </div>
 
             <>
-              <button type="button" className="btn primary form-launch mobile-add" aria-label="Agregar reserva" onClick={() => setFormOpen(true)}><IoAddOutline className="mobile-only-action-icon" aria-hidden="true" /> <span>Agregar</span></button>
               {formOpen && <FormModal title={editingId ? "Editar reserva" : "Agregar reserva"} onClose={() => { handleCancel(); setListError(""); setFormOpen(false); }}>
                 {listError && <p role="alert">{listError}</p>}
                 <form onSubmit={handleSubmit} className="asistencia-form-grid">
