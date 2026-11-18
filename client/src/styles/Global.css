@@ -2032,6 +2032,10 @@ textarea { border-radius: 13px; }
   font-size: 1.25rem;
 }
 .auth-form .login-password-toggle:hover { color: var(--text-main); }
+.auth-form .login-password-toggle:is(:hover, :active):not(:disabled) {
+  transform: translateY(-50%);
+  box-shadow: none;
+}
 .auth-form .login-password-toggle:focus-visible { outline: 2px solid var(--primary); }
 
 /* Reservation statistics are intentionally available on every screen size. */
