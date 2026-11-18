@@ -263,8 +263,8 @@ test("teacher member directory is read only and links use academic profile ident
  try{
   assert.ok(!view.node.textContent.includes('Registrar miembro'));assert.equal(view.node.querySelector('[aria-label="Editar Academic member"]'),null);
   assert.deepEqual(Array.from(view.node.querySelectorAll('thead th')).map(x=>x.textContent),['Nombre','Documento','Organización','Acciones']);
-  assert.equal(view.node.querySelector('.miembros-row-actions').textContent,'');
-  const name=view.node.querySelector('.miembros-name');name.focus();
+  assert.equal(view.node.querySelectorAll('.table-record-actions button').length,1);
+  const name=view.node.querySelector('[aria-label="Ver ficha de Academic member"]');name.focus();
   await view.act(async()=>Simulate.click(name));
   assert.ok(view.node.querySelector('[role="dialog"][aria-modal="true"]'));
 
@@ -403,6 +403,29 @@ test("leader navigation and direct access use the same page permissions", async 
   } finally {
    await view.close();
    window.matchMedia = previous;
+  }
+ }
+});
+
+test("grade details and permitted mutations are in the Actions column", async () => {
+ const { Simulate } = require("react-dom/test-utils");
+ const grade = { id: 9, student_id: 7, student_name: "Ana", course_title: "Curso", grade: 85,
+  grade_type: "examen", created_at: "2026-11-15" };
+ const api = { get: async url => ({ data: url === "/grades" ? { items: [grade], total: 1 } : [] }) };
+ for (const role of ["admin", "student"]) {
+  const view = await mountPage("pages/Calificaciones.tsx", api, { id: 7, role });
+  try {
+   await view.wait();
+   const row = view.node.querySelector("tbody tr");
+   const headers = view.node.querySelectorAll("thead th");
+   const eye = row.querySelector('[aria-label="Ver calificación"]');
+   assert.ok(eye);
+   assert.equal(headers[eye.closest("td").cellIndex].textContent, "Acciones");
+   assert.equal(eye.closest("td").querySelectorAll("button").length, role === "admin" ? 3 : 1);
+   await view.act(async () => Simulate.click(eye));
+   assert.match(view.node.querySelector('[role="dialog"]').textContent, /85/);
+  } finally {
+   await view.close();
   }
  }
 });

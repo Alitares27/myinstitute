@@ -1,3 +1,4 @@
+import { ViewRecordButton } from "../components/RecordDetails";
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { IoAddOutline, IoCreateOutline, IoTrashOutline } from "react-icons/io5";
@@ -148,26 +149,26 @@ export default function Agendas() {
           <thead><tr>
             <th scope="col">Amigo</th>
             <th scope="col">Fecha y hora</th>
-            <th scope="col">Ordenanza</th>
-            {admin && <th scope="col">Acciones</th>}
+            <th className="table-desktop-only" scope="col">Ordenanza</th>
+            <th scope="col">Acciones</th>
           </tr></thead>
           <tbody>
             {[...agendas].sort((a, b) => b.scheduled_at.localeCompare(a.scheduled_at) || b.id - a.id).map(agenda => (
               <tr key={agenda.id}>
-                <td><button type="button" className="btn secondary" onClick={() => setDetail(agenda)}>{agenda.friend}</button></td>
+                <td>{agenda.friend}</td>
                 <td><time dateTime={agenda.scheduled_at}>{formatDate(agenda.scheduled_at)}</time></td>
-                <td>
+                <td className="table-desktop-only">
                   <div>Bautismo: {memberName(agenda, agenda.baptism_id)}</div>
                   <div>Confirmación: {memberName(agenda, agenda.confirmation_id)}</div>
                 </td>
-                {admin && <td><div className="miembros-row-actions">
+                <td><div className="table-record-actions"><ViewRecordButton label="Ver agenda" onClick={() => setDetail(agenda)} />{admin && <>
                   <button type="button" className="btn secondary btn-icon" disabled={busy} aria-label={`Editar bautismo de ${agenda.friend}`} onClick={() => openEditor(agenda)}>
                     <IoCreateOutline aria-hidden="true" />
                   </button>
                   <button type="button" className="btn secondary btn-icon danger-outline" disabled={busy} aria-label={`Eliminar agenda de ${agenda.friend}`} onClick={() => void remove(agenda)}>
                     <IoTrashOutline aria-hidden="true" />
                   </button>
-                </div></td>}
+                </>}</div></td>
               </tr>
             ))}
           </tbody>

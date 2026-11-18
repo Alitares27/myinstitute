@@ -1,3 +1,4 @@
+import { ViewRecordButton } from "../components/RecordDetails";
 import ActivityCalendar from "../components/activities/CalendarioActividades";
 import { confirmAppAction } from "../components/AppDialogHost";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -152,14 +153,14 @@ export default function Actividades() {
         <div className="table-container">
           <table>
             <thead>
-              <tr><th>Actividad</th><th>Fecha</th><th>Asignada a</th></tr>
+              <tr><th>Actividad</th><th>Fecha</th><th className="table-desktop-only">Asignada a</th></tr>
             </thead>
             <tbody>
               {Array.from({ length: 5 }).map((_, i) => (
                 <tr key={i}>
                   <td><Skeleton width={`${140 + (i % 3) * 40}px`} height="0.95rem" /></td>
                   <td><Skeleton width="110px" height="0.95rem" /></td>
-                  <td><Skeleton width="100px" height="0.95rem" /></td>
+                  <td className="table-desktop-only"><Skeleton width="100px" height="0.95rem" /></td>
                 </tr>
               ))}
             </tbody>
@@ -215,22 +216,20 @@ export default function Actividades() {
               <tr>
                 <th>Actividad</th>
                 <th>Fecha</th>
-                <th>Asignada a</th>
-                <th>Áreas</th>
-                {role === "admin" && <th>Acciones</th>}
+                <th className="table-desktop-only">Asignada a</th>
+                <th className="table-desktop-only">Áreas</th>
+                <th>Acciones</th>
               </tr>
             </thead>
             <tbody>
               {currentRecords.map(a => (
                 <tr key={a.id}>
                   <td>
-                    <button className="link-button" onClick={() => setSelectedActivity(a)}>
-                      {a.activity_name}
-                    </button>
+                    {a.activity_name}
                   </td>
                   <td>{formatDateTime(a.activity_datetime)}</td>
-                  <td>{a.assigned_to_name || "—"}</td>
-                  <td>
+                  <td className="table-desktop-only">{a.assigned_to_name || "—"}</td>
+                  <td className="table-desktop-only">
                     <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
                       {a.spiritual && <span className="status-badge status-scheduled">Esp</span>}
                       {a.social && <span className="status-badge status-completed">Soc</span>}
@@ -238,16 +237,19 @@ export default function Actividades() {
                       {a.intellectual && <span className="status-badge" style={{ background: "rgba(0,122,255,0.12)", color: "#007AFF" }}>Int</span>}
                     </div>
                   </td>
-                  {role === "admin" && (
-                    <td>
-                      <Link to={`/actividades/editar/${a.id}`} className="btn secondary btn-icon" aria-label="Editar">
+                  <td>
+                    <div className="table-record-actions">
+                      <ViewRecordButton label="Ver actividad" onClick={() => setSelectedActivity(a)} />
+                      {role === "admin" && <>
+                        <Link to={`/actividades/editar/${a.id}`} className="btn secondary btn-icon" aria-label="Editar">
                         <IoCreateOutline />
-                      </Link>
-                      <button className="btn secondary btn-icon danger-outline" onClick={() => handleDelete(a.id)} aria-label="Eliminar">
+                        </Link>
+                        <button className="btn secondary btn-icon danger-outline" onClick={() => handleDelete(a.id)} aria-label="Eliminar">
                         <IoTrashOutline />
-                      </button>
-                    </td>
-                  )}
+                        </button>
+                      </>}
+                    </div>
+                  </td>
                 </tr>
               ))}
             </tbody>

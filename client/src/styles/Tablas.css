@@ -20,7 +20,6 @@
 table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 800px;
   background-color: var(--bg-surface);
   color: var(--text-main);
 }
@@ -83,7 +82,6 @@ th {
 .meetings-table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 700px;
   background-color: var(--bg-surface);
   color: var(--text-main);
   border-radius: var(--radius);
@@ -320,4 +318,23 @@ th {
 .sortable-header:focus-visible {
   outline: 2px solid var(--primary);
   outline-offset: -2px;
+}
+
+.table-container > table { width: 100%; min-width: 0; }
+.table-container :is(th, td) { overflow-wrap: anywhere; white-space: normal; }
+.table-container :is(.course-pill-badge, .course-pill, .topic-tag-modern, .status-badge-modern) {
+  max-width: 100%;
+  white-space: normal;
+}
+.table-container :is(.course-pill-badge, .course-pill, .topic-tag-modern, .status-badge-modern) > svg {
+  flex-shrink: 0;
+}
+
+.record-person-name { font-weight: 600; }
+
+@media (max-width: 700px) {
+  .table-container > table { table-layout: fixed; }
+  .table-container :is(th, td) { padding-inline: .375rem; }
+  .table-container table:has(.table-record-actions) thead th:last-child { width: 6.5rem; }
+  .table-container .table-record-actions { width: 100%; }
 }

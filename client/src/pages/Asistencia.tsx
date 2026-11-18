@@ -1,3 +1,5 @@
+import { RecordDetails, ViewRecordButton } from "../components/RecordDetails";
+import { confirmAppAction } from "../components/AppDialogHost";
 import { isAndroidApp } from "../utils/androidReports";
 import FormModal from "../components/FormModal";
 import { useSearchParams } from "react-router-dom";
@@ -10,6 +12,8 @@ import {
   IoSearchOutline,
   IoPrintOutline,
   IoAddOutline,
+  IoCreateOutline,
+  IoTrashOutline,
   IoCheckmarkCircle,
   IoPeopleOutline,
   IoSchoolOutline,
@@ -31,6 +35,9 @@ const ITEMS_PER_PAGE = 7;
 
 export default function Attendance() {
 
+  const [detail, setDetail] = useState<AttendanceRecord | null>(null);
+  const [editing, setEditing] = useState<AttendanceRecord | null>(null);
+  const [saving, setSaving] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
   const [students, setStudents] = useState<Student[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
@@ -98,15 +105,15 @@ export default function Attendance() {
     return allTopics.filter((t) => t.course_id === Number(form.course_id));
   }, [allTopics, form.course_id]);
 
-  const listParams={page:currentPage,limit:ITEMS_PER_PAGE,student_id:studentFilter||undefined,course_id:courseFilter||undefined,date:dateFilter||undefined,search:searchQuery||undefined,sort:sortConfig?.key,direction:sortConfig?.direction};
-  const page=usePagedList<AttendanceRecord>("/attendance",listParams);
-  const attendance=page.items;
-  const currentRecords=attendance;
-  const totalPages=Math.max(1,Math.ceil(page.total/ITEMS_PER_PAGE));
-  const stats={totalPresent:0,uniqueStudents:0,activeCourses:0,todayCount:0,...page.summary};
-  const studentsById=useMemo(()=>new Map(students.map(student=>[student.id,student])),[students]);
-  const coursesById=useMemo(()=>new Map(courses.map(course=>[course.id,course])),[courses]);
-  useEffect(()=>{if(currentPage>totalPages)setCurrentPage(totalPages);},[currentPage,totalPages]);
+  const listParams = { page: currentPage, limit: ITEMS_PER_PAGE, student_id: studentFilter || undefined, course_id: courseFilter || undefined, date: dateFilter || undefined, search: searchQuery || undefined, sort: sortConfig?.key, direction: sortConfig?.direction };
+  const page = usePagedList<AttendanceRecord>("/attendance", listParams);
+  const attendance = page.items;
+  const currentRecords = attendance;
+  const totalPages = Math.max(1, Math.ceil(page.total / ITEMS_PER_PAGE));
+  const stats = { totalPresent: 0, uniqueStudents: 0, activeCourses: 0, todayCount: 0, ...page.summary };
+  const studentsById = useMemo(() => new Map(students.map(student => [student.id, student])), [students]);
+  const coursesById = useMemo(() => new Map(courses.map(course => [course.id, course])), [courses]);
+  useEffect(() => { if (currentPage > totalPages) setCurrentPage(totalPages); }, [currentPage, totalPages]);
 
   const handleSort = (key: string) => {
     setCurrentPage(1);
@@ -117,71 +124,99 @@ export default function Attendance() {
     );
   };
 
+  function openEdit(record: AttendanceRecord) {
+    setError(null);
+    setEditing(record);
+    setForm({
+      student_id: String(record.student_id), course_id: String(record.course_id),
+      topic_id: String(record.topic_id ?? ""), date: toYMD(record.date), status: record.status,
+    });
+    setFormOpen(true);
+  }
+
+  async function deleteAttendance(record: AttendanceRecord) {
+    if (!await confirmAppAction("¿Eliminar esta asistencia?")) return;
+    try {
+      await api.delete(`/attendance/${record.id}`);
+      page.refresh();
+    } catch {
+      alert("No se pudo eliminar la asistencia.");
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    if (!form.student_id || !form.course_id || !form.topic_id) {
+    if (saving) return;
+    if (!form.student_id || !form.course_id || (!editing && !form.topic_id)) {
       alert("Por favor completa todos los campos requeridos.");
       return;
     }
 
+    setSaving(true);
     try {
-      await api.post("/attendance", {
-        ...form,
-        status: "Present",
-      });
+      if (editing) {
+        await api.put(`/attendance/${editing.id}`, { date: form.date, status: form.status, topic_id: form.topic_id });
+      } else {
+        await api.post("/attendance", { ...form, status: "Present" });
+      }
 
       page.refresh();
 
       setFormOpen(false);
       setForm({ ...form, student_id: "", topic_id: "", status: "Present" });
-      alert("Asistencia registrada exitosamente.");
-    } catch {
-      setError("Error al registrar asistencia");
+      setEditing(null);
+      alert(editing ? "Asistencia actualizada." : "Asistencia registrada exitosamente.");
+    } catch (error: any) {
+      setError(error.response?.data?.message || "No se pudo guardar la asistencia.");
+    } finally {
+      setSaving(false);
     }
   };
 
   const handlePrintAttendanceReport = async (selectedCourseId: string) => {
-    const printWindow=isAndroidApp() ? null : window.open("","_blank");if (!printWindow && !isAndroidApp()) return;
+    const printWindow = isAndroidApp() ? null : window.open("", "_blank"); if (!printWindow && !isAndroidApp()) return;
     try {
-    const {data:reportRows}=await api.get<AttendanceRecord[]>("/attendance/report",{params:{
-      student_id: studentFilter || undefined,
-      course_id: selectedCourseId || undefined,
-      date: dateFilter || undefined,
-      search: searchQuery || undefined,
-    }});
-    const presentRecords = reportRows.filter((a) => a.status === "Present");
+      const { data: reportRows } = await api.get<AttendanceRecord[]>("/attendance/report", {
+        params: {
+          student_id: studentFilter || undefined,
+          course_id: selectedCourseId || undefined,
+          date: dateFilter || undefined,
+          search: searchQuery || undefined,
+        }
+      });
+      const presentRecords = reportRows.filter((a) => a.status === "Present");
 
-    const countsByCourse = presentRecords.reduce((acc, a) => {
-      if (!acc[a.course_id]) acc[a.course_id] = {};
-      acc[a.course_id][a.student_id] = (acc[a.course_id][a.student_id] || 0) + 1;
-      return acc;
-    }, {} as Record<number, Record<number, number>>);
+      const countsByCourse = presentRecords.reduce((acc, a) => {
+        if (!acc[a.course_id]) acc[a.course_id] = {};
+        acc[a.course_id][a.student_id] = (acc[a.course_id][a.student_id] || 0) + 1;
+        return acc;
+      }, {} as Record<number, Record<number, number>>);
 
-    let body = ``;
-    const relevantCourses = selectedCourseId
-      ? courses.filter((c) => String(c.id) === String(selectedCourseId))
-      : courses;
+      let body = ``;
+      const relevantCourses = selectedCourseId
+        ? courses.filter((c) => String(c.id) === String(selectedCourseId))
+        : courses;
 
-    const allUniqueStudentIds = new Set<number>();
-    let hasData = false;
+      const allUniqueStudentIds = new Set<number>();
+      let hasData = false;
 
-    relevantCourses.forEach((course) => {
-      const courseCounts = countsByCourse[course.id];
-      if (!courseCounts || Object.keys(courseCounts).length === 0) return;
-      hasData = true;
+      relevantCourses.forEach((course) => {
+        const courseCounts = countsByCourse[course.id];
+        if (!courseCounts || Object.keys(courseCounts).length === 0) return;
+        hasData = true;
 
-      const courseStudents = Object.keys(courseCounts)
-        .map(Number)
-        .sort((a, b) => {
-          const nameA = studentsById.get(a)?.name || "";
-          const nameB = studentsById.get(b)?.name || "";
-          return nameA.localeCompare(nameB);
-        });
+        const courseStudents = Object.keys(courseCounts)
+          .map(Number)
+          .sort((a, b) => {
+            const nameA = studentsById.get(a)?.name || "";
+            const nameB = studentsById.get(b)?.name || "";
+            return nameA.localeCompare(nameB);
+          });
 
-      courseStudents.forEach((id) => allUniqueStudentIds.add(id));
+        courseStudents.forEach((id) => allUniqueStudentIds.add(id));
 
-      body += `
+        body += `
         <h2 style="margin-top: 24px; color: #0056cc;">${course.title}</h2>
         <table>
           <thead>
@@ -194,46 +229,40 @@ export default function Attendance() {
           <tbody>
       `;
 
-      courseStudents.forEach((studentId, idx) => {
-        const studentName = studentsById.get(studentId)?.name || "Desconocido";
-        const count = courseCounts[studentId];
-        body += `
+        courseStudents.forEach((studentId, idx) => {
+          const studentName = studentsById.get(studentId)?.name || "Desconocido";
+          const count = courseCounts[studentId];
+          body += `
           <tr>
             <td class="center">${idx + 1}</td>
             <td><strong>${studentName}</strong></td>
             <td class="center"><strong style="color: #34c759;">${count}</strong></td>
           </tr>
         `;
+        });
+
+        body += `</tbody></table>`;
       });
 
-      body += `</tbody></table>`;
-    });
-
-    if (hasData) {
-      body += `
+      if (hasData) {
+        body += `
         <div class="summary-box" style="margin-top: 20px;">
           🎓 <strong>Total general de miembros con asistencia:</strong> ${allUniqueStudentIds.size}
         </div>
       `;
-    } else {
-      body += `<p style="text-align: center; color: #666; margin-top: 20px;">No hay asistencias registradas para los filtros seleccionados.</p>`;
-    }
+      } else {
+        body += `<p style="text-align: center; color: #666; margin-top: 20px;">No hay asistencias registradas para los filtros seleccionados.</p>`;
+      }
 
-    const courseObj = courses.find((c) => String(c.id) === String(selectedCourseId));
-    const subtitle = courseObj ? `Curso: ${courseObj.title}` : "Todos los Cursos";
+      const courseObj = courses.find((c) => String(c.id) === String(selectedCourseId));
+      const subtitle = courseObj ? `Curso: ${courseObj.title}` : "Todos los Cursos";
 
-    await openPrintWindow(
-      "Reporte de Asistencias",
-      subtitle,
-      body, printWindow
-    );
-    } catch {printWindow?.close();setError("No se pudo generar el reporte");}
-  };
-
-  const getStudentAvatar = (name: string, index: number) => {
-    const initial = (name || "E").charAt(0).toUpperCase();
-    const gradientClass = index % 3 === 1 ? "gradient-2" : index % 3 === 2 ? "gradient-3" : "";
-    return <div className={`student-avatar-circle ${gradientClass}`}>{initial}</div>;
+      await openPrintWindow(
+        "Reporte de Asistencias",
+        subtitle,
+        body, printWindow
+      );
+    } catch { printWindow?.close(); setError("No se pudo generar el reporte"); }
   };
 
   if (loading || (!page.loaded && page.loading)) {
@@ -337,7 +366,7 @@ export default function Attendance() {
 
       {(role === "admin" || role === "teacher") && (
         <>
-          {formOpen && <FormModal title="Agregar asistencia" onClose={() => { setForm({ ...form, student_id: "", topic_id: "", status: "Present" }); setError(null); setFormOpen(false); }}>
+          {formOpen && <FormModal title={editing ? "Editar asistencia" : "Agregar asistencia"} busy={saving} onClose={() => { setEditing(null); setForm({ ...form, student_id: "", topic_id: "", status: "Present" }); setError(null); setFormOpen(false); }}>
             {error && <p role="alert">{error}</p>}
             <form onSubmit={handleSubmit}>
               <div className="asistencia-form-grid">
@@ -345,6 +374,7 @@ export default function Attendance() {
                   <label>Estudiante / Miembro:</label>
                   <select
                     required
+                    disabled={!!editing || saving}
                     value={form.student_id}
                     onChange={(e) => setForm({ ...form, student_id: e.target.value })}
                   >
@@ -361,6 +391,7 @@ export default function Attendance() {
                   <label>Curso:</label>
                   <select
                     required
+                    disabled={!!editing || saving}
                     value={form.course_id}
                     onChange={(e) => setForm({ ...form, course_id: e.target.value, topic_id: "" })}
                   >
@@ -376,7 +407,7 @@ export default function Attendance() {
                 <div className="form-group">
                   <label>Capítulo / Tema:</label>
                   <select
-                    required
+                    required={!editing}
                     value={form.topic_id}
                     onChange={(e) => setForm({ ...form, topic_id: e.target.value })}
                     disabled={!form.course_id}
@@ -402,11 +433,17 @@ export default function Attendance() {
                   />
                 </div>
 
+                {editing && <label className="form-group">Estado
+                  <select value={form.status} onChange={event => setForm({ ...form, status: event.target.value })}>
+                    <option value="Present">Presente</option>
+                    <option value="Absent">Ausente</option>
+                  </select>
+                </label>}
                 <div className="asistencia-form-actions">
-                  <button type="submit" className="btn primary">
-                    Marcar
+                  <button type="submit" className="btn primary" disabled={saving}>
+                    {editing ? "Guardar" : "Marcar"}
                   </button>
-                  {(form.student_id || form.topic_id) && (
+                  {!editing && (form.student_id || form.topic_id) && (
                     <button
                       type="button"
                       onClick={() => setForm({ ...form, student_id: "", topic_id: "", status: "Present" })}
@@ -495,9 +532,10 @@ export default function Attendance() {
         <table aria-label="Registros de asistencia">
           <thead>
             <tr>
+              {role === "student" && <th className="table-mobile-only" scope="col">Miembro</th>}
               {role !== "student" && (
                 <th scope="col" onClick={() => handleSort("student_name")} className="sortable-header" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleSort("student_name"); } }} aria-sort={sortConfig?.key === "student_name" ? (sortConfig.direction === "asc" ? "ascending" : "descending") : "none"}>
-                  Estudiante / Miembro
+                  Miembro
                   <span className="sort-icon">
                     {sortConfig?.key === "student_name" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
                   </span>
@@ -509,38 +547,34 @@ export default function Attendance() {
                   {sortConfig?.key === "course_title" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
                 </span>
               </th>
-              <th scope="col" onClick={() => handleSort("date")} className="sortable-header" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleSort("date"); } }} aria-sort={sortConfig?.key === "date" ? (sortConfig.direction === "asc" ? "ascending" : "descending") : "none"}>
+              <th scope="col" onClick={() => handleSort("date")} className="sortable-header table-desktop-only" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleSort("date"); } }} aria-sort={sortConfig?.key === "date" ? (sortConfig.direction === "asc" ? "ascending" : "descending") : "none"}>
                 Fecha
                 <span className="sort-icon">
                   {sortConfig?.key === "date" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
                 </span>
               </th>
-              <th scope="col" onClick={() => handleSort("status")} className="sortable-header" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleSort("status"); } }} aria-sort={sortConfig?.key === "status" ? (sortConfig.direction === "asc" ? "ascending" : "descending") : "none"}>
+              <th scope="col" onClick={() => handleSort("status")} className="sortable-header table-desktop-only" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleSort("status"); } }} aria-sort={sortConfig?.key === "status" ? (sortConfig.direction === "asc" ? "ascending" : "descending") : "none"}>
                 Estado
                 <span className="sort-icon">
                   {sortConfig?.key === "status" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
                 </span>
               </th>
-              <th scope="col">Capítulo / Tema</th>
+              <th scope="col" className="table-desktop-only">Capítulo</th>
+              <th scope="col">Acciones</th>
             </tr>
           </thead>
           <tbody>
             {currentRecords.length > 0 ? (
-              currentRecords.map((a, index) => {
+              currentRecords.map((a) => {
                 const student = studentsById.get(a.student_id);
                 const course = coursesById.get(a.course_id);
 
                 return (
                   <tr key={a.id}>
+                    {role === "student" && <td className="table-mobile-only">{a.student || student?.name || "—"}</td>}
                     {role !== "student" && (
                       <td>
-                        <div className="student-profile-cell">
-                          {getStudentAvatar(student?.name || "E", index)}
-                          <div className="student-details">
-                            <span className="student-name">{student?.name || "Miembro sin nombre"}</span>
-                            <span className="student-contact">{student?.email || student?.telefono || "Registrado"}</span>
-                          </div>
-                        </div>
+                        <span className="record-person-name">{student?.name || a.student || "Miembro sin nombre"}</span>
                       </td>
                     )}
                     <td>
@@ -548,23 +582,32 @@ export default function Attendance() {
                         <TbBooks /> {course?.title || "Curso"}
                       </span>
                     </td>
-                    <td>{formatDate(a.date)}</td>
-                    <td>
+                    <td className="table-desktop-only">{formatDate(a.date)}</td>
+                    <td className="table-desktop-only">
                       <span className={`status-badge-modern ${a.status === "Present" ? "present" : "absent"}`}>
                         <IoCheckmarkCircle /> {a.status === "Present" ? "Presente" : "Ausente"}
                       </span>
                     </td>
-                    <td>
+                    <td className="table-desktop-only">
                       <span className="topic-tag-modern">
                         <IoBookmarkOutline /> {a.topic || "—"}
                       </span>
+                    </td>
+                    <td>
+                      <div className="table-record-actions">
+                        <ViewRecordButton label="Ver asistencia" onClick={() => setDetail(a)} />
+                        {(role === "admin" || role === "teacher") && <>
+                          <button type="button" className="btn secondary btn-icon" aria-label="Editar" onClick={() => openEdit(a)}><IoCreateOutline aria-hidden="true" /></button>
+                          <button type="button" className="btn secondary btn-icon danger-outline" aria-label="Eliminar" onClick={() => void deleteAttendance(a)}><IoTrashOutline aria-hidden="true" /></button>
+                        </>}
+                      </div>
                     </td>
                   </tr>
                 );
               })
             ) : (
               <tr>
-                <td colSpan={role !== "student" ? 5 : 4} style={{ textAlign: "center", padding: "2.5rem 1rem", color: "var(--text-muted)" }}>
+                <td colSpan={role !== "student" ? 6 : 5} style={{ textAlign: "center", padding: "2.5rem 1rem", color: "var(--text-muted)" }}>
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.5rem" }}>
                     <IoCalendarOutline style={{ fontSize: "2rem", opacity: 0.5 }} />
                     <p style={{ margin: 0, fontSize: "0.95rem" }}>No se encontraron registros de asistencia con los filtros seleccionados.</p>
@@ -601,6 +644,13 @@ export default function Attendance() {
         onClose={() => setShowReportModal(false)}
         onPrint={handlePrintAttendanceReport}
       />}
+      {detail && <RecordDetails title="Detalles de asistencia" onClose={() => setDetail(null)} fields={[
+        ["Miembro", detail.student || studentsById.get(detail.student_id)?.name],
+        ["Curso", detail.course || coursesById.get(detail.course_id)?.title],
+        ["Fecha", formatDate(detail.date)],
+        ["Estado", detail.status === "Present" ? "Presente" : "Ausente"],
+        ["Capítulo", detail.topic],
+      ]} />}
     </div>
   );
 }

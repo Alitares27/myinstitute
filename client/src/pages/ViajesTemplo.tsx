@@ -1,3 +1,4 @@
+import { ViewRecordButton, RecordDetails } from "../components/RecordDetails";
 import { IoAddOutline } from "react-icons/io5";
 import FormModal from "../components/FormModal";
 import { confirmAppAction } from "../components/AppDialogHost";
@@ -14,6 +15,7 @@ import type { Trip } from "../interfaces/Trip";
 
 export default function TempleTrip() {
 
+    const [detail, setDetail] = useState<Trip | null>(null);
     const [formOpen, setFormOpen] = useState(false);
     const [temples, setTemples] = useState<Temple[]>([]);
     const [trips, setTrips] = useState<Trip[]>([]);
@@ -357,52 +359,55 @@ export default function TempleTrip() {
                                     {sortConfig?.key === "date" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
                                 </span>
                             </th>
-                            <th onClick={() => handleSort("status")} className="sortable-header">
+                            <th onClick={() => handleSort("status")} className="sortable-header table-desktop-only">
                                 Estado
                                 <span className="sort-icon">
                                     {sortConfig?.key === "status" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
                                 </span>
                             </th>
-                            <th onClick={() => handleSort("cost")} className="sortable-header">
+                            <th onClick={() => handleSort("cost")} className="sortable-header table-desktop-only">
                                 Costo
                                 <span className="sort-icon">
                                     {sortConfig?.key === "cost" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
                                 </span>
                             </th>
-                            {role === "admin" && <th>Acciones</th>}
+                            <th>Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
                         {currentTrips.length === 0 ? (
                             <tr>
-                                <td colSpan={role === "admin" ? 5 : 4}>No hay viajes registrados</td>
+                                <td colSpan={5}>No hay viajes registrados</td>
                             </tr>
                         ) : (
                             currentTrips.map(trip => (
                                 <tr key={trip.id}>
                                     <td>{trip.temple_name}</td>
                                     <td>{formatDate(trip.date)}</td>
-                                    <td><span className={`status-${trip.status}`}>{formatStatus(trip.status)}</span></td>
-                                    <td>${Number(trip.cost).toLocaleString()}</td>
-                                    {role === "admin" && (
-                                        <td>
-                                            <button
-                                                className="btn secondary btn-icon"
-                                                onClick={() => handleEdit(trip)}
-                                                aria-label="Editar"
+                                    <td className="table-desktop-only"><span className={`status-${trip.status}`}>{formatStatus(trip.status)}</span></td>
+                                    <td className="table-desktop-only">${Number(trip.cost).toLocaleString()}</td>
+                                    <td>
+                                      <div className="table-record-actions">
+                                        <ViewRecordButton label="Ver viaje" onClick={() => setDetail(trip)} />
+                                        {role === "admin" && <>
+                                          <button
+                                            className="btn secondary btn-icon"
+                                            onClick={() => handleEdit(trip)}
+                                            aria-label="Editar"
                                             >
-                                                <IoCreateOutline />
-                                            </button>
-                                            <button className="btn secondary" onClick={() => handleArchive(trip.id)} aria-label="Archivar" title="Archivar"><IoArchiveOutline /></button>
-<button
-                                                className="btn secondary btn-icon danger-outline"
-                                                onClick={() => handleDelete(trip.id)}
-                                                aria-label="Eliminar"
+                                            <IoCreateOutline />
+                                          </button>
+                                          <button className="btn secondary btn-icon" onClick={() => handleArchive(trip.id)} aria-label="Archivar" title="Archivar"><IoArchiveOutline /></button>
+                                          <button
+                                            className="btn secondary btn-icon danger-outline"
+                                            onClick={() => handleDelete(trip.id)}
+                                            aria-label="Eliminar"
                                             >
-                                                <IoTrashOutline />
-                                            </button>
-                                        </td>
-                                    )}
+                                            <IoTrashOutline />
+                                          </button>
+                                        </>}
+                                      </div>
+                                    </td>
                                 </tr>
                             ))
                         )}
@@ -423,6 +428,12 @@ export default function TempleTrip() {
                     </div>
                 )}
             </div>
+      {detail && <RecordDetails title="Detalles del viaje" onClose={() => setDetail(null)} fields={[
+        ["Templo", detail.temple_name],
+        ["Fecha", formatDate(detail.date)],
+        ["Estado", formatStatus(detail.status)],
+        ["Costo", `$${Number(detail.cost).toLocaleString()}`]
+      ]} />}
         </div>
     );
 }

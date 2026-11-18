@@ -1,3 +1,4 @@
+import { ViewRecordButton, RecordDetails } from "../components/RecordDetails";
 import { canAccessModule, readSessionUser } from "../utils/access";
 import { TbCoin } from "react-icons/tb";
 import { IoAddOutline } from "react-icons/io5";
@@ -26,25 +27,10 @@ import type { BasicUser } from "../interfaces/Common";
 
 const getTodayYMD = businessDate;
 
-const getInitials = (name: string = "") => {
-    const parts = name.trim().split(/\s+/).filter(Boolean);
-    if (parts.length === 0) return "?";
-    if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
-    return (parts[0].charAt(0) + parts[1].charAt(0)).toUpperCase();
-};
-
-const avatarGradient = (index: number) => {
-    const gradients = [
-        "",
-        " gradient-2",
-        " gradient-3"
-    ];
-    return gradients[index % gradients.length];
-};
-
 export default function TripReservations() {
   const canManage = readSessionUser()?.role === "admin";
     const navigate = useNavigate();
+    const [detail, setDetail] = useState<{ user_name: string; user_document?: string; trip_date: string; adelanto: number; abonos: number; pagado: number; saldo: number } | null>(null);
     const [formOpen, setFormOpen] = useState(false);
     const [users, setUsers] = useState<BasicUser[]>([]);
     const [trips, setTrips] = useState<Trip[]>([]);
@@ -600,19 +586,19 @@ export default function TripReservations() {
                                     {sortConfig?.key === "trip_date" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
                                 </span>
                             </th>
-                            <th onClick={() => handleSort("adelanto")} className="sortable-header">
+                            <th onClick={() => handleSort("adelanto")} className="sortable-header table-desktop-only">
                                 Adelanto
                                 <span className="sort-icon">
                                     {sortConfig?.key === "adelanto" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
                                 </span>
                             </th>
-                            <th onClick={() => handleSort("abonos")} className="sortable-header">
+                            <th onClick={() => handleSort("abonos")} className="sortable-header table-desktop-only">
                                 Abonos
                                 <span className="sort-icon">
                                     {sortConfig?.key === "abonos" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
                                 </span>
                             </th>
-                            <th onClick={() => handleSort("pagado")} className="sortable-header">
+                            <th onClick={() => handleSort("pagado")} className="sortable-header table-desktop-only">
                                 Pagado
                                 <span className="sort-icon">
                                     {sortConfig?.key === "pagado" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
@@ -624,23 +610,18 @@ export default function TripReservations() {
                                     {sortConfig?.key === "saldo" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
                                 </span>
                             </th>
-                            {canManage && <th>Acciones</th>}
+                            <th>Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {currentRecords.map((res, idx) => (
+                        {currentRecords.map((res) => (
                             <tr key={res.id}>
                                 <td>
-                                    <div className="student-profile-cell">
-                                        <div className={`student-avatar-circle${avatarGradient(idx)}`}>{getInitials(res.user_name)}</div>
-                                        <div className="student-details">
-                                            <span className="student-name">{res.user_name}</span>
-                                        </div>
-                                    </div>
+                                    <span className="record-person-name">{res.user_name}</span>
                                 </td>
                                 <td>{formatDate(res.trip_date)}</td>
-                                <td>${res.adelanto.toLocaleString()}</td>
-                                <td>
+                                <td className="table-desktop-only">${res.adelanto.toLocaleString()}</td>
+                                <td className="table-desktop-only">
                                     ${res.abonos.toLocaleString()}
                                     {res.num_pagos > 0 && (
                                         <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
@@ -648,7 +629,7 @@ export default function TripReservations() {
                                         </div>
                                     )}
                                 </td>
-                                <td>${res.pagado.toLocaleString()}</td>
+                                <td className="table-desktop-only">${res.pagado.toLocaleString()}</td>
                                 <td>
                                     {res.saldo > 0 ? (
                                         <span style={{
@@ -666,10 +647,15 @@ export default function TripReservations() {
                                         <span style={{ color: "var(--success, #27ae60)", fontWeight: 600 }}>Saldado</span>
                                     )}
                                 </td>
-                                {canManage && <td>
-                                    <button className="btn secondary btn-icon" onClick={() => handleEdit(res)} aria-label="Editar"><IoCreateOutline /></button>
-                                    <button className="btn secondary btn-icon danger-outline" onClick={() => handleDelete(res.id)} aria-label="Eliminar"><IoTrashOutline /></button>
-                                </td>}
+                                <td>
+                                  <div className="table-record-actions">
+                                    <ViewRecordButton label="Ver reserva" onClick={() => setDetail(res)} />
+                                    {canManage && <>
+                                      <button className="btn secondary btn-icon" onClick={() => handleEdit(res)} aria-label="Editar"><IoCreateOutline /></button>
+                                      <button className="btn secondary btn-icon danger-outline" onClick={() => handleDelete(res.id)} aria-label="Eliminar"><IoTrashOutline /></button>
+                                    </>}
+                                  </div>
+                                </td>
                             </tr>
                         ))}
                     </tbody>
@@ -699,6 +685,15 @@ export default function TripReservations() {
                 onClose={() => setShowReportModal(false)}
                 onPrint={handlePrintReport}
             />}
+      {detail && <RecordDetails title="Detalles de la reserva" onClose={() => setDetail(null)} fields={[
+        ["Miembro", detail.user_name],
+        ["Documento", detail.user_document],
+        ["Viaje", formatDate(detail.trip_date)],
+        ["Adelanto", `$${Number(detail.adelanto).toLocaleString()}`],
+        ["Abonos", `$${Number(detail.abonos).toLocaleString()}`],
+        ["Pagado", `$${Number(detail.pagado).toLocaleString()}`],
+        ["Saldo", `$${Number(detail.saldo).toLocaleString()}`]
+      ]} />}
         </div>
     );
 }

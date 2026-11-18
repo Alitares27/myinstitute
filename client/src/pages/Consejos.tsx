@@ -1,3 +1,4 @@
+import { ViewRecordButton } from "../components/RecordDetails";
 import { confirmAppAction } from "../components/AppDialogHost";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
@@ -184,9 +185,9 @@ export default function Meetings() {
               <tr>
                 <th>Título</th>
                 <th>Fecha</th>
-                <th>Horario</th>
-                <th>Creador</th>
-                <th>Estado</th>
+                <th className="table-desktop-only">Horario</th>
+                <th className="table-desktop-only">Creador</th>
+                <th className="table-desktop-only">Estado</th>
               </tr>
             </thead>
             <tbody>
@@ -194,9 +195,9 @@ export default function Meetings() {
                 <tr key={i}>
                   <td><Skeleton width={`${140 + (i % 3) * 40}px`} height="0.95rem" /></td>
                   <td><Skeleton width="90px" height="0.95rem" /></td>
-                  <td><Skeleton width="110px" height="0.95rem" /></td>
-                  <td><Skeleton width={`${100 + (i % 2) * 30}px`} height="0.95rem" /></td>
-                  <td><Skeleton width="100px" height="1.5rem" style={{ borderRadius: "12px" }} /></td>
+                  <td className="table-desktop-only"><Skeleton width="110px" height="0.95rem" /></td>
+                  <td className="table-desktop-only"><Skeleton width={`${100 + (i % 2) * 30}px`} height="0.95rem" /></td>
+                  <td className="table-desktop-only"><Skeleton width="100px" height="1.5rem" style={{ borderRadius: "12px" }} /></td>
                 </tr>
               ))}
             </tbody>
@@ -247,45 +248,43 @@ export default function Meetings() {
               <tr>
                 <th>Título</th>
                 <th>Fecha</th>
-                <th>Horario</th>
-                <th>Creador</th>
-                <th>Estado</th>
-                {role === "admin" && <th>Acciones</th>}
+                <th className="table-desktop-only">Horario</th>
+                <th className="table-desktop-only">Creador</th>
+                <th className="table-desktop-only">Estado</th>
+                <th>Acciones</th>
               </tr>
             </thead>
             <tbody>
               {currentRecords.map((meeting) => (
                 <tr key={meeting.id}>
                   <td>
-                    <button
-                      className="link-button"
-                      onClick={() => handleViewMeeting(meeting.id!)}
-                    >
-                      {meeting.title}
-                    </button>
+                    {meeting.title}
                   </td>
                   <td>{formatDate(meeting.meeting_date)}</td>
-                  <td>{meeting.start_time}{" - "}{meeting.end_time || "--"}</td>
-                  <td>{meeting.created_by_name}</td>
-                  <td>
+                  <td className="table-desktop-only">{meeting.start_time}{" - "}{meeting.end_time || "--"}</td>
+                  <td className="table-desktop-only">{meeting.created_by_name}</td>
+                  <td className="table-desktop-only">
                     <span className={`status-badge status-${meeting.status || "scheduled"}`}>
                       {etiquetaEstadoConsejo(meeting.status)}
                     </span>
                   </td>
-                  {role === "admin" && (
-                    <td>
-                      <Link to={`/consejos/editar/${meeting.id}`} className="btn secondary btn-icon" aria-label="Editar">
+                  <td>
+                    <div className="table-record-actions">
+                      <ViewRecordButton label="Ver consejo" onClick={() => handleViewMeeting(meeting.id!)} />
+                      {role === "admin" && <>
+                        <Link to={`/consejos/editar/${meeting.id}`} className="btn secondary btn-icon" aria-label="Editar">
                         <IoCreateOutline />
-                      </Link>
-                      <button
-                        className="btn secondary btn-icon danger-outline"
-                        onClick={() => handleDelete(meeting.id!)}
-                        aria-label="Eliminar"
+                        </Link>
+                        <button
+                      className="btn secondary btn-icon danger-outline"
+                      onClick={() => handleDelete(meeting.id!)}
+                      aria-label="Eliminar"
                       >
                         <IoTrashOutline />
-                      </button>
-                    </td>
-                  )}
+                        </button>
+                      </>}
+                    </div>
+                  </td>
                 </tr>
               ))}
             </tbody>

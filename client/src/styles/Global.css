@@ -252,7 +252,6 @@ h1 {
 }
 
 .audit-table-scroll { width: 100%; max-width: 100%; overflow-x: auto; overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch; }
-.audit-table-scroll table { min-width: 820px; }
 .audit-details { list-style: none; padding: 0; margin: 0; }
 .audit-details li + li { margin-top: .25rem; }
 .audit-reservation-id { display: block; color: var(--text-secondary); }
@@ -2215,7 +2214,32 @@ html:root body .ios-dialog-backdrop { z-index: 15001; }
   min-height: 44px;
   cursor: pointer;
 }
-.leader-permissions-options input { margin: 0; accent-color: var(--primary); }
+.leader-permissions-options input[type="checkbox"] {
+  flex: 0 0 16px;
+  width: 16px;
+  height: 16px;
+  min-height: 16px;
+  margin: 0;
+  padding: 0;
+  accent-color: var(--primary);
+}
+
+@media (max-width: 700px) {
+  .leader-permissions { width: 100%; padding: .5rem; }
+  .leader-permissions-options {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .2rem .5rem;
+  }
+  .leader-permissions-options label {
+    min-width: 0;
+    justify-content: flex-start;
+    text-align: start;
+    font-size: .8rem;
+    line-height: 1.3;
+    gap: .4rem;
+    overflow-wrap: anywhere;
+  }
+}
 
 /* =========================================
    17. REDUCED MOTION (WCAG 2.3.3)
@@ -2234,4 +2258,40 @@ html:root body .ios-dialog-backdrop { z-index: 15001; }
   .skeleton {
     animation: none !important;
   }
+}
+
+.table-record-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .25rem;
+  width: max-content;
+  max-width: 100%;
+}
+
+.record-details {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .75rem;
+}
+
+.record-details > div {
+  padding: .75rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  overflow-wrap: anywhere;
+}
+
+.record-details dt { color: var(--text-secondary); font-size: .85rem; }
+.record-details dd { margin: .25rem 0 0; font-weight: 600; }
+
+@media (max-width: 700px) {
+  :is(th, td, span).table-desktop-only { display: none; }
+  .table-record-actions { max-width: 6rem; }
+  .record-details { grid-template-columns: minmax(0, 1fr); }
+}
+
+:is(th, td).table-mobile-only { display: none; }
+
+@media (max-width: 700px) {
+  :is(th, td).table-mobile-only { display: table-cell; }
 }

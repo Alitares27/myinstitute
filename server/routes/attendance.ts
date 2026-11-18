@@ -1,6 +1,6 @@
 import { readPage, addFilters, addSearch } from "../utils/pagination";
 import { courseAccess } from "../utils/courseAccess";
-import { isoDate } from "../utils/validation";
+import { isoDate, positiveId } from "../utils/validation";
 import { businessDate } from "../utils/businessDate";
 import { asyncRouter } from "../middleware/asyncRouter";
 import express, { Response } from "express";
@@ -78,6 +78,55 @@ router.post("/", verifyToken, requireModuleAccess("asistencia"), canTeach, async
     console.error(err);
     res.status(500).json({ message: "Error recording attendance" });
   }
+});
+
+router.put("/:id", verifyToken, requireModuleAccess("asistencia"), canTeach, async (req: AuthRequest, res: Response) => {
+  const id = positiveId(req.params.id);
+  const date = isoDate(req.body?.date);
+  const { status, topic_id } = req.body;
+  if (!["Present", "Absent"].includes(status) || date > businessDate()) {
+    return res.status(400).json({ message: "Asistencia inválida: revisa la fecha y el estado." });
+  }
+  const topicId = topic_id == null || topic_id === "" ? null : positiveId(topic_id);
+  try {
+    const result = await pool.query(
+      `WITH allowed_course AS (
+         SELECT c.id FROM attendance existing_record
+         JOIN courses c ON c.id=existing_record.course_id
+         WHERE existing_record.id=$1 AND ${courseAccess("c", "$2", "$3")}
+         FOR SHARE OF c
+       )
+       UPDATE attendance a SET date=$4, status=$5, topic_id=$6
+       FROM allowed_course
+       WHERE a.id=$1 AND a.course_id=allowed_course.id
+         AND ($6::integer IS NULL OR EXISTS (SELECT 1 FROM topics t WHERE t.id=$6 AND t.course_id=a.course_id))
+       RETURNING a.*`,
+      [id, req.user!.role, req.user!.id, date, status, topicId]
+    );
+    if (!result.rowCount) return res.status(404).json({ message: "Asistencia no disponible o capítulo inválido." });
+    res.json(result.rows[0]);
+  } catch (error) {
+    if ((error as { code?: string }).code === "23505") {
+      return res.status(409).json({ message: "Ya hay una asistencia del miembro para esa fecha y curso." });
+    }
+    throw error;
+  }
+});
+
+router.delete("/:id", verifyToken, requireModuleAccess("asistencia"), canTeach, async (req: AuthRequest, res: Response) => {
+  const result = await pool.query(
+    `WITH allowed_course AS (
+       SELECT c.id FROM attendance existing_record
+       JOIN courses c ON c.id=existing_record.course_id
+       WHERE existing_record.id=$1 AND ${courseAccess("c", "$2", "$3")}
+       FOR SHARE OF c
+     )
+     DELETE FROM attendance a USING allowed_course
+     WHERE a.id=$1 AND a.course_id=allowed_course.id RETURNING a.id`,
+    [positiveId(req.params.id), req.user!.role, req.user!.id]
+  );
+  if (!result.rowCount) return res.status(404).json({ message: "Asistencia no encontrada." });
+  res.json({ message: "Asistencia eliminada." });
 });
 
 function attendanceQuery(req: AuthRequest) {

@@ -1,3 +1,4 @@
+import { ViewRecordButton, RecordDetails } from "../components/RecordDetails";
 import { IoAddOutline } from "react-icons/io5";
 import { isAndroidApp } from "../utils/androidReports";
 import FormModal from "../components/FormModal";
@@ -17,17 +18,9 @@ import type { SortConfig } from "../interfaces/Common";
 import { obtenerEstudiantes, obtenerCursos } from "../utils/clienteCache";
 import "../styles/calificaciones.css";
 
-const getInitials = (name: string) =>
-  (name || "?")
-    .split(" ")
-    .filter(Boolean)
-    .map((w) => w[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
-
 export default function Grades() {
 
+  const [detail, setDetail] = useState<{ student_name: string; course_title: string; grade: number; grade_type: string; created_at: string } | null>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [students, setStudents] = useState<any[]>([]);
   const [courses, setCourses] = useState<any[]>([]);
@@ -445,6 +438,7 @@ export default function Grades() {
         <table aria-label="Calificaciones de estudiantes">
           <thead>
             <tr>
+              {role === "student" && <th className="table-mobile-only" scope="col">Estudiante</th>}
               {role !== "student" && (
                 <th scope="col" onClick={() => requestSort("student_name")} className="sortable-header" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); requestSort("student_name"); } }} aria-sort={sortConfig?.key === "student_name" ? (sortConfig.direction === "asc" ? "ascending" : "descending") : "none"}>
                   Estudiante
@@ -459,60 +453,58 @@ export default function Grades() {
                   {sortConfig?.key === "course_title" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
                 </span>
               </th>
-              <th scope="col" onClick={() => requestSort("grade")} className="sortable-header" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); requestSort("grade"); } }} aria-sort={sortConfig?.key === "grade" ? (sortConfig.direction === "asc" ? "ascending" : "descending") : "none"}>
+              <th scope="col" onClick={() => requestSort("grade")} className="sortable-header table-desktop-only" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); requestSort("grade"); } }} aria-sort={sortConfig?.key === "grade" ? (sortConfig.direction === "asc" ? "ascending" : "descending") : "none"}>
                 Nota
                 <span className="sort-icon">
                   {sortConfig?.key === "grade" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
                 </span>
               </th>
-              <th scope="col" onClick={() => requestSort("grade_type")} className="sortable-header" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); requestSort("grade_type"); } }} aria-sort={sortConfig?.key === "grade_type" ? (sortConfig.direction === "asc" ? "ascending" : "descending") : "none"}>
+              <th scope="col" onClick={() => requestSort("grade_type")} className="sortable-header table-desktop-only" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); requestSort("grade_type"); } }} aria-sort={sortConfig?.key === "grade_type" ? (sortConfig.direction === "asc" ? "ascending" : "descending") : "none"}>
                 Tipo
                 <span className="sort-icon">
                   {sortConfig?.key === "grade_type" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
                 </span>
               </th>
-              <th scope="col" onClick={() => requestSort("created_at")} className="sortable-header" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); requestSort("created_at"); } }} aria-sort={sortConfig?.key === "created_at" ? (sortConfig.direction === "asc" ? "ascending" : "descending") : "none"}>
+              <th scope="col" onClick={() => requestSort("created_at")} className="sortable-header table-desktop-only" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); requestSort("created_at"); } }} aria-sort={sortConfig?.key === "created_at" ? (sortConfig.direction === "asc" ? "ascending" : "descending") : "none"}>
                 Fecha
                 <span className="sort-icon">
                   {sortConfig?.key === "created_at" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
                 </span>
               </th>
-              {role !== "student" && <th scope="col">Acciones</th>}
+              <th scope="col">Acciones</th>
             </tr>
           </thead>
 
           <tbody>
             {currentRecords.length > 0 ? (
-              currentRecords.map((g, idx) => (
+              currentRecords.map((g) => (
                 <tr key={g.id}>
-                  {role !== "student" && (
+                  {role === "student" ? (
+                    <td className="table-mobile-only">{g.student_name || "—"}</td>
+                  ) : (
                     <td>
-                      <div className="student-profile-cell">
-                        <div className={`student-avatar-circle ${g.student_id % 3 === 1 ? "gradient-2" : g.student_id % 3 === 2 ? "gradient-3" : ""}`}>
-                          {getInitials(g.student_name)}
-                        </div>
-                        <div className="student-details">
-                          <span className="student-name">{g.student_name}</span>
-                        </div>
-                      </div>
+                      <span className="record-person-name">{g.student_name}</span>
                     </td>
                   )}
                   <td>{g.course_title}</td>
-                  <td><strong>{g.grade}</strong></td>
-                  <td>{g.grade_type}</td>
-                  <td>{formatDate(g.created_at)}</td>
+                  <td className="table-desktop-only"><strong>{g.grade}</strong></td>
+                  <td className="table-desktop-only">{g.grade_type}</td>
+                  <td className="table-desktop-only">{formatDate(g.created_at)}</td>
 
-                  {role !== "student" && (
-                    <td>
-                      <button className="btn secondary btn-icon" onClick={() => handleEditClick(g)} aria-label="Editar"><IoCreateOutline /></button>
-                      <button className="btn secondary btn-icon danger-outline" onClick={() => handleDelete(g.id)} aria-label="Eliminar"><IoTrashOutline /></button>
-                    </td>
-                  )}
+                  <td>
+                    <div className="table-record-actions">
+                      <ViewRecordButton label="Ver calificación" onClick={() => setDetail(g)} />
+                      {role !== "student" && <>
+                        <button className="btn secondary btn-icon" onClick={() => handleEditClick(g)} aria-label="Editar"><IoCreateOutline /></button>
+                        <button className="btn secondary btn-icon danger-outline" onClick={() => handleDelete(g.id)} aria-label="Eliminar"><IoTrashOutline /></button>
+                      </>}
+                    </div>
+                  </td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan={role !== "student" ? 6 : 4}>Sin registros.</td>
+                <td colSpan={role !== "student" ? 6 : 5}>Sin registros.</td>
               </tr>
             )}
           </tbody>
@@ -534,6 +526,13 @@ export default function Grades() {
       )}
 
       {error && !formOpen && <p>{error}</p>}
+      {detail && <RecordDetails title="Detalle de calificación" onClose={() => setDetail(null)} fields={[
+        ["Estudiante", detail.student_name],
+        ["Curso", detail.course_title],
+        ["Nota", detail.grade],
+        ["Tipo", detail.grade_type],
+        ["Fecha", formatDate(detail.created_at)]
+      ]} />}
     </div>
   );
 }

@@ -12,7 +12,7 @@ import MemberEditor from "../components/members/MemberEditor";
 import type { MemberForm } from "../components/members/MemberEditor";
 import MemberDetails from "../components/members/MemberDetails";
 import "../styles/Miembros.css";
-import { IoSearchOutline, IoAddOutline, IoEyeOutline, IoCreateOutline, IoTrashOutline } from "react-icons/io5";
+import { IoPersonCircleOutline, IoSearchOutline, IoAddOutline, IoEyeOutline, IoCreateOutline, IoTrashOutline } from "react-icons/io5";
 import MemberModal from "../components/members/MemberModal";
 export default function Miembros() {
     const [searchParams, setSearchParams] = useSearchParams();
@@ -44,7 +44,7 @@ export default function Miembros() {
     if (loading) return <p role="status">Cargando miembros...</p>;
     if (!me) return <p role="alert">{error || 'No hay una sesión válida'}</p>;
     return <div className="miembros-page"><header className="miembros-header"><div><h1>{profileView ? 'Mi perfil' : admin ? 'Miembros' : 'Estudiantes de mis cursos'}</h1><p>{profileView ? 'Información personal y seguimiento académico' : 'Consulta y gestiona la información personal y académica.'}</p></div>
-        {me.role !== 'student' && <div className="miembros-actions"><button className="btn secondary" onClick={() => { setSearchParams(profileView ? {} : { view: 'profile' }); setEditorOpen(false); closePassword(); setSelected(null); }}>{profileView ? 'Miembros' : 'Mi perfil'}</button>
+        {me.role !== 'student' && <div className="miembros-actions"><button type="button" className="btn secondary mobile-header-action" aria-label={profileView ? "Miembros" : "Mi perfil"} onClick={() => { setSearchParams(profileView ? {} : { view: 'profile' }); setEditorOpen(false); closePassword(); setSelected(null); }}><IoPersonCircleOutline aria-hidden="true" /><span>{profileView ? 'Miembros' : 'Mi perfil'}</span></button>
             {admin && !profileView && <button type="button" className="btn primary mobile-add" aria-label="Agregar miembro" onClick={() => { setEditing(null); setEditorOpen(true); }}><IoAddOutline aria-hidden="true" /> <span>Agregar</span></button>}</div>}</header>
         {error && !passwordOpen && <p role="alert">{error}</p>}
         {profileView ? <>
@@ -67,10 +67,10 @@ export default function Miembros() {
             {directory.error && <p role="alert">{directory.error}</p>}{directory.loading && <p role="status">Actualizando miembros...</p>}
             <p className="miembros-count">{directory.total} miembros encontrados</p>
             <div className="table-container"><table><thead><tr>
-                <th><button className="miembros-sort" type="button" onClick={() => requestSort('name')}>Nombre</button></th><th>Documento</th><th><button className="miembros-sort" type="button" onClick={() => requestSort('grade')}>Organización</button></th><th>Acciones</th>
+                <th><button className="miembros-sort" type="button" onClick={() => requestSort('name')}>Nombre</button></th><th>Documento</th><th className="table-desktop-only"><button className="miembros-sort" type="button" onClick={() => requestSort('grade')}>Organización</button></th><th>Acciones</th>
             </tr></thead><tbody>{directory.items.map(member => <tr key={member.id}>
-                <td><button type="button" className="miembros-name" onClick={() => setSelected(member.id)}>{member.name}</button></td><td>{member.document || '—'}</td><td>{member.grade || '—'}</td>
-                <td><div className="miembros-row-actions"><button type="button" className="btn secondary btn-icon" title="Ver ficha" onClick={() => setSelected(member.id)} aria-label={`Ver ficha de ${member.name}`}><IoEyeOutline aria-hidden="true" /></button>
+                <td>{member.name}</td><td>{member.document || '—'}</td><td className="table-desktop-only">{member.grade || '—'}</td>
+                <td><div className="table-record-actions"><button type="button" className="btn secondary btn-icon" title="Ver ficha" onClick={() => setSelected(member.id)} aria-label={`Ver ficha de ${member.name}`}><IoEyeOutline aria-hidden="true" /></button>
                     {admin && <><button type="button" className="btn secondary btn-icon" title="Editar" onClick={() => { setEditing(member); setEditorOpen(true); }} aria-label={`Editar ${member.name}`}><IoCreateOutline aria-hidden="true" /></button><button type="button" className="btn btn-icon miembros-delete" title="Eliminar" disabled={member.id === me.id} onClick={() => removeMember(member)} aria-label={`Eliminar ${member.name}`}><IoTrashOutline aria-hidden="true" /></button></>}
                 </div></td></tr>)}</tbody></table></div>
             {!directory.loading && !directory.items.length && <p>No hay miembros para los filtros seleccionados.</p>}

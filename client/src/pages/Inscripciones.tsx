@@ -427,12 +427,6 @@ export default function Enrollments() {
     ).catch(() => alert("No se pudo abrir la impresión."));
   };
 
-  const getStudentAvatar = (name: string, index: number) => {
-    const initial = (name || "E").charAt(0).toUpperCase();
-    const gradientClass = index % 3 === 1 ? "gradient-2" : index % 3 === 2 ? "gradient-3" : "";
-    return <div className={`student-avatar-circle ${gradientClass}`}>{initial}</div>;
-  };
-
   if (loading) {
     return (
       <div className="inscripciones-page">
@@ -672,20 +666,14 @@ export default function Enrollments() {
 
           <tbody>
             {paginatedEnrollments.length > 0 ? (
-              paginatedEnrollments.map((en, index) => {
+              paginatedEnrollments.map((en) => {
                 const student = students.find((s) => s.id === en.student_id);
                 const course = courses.find((c) => c.id === en.course_id);
 
                 return (
                   <tr key={en.id}>
                     <td>
-                      <div className="student-profile-cell">
-                        {getStudentAvatar(student?.name || "E", index)}
-                        <div className="student-details">
-                          <span className="student-name">{student?.name || "Miembro sin nombre"}</span>
-                          <span className="student-contact">{student?.email || student?.telefono || "Sin contacto registrado"}</span>
-                        </div>
-                      </div>
+                      <span className="record-person-name">{student?.name || "Miembro sin nombre"}</span>
                     </td>
 
                     <td>

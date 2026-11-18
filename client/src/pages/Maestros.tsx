@@ -1,3 +1,4 @@
+import { ViewRecordButton, RecordDetails } from "../components/RecordDetails";
 import LeaderPermissions from "../components/LeaderPermissions";
 import type { AppModule } from "../shared/constants";
 import FormModal from "../components/FormModal";
@@ -43,6 +44,7 @@ interface TeacherItem {
 }
 
 export default function Maestros() {
+  const [detail, setDetail] = useState<TeacherItem | null>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [teachers, setTeachers] = useState<TeacherItem[]>([]);
   const [users, setUsers] = useState<any[]>([]);
@@ -531,8 +533,8 @@ export default function Maestros() {
                 </div>
               </div>
 
+              <LeaderPermissions value={form.permissions} onChange={permissions => setForm({ ...form, permissions })} />
               <div className="course-selection-box">
-                <LeaderPermissions value={form.permissions} onChange={permissions => setForm({ ...form, permissions })} />
                 <div className="course-selection-header">
                   <span>
                     <IoBookOutline style={{ verticalAlign: "middle", marginRight: "4px" }} />
@@ -707,37 +709,19 @@ export default function Maestros() {
               <th className="sortable-header" onClick={() => requestSort("specialty")}>
                 Especialidad {sortConfig?.key === "specialty" && (sortConfig.direction === "asc" ? "▲" : "▼")}
               </th>
-              <th className="sortable-header" onClick={() => requestSort("courses_count")}>
+              <th className="sortable-header table-desktop-only" onClick={() => requestSort("courses_count")}>
                 Cursos Dictados {sortConfig?.key === "courses_count" && (sortConfig.direction === "asc" ? "▲" : "▼")}
               </th>
-              {role === "admin" && <th style={{ textAlign: "right" }}>Acciones</th>}
+              <th style={{ textAlign: "right" }}>Acciones</th>
             </tr>
           </thead>
           <tbody>
             {paginatedTeachers.length > 0 ? (
               paginatedTeachers.map((teacher) => {
-                const initials = teacher.name
-                  ? teacher.name
-                    .split(" ")
-                    .map((n) => n[0])
-                    .slice(0, 2)
-                    .join("")
-                    .toUpperCase()
-                  : "M";
-
                 return (
                   <tr key={teacher.id}>
                     <td>
-                      <div className="teacher-profile-cell">
-                        <div className="teacher-avatar-circle">{initials}</div>
-                        <div className="teacher-details">
-                          <span className="teacher-name">{teacher.name}</span>
-                          <span className="teacher-contact">
-                            {teacher.email}
-                            {teacher.telefono ? ` • ${teacher.telefono}` : ""}
-                          </span>
-                        </div>
-                      </div>
+                      <span className="record-person-name">{teacher.name}</span>
                     </td>
 
                     <td>
@@ -746,7 +730,7 @@ export default function Maestros() {
                       </span>
                     </td>
 
-                    <td>
+                    <td className="table-desktop-only">
                       {teacher.courses && teacher.courses.length > 0 ? (
                         <div className="courses-pills-list">
                           {teacher.courses.map((course) => (
@@ -762,15 +746,16 @@ export default function Maestros() {
                       )}
                     </td>
 
-                    {role === "admin" && (
-                      <td style={{ textAlign: "right" }}>
-                        <div style={{ display: "inline-flex", gap: "4px" }}>
+                    <td>
+                      <div className="table-record-actions">
+                        <ViewRecordButton label="Ver maestro" onClick={() => setDetail(teacher)} />
+                        {role === "admin" && <>
                           <button
                             className="btn secondary btn-icon"
                             onClick={() => openQuickAssign(teacher)}
                             title="Asignar / Gestionar cursos dictados"
                             aria-label="Gestionar Cursos"
-                          >
+                            >
                             <IoBookOutline />
                           </button>
                           <button
@@ -778,7 +763,7 @@ export default function Maestros() {
                             onClick={() => handleEdit(teacher)}
                             title="Editar maestro"
                             aria-label="Editar"
-                          >
+                            >
                             <IoCreateOutline />
                           </button>
                           <button
@@ -786,18 +771,18 @@ export default function Maestros() {
                             onClick={() => handleDelete(teacher.id, teacher.name)}
                             title="Eliminar maestro"
                             aria-label="Eliminar"
-                          >
+                            >
                             <IoTrashOutline />
                           </button>
-                        </div>
-                      </td>
-                    )}
+                        </>}
+                      </div>
+                    </td>
                   </tr>
                 );
               })
             ) : (
               <tr>
-                <td colSpan={role === "admin" ? 4 : 3} style={{ textAlign: "center", padding: "2.5rem 1rem", color: "var(--text-muted)" }}>
+                <td colSpan={4} style={{ textAlign: "center", padding: "2.5rem 1rem", color: "var(--text-muted)" }}>
                   <IoSchoolOutline style={{ fontSize: "2.5rem", marginBottom: "0.5rem", opacity: 0.5 }} />
                   <p style={{ margin: 0, fontSize: "1rem" }}>
                     {searchQuery || filterSpecialty || filterCourse
@@ -920,6 +905,13 @@ export default function Maestros() {
           </div>
         </div>
       )}
+      {detail && <RecordDetails title="Detalles del maestro" onClose={() => setDetail(null)} fields={[
+        ["Maestro", detail.name],
+        ["Especialidad", detail.specialty || "General"],
+        ["Correo", detail.email],
+        ["Teléfono", detail.telefono],
+        ["Cursos", detail.courses?.map(course => course.title).join(", ") || "Sin cursos asignados"]
+      ]} />}
     </div>
   );
 }

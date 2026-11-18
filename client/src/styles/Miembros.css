@@ -18,9 +18,9 @@
 .miembros-count { font-size: .875rem; color: var(--text-muted); margin: 1rem 0; }
 .miembros-page .table-container { width: 100%; max-width: 100%; overflow-x: auto; background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius); box-shadow: var(--shadow-xs); }
 .miembros-page table { width: 100%; border-collapse: collapse; margin: 0; font-size: .875rem; }
-.miembros-page th { text-align: left; background: var(--bg-body); font-size: .8125rem; font-weight: 600; color: var(--text-secondary); white-space: nowrap; }
+.miembros-page th { text-align: left; background: var(--bg-body); font-size: .8125rem; font-weight: 600; color: var(--text-secondary); }
 .miembros-page th, .miembros-page td { padding: 1rem; border-bottom: 1px solid var(--border-color); vertical-align: middle; }
-.miembros-page td { color: var(--text-main); line-height: 1.5; overflow-wrap: anywhere; min-width: 110px; }
+.miembros-page td { color: var(--text-main); line-height: 1.5; overflow-wrap: anywhere; }
 .miembros-page tbody tr:last-child td { border-bottom: 0; }
 .miembros-page tbody tr:hover { background: var(--primary-light); }
 .miembros-page .miembros-sort { padding: 0; background: transparent; border: 0; border-radius: 0; box-shadow: none; color: inherit; font: inherit; text-align: center; }
@@ -66,10 +66,22 @@
 .miembros-modal { width: 100%; max-width: 760px; max-height: calc(100dvh - 2.5rem); overflow-y: auto; padding: 1.5rem; background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); }
 .miembros-modal-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding-bottom: 1rem; margin-bottom: 1rem; border-bottom: 1px solid var(--border-color); }
 .miembros-modal-header h2 { margin: 0; font-size: 1.2rem; }
-.miembros-modal .miembros-details { padding: 0; border: 0; box-shadow: none; margin-bottom: 0; }
+.miembros-modal .miembros-details { padding: 0; border: 0; box-shadow: none; margin-bottom: 0; background: transparent; }
+html:root body .miembros-modal-overlay .miembros-modal { background: var(--bg-surface); }
 @media(max-width:600px) {
  .miembros-filters { width: 100%; }
  .miembros-page .miembros-filters select { flex: 1 1 140px; max-width: 100%; min-width: 0; }
  .miembros-modal-overlay { padding: .75rem; }
  .miembros-modal { padding: 1rem; max-height: calc(100dvh - 1.5rem); }
+}
+
+@media (max-width: 700px) {
+  .miembros-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: .5rem;
+  }
+
+  .miembros-header .miembros-actions { width: auto; justify-content: flex-end; }
+  .miembros-header .miembros-actions > .btn { flex: 0 0 auto; }
 }

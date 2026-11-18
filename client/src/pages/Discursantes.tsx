@@ -1,3 +1,4 @@
+import { ViewRecordButton } from "../components/RecordDetails";
 import { IoAddOutline } from "react-icons/io5";
 import FormModal from "../components/FormModal";
 import "../styles/Discursantes.css";
@@ -420,7 +421,7 @@ export default function Speakers() {
                   {sortConfig?.key === "member_id" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
                 </span>
               </th>
-              <th onClick={() => handleSort("completed")} className="sortable-header">
+              <th onClick={() => handleSort("completed")} className="sortable-header table-desktop-only">
                 Estado
                 <span className="sort-icon">
                   {sortConfig?.key === "completed" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
@@ -432,21 +433,19 @@ export default function Speakers() {
                   {sortConfig?.key === "topic" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
                 </span>
               </th>
-              {role === "admin" && <th>Acciones</th>}
+              <th>Acciones</th>
             </tr>
           </thead>
           <tbody>
             {currentRecords.map(s => (
               <tr key={s.id}>
                 <td>
-                  <button type="button" className="link-button" onClick={() => setSelectedSpeaker(s)}>
-                    {memberName(s)}
-                  </button>
+                  {memberName(s)}
                   <div className="text-muted-sm">
                     {formatDate(s.date, { weekday: 'short', day: 'numeric', month: 'short' })}
                   </div>
                 </td>
-                <td>
+                <td className="table-desktop-only">
                   <SpeakerStatus completed={s.completed} />
                   <div className="flex-icon-text speakers-desktop-detail">
                     <IoTimeOutline /> {s.time || 0} min
@@ -458,23 +457,24 @@ export default function Speakers() {
                     "{s.speech_title}"
                   </div>
                 </td>
-                {role === "admin" && (
-                  <td>
-                    <div className="speakers-row-actions">
-                    <button type="button" className="btn secondary btn-icon" onClick={() => handleEdit(s)} aria-label="Editar">
+                <td>
+                  <div className="table-record-actions">
+                    <ViewRecordButton label="Ver discurso" onClick={() => setSelectedSpeaker(s)} />
+                    {role === "admin" && <>
+                      <button type="button" className="btn secondary btn-icon" onClick={() => handleEdit(s)} aria-label="Editar">
                       <IoCreateOutline />
-                    </button>
-                    <button type="button" className="btn secondary btn-icon danger-outline" onClick={() => handleDelete(s.id)} aria-label="Eliminar">
+                      </button>
+                      <button type="button" className="btn secondary btn-icon danger-outline" onClick={() => handleDelete(s.id)} aria-label="Eliminar">
                       <IoTrashOutline />
-                    </button>
-                    </div>
-                  </td>
-                )}
+                      </button>
+                    </>}
+                  </div>
+                </td>
               </tr>
             ))}
             {currentRecords.length === 0 && (
               <tr>
-                <td colSpan={role === "admin" ? 4 : 3} >No hay registros que coincidan</td>
+                <td colSpan={4} >No hay registros que coincidan</td>
               </tr>
             )}
           </tbody>

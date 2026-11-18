@@ -124,6 +124,21 @@ test("student identity and course access isolate enrollments, topics, attendance
     }
     const forbidden = await request('/api/grades', { id: 2, method: 'POST', body: { student_id: 8, course_id: 2, grade: 50, grade_type: 'examen' } }); assert.equal(forbidden.status, 403);
 });
+test("teachers can edit and delete attendance only for assigned courses", async () => {
+    const inserted = await db.query(
+        "INSERT INTO attendance(student_id, course_id, date, status, topic_id) VALUES (7,1,'2026-01-10','Present',1) RETURNING id"
+    );
+    const route = "/api/attendance/" + inserted.rows[0].id;
+    const body = { date: "2026-01-10", status: "Absent", topic_id: 1 };
+    assert.equal((await request(route, { id: 3, method: "PUT", body })).status, 404);
+    assert.equal((await request(route, { id: 3, method: "DELETE" })).status, 404);
+    assert.equal((await request(route, { id: 42, method: "DELETE" })).status, 403);
+    assert.equal((await request(route, { id: 2, method: "PUT", body: { ...body, topic_id: 2 } })).status, 404);
+    const updated = await request(route, { id: 2, method: "PUT", body });
+    assert.equal(updated.status, 200);
+    assert.equal(updated.data.status, "Absent");
+    assert.equal((await request(route, { id: 2, method: "DELETE" })).status, 200);
+});
 test("pagination, numeric sorting, filtering and reports run as real SQL", async () => {
     for (const route of ['attendance', 'grades', 'temple-amortizations']) {
         const first = await request('/api/' + route + '?limit=1'); assert.equal(first.status, 200, route); assert.equal(first.data.items.length, 1); assert.ok(first.data.total > 1);

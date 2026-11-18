@@ -84,7 +84,6 @@
 .meetings-table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 700px;
   background-color: var(--bg-surface);
   color: var(--text-main);
   border-radius: var(--radius);

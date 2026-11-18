@@ -1,3 +1,4 @@
+import { ViewRecordButton, RecordDetails } from "../components/RecordDetails";
 import { canAccessModule, readSessionUser } from "../utils/access";
 import { TbCoin } from "react-icons/tb";
 import { isAndroidApp } from "../utils/androidReports";
@@ -23,18 +24,6 @@ import useAvailableTrips from "../hooks/usarViajesDisponibles";
 
 const getTodayYMD = businessDate;
 
-const getInitials = (name: string = "") => {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return "?";
-  if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
-  return (parts[0].charAt(0) + parts[1].charAt(0)).toUpperCase();
-};
-
-const avatarGradient = (index: number) => {
-  const gradients = ["", " gradient-2", " gradient-3"];
-  return gradients[index % gradients.length];
-};
-
 const capitalizarMedio = (value: string = "efectivo") => {
   return value.charAt(0).toUpperCase() + value.slice(1);
 };
@@ -43,6 +32,7 @@ export default function PagosTemplos() {
   const canManage = readSessionUser()?.role === "admin";
   const navigate = useNavigate();
 
+  const [detail, setDetail] = useState<{ miembro_nombre: string; payment_amount: number; monto_adeudado: number; payment_date: string; payment_type: string } | null>(null);
   const [role, setRole] = useState<string>("");
   const [trips, setTrips] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
@@ -513,40 +503,35 @@ export default function PagosTemplos() {
                     {sortConfig?.key === "payment_amount" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
                   </span>
                 </th>
-                <th scope="col" onClick={() => handleSort("monto_adeudado")} className="sortable-header" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleSort("monto_adeudado"); } }} aria-sort={sortConfig?.key === "monto_adeudado" ? (sortConfig.direction === "asc" ? "ascending" : "descending") : "none"}>
+                <th scope="col" onClick={() => handleSort("monto_adeudado")} className="sortable-header table-desktop-only" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleSort("monto_adeudado"); } }} aria-sort={sortConfig?.key === "monto_adeudado" ? (sortConfig.direction === "asc" ? "ascending" : "descending") : "none"}>
                   Monto Adeudado
                   <span className="sort-icon">
                     {sortConfig?.key === "monto_adeudado" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
                   </span>
                 </th>
-                <th scope="col" onClick={() => handleSort("payment_date")} className="sortable-header" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleSort("payment_date"); } }} aria-sort={sortConfig?.key === "payment_date" ? (sortConfig.direction === "asc" ? "ascending" : "descending") : "none"}>
+                <th scope="col" onClick={() => handleSort("payment_date")} className="sortable-header table-desktop-only" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleSort("payment_date"); } }} aria-sort={sortConfig?.key === "payment_date" ? (sortConfig.direction === "asc" ? "ascending" : "descending") : "none"}>
                   Fecha Pago
                   <span className="sort-icon">
                     {sortConfig?.key === "payment_date" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
                   </span>
                 </th>
-                <th scope="col" onClick={() => handleSort("payment_type")} className="sortable-header" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleSort("payment_type"); } }} aria-sort={sortConfig?.key === "payment_type" ? (sortConfig.direction === "asc" ? "ascending" : "descending") : "none"}>
+                <th scope="col" onClick={() => handleSort("payment_type")} className="sortable-header table-desktop-only" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleSort("payment_type"); } }} aria-sort={sortConfig?.key === "payment_type" ? (sortConfig.direction === "asc" ? "ascending" : "descending") : "none"}>
                   Medio Pago
                   <span className="sort-icon">
                     {sortConfig?.key === "payment_type" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
                   </span>
                 </th>
-                {canManage && <th scope="col" style={{ width: "96px", textAlign: "center" }}>Acciones</th>}
+                <th scope="col" style={{ width: "96px", textAlign: "center" }}>Acciones</th>
               </tr>
             </thead>
             <tbody>
-              {currentRecords.map((p: any, idx: number) => (
+              {currentRecords.map((p: any) => (
                 <tr key={p.id}>
                   <td>
-                    <div className="student-profile-cell">
-                      <div className={`student-avatar-circle${avatarGradient(idx)}`}>{getInitials(p.miembro_nombre)}</div>
-                      <div className="student-details">
-                        <span className="student-name">{p.miembro_nombre}</span>
-                      </div>
-                    </div>
+                    <span className="record-person-name">{p.miembro_nombre}</span>
                   </td>
                   <td>${Number(p.payment_amount).toLocaleString()}</td>
-                  <td>
+                  <td className="table-desktop-only">
                     {Number(p.monto_adeudado) > 0 ? (
                       <span style={{
                         display: "inline-block",
@@ -563,27 +548,30 @@ export default function PagosTemplos() {
                       <span style={{ color: "var(--success, #27ae60)", fontWeight: 600 }}>Saldado</span>
                     )}
                   </td>
-                  <td>{formatDate(p.payment_date)}</td>
-                  <td>{capitalizarMedio(p.payment_type)}</td>
-                  {canManage && <td>
-                    <div style={{ display: "flex", gap: "4px" }}>
-                      <button
-                        className="btn secondary btn-icon"
-                        onClick={() => handleOpenEditModal(p)}
-                        aria-label="Editar"
-                      >
-                        <IoCreateOutline />
-                      </button>
-                      <button
-                        className="btn secondary btn-icon danger-outline"
-                        onClick={() => handleDeletePayment(p)}
-                        disabled={isDeletingId === p.id}
-                        aria-label="Eliminar"
-                      >
-                        {isDeletingId === p.id ? "⏳" : <IoTrashOutline />}
-                      </button>
+                  <td className="table-desktop-only">{formatDate(p.payment_date)}</td>
+                  <td className="table-desktop-only">{capitalizarMedio(p.payment_type)}</td>
+                  <td>
+                    <div className="table-record-actions">
+                      <ViewRecordButton label="Ver pago" onClick={() => setDetail(p)} />
+                      {canManage && <>
+                        <button
+                          className="btn secondary btn-icon"
+                          onClick={() => handleOpenEditModal(p)}
+                          aria-label="Editar"
+                          >
+                          <IoCreateOutline />
+                        </button>
+                        <button
+                          className="btn secondary btn-icon danger-outline"
+                          onClick={() => handleDeletePayment(p)}
+                          disabled={isDeletingId === p.id}
+                          aria-label="Eliminar"
+                          >
+                          {isDeletingId === p.id ? "⏳" : <IoTrashOutline />}
+                        </button>
+                      </>}
                     </div>
-                  </td>}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -615,6 +603,13 @@ export default function PagosTemplos() {
         onClose={() => setShowReportModal(false)}
         onPrint={handlePrintReport}
       />}
+      {detail && <RecordDetails title="Detalles del pago" onClose={() => setDetail(null)} fields={[
+        ["Miembro", detail.miembro_nombre],
+        ["Monto pagado", `$${Number(detail.payment_amount).toLocaleString()}`],
+        ["Saldo", `$${Number(detail.monto_adeudado).toLocaleString()}`],
+        ["Fecha", formatDate(detail.payment_date)],
+        ["Medio de pago", capitalizarMedio(detail.payment_type)]
+      ]} />}
     </div>
   );
 }
