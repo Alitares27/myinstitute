@@ -52,6 +52,7 @@ export default function Sidebar(){
  const {theme,toggleTheme}=useTheme();
  const [open,setOpen]=useState<string|null>(null),[loggingOut,setLoggingOut]=useState(false);
  const [showAbout,setShowAbout]=useState(false);
+ const aboutTriggerRef=useRef<HTMLButtonElement|null>(null);
  const [isMobile,setIsMobile]=useState(()=>window.matchMedia('(max-width: 700px)').matches);
  const nav=useRef<HTMLElement>(null);
  const triggers=useRef<Record<string,HTMLButtonElement|null>>({});
@@ -88,6 +89,45 @@ export default function Sidebar(){
   query.addEventListener('change',update);
   return()=>query.removeEventListener('change',update);
  },[]);
+ 
+ useEffect(() => {
+  if (!showAbout) return;
+  const previous = aboutTriggerRef.current || (document.activeElement as HTMLElement | null);
+  const overflow = document.body.style.overflow;
+  document.body.style.overflow = "hidden";
+  const closeBtn = document.getElementById("about-dialog-close-btn");
+  closeBtn?.focus();
+
+  const handleKeyDown = (event: KeyboardEvent) => {
+   if (event.key === "Escape") {
+    event.stopPropagation();
+    setShowAbout(false);
+    return;
+   }
+   if (event.key === "Tab") {
+    const dialog = document.querySelector(".about-app-dialog") as HTMLElement | null;
+    if (!dialog) return;
+    const focusables = Array.from(dialog.querySelectorAll<HTMLElement>('button:not(:disabled), [tabindex="0"]'));
+    if (!focusables.length) return;
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+     event.preventDefault();
+     last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+     event.preventDefault();
+     first.focus();
+    }
+   }
+  };
+  window.addEventListener("keydown", handleKeyDown);
+  return () => {
+   window.removeEventListener("keydown", handleKeyDown);
+   document.body.style.overflow = overflow;
+   previous?.focus();
+  };
+ }, [showAbout]);
+
  useEffect(()=>{setOpen(null);},[location.pathname]);
  useEffect(()=>{
   if(!open)return;

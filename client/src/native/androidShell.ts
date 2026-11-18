@@ -64,7 +64,7 @@ export async function updateAndroidSystemColors(accent: string, dark: boolean): 
   }
   document.querySelector('meta[name="theme-color"]')?.setAttribute("content", colors.primary);
   await Promise.all([
-    StatusBar.setBackgroundColor({ color: colors.primary }).catch(() => undefined),
-    StatusBar.setStyle({ style: dark ? Style.Light : Style.Dark }).catch(() => undefined),
+    StatusBar.setBackgroundColor({ color: dark ? "#1C1C1E" : "#F2F2F7" }).catch(() => undefined),
+    StatusBar.setStyle({ style: dark ? Style.Dark : Style.Light }).catch(() => undefined),
   ]);
 }

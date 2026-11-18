@@ -23,11 +23,45 @@ export default function ReportFilterModal({ title, description, label, allLabel,
   const [printing, setPrinting] = useState(false);
 
   useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && !printing) onClose();
+    const previous = document.activeElement as HTMLElement | null;
+    const overflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const select = document.getElementById("report-filter-select") as HTMLSelectElement | null;
+    select?.focus();
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && !printing) {
+        event.stopPropagation();
+        onClose();
+        return;
+      }
+      if (event.key === "Tab") {
+        const modal = document.querySelector(".report-filter-modal") as HTMLElement | null;
+        if (!modal) return;
+        const focusables = Array.from(
+          modal.querySelectorAll<HTMLElement>(
+            'button:not(:disabled), select:not(:disabled), input:not(:disabled), [tabindex="0"]'
+          )
+        ).filter(el => el.offsetWidth > 0 || el.offsetHeight > 0);
+        if (!focusables.length) return;
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
+        }
+      }
     };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = overflow;
+      previous?.focus();
+    };
   }, [onClose, printing]);
 
   async function submit(event: React.FormEvent) {
@@ -54,8 +88,8 @@ export default function ReportFilterModal({ title, description, label, allLabel,
             {options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
           </select>
           <div className="report-filter-actions">
-            <button type="button" className="report-filter-cancel" onClick={onClose} disabled={printing}>Cancelar</button>
-            <button type="submit" className="report-filter-submit" disabled={printing}>
+            <button type="button" className="report-filter-cancel" onClick={onClose} disabled={printing} style={{ minHeight: "44px" }}>Cancelar</button>
+            <button type="submit" className="report-filter-submit" disabled={printing} style={{ minHeight: "44px" }}>
               <IoPrintOutline aria-hidden="true" /> {printing ? "Preparando…" : "Imprimir"}
             </button>
           </div>

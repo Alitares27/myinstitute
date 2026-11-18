@@ -48,20 +48,26 @@ a.activity-calendar-date::after {
   position: relative;
   display: grid;
   justify-items: start;
-  gap: .1rem;
+  gap: .15rem;
   width: 100%;
   margin: .25rem 0 0;
-  padding: .3rem .4rem;
+  padding: .45rem .55rem;
+  min-height: 44px;
   border-inline-start-width: 4px;
   border-radius: .35rem;
   background: var(--bg-surface-elevated);
   color: var(--text-main);
   text-align: start;
-  font-size: .8rem;
+  font-size: .875rem;
   overflow-wrap: anywhere;
+  cursor: pointer;
+}
+.activity-calendar-event:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
 }
 
-.activity-calendar-event time { color: var(--text-secondary); font-size: .72rem; }
+.activity-calendar-event time { color: var(--text-secondary); font-size: .8125rem; font-weight: 600; }
 .activity-color-picker { min-width: 0; border: 0; padding: 0; }
 .activity-color-options { display: flex; flex-wrap: wrap; gap: .35rem; margin: .5rem 0; }
 .activity-color-option {

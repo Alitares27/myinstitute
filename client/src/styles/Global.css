@@ -2,27 +2,32 @@
    1. VARIABLES & DESIGN TOKENS
    ========================================= */
 :root {
-  --primary: #007AFF;
+  --primary: #0066D6;
+  --primary-accent: #007AFF;
   --button-primary: #0066D6;
   --button-on-primary: #fff;
-  --button-on-danger: #210402;
+  --button-on-danger: #fff;
   --button-danger-text: #B3261E;
   --primary-hover: #0056CC;
   --primary-dark: #0A84FF;
-  --primary-light: rgba(0, 122, 255, 0.07);
+  --primary-light: rgba(0, 102, 214, 0.08);
 
-  --secondary: #34C759;
+  --secondary: #248A3D;
   --secondary-dark: #30D158;
 
-  --danger: #FF3B30;
+  --danger: #D70015;
   --danger-dark: #FF453A;
-  --danger-hover: #D63029;
+  --danger-hover: #B31B1B;
 
-  --warning: #FF9500;
+  --warning: #B25000;
   --warning-dark: #FF9F0A;
 
-  --success: #34C759;
+  --success: #1B6A2D;
   --success-dark: #30D158;
+
+  --text-success: #1B6A2D;
+  --text-danger: #C41C14;
+  --text-warning: #7C3700;
 
   --bg-body: #F2F2F7;
   --bg-surface: #FFFFFF;
@@ -32,15 +37,15 @@
 
   --text-main: #1C1C1E;
   --text-secondary: #3C3C43;
-  --text-muted: #8E8E93;
+  --text-muted: #59595E;
 
   --border-color: #E7E7ED;
-
+  --input-border: #767680;
 
   --sidebar-text: #1C1C1E;
-  --sidebar-text-muted: #8E8E93;
+  --sidebar-text-muted: #59595E;
   --sidebar-hover-bg: rgba(0, 0, 0, 0.04);
-  --sidebar-active-bg: #007AFF;
+  --sidebar-active-bg: #0066D6;
   --sidebar-active-text: #FFFFFF;
   --sidebar-border: #D1D1D6;
 
@@ -82,6 +87,10 @@
   --success: #30D158;
   --success-dark: #30D158;
 
+  --text-success: #30D158;
+  --text-danger: #FF6961;
+  --text-warning: #FFB340;
+
   --bg-body: #000000;
   --bg-surface: #1C1C1E;
   --bg-surface-elevated: #2C2C2E;
@@ -92,18 +101,57 @@
   --text-muted: #8E8E93;
 
   --border-color: #343438;
+  --input-border: #636366;
 
   --sidebar-text: #F5F5F7;
   --sidebar-text-muted: #8E8E93;
   --sidebar-hover-bg: rgba(255, 255, 255, 0.06);
   --sidebar-active-bg: #0A84FF;
-  --sidebar-active-text: #FFFFFF;
+  --sidebar-active-text: #071522;
   --sidebar-border: #38383A;
 
   --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.3);
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.35), 0 1px 2px rgba(0, 0, 0, 0.25);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
   --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.5);
+}
+
+/* =========================================
+   ACCESSIBILITY: SKIP LINK & SCREEN READERS
+   ========================================= */
+.skip-link {
+  position: absolute;
+  top: -120px;
+  left: 1rem;
+  z-index: 10000;
+  padding: 0.75rem 1.25rem;
+  background: var(--button-primary);
+  color: var(--button-on-primary);
+  border-radius: var(--radius-sm);
+  font-weight: 700;
+  font-size: 0.95rem;
+  text-decoration: none;
+  box-shadow: var(--shadow-lg);
+  transition: top 0.2s var(--ease-out);
+}
+
+.skip-link:focus,
+.skip-link:focus-visible {
+  top: 1rem;
+  outline: 3px solid var(--primary);
+  outline-offset: 3px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
 }
 
 /* =========================================
@@ -430,7 +478,7 @@ footer {
   gap: 1rem;
   box-shadow: none;
   background: transparent;
-  border: 1.5px solid var(--border-color);
+  border: 1.5px solid var(--input-border, var(--border-color));
 }
 
 .trip-form {
@@ -474,7 +522,7 @@ select,
 textarea {
   width: 100%;
   padding: 0.7rem 1rem;
-  border: 1.5px solid var(--border-color);
+  border: 1.5px solid var(--input-border, var(--border-color));
   border-radius: var(--radius-sm);
   background-color: var(--bg-surface);
   font-size: 0.95rem;
@@ -486,10 +534,11 @@ textarea {
 input:focus,
 select:focus,
 textarea:focus {
-  outline: none;
+  outline: 2px solid var(--primary);
+  outline-offset: 1px;
   background-color: var(--bg-surface);
   border-color: var(--primary);
-  box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.12);
+  box-shadow: 0 0 0 4px rgba(0, 102, 214, 0.15);
 }
 
 .form-group.full-width {
@@ -619,8 +668,7 @@ button:disabled {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 40px;
-  height: 40px;
+  min-width: 44px; height: 44px;
   padding: 0 0.8rem;
   border-radius: 50%;
   background-color: var(--bg-surface);
@@ -664,8 +712,8 @@ button:disabled {
 .status-present,
 .status-general,
 .status-finalizado {
-  background-color: rgba(52, 199, 89, 0.12);
-  color: var(--success);
+  background-color: rgba(52, 199, 89, 0.14);
+  color: var(--text-success);
   padding: 4px 12px;
   border-radius: 20px;
   font-weight: 700;
@@ -677,8 +725,8 @@ button:disabled {
 .status-cancelled,
 .status-absent,
 .status-cancelado {
-  background-color: rgba(255, 59, 48, 0.12);
-  color: var(--danger);
+  background-color: rgba(255, 59, 48, 0.14);
+  color: var(--text-danger);
   padding: 4px 12px;
   border-radius: 20px;
   font-weight: 700;
@@ -690,8 +738,8 @@ button:disabled {
 .status-scheduled,
 .status-warning,
 .status-programado {
-  background-color: rgba(255, 149, 0, 0.12);
-  color: #CC7700;
+  background-color: rgba(255, 149, 0, 0.14);
+  color: var(--text-warning);
   padding: 4px 12px;
   border-radius: 20px;
   font-weight: 700;
@@ -1070,8 +1118,8 @@ button:disabled {
   gap: 0.5rem;
   padding: 0.75rem 1rem;
   border-radius: var(--radius);
-  background: rgba(255, 59, 48, 0.1);
-  color: var(--danger);
+  background: rgba(215, 0, 21, 0.1);
+  color: var(--text-danger);
   font-size: 0.875rem;
   font-weight: 500;
 }
@@ -1082,8 +1130,8 @@ button:disabled {
   gap: 0.5rem;
   padding: 0.6rem 0.8rem;
   border-radius: var(--radius-sm);
-  background: rgba(255, 149, 0, 0.1);
-  color: #FF9500;
+  background: rgba(178, 80, 0, 0.12);
+  color: var(--text-warning);
   font-size: 0.8rem;
   font-weight: 500;
   margin-bottom: 0.5rem;
@@ -1226,7 +1274,7 @@ button:disabled {
 .activity-form textarea {
   width: 100%;
   padding: 0.7rem 1rem;
-  border: 1.5px solid var(--border-color);
+  border: 1.5px solid var(--input-border, var(--border-color));
   border-radius: 10px;
   background-color: var(--bg-body);
   font-size: 0.95rem;
@@ -1326,12 +1374,12 @@ button:disabled {
    OFFLINE BANNER
    ========================================= */
 .offline-banner {
-  background: var(--warning);
-  color: #fff;
+  background: var(--text-warning);
+  color: #FFFFFF;
   text-align: center;
-  padding: 8px 16px;
-  font-size: 0.82rem;
-  font-weight: 600;
+  padding: 10px 16px;
+  font-size: 0.875rem;
+  font-weight: 700;
   border-radius: 0 0 8px 8px;
   margin: -16px -16px 16px -16px;
 }
@@ -2168,3 +2216,22 @@ html:root body .ios-dialog-backdrop { z-index: 15001; }
   cursor: pointer;
 }
 .leader-permissions-options input { margin: 0; accent-color: var(--primary); }
+
+/* =========================================
+   17. REDUCED MOTION (WCAG 2.3.3)
+   ========================================= */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .loading-spinner,
+  .skeleton {
+    animation: none !important;
+  }
+}

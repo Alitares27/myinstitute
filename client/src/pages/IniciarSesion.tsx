@@ -3,7 +3,7 @@ import { invalidarCache } from "../utils/clienteCache";
 import { limpiarSesion } from "../utils/sesion";
 import { useState } from "react";
 import api from "../api";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import Layout from "../components/Disposicion";
 import { TbLogin, TbAlertTriangle, TbEye, TbEyeOff } from "react-icons/tb";
 import { synchronizePendingChanges } from "../services/offlineSync";
@@ -135,12 +135,7 @@ export default function Login() {
           <div className="auth-footer">
             <p>
               ¿No tienes una cuenta?{" "}
-              <span
-                onClick={() => navigate("/registrarse")}
-                className="auth-link"
-              >
-                Regístrate aquí
-              </span>
+              <Link to="/registrarse" className="auth-link">Regístrate aquí</Link>
             </p>
           </div>
         </div>

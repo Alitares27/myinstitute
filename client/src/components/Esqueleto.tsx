@@ -13,5 +13,5 @@ export const Skeleton: React.FC<SkeletonProps> = ({ width = '100%', height = '1r
     height,
     ...(style || {}),
   };
-  return <div className="skeleton" style={inlineStyle} />;
+  return <div className="skeleton" style={inlineStyle} aria-hidden="true" />;
 };

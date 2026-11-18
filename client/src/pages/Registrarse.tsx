@@ -103,7 +103,7 @@ export default function Signup() {
       />
     </div>
 
-    {error && <p className="error-message">{error}</p>}
+    {error && <p id="signup-error" className="error-message" role="alert" aria-live="assertive">{error}</p>}
 
     <div className="auth-buttons">
       <button type="submit" className="btn-login" disabled={loading}>

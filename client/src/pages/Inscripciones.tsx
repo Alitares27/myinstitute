@@ -650,23 +650,23 @@ export default function Enrollments() {
         </div>
       </div>
 
-      <div className="table-container">
-        <table>
+      <div className="table-container" tabIndex={0} role="region" aria-label="Tabla de matrículas">
+        <table aria-label="Matrículas de estudiantes">
           <thead>
             <tr>
-              <th onClick={() => handleSort("student_name")} className="sortable-header">
+              <th scope="col" onClick={() => handleSort("student_name")} className="sortable-header" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleSort("student_name"); } }} aria-sort={sortConfig?.key === "student_name" ? (sortConfig.direction === "asc" ? "ascending" : "descending") : "none"}>
                 Estudiante / Miembro
                 <span className="sort-icon">
                   {sortConfig?.key === "student_name" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
                 </span>
               </th>
-              <th onClick={() => handleSort("course_title")} className="sortable-header">
+              <th scope="col" onClick={() => handleSort("course_title")} className="sortable-header" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleSort("course_title"); } }} aria-sort={sortConfig?.key === "course_title" ? (sortConfig.direction === "asc" ? "ascending" : "descending") : "none"}>
                 Curso Asignado
                 <span className="sort-icon">
                   {sortConfig?.key === "course_title" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
                 </span>
               </th>
-              {role === "admin" && <th style={{ width: "120px", textAlign: "center" }}>Acciones</th>}
+              {role === "admin" && <th scope="col" style={{ width: "120px", textAlign: "center" }}>Acciones</th>}
             </tr>
           </thead>
 

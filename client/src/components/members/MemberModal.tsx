@@ -21,7 +21,7 @@ export default function MemberModal({children,onClose}:{children:ReactNode;onClo
  },[]);
  return <div className="miembros-modal-overlay" onClick={event=>{if(event.target===event.currentTarget)onClose();}}>
   <div className="miembros-modal" role="dialog" aria-modal="true" aria-labelledby="miembros-modal-title" tabIndex={-1} ref={ref}>
-   <header className="miembros-modal-header"><h2 id="miembros-modal-title">Información del miembro</h2></header>
+   <header className="miembros-modal-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}><h2 id="miembros-modal-title">Información del miembro</h2><button type="button" className="btn secondary btn-icon modal-close-icon" aria-label="Cerrar modal de miembro" onClick={onClose} style={{ minHeight: "44px", minWidth: "44px" }}>×</button></header>
    {children}
   </div>
  </div>;

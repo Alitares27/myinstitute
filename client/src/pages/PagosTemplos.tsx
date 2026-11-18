@@ -497,40 +497,41 @@ export default function PagosTemplos() {
             No hay pagos registrados{filterTripId || filterUserId ? " para el filtro seleccionado" : ""}.
           </p>
         ) : (
-          <table>
+          <div className="table-container" tabIndex={0} role="region" aria-label="Tabla de pagos de viajes al templo">
+          <table aria-label="Pagos de viajes al templo">
             <thead>
               <tr>
-                <th onClick={() => handleSort("miembro_nombre")} className="sortable-header">
+                <th scope="col" onClick={() => handleSort("miembro_nombre")} className="sortable-header" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleSort("miembro_nombre"); } }} aria-sort={sortConfig?.key === "miembro_nombre" ? (sortConfig.direction === "asc" ? "ascending" : "descending") : "none"}>
                   Miembro
                   <span className="sort-icon">
                     {sortConfig?.key === "miembro_nombre" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
                   </span>
                 </th>
-                <th onClick={() => handleSort("payment_amount")} className="sortable-header">
+                <th scope="col" onClick={() => handleSort("payment_amount")} className="sortable-header" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleSort("payment_amount"); } }} aria-sort={sortConfig?.key === "payment_amount" ? (sortConfig.direction === "asc" ? "ascending" : "descending") : "none"}>
                   Monto Pagado
                   <span className="sort-icon">
                     {sortConfig?.key === "payment_amount" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
                   </span>
                 </th>
-                <th onClick={() => handleSort("monto_adeudado")} className="sortable-header">
+                <th scope="col" onClick={() => handleSort("monto_adeudado")} className="sortable-header" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleSort("monto_adeudado"); } }} aria-sort={sortConfig?.key === "monto_adeudado" ? (sortConfig.direction === "asc" ? "ascending" : "descending") : "none"}>
                   Monto Adeudado
                   <span className="sort-icon">
                     {sortConfig?.key === "monto_adeudado" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
                   </span>
                 </th>
-                <th onClick={() => handleSort("payment_date")} className="sortable-header">
+                <th scope="col" onClick={() => handleSort("payment_date")} className="sortable-header" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleSort("payment_date"); } }} aria-sort={sortConfig?.key === "payment_date" ? (sortConfig.direction === "asc" ? "ascending" : "descending") : "none"}>
                   Fecha Pago
                   <span className="sort-icon">
                     {sortConfig?.key === "payment_date" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
                   </span>
                 </th>
-                <th onClick={() => handleSort("payment_type")} className="sortable-header">
+                <th scope="col" onClick={() => handleSort("payment_type")} className="sortable-header" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleSort("payment_type"); } }} aria-sort={sortConfig?.key === "payment_type" ? (sortConfig.direction === "asc" ? "ascending" : "descending") : "none"}>
                   Medio Pago
                   <span className="sort-icon">
                     {sortConfig?.key === "payment_type" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
                   </span>
                 </th>
-                {canManage && <th style={{ width: "96px", textAlign: "center" }}>Acciones</th>}
+                {canManage && <th scope="col" style={{ width: "96px", textAlign: "center" }}>Acciones</th>}
               </tr>
             </thead>
             <tbody>
@@ -587,6 +588,7 @@ export default function PagosTemplos() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </div>
 

@@ -10,9 +10,12 @@ interface LayoutProps {
 export default function Layout({ children }: LayoutProps) {
   return (
     <div className="app-layout">
+      <a href="#main-content" className="skip-link">
+        Saltar al contenido principal
+      </a>
       <BarraLateral />
       <div className="main-content">
-        <main className="content">
+        <main id="main-content" className="content" tabIndex={-1}>
           <EstadoSincronizacion />
           {children}
         </main>

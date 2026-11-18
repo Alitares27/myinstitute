@@ -253,7 +253,7 @@ export default function MeetingForm({
                             className="btn cancel-btn modal-close-icon"
                             onClick={onCancel}
                             title="Cancelar"
-                            aria-label="Cancelar"
+                            aria-label="Cancelar y cerrar formulario"
                         >
                             ✕
                         </button>

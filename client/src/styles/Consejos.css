@@ -427,12 +427,13 @@
   font-family: inherit;
 }
 
-.meeting-form input:focus,
-.meeting-form textarea:focus {
-  outline: none;
+.meeting-form input:focus-visible,
+.meeting-form textarea:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 1px;
   background-color: var(--bg-surface);
   border-color: var(--primary);
-  box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.12);
+  box-shadow: 0 0 0 4px rgba(0, 102, 214, 0.15);
 }
 
 .meeting-form button[type="submit"] {
@@ -503,12 +504,13 @@
   background-color: var(--bg-surface);
 }
 
-.attendees-dropdown-trigger:focus,
+.attendees-dropdown-trigger:focus-visible,
 .attendees-dropdown-trigger:focus-within {
-  outline: none;
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
   background-color: var(--bg-surface);
   border-color: var(--primary);
-  box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.12);
+  box-shadow: 0 0 0 4px rgba(0, 102, 214, 0.15);
 }
 
 .attendees-placeholder {
@@ -607,10 +609,11 @@
   transition: all var(--transition);
 }
 
-.attendees-search:focus {
+.attendees-search:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
   background: var(--bg-surface);
   border-bottom-color: var(--primary);
-  box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.12);
 }
 
 .attendees-dropdown-list {
@@ -742,21 +745,21 @@
 }
 
 .attendee-status-select.status-pending {
-  border-color: var(--warning);
-  color: #b7950b;
-  background: rgba(255, 149, 0, 0.06);
+  border-color: var(--text-warning);
+  color: var(--text-warning);
+  background: rgba(178, 80, 0, 0.08);
 }
 
 .attendee-status-select.status-confirmed {
-  border-color: var(--success);
-  color: var(--success);
-  background: rgba(52, 199, 89, 0.06);
+  border-color: var(--text-success);
+  color: var(--text-success);
+  background: rgba(27, 106, 45, 0.08);
 }
 
 .attendee-status-select.status-declined {
-  border-color: var(--danger);
-  color: var(--danger);
-  background: rgba(255, 59, 48, 0.06);
+  border-color: var(--text-danger);
+  color: var(--text-danger);
+  background: rgba(215, 0, 21, 0.08);
 }
 
 /* -----------------------------------------

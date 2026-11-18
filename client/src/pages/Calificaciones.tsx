@@ -425,14 +425,14 @@ export default function Grades() {
         </div>
         <div className="asistencia-filters">
           {role !== "student" && (
-            <select value={filterStudent} onChange={(e) => setFilterStudent(e.target.value)}>
+            <select value={filterStudent} onChange={(e) => setFilterStudent(e.target.value)} aria-label="Filtrar por estudiante">
               <option value="">Todos los miembros ({students.length})</option>
               {students.map((s) => (
                 <option key={s.id} value={s.id}>{s.name}</option>
               ))}
             </select>
           )}
-          <select value={filterType} onChange={(e) => setFilterType(e.target.value)}>
+          <select value={filterType} onChange={(e) => setFilterType(e.target.value)} aria-label="Filtrar por tipo de calificación">
             <option value="">Todos los tipos</option>
             <option value="examen">Examen</option>
             <option value="Lectura">Lectura</option>
@@ -441,43 +441,43 @@ export default function Grades() {
         </div>
       </div>
 
-      <div className="table-container">
-        <table>
+      <div className="table-container" tabIndex={0} role="region" aria-label="Tabla de calificaciones">
+        <table aria-label="Calificaciones de estudiantes">
           <thead>
             <tr>
               {role !== "student" && (
-                <th onClick={() => requestSort("student_name")} className="sortable-header">
+                <th scope="col" onClick={() => requestSort("student_name")} className="sortable-header" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); requestSort("student_name"); } }} aria-sort={sortConfig?.key === "student_name" ? (sortConfig.direction === "asc" ? "ascending" : "descending") : "none"}>
                   Estudiante
                   <span className="sort-icon">
                     {sortConfig?.key === "student_name" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
                   </span>
                 </th>
               )}
-              <th onClick={() => requestSort("course_title")} className="sortable-header">
+              <th scope="col" onClick={() => requestSort("course_title")} className="sortable-header" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); requestSort("course_title"); } }} aria-sort={sortConfig?.key === "course_title" ? (sortConfig.direction === "asc" ? "ascending" : "descending") : "none"}>
                 Curso
                 <span className="sort-icon">
                   {sortConfig?.key === "course_title" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
                 </span>
               </th>
-              <th onClick={() => requestSort("grade")} className="sortable-header">
+              <th scope="col" onClick={() => requestSort("grade")} className="sortable-header" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); requestSort("grade"); } }} aria-sort={sortConfig?.key === "grade" ? (sortConfig.direction === "asc" ? "ascending" : "descending") : "none"}>
                 Nota
                 <span className="sort-icon">
                   {sortConfig?.key === "grade" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
                 </span>
               </th>
-              <th onClick={() => requestSort("grade_type")} className="sortable-header">
+              <th scope="col" onClick={() => requestSort("grade_type")} className="sortable-header" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); requestSort("grade_type"); } }} aria-sort={sortConfig?.key === "grade_type" ? (sortConfig.direction === "asc" ? "ascending" : "descending") : "none"}>
                 Tipo
                 <span className="sort-icon">
                   {sortConfig?.key === "grade_type" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
                 </span>
               </th>
-              <th onClick={() => requestSort("created_at")} className="sortable-header">
+              <th scope="col" onClick={() => requestSort("created_at")} className="sortable-header" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); requestSort("created_at"); } }} aria-sort={sortConfig?.key === "created_at" ? (sortConfig.direction === "asc" ? "ascending" : "descending") : "none"}>
                 Fecha
                 <span className="sort-icon">
                   {sortConfig?.key === "created_at" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
                 </span>
               </th>
-              {role !== "student" && <th>Acciones</th>}
+              {role !== "student" && <th scope="col">Acciones</th>}
             </tr>
           </thead>
 

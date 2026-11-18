@@ -33,11 +33,39 @@ export default function AppDialogHost() {
 
   useEffect(() => {
     if (!dialog) return;
+    const previous = document.activeElement as HTMLElement | null;
+    const overflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") close(false);
+      if (event.key === "Escape") {
+        event.stopPropagation();
+        close(false);
+        return;
+      }
+      if (event.key === "Tab") {
+        const dialogEl = document.querySelector(".ios-dialog") as HTMLElement | null;
+        if (!dialogEl) return;
+        const focusables = Array.from(dialogEl.querySelectorAll<HTMLElement>("button:not(:disabled)"));
+        if (!focusables.length) return;
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
+        }
+      }
     };
+
     window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      document.body.style.overflow = overflow;
+      previous?.focus();
+    };
   }, [dialog]);
 
   function close(accepted: boolean) {

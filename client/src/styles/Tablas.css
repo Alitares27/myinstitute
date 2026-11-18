@@ -43,9 +43,9 @@ td {
 
 th {
   background: var(--bg-body);
-  font-weight: 600;
-  color: var(--text-muted);
-  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  font-size: 0.8125rem;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -102,8 +102,8 @@ th {
 .meetings-table th {
   background: var(--bg-body);
   font-weight: 700;
-  color: var(--text-muted);
-  font-size: 0.7rem;
+  color: var(--text-secondary);
+  font-size: 0.8125rem;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -163,11 +163,14 @@ th {
 .extracted-style-9 {
   padding: 8px 12px;
   border-radius: var(--radius-sm);
-  border: 1px solid var(--border-color);
-  outline: none;
+  border: 1px solid var(--input-border, var(--border-color));
   background-color: var(--bg-body);
   color: var(--text-main);
   transition: all var(--transition);
+}
+.extracted-style-9:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
 }
 
 .extracted-style-9:focus {
@@ -312,4 +315,9 @@ th {
   text-align: center;
   font-weight: 600;
   border: 1px solid rgba(255, 59, 48, 0.15);
+}
+
+.sortable-header:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: -2px;
 }

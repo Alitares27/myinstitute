@@ -29,3 +29,11 @@
     background-position: calc(200px + 100%) 0;
   }
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none !important;
+    background-image: none !important;
+    opacity: 0.6;
+  }
+}

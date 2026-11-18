@@ -89,8 +89,12 @@ export default function AttendeesSelector({
                 <p>No hay usuarios registrados.</p>
             ) : (
                 <div className="attendees-dropdown">
-                    <div
+                    <button
+                        type="button"
                         className="attendees-dropdown-trigger"
+                        aria-haspopup="listbox"
+                        aria-expanded={isOpen}
+                        aria-label="Seleccionar participantes"
                         onClick={() => setIsOpen(!isOpen)}
                     >
                         {selectedUsers.length === 0 ? (
@@ -102,48 +106,35 @@ export default function AttendeesSelector({
                                     return (
                                         <span key={user.id} className={`attendee-chip chip-${attendee.status}`}>
                                             {user.name}
-                                            <button
-                                                type="button"
-                                                className="attendee-chip-remove"
-                                                onClick={(e) => removeUser(user.id, e)}
-                                            >
-                                                &times;
-                                            </button>
+                                            <button type="button" className="attendee-chip-remove" aria-label={`Quitar a ${user.name}`} onClick={(e) => removeUser(user.id, e)}>&times;</button>
                                         </span>
                                     );
                                 })}
                             </div>
                         )}
-                        <span className={`attendees-arrow ${isOpen ? "open" : ""}`}>&#9662;</span>
-                    </div>
+                        <span className={`attendees-arrow ${isOpen ? "open" : ""}`} aria-hidden="true">&#9662;</span>
+                    </button>
 
                     {isOpen && (
                         <div className="attendees-dropdown-menu">
-                            <input
-                                type="text"
-                                className="attendees-search"
-                                placeholder="Buscar usuario..."
+                            <input type="text" className="attendees-search" placeholder="Buscar usuario..." aria-label="Buscar participante por nombre"
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
                                 onClick={(e) => e.stopPropagation()}
                             />
-                            <div className="attendees-dropdown-list">
+                            <div className="attendees-dropdown-list" role="listbox" aria-label="Usuarios disponibles">
                                 {filteredUsers.length === 0 ? (
                                     <p className="attendees-no-results">Sin resultados</p>
                                 ) : (
                                     filteredUsers.map((user) => {
                                         const isSelected = selectedIds.includes(user.id);
                                         return (
-                                            <div
-                                                key={user.id}
-                                                className={`attendee-option ${isSelected ? "selected" : ""}`}
-                                                onClick={() => toggleUser(user.id)}
-                                            >
+                                            <button type="button" key={user.id} role="option" aria-selected={isSelected} className={`attendee-option ${isSelected ? "selected" : ""}`} onClick={() => toggleUser(user.id)} style={{ width: "100%", textAlign: "left", background: "none", border: "none", font: "inherit", cursor: "pointer" }}>
                                                 <span className="attendee-option-check">
                                                     {isSelected ? <TbCheck /> : ""}
                                                 </span>
                                                 <span>{user.name}</span>
-                                            </div>
+                                            </button>
                                         );
                                     })
                                 )}
@@ -161,9 +152,7 @@ export default function AttendeesSelector({
                         return (
                             <div key={user.id} className="attendee-status-row">
                                 <span className="attendee-status-name">{user.name}</span>
-                                <select
-                                    className={`attendee-status-select status-${attendee.status}`}
-                                    value={attendee.status}
+                                <select className={`attendee-status-select status-${attendee.status}`} aria-label={`Estado de asistencia de ${user.name}`} value={attendee.status}
                                     onChange={(e) =>
                                         changeStatus(user.id, e.target.value as AttendeeStatus)
                                     }
