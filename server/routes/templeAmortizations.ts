@@ -4,7 +4,7 @@ import { cents, isoDate, positiveId } from "../utils/validation";
 import { asyncRouter } from "../middleware/asyncRouter";
 import { Router, Request, Response } from "express";
 import { pool } from "../models/db";
-import { verifyToken, isAdmin, AuthRequest } from "../middleware/auth";
+import { verifyToken, adminOrTeacher, isAdmin, AuthRequest, requireModuleAccess } from "../middleware/auth";
 
 const router = asyncRouter();
 
@@ -25,12 +25,12 @@ function paymentQuery(req: AuthRequest) {
     'efectivo',COALESCE(SUM(payment_amount) FILTER(WHERE payment_type='efectivo'),0),'transferencia',COALESCE(SUM(payment_amount) FILTER(WHERE payment_type='transferencia'),0),'donacion',COALESCE(SUM(payment_amount) FILTER(WHERE payment_type='donacion'),0))`;
   return { select, params, summary };
 }
-router.get("/report", verifyToken, isAdmin, async (req: AuthRequest, res: Response) => {
+router.get("/report", verifyToken, requireModuleAccess("pagos-templos"), adminOrTeacher, async (req: AuthRequest, res: Response) => {
   const { select, params, summary } = paymentQuery(req);
   const result = await pool.query(`WITH filtered AS (${select}) SELECT COALESCE(json_agg(filtered),'[]'::json) AS items,${summary} AS summary FROM filtered`, params);
   res.json(result.rows[0]);
 });
-router.get("/events", verifyToken, isAdmin, async (req: AuthRequest, res: Response) => {
+router.get("/events", verifyToken, requireModuleAccess("auditorias"), adminOrTeacher, async (req: AuthRequest, res: Response) => {
   res.json(await readPage(req, `SELECT e.*,actor.name AS actor_name,member.name AS reservation_member_name
     FROM financial_events e
     LEFT JOIN users actor ON actor.id=e.actor_id
@@ -41,14 +41,14 @@ router.get("/events", verifyToken, isAdmin, async (req: AuthRequest, res: Respon
       ELSE reservation.user_id
     END`, [], { created_at: "created_at" }, "created_at"));
 });
-router.get("/", verifyToken, isAdmin, async (req: AuthRequest, res: Response) => {
+router.get("/", verifyToken, requireModuleAccess("pagos-templos"), adminOrTeacher, async (req: AuthRequest, res: Response) => {
   const { select, params, summary } = paymentQuery(req);
   res.json(await readPage(req, select, params, { miembro_nombre: "miembro_nombre", payment_amount: "payment_amount", monto_adeudado: "monto_adeudado", payment_date: "payment_date", payment_type: "payment_type" }, "payment_date", summary));
 });
 
 router.post(
   "/",
-  verifyToken,
+  verifyToken, requireModuleAccess("pagos-templos"),
   isAdmin,
   async (req: AuthRequest, res: Response) => {
     try {
@@ -135,7 +135,7 @@ router.post(
 
 router.put(
   "/:id",
-  verifyToken,
+  verifyToken, requireModuleAccess("pagos-templos"),
   isAdmin,
   async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
@@ -230,7 +230,7 @@ router.put(
 
 router.delete(
   "/:id",
-  verifyToken,
+  verifyToken, requireModuleAccess("pagos-templos"),
   isAdmin,
   async (req: AuthRequest, res: Response) => {
     const { id } = req.params;

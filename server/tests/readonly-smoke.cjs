@@ -11,11 +11,11 @@ const { startServer } = require("../dist/index");
   const base = `http://127.0.0.1:${server.address().port}`;
   let checks = 0;
   try {
-    const users = await pool.query("SELECT DISTINCT ON (role) id, role, password, auth_version FROM users WHERE role IN ('admin','teacher','student') ORDER BY role,id");
+    const users = await pool.query("SELECT DISTINCT ON (role) id, role, password, token_version FROM users WHERE role IN ('admin','teacher','student') ORDER BY role,id");
     assert.ok(users.rowCount > 0, "No accounts available for read-only smoke test");
     assert.equal((await fetch(`${base}/health`)).status, 200); checks++;
     for (const user of users.rows) {
-      const token = jwt.sign({ id: user.id, role: user.role, session: sessionFingerprint(user.password), version: Number(user.auth_version) }, process.env.JWT_SECRET, { expiresIn: "2m" });
+      const token = jwt.sign({ id: user.id, role: user.role, session: sessionFingerprint(user.password), tokenVersion: Number(user.token_version) }, process.env.JWT_SECRET, { expiresIn: "2m" });
       const headers = { Authorization: `Bearer ${token}` };
       for (const route of ["users/me", "users/members?limit=2", `users/${user.id}/academic`, "students", "teachers", "courses", "enrollments", "attendance", "grades", "topics", "meetings", "dashboard-stats", "temple-trips", "temples", "activities"]) {
         const response = await fetch(`${base}/api/${route}`, { headers });

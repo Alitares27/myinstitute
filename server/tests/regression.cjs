@@ -7,10 +7,10 @@ const { app } = require("../dist/index");
 const { sessionFingerprint } = require("../dist/middleware/auth");
 const { cents, isoDate, positiveId, reservationBalance } = require("../dist/utils/validation");
 const { prepareRoleChange } = require("../dist/utils/roles");
-const users = new Map([[1,{role:"admin",password:"hash-admin",auth_version:0}],[2,{role:"teacher",password:"hash-teacher",auth_version:0}],[3,{role:"student",password:"hash-student",auth_version:0}]]);
+const users = new Map([[1,{role:"admin",password:"hash-admin",token_version:0}],[2,{role:"teacher",password:"hash-teacher",token_version:0,permissions:["asistencia","calificaciones","inscripciones","miembros","panel"]}],[3,{role:"student",password:"hash-student",token_version:0}]]);
 let server, base, calls, transaction, queryHandler, connectError;
 const rows = (...values) => ({ rows:values, rowCount:values.length });
-const token = (id, override={}) => jwt.sign({ id, role:users.get(id).role, session:sessionFingerprint(users.get(id).password), version:users.get(id).auth_version, ...override }, process.env.JWT_SECRET, {expiresIn:"1h"});
+const token = (id, override={}) => jwt.sign({ id, role:users.get(id).role, session:sessionFingerprint(users.get(id).password), tokenVersion:users.get(id).token_version, ...override }, process.env.JWT_SECRET, {expiresIn:"1h"});
 async function request(path, id=1, body, method=body ? "POST" : "GET", authToken) {
   return fetch(base+path, { method, headers:{"Content-Type":"application/json", ...(id ? {Authorization:`Bearer ${authToken || token(id)}`} : {})}, ...(body ? {body:JSON.stringify(body)} : {}), signal:AbortSignal.timeout(3000) });
 }
@@ -18,7 +18,7 @@ before(async () => { server=app.listen(0,"127.0.0.1"); await new Promise(r=>serv
 after(async () => { await new Promise(r=>server.close(r)); await pool.end(); });
 beforeEach(() => {
   calls=[]; transaction=[]; connectError=false; queryHandler=async()=>rows();
-  pool.query=async(sql,params=[])=>{ calls.push([sql,params]); if(sql.startsWith("SELECT role, password, auth_version FROM users")) return users.has(params[0]) ? rows(users.get(params[0])) : rows(); return queryHandler(sql,params); };
+  pool.query=async(sql,params=[])=>{ calls.push([sql,params]); if(sql.startsWith("SELECT role, password, token_version, permissions FROM users")) return users.has(params[0]) ? rows(users.get(params[0])) : rows(); return queryHandler(sql,params); };
   pool.connect=async()=> { if(connectError) throw new Error("Simulated pool failure"); return { query:async(sql,params=[])=>{transaction.push([sql,params]); return queryHandler(sql,params);}, release:()=>transaction.push(["RELEASE",[]]) }; };
 });
 test("money arithmetic preserves cents and rejects invalid, negative, overpaid amounts", () => {
@@ -56,7 +56,7 @@ test("students and teachers cannot read reservations, reports or options",async(
 });
 test("students cannot create attendance or grades",async()=>{
   for(const path of ["/api/attendance","/api/grades"]) assert.equal((await request(path,3,{student_id:3,course_id:1})).status,403);
-  assert.equal(calls.filter(([sql])=>sql.includes("INSERT")).length,0);
+  assert.equal(calls.filter(([sql])=>sql.includes("INSERT") && !sql.includes("security_events")).length,0);
 });
 test("attendance requires enrollment, a matching topic and valid status/date",async()=>{
   const body={student_id:5,course_id:1,topic_id:2,date:"2026-01-01",status:"Present"};

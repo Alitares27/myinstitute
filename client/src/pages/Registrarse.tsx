@@ -4,6 +4,7 @@ import { limpiarSesion } from "../utils/sesion";
 import { useState } from "react";
 import api from "../api";
 import { useNavigate } from "react-router-dom";
+import { TbEye, TbEyeOff } from "react-icons/tb";
 
 export default function Signup() {
   const [form, setForm] = useState({
@@ -11,8 +12,8 @@ export default function Signup() {
     email: "",
     password: "",
     telefono: "",
-    role: "student",
   });
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -67,14 +68,28 @@ export default function Signup() {
     </div>
 
     <div className="form-group">
-      <label>Contraseña</label>
-      <input
-        type="password"
-        placeholder="Mínimo 6 caracteres"
-        value={form.password}
-        onChange={(e) => setForm({ ...form, password: e.target.value })}
-        required
-      />
+      <label htmlFor="signup-password">Contraseña</label>
+      <div className="login-password-field">
+        <input
+          id="signup-password"
+          name="password"
+          type={showPassword ? "text" : "password"}
+          placeholder="Mínimo 6 caracteres"
+          value={form.password}
+          onChange={(e) => setForm({ ...form, password: e.target.value })}
+          autoComplete="new-password"
+          autoCapitalize="none"
+          spellCheck={false}
+          required
+        />
+        <button type="button" className="login-password-toggle"
+          aria-controls="signup-password"
+          aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+          onClick={() => setShowPassword(visible => !visible)}
+          disabled={loading}>
+          {showPassword ? <TbEyeOff aria-hidden="true" /> : <TbEye aria-hidden="true" />}
+        </button>
+      </div>
     </div>
 
     <div className="form-group">
@@ -86,16 +101,6 @@ export default function Signup() {
         onChange={(e) => setForm({ ...form, telefono: e.target.value })}
         required
       />
-    </div>
-
-    <div className="form-group">
-      <label>Tipo de Usuario</label>
-      <select
-        value={form.role}
-        onChange={(e) => setForm({ ...form, role: e.target.value })}
-      >
-        <option value="student">Miembro</option>
-      </select>
     </div>
 
     {error && <p className="error-message">{error}</p>}

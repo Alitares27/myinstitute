@@ -26,15 +26,23 @@ function idbRequest(request){return new Promise((resolve,reject)=>{request.onsuc
 function openOfflineDb(){return new Promise((resolve,reject)=>{const request=indexedDB.open('gestionar-offline-v1',3);request.onupgradeneeded=()=>{const db=request.result;if(!db.objectStoreNames.contains('responses')){const store=db.createObjectStore('responses',{keyPath:'key'});store.createIndex('userId','userId',{unique:false});}if(!db.objectStoreNames.contains('outbox')){const store=db.createObjectStore('outbox',{keyPath:'id'});store.createIndex('userId','userId',{unique:false});}if(!db.objectStoreNames.contains('sessions'))db.createObjectStore('sessions',{keyPath:'userId'});if(!db.objectStoreNames.contains('meta'))db.createObjectStore('meta',{keyPath:'key'});};request.onsuccess=()=>{request.result.onversionchange=()=>request.result.close();resolve(request.result);};request.onerror=()=>reject(request.error);});}
 async function acquireWorkerLock(db,owner){return new Promise(resolve=>{const tx=db.transaction('meta','readwrite'),store=tx.objectStore('meta'),request=store.get('sync-lock');let acquired=false;request.onsuccess=()=>{if(!request.result||request.result.expiresAt<=Date.now()){store.put({key:'sync-lock',owner,expiresAt:Date.now()+120000});acquired=true;}};tx.oncomplete=()=>resolve(acquired);tx.onerror=tx.onabort=()=>resolve(false);});}
 async function releaseWorkerLock(db,owner){return new Promise(resolve=>{const tx=db.transaction('meta','readwrite'),store=tx.objectStore('meta'),request=store.get('sync-lock');request.onsuccess=()=>{if(request.result?.owner===owner)store.delete('sync-lock');};tx.oncomplete=tx.onerror=tx.onabort=()=>resolve();});}
+async function activeOfflineSession(db,session){
+  const current=await idbRequest(db.transaction('sessions','readonly').objectStore('sessions').get(session.userId));
+  return current?.token===session.token;
+}
 async function refreshWorkerCopies(db,session){
   const entries=await idbRequest(db.transaction('responses','readonly').objectStore('responses').index('userId').getAll(session.userId));
   for(const entry of entries){
+    if(!await activeOfflineSession(db,session))break;
     try{
       const response=await fetch(session.apiBase+entry.url,{headers:{Authorization:'Bearer '+session.token},cache:'no-store',signal:AbortSignal.timeout(15000)});
       if(response.status===401)break;
       if(response.ok){
         const data=await response.json();
-        await idbRequest(db.transaction('responses','readwrite').objectStore('responses').put({...entry,data,savedAt:Date.now()}));
+        const tx=db.transaction(['sessions','responses'],'readwrite');
+        const current=await idbRequest(tx.objectStore('sessions').get(session.userId));
+        if(current?.token!==session.token)break;
+        await idbRequest(tx.objectStore('responses').put({...entry,data,savedAt:Date.now()}));
       }else if(response.status===403||response.status===404){
         await idbRequest(db.transaction('responses','readwrite').objectStore('responses').delete(entry.key));
       }
@@ -55,10 +63,22 @@ async function syncOfflineOutbox(){
       let completed=false;
       try{
       for(const entry of entries){
+        if(!await activeOfflineSession(db,session))break;
         let response;
         try{response=await fetch(session.apiBase+entry.url,{method:entry.method,headers:{'Content-Type':'application/json',Authorization:'Bearer '+session.token,'X-Offline-Queue-Id':entry.id},...(entry.data===undefined?{}:{body:JSON.stringify(entry.data)})});}
         catch{throw new Error('offline');}
-        if(!response.ok){if(response.status===429||response.status>=500)throw new Error('retry');break;}
+        if(!response.ok){
+          if(response.status===401||response.status===403){
+            const rejection=db.transaction(['outbox','sessions'],'readwrite');
+            const active=await idbRequest(rejection.objectStore('sessions').get(session.userId));
+            rejection.objectStore('outbox').delete(entry.id);
+            if(response.status===401&&active?.token===session.token)rejection.objectStore('sessions').delete(session.userId);
+            const windows=await self.clients.matchAll({type:'window'});
+            for(const client of windows)client.postMessage({type:'offline-sync-rejected',status:response.status,userId:session.userId});
+          }
+          if(response.status===429||response.status>=500)throw new Error('retry');
+          break;
+        }
         const data=await response.json().catch(()=>({}));
         const createdId=data?.id??data?.user?.id;
         if(entry.localId&&createdId!=null){

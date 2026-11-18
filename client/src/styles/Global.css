@@ -2052,6 +2052,17 @@ html.native-android .desktop-statistics { display: none !important; }
 .form-modal-header button { flex: none; }
 .form-launch { margin-bottom: 1rem; }
 
+.audit-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+  margin-bottom: 1rem;
+}
+
+.audit-header h1 { margin: 0; min-width: 0; }
+.audit-header .btn { flex-shrink: 0; margin: 0; }
+
 @media (min-width: 701px) {
   .asistencia-header-actions.reservation-header-actions { align-items: stretch; }
   .reservation-header-actions > .btn { min-height: 44px; }
@@ -2132,10 +2143,28 @@ html:root body .ios-dialog-backdrop { z-index: 15001; }
 
   .page-actions:has(.mobile-print) > .mobile-header-action { flex: none; }
 
-  .inscripciones-header-actions:has(.mobile-print) > .btn:not(.mobile-print) {
-    margin: 0;
-    padding-inline: .55rem;
-  }
-
-  .inscripciones-header-actions:has(.mobile-print) > .btn:not(.mobile-print) > svg { display: none; }
 }
+
+.leader-permissions {
+  grid-column: 1 / -1;
+  min-width: 0;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: .75rem;
+}
+
+.leader-permissions legend { padding-inline: .25rem; font-weight: 600; }
+.leader-permissions-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 10rem), 1fr));
+  gap: .25rem .75rem;
+}
+.leader-permissions-options label {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: .5rem;
+  min-height: 44px;
+  cursor: pointer;
+}
+.leader-permissions-options input { margin: 0; accent-color: var(--primary); }

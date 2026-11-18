@@ -2,11 +2,11 @@ import { courseAccess } from "../utils/courseAccess";
 import { asyncRouter } from "../middleware/asyncRouter";
 import express, { Response } from "express";
 import { pool } from "../models/db";
-import { verifyToken, isAdmin, AuthRequest } from "../middleware/auth";
+import { verifyToken, isAdmin, AuthRequest, requireModuleAccess } from "../middleware/auth";
 
 const router = asyncRouter();
 
-router.get("/:id/topics", verifyToken, async (req: AuthRequest, res: Response) => {
+router.get("/:id/topics", verifyToken, requireModuleAccess("asistencia", "calificaciones", "inscripciones", "maestros"), async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     const result = await pool.query(
@@ -23,7 +23,7 @@ router.get("/:id/topics", verifyToken, async (req: AuthRequest, res: Response) =
   }
 });
 
-router.get("/", verifyToken, async (req: AuthRequest, res: Response) => {
+router.get("/", verifyToken, requireModuleAccess("asistencia", "calificaciones", "inscripciones", "maestros"), async (req: AuthRequest, res: Response) => {
   try {
     const role = req.user?.role;
     const userId = req.user?.id;
@@ -62,7 +62,7 @@ router.get("/", verifyToken, async (req: AuthRequest, res: Response) => {
   }
 });
 
-router.post("/", verifyToken, isAdmin, async (req: AuthRequest, res: Response) => {
+router.post("/", verifyToken, requireModuleAccess("inscripciones"), isAdmin, async (req: AuthRequest, res: Response) => {
   try {
     const { title, description, teacher_id } = req.body;
     if (!title) return res.status(400).json({ message: "El título es obligatorio" });
@@ -78,7 +78,7 @@ router.post("/", verifyToken, isAdmin, async (req: AuthRequest, res: Response) =
   }
 });
 
-router.put("/:id", verifyToken, isAdmin, async (req: AuthRequest, res: Response) => {
+router.put("/:id", verifyToken, requireModuleAccess("inscripciones"), isAdmin, async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     const { title, description, teacher_id } = req.body;
@@ -102,7 +102,7 @@ router.put("/:id", verifyToken, isAdmin, async (req: AuthRequest, res: Response)
   }
 });
 
-router.delete("/:id", verifyToken, isAdmin, async (req: AuthRequest, res: Response) => {
+router.delete("/:id", verifyToken, requireModuleAccess("inscripciones"), isAdmin, async (req: AuthRequest, res: Response) => {
   const client = await pool.connect();
   try {
     const { id } = req.params;

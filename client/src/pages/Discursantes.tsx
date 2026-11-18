@@ -48,6 +48,8 @@ export default function Speakers() {
 
   const [showTemasModal, setShowTemasModal] = useState(false);
   const [temaTitle, setTemaTitle] = useState("");
+  const [editingTemaId, setEditingTemaId] = useState<number | null>(null);
+  const [savingTema, setSavingTema] = useState(false);
   const [temaError, setTemaError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -184,16 +186,32 @@ export default function Speakers() {
     } catch { alert("Error al eliminar"); }
   };
 
-  const handleAddTema = async (e: React.FormEvent) => {
+  const resetTema = () => {
+    setEditingTemaId(null);
+    setTemaTitle("");
+    setTemaError(null);
+  };
+
+  const handleSaveTema = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!temaTitle.trim()) return;
+    const title = temaTitle.trim();
+    if (!title || savingTema) return;
+    setSavingTema(true);
+    setTemaError(null);
     try {
-      const res = await api.post("/temas", { title: temaTitle.trim() });
-      setAllTemas(prev => [...prev, res.data]);
-      setTemaTitle("");
-      setTemaError(null);
+      if (editingTemaId === null) {
+        const { data } = await api.post("/temas", { title });
+        setAllTemas(prev => [...prev, data]);
+      } else {
+        await api.put(`/temas/${editingTemaId}`, { title });
+        setAllTemas(prev => prev.map(tema => tema.id === editingTemaId ? { ...tema, title } : tema));
+        setSpeakers(prev => prev.map(speaker => Number(speaker.tema_id) === editingTemaId ? { ...speaker, topic: title } : speaker));
+      }
+      resetTema();
     } catch {
-      setTemaError("Error al agregar el tema");
+      setTemaError(editingTemaId === null ? "Error al agregar el tema" : "Error al editar el tema");
+    } finally {
+      setSavingTema(false);
     }
   };
 
@@ -300,6 +318,12 @@ export default function Speakers() {
     <div className="dashboard-container speakers-page">
       <header className="speakers-header">
         <h1><span className="page-title-icon"><FiMic /></span> Control de Discursantes</h1>
+        {role === "admin" && (
+          <button type="button" className="btn primary mobile-add" aria-label="Agregar discursante"
+            onClick={() => setFormOpen(true)}>
+            <IoAddOutline className="mobile-only-action-icon" aria-hidden="true" /> <span>Agregar</span>
+          </button>
+        )}
         {role === "admin" && <button type="button" className="btn secondary mobile-header-action speakers-topics-mobile"
           aria-label="Temas" onClick={() => setShowTemasModal(true)}>
           <TbList aria-hidden="true" />
@@ -319,7 +343,6 @@ export default function Speakers() {
 
       {role === "admin" && (
         <>
-          <button type="button" className="btn primary form-launch mobile-add" aria-label="Agregar discursante" onClick={() => setFormOpen(true)}><IoAddOutline className="mobile-only-action-icon" aria-hidden="true" /> <span>Agregar</span></button>
           {formOpen && <FormModal title={editingId ? "Editar discursante" : "Agregar discursante"} onClose={() => { setEditingId(null); setForm({ member_id: "", tema_id: "", speech_title: "", time: "10", date: businessDate(), completed: "No" }); setFormOpen(false); }}>
             <form className="grid-form" onSubmit={handleSubmit}>
               <div className="form-group">
@@ -488,17 +511,23 @@ export default function Speakers() {
         </dl>
       </FormModal>}
       {showTemasModal && (
-        <FormModal title="Temas para discursantes" onClose={() => setShowTemasModal(false)}>
-          <form onSubmit={handleAddTema} style={{ display: "flex", gap: "0.5rem", marginBottom: "1rem" }}>
+        <FormModal title="Temas para discursantes" busy={savingTema} onClose={() => { resetTema(); setShowTemasModal(false); }}>
+          <form onSubmit={handleSaveTema} style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginBottom: "1rem" }}>
             <input
               type="text"
-              placeholder="Nuevo tema..."
+              aria-label={editingTemaId === null ? "Nuevo tema" : "Nombre del tema"}
+              placeholder={editingTemaId === null ? "Nuevo tema…" : "Nombre del tema"}
               value={temaTitle}
               onChange={e => setTemaTitle(e.target.value)}
               style={{ flex: 1 }}
+              disabled={savingTema}
               required
             />
-            <button type="submit" className="btn primary mobile-inline-add" aria-label="Agregar tema"><FaPlus aria-hidden="true" /></button>
+            <button type="submit" className="btn primary mobile-inline-add" disabled={savingTema}
+              aria-label={editingTemaId === null ? "Agregar tema" : "Guardar tema"}>
+              {editingTemaId === null ? <FaPlus aria-hidden="true" /> : <IoSaveOutline aria-hidden="true" />}
+            </button>
+            {editingTemaId !== null && <button type="button" className="btn secondary" disabled={savingTema} onClick={resetTema}>Cancelar</button>}
           </form>
 
           {temaError && <div className="error-message" style={{ marginBottom: "0.5rem" }}>{temaError}</div>}
@@ -509,9 +538,16 @@ export default function Speakers() {
                 {allTemas.map(t => (
                   <li key={t.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0.5rem 0", borderBottom: "1px solid var(--border-color)" }}>
                     <span>{t.title}</span>
-                    <button className="btn secondary btn-icon danger-outline" onClick={() => handleDeleteTema(t.id)} aria-label="Eliminar">
-                      <IoTrashOutline />
-                    </button>
+                    <div className="speakers-row-actions">
+                      <button type="button" className="btn secondary btn-icon" disabled={savingTema}
+                        aria-label={`Editar tema: ${t.title}`} onClick={() => { setEditingTemaId(t.id); setTemaTitle(t.title); setTemaError(null); }}>
+                        <IoCreateOutline aria-hidden="true" />
+                      </button>
+                      <button type="button" className="btn secondary btn-icon danger-outline" disabled={savingTema || editingTemaId === t.id}
+                        onClick={() => handleDeleteTema(t.id)} aria-label={`Eliminar tema: ${t.title}`}>
+                        <IoTrashOutline aria-hidden="true" />
+                      </button>
+                    </div>
                   </li>
                 ))}
               </ul>

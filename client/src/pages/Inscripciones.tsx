@@ -468,10 +468,11 @@ export default function Enrollments() {
           {role === "admin" && (
             <button
               type="button"
-              className="btn secondary"
+              className="btn secondary mobile-header-action"
+              aria-label="Cursos"
               onClick={() => setShowCursosModal(true)}
             >
-              <TbList /> Cursos
+              <TbList aria-hidden="true" /> <span>Cursos</span>
             </button>
           )}
 
@@ -482,6 +483,12 @@ export default function Enrollments() {
           >
             <IoPrintOutline aria-hidden="true" /> <span>Imprimir</span>
           </button>
+          {role === "admin" && (
+            <button type="button" className="btn primary mobile-add" aria-label="Agregar inscripción"
+              onClick={() => setFormOpen(true)}>
+              <IoAddOutline className="mobile-only-action-icon" aria-hidden="true" /> <span>Agregar</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -529,7 +536,6 @@ export default function Enrollments() {
 
       {role === "admin" && (
         <>
-          <button type="button" className="btn primary form-launch mobile-add" aria-label="Agregar inscripción" onClick={() => setFormOpen(true)}><IoAddOutline className="mobile-only-action-icon" aria-hidden="true" /> <span>Agregar</span></button>
           {formOpen && <FormModal title={form.id ? "Editar inscripción" : "Agregar inscripción"} onClose={() => { resetForm(); setFormOpen(false); }}>
             <form onSubmit={handleSubmit}>
               <div className="inscripcion-form-grid">

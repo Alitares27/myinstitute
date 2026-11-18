@@ -1,11 +1,11 @@
 import { asyncRouter } from "../middleware/asyncRouter";
 import express from "express";
 import { pool } from "../models/db";
-import { verifyToken } from "../middleware/auth";
+import { verifyToken, requireModuleAccess } from "../middleware/auth";
 
 const router = asyncRouter();
 
-router.get("/dashboard-stats", verifyToken, async (req: any, res) => {
+router.get("/dashboard-stats", verifyToken, requireModuleAccess("panel"), async (req: any, res) => {
   try {
     const { role, id: userId } = req.user;
 

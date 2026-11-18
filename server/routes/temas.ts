@@ -1,11 +1,11 @@
 import { asyncRouter } from "../middleware/asyncRouter";
 import { Router, Request, Response } from "express";
 import { pool } from "../models/db";
-import { verifyToken, isAdmin, AuthRequest } from "../middleware/auth";
+import { verifyToken, isAdmin, AuthRequest, requireModuleAccess } from "../middleware/auth";
 
 const router = asyncRouter();
 
-router.get("/", verifyToken, async (req: AuthRequest, res: Response) => {
+router.get("/", verifyToken, requireModuleAccess("discursantes"), async (req: AuthRequest, res: Response) => {
   try {
     const result = await pool.query("SELECT * FROM temas ORDER BY title ASC");
     res.json(result.rows);
@@ -14,7 +14,7 @@ router.get("/", verifyToken, async (req: AuthRequest, res: Response) => {
   }
 });
 
-router.post("/", verifyToken, isAdmin, async (req: AuthRequest, res: Response) => {
+router.post("/", verifyToken, requireModuleAccess("discursantes"), isAdmin, async (req: AuthRequest, res: Response) => {
   try {
     const { title } = req.body;
     if (!title) return res.status(400).json({ message: "El título es requerido" });
@@ -28,7 +28,7 @@ router.post("/", verifyToken, isAdmin, async (req: AuthRequest, res: Response) =
   }
 });
 
-router.put("/:id", verifyToken, isAdmin, async (req: AuthRequest, res: Response) => {
+router.put("/:id", verifyToken, requireModuleAccess("discursantes"), isAdmin, async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     const { title } = req.body;
@@ -44,7 +44,7 @@ router.put("/:id", verifyToken, isAdmin, async (req: AuthRequest, res: Response)
   }
 });
 
-router.delete("/:id", verifyToken, isAdmin, async (req: AuthRequest, res: Response) => {
+router.delete("/:id", verifyToken, requireModuleAccess("discursantes"), isAdmin, async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     const result = await pool.query("DELETE FROM temas WHERE id = $1 RETURNING *", [id]);

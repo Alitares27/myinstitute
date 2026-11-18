@@ -1,3 +1,4 @@
+import { firstAllowedPage } from "../utils/access";
 import { invalidarCache } from "../utils/clienteCache";
 import { limpiarSesion } from "../utils/sesion";
 import { useState } from "react";
@@ -36,7 +37,7 @@ export default function Login() {
       localStorage.setItem("role", res.data.user.role);
       void synchronizePendingChanges();
 
-      navigate("/panel", { replace: true });
+      navigate(firstAllowedPage(res.data.user), { replace: true });
     } catch (err: any) {
       if (err.code === 'ERR_NETWORK' || err.message.includes('Network Error')) {
         setError("No se pudo conectar con el servidor. Verifica que el backend esté activo.");

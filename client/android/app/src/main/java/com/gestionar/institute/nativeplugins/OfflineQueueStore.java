@@ -34,6 +34,16 @@ final class OfflineQueueStore {
         preferences(context).edit().putString(QUEUE_KEY, queue.toString()).commit();
     }
 
+    static boolean isAllowedApi(String apiBase) {
+        return "https://myinstitute-1.onrender.com/api".equals(apiBase.replaceAll("/+$", ""));
+    }
+
+    static boolean isAllowedOperation(String apiBase, String path, String method) {
+        return isAllowedApi(apiBase)
+            && path.matches("^/[a-zA-Z0-9_-]+(?:/[a-zA-Z0-9_-]+)*(?:\\?[^#\\r\\n]*)?$")
+            && ("POST".equals(method) || "PUT".equals(method) || "PATCH".equals(method) || "DELETE".equals(method));
+    }
+
     static void schedule(Context context) {
         JobInfo job = new JobInfo.Builder(
             JOB_ID,

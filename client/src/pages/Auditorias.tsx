@@ -1,6 +1,57 @@
+import api from "../api";
+import { IoCashOutline, IoShieldCheckmarkOutline } from "react-icons/io5";
+import { canAccessModule, readSessionUser } from "../utils/access";
 import { useEffect, useState } from "react";
 import { usePagedList } from "../hooks/usePagedList";
 import { formatDate, formatDateTime } from "../utils/utilidadesFecha";
+
+type SecurityEvent = {
+  id: number;
+  occurred_at: string;
+  actor_id: number | null;
+  target_id: number | null;
+  action: string;
+  outcome: string;
+  module: string | null;
+};
+
+function SecurityHistory() {
+  const [events, setEvents] = useState<SecurityEvent[]>([]);
+  const [status, setStatus] = useState("Cargando eventos…");
+  useEffect(() => {
+    const controller = new AbortController();
+    api.get<SecurityEvent[]>("/security-events", { signal: controller.signal }).then(({ data }) => {
+      setEvents(data);
+      setStatus(data.length ? "" : "No hay eventos de seguridad.");
+    }).catch(() => {
+      if (!controller.signal.aborted) setStatus("No se pudieron cargar los eventos de seguridad.");
+    });
+    return () => controller.abort();
+  }, []);
+
+  return (
+    <section aria-label="Eventos de seguridad">
+      {status && <p role="status">{status}</p>}
+      {events.length > 0 && <div className="audit-table-scroll table-container">
+        <table>
+          <thead><tr><th>Fecha</th><th>Acción</th><th>Actor</th><th>Cuenta</th><th>Módulo</th></tr></thead>
+          <tbody>
+            {events.map(event => (
+              <tr key={event.id}>
+                <td>{formatDateTime(event.occurred_at)}</td>
+                <td>{event.outcome === "denied" ? `Acceso denegado (${event.action})`
+                  : event.action === "account_created" ? "Cuenta creada" : "Acceso modificado"}</td>
+                <td>{event.actor_id ?? "—"}</td>
+                <td>{event.target_id ?? "—"}</td>
+                <td>{event.module ?? "—"}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>}
+    </section>
+  );
+}
 
 const RECORDS_PER_PAGE = 20;
 
@@ -93,12 +144,14 @@ function EventDetails({ event }: { event: FinancialEvent }) {
 
 
 export default function Auditorias() {
+  const [showSecurity, setShowSecurity] = useState(false);
+  const canSeeSecurity = readSessionUser()?.role === "admin";
   const [currentPage, setCurrentPage] = useState(1);
-  const admin = JSON.parse(localStorage.getItem("user") || "{}").role === "admin";
+  const admin = canAccessModule(readSessionUser(), "auditorias", false);
   const page = usePagedList<FinancialEvent>(
     "/temple-amortizations/events",
     { page: currentPage, limit: RECORDS_PER_PAGE },
-    admin,
+    admin && !showSecurity,
   );
   const totalPages = Math.max(1, Math.ceil(page.total / RECORDS_PER_PAGE));
 
@@ -108,7 +161,29 @@ export default function Auditorias() {
     }
   }, [currentPage, page.loaded, page.loading, totalPages]);
 
-  if (!admin) return <p>Solo los administradores pueden consultar auditorías.</p>;
+  if (!admin) return <p>No tienes permiso para consultar auditorías.</p>;
+
+  const securityView = showSecurity && canSeeSecurity;
+  const destination = securityView ? "Historial financiero" : "Eventos de seguridad";
+  const heading = (
+    <header className="audit-header">
+      <h1>{securityView ? "Eventos de seguridad" : "Historial financiero"}</h1>
+      {canSeeSecurity && (
+        <button type="button" className="btn secondary mobile-header-action"
+          aria-label={destination} title={destination} onClick={() => setShowSecurity(!securityView)}>
+          {securityView ? <IoCashOutline aria-hidden="true" /> : <IoShieldCheckmarkOutline aria-hidden="true" />}
+          <span>{destination}</span>
+        </button>
+      )}
+    </header>
+  );
+
+  if (securityView) return (
+    <div className="dashboard-container audit-page">
+      {heading}
+      <SecurityHistory />
+    </div>
+  );
 
   const labels: Record<string, string> = {
     payment_created: "Pago registrado",
@@ -120,7 +195,7 @@ export default function Auditorias() {
 
   return (
     <div className="dashboard-container audit-page">
-      <h1>Historial financiero</h1>
+      {heading}
       {page.error && <p role="alert">{page.error}</p>}
       {page.loading && <p role="status">Cargando auditorías...</p>}
       <div className="audit-table-scroll table-container" role="region" aria-label="Movimientos de auditoría" tabIndex={0}>

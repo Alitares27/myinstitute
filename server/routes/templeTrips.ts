@@ -2,11 +2,11 @@ import { cents, isoDate, positiveId, InputError } from "../utils/validation";
 import { asyncRouter } from "../middleware/asyncRouter";
 import express, { Response } from "express";
 import { pool } from "../models/db";
-import { verifyToken, isAdmin, AuthRequest } from "../middleware/auth";
+import { verifyToken, isAdmin, AuthRequest, requireModuleAccess } from "../middleware/auth";
 
 const router = asyncRouter();
 
-router.get("/", verifyToken, async (req: AuthRequest, res: Response) => {
+router.get("/", verifyToken, requireModuleAccess("viajes-templo", "reservar-viajes", "pagos-templos"), async (req: AuthRequest, res: Response) => {
   try {
     const result = await pool.query(`
       SELECT
@@ -30,7 +30,7 @@ router.get("/", verifyToken, async (req: AuthRequest, res: Response) => {
   }
 });
 
-router.post("/", verifyToken, isAdmin, async (req: AuthRequest, res: Response) => {
+router.post("/", verifyToken, requireModuleAccess("viajes-templo"), isAdmin, async (req: AuthRequest, res: Response) => {
   try {
     const { temple_id, date, status, cost } = req.body;
 
@@ -57,7 +57,7 @@ router.post("/", verifyToken, isAdmin, async (req: AuthRequest, res: Response) =
   }
 });
 
-router.put("/:id", verifyToken, isAdmin, async (req: AuthRequest, res: Response) => {
+router.put("/:id", verifyToken, requireModuleAccess("viajes-templo"), isAdmin, async (req: AuthRequest, res: Response) => {
   const id = positiveId(req.params.id);
   const { temple_id, date, status, cost } = req.body;
   positiveId(temple_id); isoDate(date); const costCents = cents(cost);
@@ -77,7 +77,7 @@ router.put("/:id", verifyToken, isAdmin, async (req: AuthRequest, res: Response)
   finally { client.release(); }
 });
 
-router.delete("/:id", verifyToken, isAdmin, async (req: AuthRequest, res: Response) => {
+router.delete("/:id", verifyToken, requireModuleAccess("viajes-templo"), isAdmin, async (req: AuthRequest, res: Response) => {
   const client = await pool.connect();
   try {
     const { id } = req.params;
@@ -110,7 +110,7 @@ router.delete("/:id", verifyToken, isAdmin, async (req: AuthRequest, res: Respon
   }
 });
 
-router.patch("/:id/archive", verifyToken, isAdmin, async (req: AuthRequest, res: Response) => {
+router.patch("/:id/archive", verifyToken, requireModuleAccess("viajes-templo"), isAdmin, async (req: AuthRequest, res: Response) => {
   const result = await pool.query("UPDATE temple_trips SET archived_at=COALESCE(archived_at,NOW()) WHERE id=$1 RETURNING id", [positiveId(req.params.id)]);
   if (!result.rowCount) return res.status(404).json({message:"Viaje no encontrado"});
   res.json({message:"Viaje archivado; reservas y pagos conservados"});

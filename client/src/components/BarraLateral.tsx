@@ -1,3 +1,4 @@
+import { canAccessModule, firstAllowedPage, moduleForPath, readSessionUser } from "../utils/access";
 import api from "../api";
 import {invalidarCache} from "../utils/clienteCache";
 import {limpiarSesion} from "../utils/sesion";
@@ -46,7 +47,8 @@ function SubmenuLabel({ item }: { item: NavItem }) {
 
 export default function Sidebar(){
  const navigate=useNavigate(),location=useLocation();
- const role=JSON.parse(localStorage.getItem("user")||"{}").role||"";
+ const user = readSessionUser();
+ const role = user?.role ?? "";
  const {theme,toggleTheme}=useTheme();
  const [open,setOpen]=useState<string|null>(null),[loggingOut,setLoggingOut]=useState(false);
  const [showAbout,setShowAbout]=useState(false);
@@ -60,7 +62,7 @@ export default function Sidebar(){
    {to:'/maestros',label:'Maestros',Icon:IoSchoolOutline},{to:'/inscripciones',label:'Matrículas',Icon:IoClipboardOutline},{to:'/asistencia',label:'Asistencia',Icon:IoCalendarOutline},{to:'/calificaciones',label:'Calificaciones',Icon:IoRibbonOutline}]},
   {id:'leadership',label:'Liderazgo',Icon:IoBriefcaseOutline,links:[{to:'/agendas',label:'Agendas',Icon:IoCalendarOutline},{to:'/discursantes',label:'Discursantes',Icon:IoMicOutline},{to:'/consejos',label:'Consejos',Icon:IoPeopleOutline},{to:'/actividades',label:'Actividades',Icon:IoCalendarOutline},{to:'/auditorias',label:'Auditorías',Icon:IoDocumentTextOutline}]},
   templeGroup,
-  ...(role==='admin'?[{id:'maintenance',label:'Mantenimiento',Icon:IoSettingsOutline,links:[{to:'/miembros',label:'Miembros',Icon:IoPersonOutline},{to:'/templos',label:'Templos',Icon:IoBusinessOutline}]}]:[])
+  ...(role!=='student'?[{id:'maintenance',label:'Mantenimiento',Icon:IoSettingsOutline,links:[{to:'/miembros',label:'Miembros',Icon:IoPersonOutline},{to:'/templos',label:'Templos',Icon:IoBusinessOutline},{to:'/sincronizacion',label:'Sincronización',Icon:IoSyncOutline}]}]:[])
  ];
  const mobileGroups:NavGroup[]=[
   {id:'teaching',label:'Enseñanza',Icon:IoSchoolOutline,links:[
@@ -74,7 +76,7 @@ export default function Sidebar(){
 
    {to:'/inscripciones',label:role==='admin'?'Administrar cursos':'Matrículas',Icon:IoClipboardOutline,...(role==='admin'?{state:{openCourseManager:true}}:{})},
    ...(role==='admin'?[{to:'/discursantes',label:'Temas para Discursantes',Icon:IoMicOutline,state:{openTopicManager:true}}]:[]),
-   ...(role==='admin'?[{to:'/templos',label:'Administrar templos',Icon:IoBusinessOutline},{to:'/miembros',label:'Miembros',Icon:IoPersonOutline}]:[]),
+   ...(role!=='student'?[{to:'/templos',label:'Administrar templos',Icon:IoBusinessOutline},{to:'/miembros',label:'Miembros',Icon:IoPersonOutline}]:[]),
    {to:'/sincronizacion',label:'Sincronización',Icon:IoSyncOutline},
    {label:'Acerca de',Icon:IoInformationCircleOutline,action:'about'}
   ]}
@@ -100,27 +102,33 @@ export default function Sidebar(){
   catch{window.alert('Se cerrará la sesión local, pero no se pudo confirmar la revocación en el servidor. Si perdiste tu dispositivo, cambia la contraseña al recuperar conexión.');}
   invalidarCache();await limpiarSesion();navigate('/');
  }
- const visibleGroups = isMobile ? mobileGroups : groups;
+ const visibleGroups = (isMobile ? mobileGroups : groups).map(group => ({
+  ...group,
+  links: group.links.filter(link => {
+   const module = link.to && moduleForPath(link.to);
+   return !module || canAccessModule(user, module, !["templos", "reservar-viajes", "pagos-templos", "auditorias"].includes(module));
+  }),
+ })).filter(group => group.links.length);
  const openGroup = visibleGroups.find(group => group.id === open);
  const token=localStorage.getItem("token");
  const hasActiveSession=!!token&&!!localStorage.getItem("user");
  if(!hasActiveSession)return null;
  return <>
   <header className="app-topbar">
-   <Link to="/panel" className="app-brand" aria-label="GestionAR, ir al inicio"><img src="/temple.webp" alt="" width="65" height="65"/><span>GestionAR</span></Link>
+   <Link to={firstAllowedPage(user)} className="app-brand" aria-label="GestionAR, ir al inicio"><img src="/temple.webp" alt="" width="65" height="65"/><span>GestionAR</span></Link>
    <div className="app-topbar-actions">
     <button type="button" className="app-icon-button" onClick={toggleTheme} title={theme==='light'?'Activar tema oscuro':'Activar tema claro'} aria-label={theme==='light'?'Activar tema oscuro':'Activar tema claro'}>{theme==='light'?<IoMoonOutline aria-hidden="true"/>:<IoSunnyOutline aria-hidden="true"/>}</button>
     <button type="button" className="app-icon-button app-logout" onClick={logout} disabled={loggingOut} aria-label="Cerrar sesión" title="Cerrar sesión"><IoLogOutOutline aria-hidden="true"/></button>
    </div>
   </header>
   {openGroup && <button type="button" className="floating-nav-backdrop" aria-label={`Cerrar el menú ${openGroup.label}`} onClick={() => setOpen(null)} />}
-  <nav ref={nav} className="floating-nav" aria-label="Menú principal" onBlur={event=>{if(!event.currentTarget.contains(event.relatedTarget as Node))setOpen(null);}}>
+  <nav hidden={!visibleGroups.length && !canAccessModule(user, "panel")} ref={nav} className="floating-nav" aria-label="Menú principal" onBlur={event=>{if(!event.currentTarget.contains(event.relatedTarget as Node))setOpen(null);}}>
    <ul className="floating-nav-groups">
-    <li className="floating-nav-home-item">
+    {canAccessModule(user, "panel") && <li className="floating-nav-home-item">
      <NavLink to="/panel" end className="floating-nav-home" aria-label="Inicio" title="Inicio" onClick={()=>setOpen(null)}>
       <IoHomeOutline aria-hidden="true"/><span className="floating-nav-label">Inicio</span>
      </NavLink>
-    </li>
+    </li>}
     {visibleGroups.map(group=>{
     const active=group.links.some(link=>location.pathname===link.to||location.pathname.startsWith(link.to+'/'));
     return <li key={group.id} className={group.id==='more'?'floating-nav-more-item':undefined}>

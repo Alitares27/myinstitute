@@ -21,11 +21,21 @@ public class NativeOfflineSyncPlugin extends Plugin {
             call.reject("Faltan datos de sesión para la sincronización Android.");
             return;
         }
-        OfflineQueueStore.preferences(getContext()).edit()
-            .putString("activeUserId", userId)
-            .putString("token", token)
-            .putString("apiBase", apiBase)
-            .commit();
+        if (!OfflineQueueStore.isAllowedApi(apiBase)) {
+            call.reject("El destino de sincronización Android no está autorizado.");
+            return;
+        }
+        try {
+            OfflineQueueStore.preferences(getContext()).edit()
+                .putString("activeUserId", userId)
+                .putString("encryptedToken", OfflineSessionCipher.encrypt(token))
+                .remove("token")
+                .putString("apiBase", apiBase)
+                .commit();
+        } catch (Exception error) {
+            call.reject("No se pudo proteger la sesión Android.", error);
+            return;
+        }
         OfflineQueueStore.schedule(getContext());
         call.resolve();
     }
@@ -34,8 +44,12 @@ public class NativeOfflineSyncPlugin extends Plugin {
     public void clearSession(PluginCall call) {
         String userId = call.getString("userId");
         android.content.SharedPreferences prefs = OfflineQueueStore.preferences(getContext());
-        if (userId == null || userId.equals(prefs.getString("activeUserId", null))) {
-            prefs.edit().remove("activeUserId").remove("token").remove("apiBase").commit();
+        synchronized (OfflineQueueStore.class) {
+            if (userId == null || userId.equals(prefs.getString("activeUserId", null))) {
+                android.app.job.JobScheduler scheduler = getContext().getSystemService(android.app.job.JobScheduler.class);
+                if (scheduler != null) scheduler.cancel(OfflineQueueStore.JOB_ID);
+                prefs.edit().clear().commit();
+            }
         }
         call.resolve();
     }
@@ -48,6 +62,12 @@ public class NativeOfflineSyncPlugin extends Plugin {
             return;
         }
         synchronized (OfflineQueueStore.class) {
+            android.content.SharedPreferences prefs = OfflineQueueStore.preferences(getContext());
+            if (!operation.optString("userId").equals(prefs.getString("activeUserId", "")) ||
+                    !OfflineQueueStore.isAllowedOperation(prefs.getString("apiBase", ""), operation.optString("url"), operation.optString("method"))) {
+                call.reject("La operación no corresponde a la sesión Android.");
+                return;
+            }
             JSONArray queue = OfflineQueueStore.readQueue(getContext());
             String id = operation.getString("id");
             boolean exists = false;
@@ -102,7 +122,7 @@ public class NativeOfflineSyncPlugin extends Plugin {
         result.put("activeUserId", userId);
         result.put("pendingIds", pendingIds);
         result.put("mappings", mappings);
-        result.put("message", message);
+        result.put("message", message.isEmpty() ? prefs.getString("lastRejected", "") : message);
         call.resolve(result);
     }
 

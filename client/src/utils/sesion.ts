@@ -1,9 +1,11 @@
+import { invalidarCache } from "./clienteCache";
 import { forgetOfflineSession } from "../services/offlineSync";
 
 let pendingCleanup: Promise<void> | undefined;
 
 export function limpiarSesion(): Promise<void> {
   if (pendingCleanup) return pendingCleanup;
+  invalidarCache();
   const forgetSession = forgetOfflineSession();
   for (const key of ["token", "user", "role"]) localStorage.removeItem(key);
   pendingCleanup = forgetSession.then(async () => {

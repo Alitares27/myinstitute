@@ -1,11 +1,11 @@
 import { asyncRouter } from "../middleware/asyncRouter";
 import express, { Response } from "express";
 import { pool } from "../models/db";
-import { verifyToken, isAdmin, AuthRequest } from "../middleware/auth";
+import { verifyToken, isAdmin, AuthRequest, requireModuleAccess } from "../middleware/auth";
 
 const router = asyncRouter();
 
-router.get("/", verifyToken, async (req: AuthRequest, res: Response) => {
+router.get("/", verifyToken, requireModuleAccess("inscripciones"), async (req: AuthRequest, res: Response) => {
   try {
     const result = await pool.query(`
       SELECT e.*, s.id AS student_id, s.grade, c.title AS course_title
@@ -23,7 +23,7 @@ router.get("/", verifyToken, async (req: AuthRequest, res: Response) => {
   }
 });
 
-router.post("/", verifyToken, isAdmin, async (req: AuthRequest, res: Response) => {
+router.post("/", verifyToken, requireModuleAccess("inscripciones"), isAdmin, async (req: AuthRequest, res: Response) => {
   try {
     const { student_id, course_id } = req.body;
 
@@ -46,7 +46,7 @@ router.post("/", verifyToken, isAdmin, async (req: AuthRequest, res: Response) =
   }
 });
 
-router.put("/:id", verifyToken, isAdmin, async (req: AuthRequest, res: Response) => {
+router.put("/:id", verifyToken, requireModuleAccess("inscripciones"), isAdmin, async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     const { student_id, course_id } = req.body;
@@ -73,7 +73,7 @@ router.put("/:id", verifyToken, isAdmin, async (req: AuthRequest, res: Response)
   }
 });
 
-router.delete("/:id", verifyToken, isAdmin, async (req: AuthRequest, res: Response) => {
+router.delete("/:id", verifyToken, requireModuleAccess("inscripciones"), isAdmin, async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     const result = await pool.query(

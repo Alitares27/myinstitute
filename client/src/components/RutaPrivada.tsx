@@ -1,7 +1,11 @@
+import type { AppModule } from "../shared/constants";
+import { canAccessModule, firstAllowedPage, readSessionUser } from "../utils/access";
 import { Navigate } from "react-router-dom";
 
 interface PrivateRouteProps {
   children: JSX.Element;
+  module?: AppModule;
+  adminOnly?: boolean;
 }
 
 export function isTokenExpired(token: string): boolean {
@@ -20,11 +24,16 @@ export function isTokenExpired(token: string): boolean {
   }
 }
 
-export default function PrivateRoute({ children }: PrivateRouteProps) {
+export default function PrivateRoute({ children, module, adminOnly }: PrivateRouteProps) {
   const token = localStorage.getItem("token");
-  const savedUser = localStorage.getItem("user");
+  const savedUser = readSessionUser();
   if (!token || !savedUser) {
     return <Navigate to="/iniciar-sesion" replace />;
+  }
+
+  if ((module && !canAccessModule(savedUser, module, !["templos", "reservar-viajes", "pagos-templos", "auditorias"].includes(module))) ||
+      (adminOnly && savedUser.role !== "admin")) {
+    return <Navigate to={firstAllowedPage(savedUser)} replace />;
   }
 
   return children;

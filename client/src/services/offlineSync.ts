@@ -140,7 +140,9 @@ function cacheKey(userId: string, url: string): string {
 
 export async function cacheGetResponse(userId: string, url: string, data: unknown): Promise<void> {
   const entry: CachedResponse = { key: cacheKey(userId, url), userId, url, data, savedAt: Date.now() };
-  await withStore(CACHE_STORE, "readwrite", (store) => storeRequest(store.put(entry)));
+  await withStore(CACHE_STORE, "readwrite", async store => {
+    if (currentUserId() === userId) await storeRequest(store.put(entry));
+  });
 }
 
 export async function readCachedGet(userId: string, url: string): Promise<unknown | undefined> {
@@ -242,7 +244,15 @@ export async function rememberOfflineSession(token: string): Promise<void> {
 export async function forgetOfflineSession(): Promise<void> {
   const userId = currentUserId();
   if (!userId) return;
-  try { await withStore(SESSION_STORE, "readwrite", (store) => storeRequest(store.delete(userId))); }
+  try {
+    await Promise.all([
+      withStore(SESSION_STORE, "readwrite", store => storeRequest(store.delete(userId))),
+      ...[CACHE_STORE, OUTBOX_STORE].map(name => withStore(name, "readwrite", async store => {
+        const keys = await storeRequest(store.index("userId").getAllKeys(userId));
+        await Promise.all(keys.map(key => storeRequest(store.delete(key))));
+      })),
+    ]);
+  }
   catch { /* Keep local sign-out available even if IndexedDB is unavailable. */ }
   if (isNativeAndroid()) {
     try { await NativeOfflineSync.clearSession({ userId }); } catch { /* Local sign-out must still complete. */ }
@@ -381,7 +391,9 @@ async function refreshOfflineCopies(userId: string, token: string): Promise<void
         failed = true;
         continue;
       }
-      await cacheGetResponse(userId, entry.url, await response.json());
+      const data = await response.json();
+      if (currentUserId() !== userId || localStorage.getItem("token") !== token) return;
+      await cacheGetResponse(userId, entry.url, data);
     } catch (error) {
       if (error instanceof Error && error.message === "Sesión vencida") throw error;
       failed = true;
@@ -412,10 +424,10 @@ async function synchronizeNativeQueue(manual: boolean): Promise<void> {
     }
     const pendingIds = new Set(state.pendingIds || []);
     const completed = localEntries.filter(entry => !pendingIds.has(entry.id));
-    if (manual || completed.length) await refreshOfflineCopies(userId, token);
     await withStore(OUTBOX_STORE, "readwrite", (store) =>
       Promise.all(completed.map(entry => storeRequest(store.delete(entry.id)))));
     syncMessage = state.message || "";
+    if (manual || completed.length) await refreshOfflineCopies(userId, token);
   } catch (error) {
     syncMessage = error instanceof Error && error.message === "Sesión vencida"
       ? "Vuelve a iniciar sesión con conexión para actualizar los datos."
@@ -456,7 +468,9 @@ export async function synchronizePendingChanges(manual = false): Promise<void> {
         ...(entry.data === undefined ? {} : { body: JSON.stringify(entry.data) }),
       });
       if (!response.ok) {
-        if (response.status === 401) syncMessage = "Vuelve a iniciar sesión para sincronizar los cambios pendientes.";
+        if (response.status === 401 || response.status === 403) await removeMutation(entry);
+        if (response.status === 401) syncMessage = "Se descartó un cambio porque la sesión caducó. Vuelve a iniciar sesión.";
+        else if (response.status === 403) syncMessage = "Se descartó un cambio porque la cuenta ya no tiene permiso.";
         else syncMessage = `No se pudo sincronizar un cambio (HTTP ${response.status}); se conserva en el dispositivo.`;
         break;
       }
@@ -493,6 +507,10 @@ if (typeof window !== "undefined") {
     }, 15_000);
   }
   navigator.serviceWorker?.addEventListener("message", (event: MessageEvent) => {
+    if (event.data?.type === "offline-sync-rejected" && event.data.userId === currentUserId()) {
+      syncMessage = "Se descartó un cambio por sesión caducada o falta de permiso.";
+      notifyState();
+    }
     if (event.data?.type === "gestionar:offline-sync-complete") notifyState();
   });
   window.addEventListener("load", () => { void synchronizePendingChanges(); }, { once: true });

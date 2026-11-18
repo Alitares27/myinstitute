@@ -1,11 +1,11 @@
 import { asyncRouter } from "../middleware/asyncRouter";
 import express, { Response } from "express";
 import { pool } from "../models/db";
-import { verifyToken, AuthRequest } from "../middleware/auth";
+import { verifyToken, AuthRequest, requireModuleAccess } from "../middleware/auth";
 
 const router = asyncRouter();
 
-router.get("/", verifyToken, async (req: AuthRequest, res: Response) => {
+router.get("/", verifyToken, requireModuleAccess("miembros", "discursantes", "asistencia", "calificaciones", "inscripciones", "maestros"), async (req: AuthRequest, res: Response) => {
   try {
     const role = req.user?.role;
     const userId = req.user?.id;

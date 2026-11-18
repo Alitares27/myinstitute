@@ -3,11 +3,11 @@ import { positiveId } from "../utils/validation";
 import { asyncRouter } from "../middleware/asyncRouter";
 import express, { Response } from "express";
 import { pool } from "../models/db";
-import { verifyToken, isAdmin, AuthRequest } from "../middleware/auth";
+import { verifyToken, isAdmin, AuthRequest, requireModuleAccess } from "../middleware/auth";
 
 const router = asyncRouter();
 
-router.get("/", verifyToken, async (req: AuthRequest, res: Response) => {
+router.get("/", verifyToken, requireModuleAccess("asistencia", "calificaciones", "inscripciones", "maestros"), async (req: AuthRequest, res: Response) => {
   try {
     const { course_id } = req.query;
     let query = `SELECT topics.* FROM topics JOIN courses c ON c.id=topics.course_id WHERE ${courseAccess("c", "$1", "$2")}`;
@@ -27,7 +27,7 @@ router.get("/", verifyToken, async (req: AuthRequest, res: Response) => {
   }
 });
 
-router.post("/", verifyToken, isAdmin, async (req: AuthRequest, res: Response) => {
+router.post("/", verifyToken, requireModuleAccess("inscripciones"), isAdmin, async (req: AuthRequest, res: Response) => {
   const { course_id, title, description, order_index } = req.body;
   try {
     const result = await pool.query(
@@ -40,7 +40,7 @@ router.post("/", verifyToken, isAdmin, async (req: AuthRequest, res: Response) =
   }
 });
 
-router.put("/:id", verifyToken, isAdmin, async (req: AuthRequest, res: Response) => {
+router.put("/:id", verifyToken, requireModuleAccess("inscripciones"), isAdmin, async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
   const { title, description, order_index } = req.body;
   try {
@@ -54,7 +54,7 @@ router.put("/:id", verifyToken, isAdmin, async (req: AuthRequest, res: Response)
   }
 });
 
-router.delete("/:id", verifyToken, isAdmin, async (req: AuthRequest, res: Response) => {
+router.delete("/:id", verifyToken, requireModuleAccess("inscripciones"), isAdmin, async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
   try {
     await pool.query("DELETE FROM topics WHERE id = $1", [id]);

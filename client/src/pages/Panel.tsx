@@ -1,3 +1,4 @@
+import { canAccessModule, moduleForPath } from "../utils/access";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import api from "../api";
@@ -192,7 +193,10 @@ function Dashboard() {
           <span><TbRocket /></span> Accesos Rápidos
         </h2>
         <div className="shortcuts-grid">
-          {shortcuts.map(({ to, title, description, Icon }) => (
+          {shortcuts.filter(({ to }) => {
+            const module = moduleForPath(to);
+            return module && canAccessModule(user, module);
+          }).map(({ to, title, description, Icon }) => (
             <Link className="shortcut-card" key={to} to={to}>
               <span className="shortcut-icon-bg"><Icon aria-hidden="true" /></span>
               <div className="shortcut-info">

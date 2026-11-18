@@ -5,11 +5,11 @@ import { businessDate } from "../utils/businessDate";
 import { asyncRouter } from "../middleware/asyncRouter";
 import express, { Response } from "express";
 import { pool } from "../models/db";
-import { verifyToken, canTeach, AuthRequest } from "../middleware/auth";
+import { verifyToken, canTeach, AuthRequest, requireModuleAccess } from "../middleware/auth";
 
 const router = asyncRouter();
 
-router.post("/", verifyToken, canTeach, async (req: AuthRequest, res: Response) => {
+router.post("/", verifyToken, requireModuleAccess("asistencia"), canTeach, async (req: AuthRequest, res: Response) => {
   try {
     const user = req.user;
     if (!user) return res.status(401).json({ message: "Unauthorized" });
@@ -58,15 +58,21 @@ router.post("/", verifyToken, canTeach, async (req: AuthRequest, res: Response) 
     }
     const result = await pool.query(
       `INSERT INTO attendance (student_id, course_id, date, status, topic_id)
-       VALUES ($1, $2, $3, $4, $5)
+       SELECT $1, c.id, $3, $4, $5
+       FROM courses c
+       JOIN enrollments e ON e.course_id=c.id AND e.student_id=$1
+       WHERE c.id=$2 AND ($6='admin' OR c.teacher_id IN (SELECT id FROM teachers WHERE user_id=$7))
+         AND ($5::integer IS NULL OR EXISTS (SELECT 1 FROM topics t WHERE t.id=$5 AND t.course_id=c.id))
+       FOR SHARE OF c, e
        ON CONFLICT (student_id, course_id, date)
        DO UPDATE SET
           status = EXCLUDED.status,
           topic_id = EXCLUDED.topic_id
        RETURNING id, student_id, course_id, date, status, topic_id`,
-      [targetStudentId, courseIdNum, date, status, topicIdNum]
+      [targetStudentId, courseIdNum, date, status, topicIdNum, role, userId]
     );
 
+    if (!result.rowCount) return res.status(403).json({ message: "Ya no se permite registrar asistencia en este curso." });
     res.status(201).json(result.rows[0]);
   } catch (err: any) {
     console.error(err);
@@ -84,11 +90,11 @@ function attendanceQuery(req: AuthRequest) {
     WHERE ${where.join(" AND ")}`;
   return { params, select };
 }
-router.get("/report", verifyToken, async (req: AuthRequest, res: Response) => {
+router.get("/report", verifyToken, requireModuleAccess("asistencia"), async (req: AuthRequest, res: Response) => {
   const { params, select } = attendanceQuery(req);
   res.json((await pool.query(select + " ORDER BY a.date DESC,a.id DESC", params)).rows);
 });
-router.get("/", verifyToken, async (req: AuthRequest, res: Response) => {
+router.get("/", verifyToken, requireModuleAccess("asistencia"), async (req: AuthRequest, res: Response) => {
   const { params, select } = attendanceQuery(req);
   const today = businessDate();
   res.json(await readPage(req, select, params, { student_id: "student", student_name: "student", course_id: "course", course_title: "course", date: "date", status: "status", topic: "topic" }, "date",

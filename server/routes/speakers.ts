@@ -1,11 +1,11 @@
 import { asyncRouter } from "../middleware/asyncRouter";
 import { Router } from "express";
 import { pool } from "../models/db";
-import { verifyToken, isAdmin, AuthRequest } from "../middleware/auth";
+import { verifyToken, isAdmin, AuthRequest, requireModuleAccess } from "../middleware/auth";
 
 const router = asyncRouter();
 
-router.get("/", verifyToken, async (req: AuthRequest, res) => {
+router.get("/", verifyToken, requireModuleAccess("discursantes"), async (req: AuthRequest, res) => {
   try {
     const query = `
       SELECT
@@ -31,7 +31,7 @@ router.get("/", verifyToken, async (req: AuthRequest, res) => {
   }
 });
 
-router.post("/", verifyToken, isAdmin, async (req: AuthRequest, res) => {
+router.post("/", verifyToken, requireModuleAccess("discursantes"), isAdmin, async (req: AuthRequest, res) => {
   const { member_id, tema_id, speech_title, time, date } = req.body;
   try {
     const query = `
@@ -56,7 +56,7 @@ router.post("/", verifyToken, isAdmin, async (req: AuthRequest, res) => {
   }
 });
 
-router.put("/:id", verifyToken, isAdmin, async (req: AuthRequest, res) => {
+router.put("/:id", verifyToken, requireModuleAccess("discursantes"), isAdmin, async (req: AuthRequest, res) => {
   const { id } = req.params;
   const { member_id, tema_id, speech_title, time, date, completed } = req.body;
 
@@ -99,7 +99,7 @@ router.put("/:id", verifyToken, isAdmin, async (req: AuthRequest, res) => {
   }
 });
 
-router.delete("/:id", verifyToken, isAdmin, async (req: AuthRequest, res) => {
+router.delete("/:id", verifyToken, requireModuleAccess("discursantes"), isAdmin, async (req: AuthRequest, res) => {
   const { id } = req.params;
   try {
     const result = await pool.query("DELETE FROM speakers WHERE id = $1 RETURNING *", [id]);

@@ -210,6 +210,12 @@ export default function TempleTrip() {
                     <h1><span className="page-title-icon"><FiTruck /></span> Gestionar Viajes</h1>
                     <p>{role === "admin" ? "Registro y seguimiento de viajes al templo" : "Viajes disponibles"}</p>
                 </div>
+                {role === "admin" && (
+                    <button type="button" className="btn primary mobile-add" aria-label="Agregar viaje"
+                        onClick={() => setFormOpen(true)}>
+                        <IoAddOutline className="mobile-only-action-icon" aria-hidden="true" /> <span>Agregar</span>
+                    </button>
+                )}
             </div>
 
             <div className="asistencia-stats-grid desktop-statistics">
@@ -245,7 +251,6 @@ export default function TempleTrip() {
 
             {role === "admin" && (
                 <>
-                  <button type="button" className="btn primary form-launch mobile-add" aria-label="Agregar viaje" onClick={() => setFormOpen(true)}><IoAddOutline className="mobile-only-action-icon" aria-hidden="true" /> <span>Agregar</span></button>
                   {formOpen && <FormModal title={editingId ? "Editar viaje" : "Agregar viaje"} onClose={() => { setEditingId(null); setFormData({ temple_id: "", date: "", status: "programado", cost: "" }); setFormOpen(false); }}>
                     <form onSubmit={handleSubmit} className="asistencia-form-grid">
                     <div className="form-group">

@@ -1,3 +1,4 @@
+import { canAccessModule, readSessionUser } from "../utils/access";
 import { TbCoin } from "react-icons/tb";
 import { IoAddOutline } from "react-icons/io5";
 import { isAndroidApp } from "../utils/androidReports";
@@ -42,6 +43,7 @@ const avatarGradient = (index: number) => {
 };
 
 export default function TripReservations() {
+  const canManage = readSessionUser()?.role === "admin";
     const navigate = useNavigate();
     const [formOpen, setFormOpen] = useState(false);
     const [users, setUsers] = useState<BasicUser[]>([]);
@@ -96,14 +98,14 @@ export default function TripReservations() {
         const userRole = user.role || "";
         setRole(userRole);
 
-        if (!userRole || userRole !== "admin") {
+        if (!canAccessModule(user, "reservar-viajes", false)) {
             navigate("/", { replace: true });
             return;
         }
     }, [navigate]);
 
     const fetchUsers = async () => {
-        const { data } = await api.get('/users');
+        const { data } = await api.get(readSessionUser()?.role === "teacher" ? "/users/travel-members" : "/users");
         setUsers(data);
     };
 
@@ -114,7 +116,7 @@ export default function TripReservations() {
 
     const listParams = { page: currentPage, limit: recordsPerPage, trip_id: filterTripId || undefined,
         user_id: filterUserId || undefined, search: searchQuery || undefined, sort: sortConfig?.key, direction: sortConfig?.direction };
-    const page=usePagedList<any>("/trip-reservations",listParams,JSON.parse(localStorage.getItem("user")||"{}").role==="admin");
+    const page=usePagedList<any>("/trip-reservations",listParams,canAccessModule(readSessionUser(), "reservar-viajes", false));
     const reservations=page.items,totalRecords=page.total;
     const reservationTotals={totalPaid:Number(statistics.summary.totalPaid||0),totalPending:Number(statistics.summary.totalPending||0)};
     const fetchReservations=()=>{page.refresh();setStatisticsRevision(value=>value+1);};
@@ -122,7 +124,7 @@ export default function TripReservations() {
     const reservationOptions=options.items;
     const fetchOptions=()=>{setOptionsRevision(value=>value+1);};
     useEffect(() => {
-        if (JSON.parse(localStorage.getItem("user") || "{}").role !== "admin") return;
+        if (!canAccessModule(readSessionUser(), "reservar-viajes", false)) return;
         Promise.all([fetchUsers(), fetchTrips()]).catch(() => setListError("Error al cargar los catálogos")).finally(()=>setLoading(false));
     }, []);
 
@@ -394,10 +396,10 @@ export default function TripReservations() {
                     <p>Gestión de reservas y pagos a los viajes al templo</p>
                 </div>
                 <div className="asistencia-header-actions reservation-header-actions">
-                    <button type="button" className="btn primary mobile-header-action mobile-pay" aria-label="Registrar pago" onClick={handleOpenPaymentModal}><FaPlus className="desktop-action-icon" aria-hidden="true" /><TbCoin className="mobile-only-action-icon" aria-hidden="true" /> <span>Pago</span></button>
-                    <button type="button" className="btn primary mobile-add" aria-label="Reservar viaje" onClick={() => setFormOpen(true)}>
+                    {canManage && <button type="button" className="btn primary mobile-header-action mobile-pay" aria-label="Registrar pago" onClick={handleOpenPaymentModal}><FaPlus className="desktop-action-icon" aria-hidden="true" /><TbCoin className="mobile-only-action-icon" aria-hidden="true" /> <span>Pago</span></button>}
+                    {canManage && <button type="button" className="btn primary mobile-add" aria-label="Reservar viaje" onClick={() => setFormOpen(true)}>
                         <IoAddOutline className="mobile-only-action-icon" aria-hidden="true" /> <span>Reservar</span>
-                    </button>
+                    </button>}
                     <button onClick={() => setShowReportModal(true)} className="btn secondary mobile-header-action mobile-print" aria-label="Imprimir"><IoPrintOutline aria-hidden="true" /> <span>Imprimir</span></button>
                 </div>
             </div>
@@ -622,7 +624,7 @@ export default function TripReservations() {
                                     {sortConfig?.key === "saldo" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
                                 </span>
                             </th>
-                            <th>Acciones</th>
+                            {canManage && <th>Acciones</th>}
                         </tr>
                     </thead>
                     <tbody>
@@ -664,10 +666,10 @@ export default function TripReservations() {
                                         <span style={{ color: "var(--success, #27ae60)", fontWeight: 600 }}>Saldado</span>
                                     )}
                                 </td>
-                                <td>
+                                {canManage && <td>
                                     <button className="btn secondary btn-icon" onClick={() => handleEdit(res)} aria-label="Editar"><IoCreateOutline /></button>
                                     <button className="btn secondary btn-icon danger-outline" onClick={() => handleDelete(res.id)} aria-label="Eliminar"><IoTrashOutline /></button>
-                                </td>
+                                </td>}
                             </tr>
                         ))}
                     </tbody>

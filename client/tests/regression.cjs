@@ -91,7 +91,7 @@ test("logout removes authentication and legacy API cache while retaining theme",
   const filename=path.resolve(__dirname,"../src/utils/sesion.ts"),mod={exports:{}};
   const js=ts.transpileModule(fs.readFileSync(filename,"utf8"),{compilerOptions:{module:ts.ModuleKind.CommonJS}}).outputText;
   localStorage.setItem("theme","dark");localStorage.setItem("token","secret");localStorage.setItem("user","private");localStorage.setItem("role","admin");
-  vm.runInNewContext(js,{exports:mod.exports,module:mod,window,localStorage,caches:window.caches,Promise,require:()=>({forgetOfflineSession:async()=>{}})});
+  vm.runInNewContext(js,{exports:mod.exports,module:mod,window,localStorage,caches:window.caches,Promise,require:()=>({forgetOfflineSession:async()=>{},invalidarCache:()=>{}})});
   await mod.exports.limpiarSesion();
   for(const key of ["token","user","role"]) assert.equal(localStorage.getItem(key),null);
   assert.equal(localStorage.getItem("theme"),"dark");assert.deepEqual(deleted,["api-cache"]);
@@ -382,5 +382,27 @@ test("every mobile submenu shows the backdrop until it closes", async () => {
  } finally {
   await view.close();
   window.matchMedia=previous;
+ }
+});
+
+test("leader navigation and direct access use the same page permissions", async () => {
+ const { Simulate } = require("react-dom/test-utils");
+ const leader = { id: 2, role: "teacher", permissions: ["agendas"] };
+ const previous = window.matchMedia;
+ for (const mobile of [false, true]) {
+  window.matchMedia = () => ({ matches: mobile, addEventListener() {}, removeEventListener() {} });
+  const view = await mountPage("components/BarraLateral.tsx", {}, leader, true);
+  try {
+   assert.equal(view.node.querySelector('[aria-label="Enseñanza"]'), null);
+   await view.act(async () => Simulate.click(view.node.querySelector('[aria-label="Liderazgo"]')));
+   assert.deepEqual([...view.node.querySelectorAll(".floating-nav-submenu a")].map(link => link.getAttribute("href")), ["/agendas"]);
+   const PrivateRoute = loadComponent("components/RutaPrivada.tsx", {});
+   const child = require("react").createElement("p", null, "Agendas");
+   assert.equal(PrivateRoute({ module: "agendas", children: child }), child);
+   assert.equal(PrivateRoute({ module: "actividades", children: child }).props.to, "/agendas");
+  } finally {
+   await view.close();
+   window.matchMedia = previous;
+  }
  }
 });

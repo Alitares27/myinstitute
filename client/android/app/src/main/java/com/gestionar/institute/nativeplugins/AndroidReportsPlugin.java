@@ -1,6 +1,5 @@
 package com.gestionar.institute.nativeplugins;
 
-import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.CancellationSignal;
@@ -13,12 +12,10 @@ import android.util.Base64;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
-import androidx.activity.result.ActivityResult;
 
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
-import com.getcapacitor.annotation.ActivityCallback;
 import com.getcapacitor.annotation.CapacitorPlugin;
 
 import java.io.IOException;
@@ -100,32 +97,38 @@ public class AndroidReportsPlugin extends Plugin {
             call.reject("Faltan los datos del PDF.");
             return;
         }
-        Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT)
-            .addCategory(Intent.CATEGORY_OPENABLE)
-            .setType("application/pdf")
-            .putExtra(Intent.EXTRA_TITLE, name);
         try {
-            startActivityForResult(call, intent, "onSavePdf");
-        } catch (RuntimeException error) {
-            call.reject("No se pudo abrir el selector de archivos.", error);
-        }
-    }
-
-    @ActivityCallback
-    private void onSavePdf(PluginCall call, ActivityResult result) {
-        if (call == null) return;
-        if (result.getResultCode() != Activity.RESULT_OK || result.getData() == null
-                || result.getData().getData() == null) {
-            call.resolve();
-            return;
-        }
-        try (OutputStream output = getContext().getContentResolver().openOutputStream(result.getData().getData())) {
-            if (output == null) throw new IOException("No se pudo abrir el destino.");
-            output.write(Base64.decode(call.getString("base64"), Base64.DEFAULT));
+            java.io.File folder = new java.io.File(getContext().getCacheDir(), "reports");
+            if (!folder.isDirectory() && !folder.mkdirs()) throw new IOException("No se pudo preparar el reporte.");
+            java.io.File[] previousReports = folder.listFiles();
+            if (previousReports != null) {
+                long cutoff = System.currentTimeMillis() - 86_400_000L;
+                for (java.io.File report : previousReports) {
+                    if (report.isFile() && report.lastModified() < cutoff) report.delete();
+                }
+            }
+            String safeName = name.replaceAll("[^\\p{L}\\p{N}._-]", "_");
+            java.io.File file = java.io.File.createTempFile("reporte-", "-" + safeName, folder);
+            try (OutputStream output = new java.io.FileOutputStream(file)) {
+                output.write(Base64.decode(call.getString("base64"), Base64.DEFAULT));
+            }
+            android.net.Uri uri = androidx.core.content.FileProvider.getUriForFile(
+                getContext(), getContext().getPackageName() + ".fileprovider", file);
+            Intent share = new Intent(Intent.ACTION_SEND)
+                .setType("application/pdf")
+                .putExtra(Intent.EXTRA_STREAM, uri)
+                .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            share.setClipData(android.content.ClipData.newRawUri(name, uri));
+            getActivity().runOnUiThread(() -> {
+                try {
+                    getActivity().startActivity(Intent.createChooser(share, "Compartir PDF"));
+                    call.resolve();
+                } catch (RuntimeException error) {
+                    call.reject("No se pudo compartir el PDF.", error);
+                }
+            });
         } catch (IOException | RuntimeException error) {
-            call.reject("No se pudo guardar el PDF.", error);
-            return;
+            call.reject("No se pudo preparar el PDF.", error);
         }
-        call.resolve();
     }
 }

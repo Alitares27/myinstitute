@@ -6,6 +6,7 @@ import { InputError, isoDate } from "../utils/validation";
 import { addSearch, readPage } from "../utils/pagination";
 
 export const memberSelect = `SELECT u.id,u.name,u.email,u.telefono,u.role,
+  CASE WHEN $1='admin' OR u.id=$2 THEN u.permissions ELSE '{}'::text[] END AS permissions,
   CASE WHEN $1='admin' OR u.id=$2 THEN u.document::text ELSE NULL END AS document,
   s.id AS student_id,s.grade,s.enrollment_date AS student_enrollment_date,
   t.id AS teacher_id,t.specialty,t.created_at AS teacher_created_at

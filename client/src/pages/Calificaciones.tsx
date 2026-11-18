@@ -288,6 +288,12 @@ export default function Grades() {
           >
             <IoPrintOutline aria-hidden="true" /> <span>Imprimir</span>
           </button>
+          {role !== "student" && (
+            <button type="button" className="btn primary mobile-add" aria-label="Agregar calificación"
+              onClick={() => setFormOpen(true)}>
+              <IoAddOutline className="mobile-only-action-icon" aria-hidden="true" /> <span>Agregar</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -334,7 +340,6 @@ export default function Grades() {
 
       {role !== "student" && (
         <>
-          <button type="button" className="btn primary form-launch mobile-add" aria-label="Agregar calificación" onClick={() => setFormOpen(true)}><IoAddOutline className="mobile-only-action-icon" aria-hidden="true" /> <span>Agregar</span></button>
           {formOpen && <FormModal title={form.id ? "Editar calificación" : "Agregar calificación"} onClose={() => { resetForm(); setError(""); setFormOpen(false); }}>
             {error && <p role="alert">{error}</p>}
             <form onSubmit={handleSubmit}>

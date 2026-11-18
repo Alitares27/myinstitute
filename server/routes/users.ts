@@ -1,6 +1,7 @@
+import { accountMutationLimiter } from "../middleware/loginLimits";
 import { academicDetails, findMember, listMembers, memberInput, memberSelect, saveProfiles, removeStudentProfile, hasAcademicHistory } from "../services/members";
 import { positiveId } from "../utils/validation";
-import { prepareRoleChange } from "../utils/roles";
+import { prepareRoleChange, leaderPermissions, saveLeaderPermissions, lockAccountAdministration, requireAnotherAdmin } from "../utils/roles";
 import { InputError } from "../utils/validation";
 import { asyncRouter } from "../middleware/asyncRouter";
 import express, { Response } from "express";
@@ -8,7 +9,7 @@ import bcrypt from "bcryptjs";
 import { loginIpLimiter, loginAccountLimiter, registrationLimiter } from "../middleware/loginLimits";
 import { pool } from "../models/db";
 import { registerUser, loginUser } from "../controllers/users";
-import { verifyToken, isAdmin, AuthRequest } from "../middleware/auth";
+import { verifyToken, isAdmin, adminOrTeacher, AuthRequest, requireModuleAccess } from "../middleware/auth";
 
 const router = asyncRouter();
 
@@ -20,18 +21,22 @@ router.get("/me",verifyToken,async(req:AuthRequest,res:Response)=>{
   if(!member)return res.status(404).json({message:"Miembro no encontrado"});
   res.json(member);
 });
-router.get("/organizations",verifyToken,isAdmin,async(_req,res:Response)=>{
+router.get("/organizations",verifyToken, requireModuleAccess("miembros"),isAdmin,async(_req,res:Response)=>{
   const result=await pool.query("SELECT DISTINCT grade FROM students WHERE grade IS NOT NULL AND grade<>'' ORDER BY grade");
   res.json(result.rows.map(row=>row.grade));
 });
-router.get("/members",verifyToken,async(req:AuthRequest,res:Response)=>res.json(await listMembers(req)));
-router.get("/:id/academic",verifyToken,async(req:AuthRequest,res:Response)=>{
+router.get("/travel-members", verifyToken, requireModuleAccess("reservar-viajes", "pagos-templos"), adminOrTeacher, async (_req, res) => {
+  const result = await pool.query("SELECT id, name FROM users ORDER BY name, id");
+  res.json(result.rows);
+});
+router.get("/members",verifyToken, requireModuleAccess("miembros"),async(req:AuthRequest,res:Response)=>res.json(await listMembers(req)));
+router.get("/:id/academic",verifyToken, requireModuleAccess("miembros"),async(req:AuthRequest,res:Response)=>{
   const details=await academicDetails(positiveId(req.params.id),req.user!);
   if(!details)return res.status(404).json({message:"Miembro no encontrado"});
   res.json(details);
 });
 
-router.put("/me/password", verifyToken, async (req: AuthRequest, res: Response) => {
+router.put("/me/password", verifyToken, accountMutationLimiter, async (req: AuthRequest, res: Response) => {
   try {
     const { currentPassword, newPassword } = req.body;
     if (typeof currentPassword !== "string" || typeof newPassword !== "string" || !currentPassword || !newPassword) {
@@ -57,51 +62,63 @@ router.put("/me/password", verifyToken, async (req: AuthRequest, res: Response) 
   }
 });
 
-router.get("/",verifyToken,isAdmin,async(req:AuthRequest,res:Response)=>{
+router.get("/",verifyToken, requireModuleAccess("miembros"),isAdmin,async(req:AuthRequest,res:Response)=>{
   const result=await pool.query(memberSelect+" ORDER BY u.name,u.id",[req.user!.role,req.user!.id]);res.json(result.rows);
 });
-router.post("/",verifyToken,isAdmin,async(req:AuthRequest,res:Response)=>{
+router.post("/",verifyToken, requireModuleAccess("miembros"),isAdmin, accountMutationLimiter,async(req:AuthRequest,res:Response)=>{
   const input=memberInput(req.body,true);
+  const permissions = leaderPermissions(req.body.permissions);
   const hashed=await bcrypt.hash(input.password,10);
   const client=await pool.connect();
   try{
     await client.query("BEGIN");
+    await lockAccountAdministration(client, req.user!.id);
     const created=await client.query("INSERT INTO users(name,email,password,telefono,role,document) VALUES($1,$2,$3,$4,$5,$6) RETURNING id",[input.name,input.email,hashed,input.telefono,input.role,input.document]);
     const id=created.rows[0].id;
+    if (input.role !== "teacher" || permissions !== undefined) {
+      await saveLeaderPermissions(client, id, input.role === "teacher" ? permissions ?? [] : []);
+    }
     await saveProfiles(client,id,input);
     const member=await findMember(id,req.user!,client);
     await client.query("COMMIT");res.status(201).json({user:member});
   }catch(error:any){await client.query("ROLLBACK");if(error.code==='23505')return res.status(409).json({message:"El correo o documento ya está registrado"});throw error;}finally{client.release();}
 });
-router.put("/:id",verifyToken,isAdmin,async(req:AuthRequest,res:Response)=>{
+router.put("/:id",verifyToken, requireModuleAccess("miembros"),isAdmin, accountMutationLimiter,async(req:AuthRequest,res:Response)=>{
   const id=positiveId(req.params.id),input=memberInput(req.body,false);
+  const permissions = leaderPermissions(req.body.permissions);
   const hashed=input.password?await bcrypt.hash(input.password,10):null;
   const client=await pool.connect();
   try{
     await client.query("BEGIN");
+    await lockAccountAdministration(client, req.user!.id);
     await prepareRoleChange(client,id,input.role);
     await client.query(`UPDATE users SET name=$1,email=$2,telefono=$3,role=$4::varchar,document=$5,
-      password=COALESCE($6,password),auth_version=auth_version+CASE WHEN role<>$4::varchar OR $6::text IS NOT NULL THEN 1 ELSE 0 END
+      password=COALESCE($6,password)
       WHERE id=$7`,[input.name,input.email,input.telefono,input.role,input.document,hashed,id]);
+    if (input.role !== "teacher" || permissions !== undefined) {
+      await saveLeaderPermissions(client, id, input.role === "teacher" ? permissions ?? [] : []);
+    }
     await saveProfiles(client,id,input);
     const member=await findMember(id,req.user!,client);
     await client.query("COMMIT");res.json(member);
   }catch(error:any){await client.query("ROLLBACK");if(error.code==='23505')return res.status(409).json({message:"El correo o documento ya está registrado"});throw error;}finally{client.release();}
 });
-router.delete("/:id/student-profile",verifyToken,isAdmin,async(req:AuthRequest,res:Response)=>{
+router.delete("/:id/student-profile",verifyToken, requireModuleAccess("miembros"),isAdmin, accountMutationLimiter,async(req:AuthRequest,res:Response)=>{
   const client=await pool.connect();
   try{
     await client.query("BEGIN");await removeStudentProfile(client,positiveId(req.params.id));await client.query("COMMIT");
     res.json({message:"Registro académico retirado; la cuenta se conserva"});
   }catch(error){await client.query("ROLLBACK");throw error;}finally{client.release();}
 });
-router.delete("/:id",verifyToken,isAdmin,async(req:AuthRequest,res:Response)=>{
+router.delete("/:id",verifyToken, requireModuleAccess("miembros"),isAdmin, accountMutationLimiter,async(req:AuthRequest,res:Response)=>{
   const id=positiveId(req.params.id),client=await pool.connect();
   try{
     await client.query("BEGIN");
+    await lockAccountAdministration(client, req.user!.id);
     const user=await client.query("SELECT role FROM users WHERE id=$1 FOR UPDATE",[id]);
     if(!user.rowCount){await client.query("ROLLBACK");return res.status(404).json({message:"Miembro no encontrado"});}
     if(id===req.user!.id){await client.query("ROLLBACK");return res.status(409).json({message:"No puedes eliminar tu propia cuenta desde Miembros"});}
+    if (user.rows[0]?.role === "admin") await requireAnotherAdmin(client, id);
     const student=await client.query("SELECT id FROM students WHERE user_id=$1 FOR UPDATE",[id]);
     if(student.rowCount&&await hasAcademicHistory(client,student.rows[0].id)){
       await client.query("ROLLBACK");return res.status(409).json({message:"El miembro tiene historial académico. Sus datos deben conservarse."});

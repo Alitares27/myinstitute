@@ -17,3 +17,12 @@ export const registrationLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, limit: 10, standardHeaders: true, legacyHeaders: false,
   message: { message: "Demasiados registros desde esta conexión. Reintenta en 15 minutos." }
 });
+
+export const accountMutationLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 40,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: req => String((req as import("./auth").AuthRequest).user?.id ?? ipKeyGenerator(req.ip || "unknown")),
+  message: { message: "Demasiados cambios de cuenta. Reintenta más tarde." },
+});

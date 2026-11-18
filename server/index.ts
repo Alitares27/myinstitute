@@ -37,22 +37,27 @@ app.use(compression());
 
 app.use(cors({
   origin: [
-    "http://localhost:5173",
-    "http://localhost:5174",
+    ...(process.env.NODE_ENV === "production" || process.env.RENDER === "true" ? [] : ["http://localhost:5173", "http://localhost:5174"]),
     "https://gestionar-three.vercel.app",
     "https://localhost"
   ],
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-  credentials: true,
+  allowedHeaders: ["Content-Type", "Authorization", "X-Offline-Queue-Id"],
   optionsSuccessStatus: 200
 }));
 
 app.use(express.json({ limit: "1mb", inflate: false }));
 app.use(express.urlencoded({ extended: false, inflate: false, limit: "1mb" }));
 
-app.use("/api", (_req, res, next) => {
+app.use("/api", (req, res, next) => {
   res.setHeader("Cache-Control", "no-store, private");
+  res.once("finish", () => {
+    const actor = (req as import("./middleware/auth").AuthRequest).user?.id;
+    if (res.statusCode !== 403 || !actor) return;
+    void pool.query("INSERT INTO security_events(actor_id, action, outcome, module) VALUES ($1,$2,'denied',$3)",
+      [actor, req.method, res.locals.securityModule ?? null])
+      .catch(error => console.error("No se pudo registrar el acceso denegado:", error.code));
+  });
   next();
 });
 app.use("/api/users", users);
@@ -95,7 +100,7 @@ app.use("*", (req, res) => {
 async function startServer() {
   try {
     if (!process.env.JWT_SECRET) throw new Error("JWT_SECRET is required");
-    const dbCheck = await pool.query("SELECT NOW(), auth_version FROM users LIMIT 1");
+    const dbCheck = await pool.query("SELECT NOW(), token_version, permissions FROM users LIMIT 1");
     console.log("✅ DB Conectada:", dbCheck.rows[0]?.now || new Date());
 
     const PORT = process.env.PORT || 5000;

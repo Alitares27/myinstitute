@@ -59,21 +59,36 @@ public class OfflineSyncJobService extends JobService {
     private static boolean syncQueue(Context context) {
         SharedPreferences prefs = OfflineQueueStore.preferences(context);
         String userId = prefs.getString("activeUserId", "");
-        String token = prefs.getString("token", "");
+        String encryptedToken = prefs.getString("encryptedToken", "");
         String apiBase = prefs.getString("apiBase", "");
-        if (userId.isEmpty() || token.isEmpty() || apiBase.isEmpty()) return false;
+        if (userId.isEmpty() || encryptedToken.isEmpty() || apiBase.isEmpty()) return false;
+
+        final String token;
+        try {
+            token = OfflineSessionCipher.decrypt(encryptedToken);
+        } catch (Exception error) {
+            Log.w(TAG, "No se pudo abrir la sesión de sincronización.", error);
+            return false;
+        }
 
         synchronized (OfflineQueueStore.class) {
             JSONArray queue = OfflineQueueStore.readQueue(context);
             for (int index = 0; index < queue.length(); index++) {
                 JSONObject entry = queue.optJSONObject(index);
                 if (entry == null || !userId.equals(entry.optString("userId"))) continue;
-                if (!userId.equals(prefs.getString("activeUserId", "")) || !token.equals(prefs.getString("token", ""))) return false;
+                if (!userId.equals(prefs.getString("activeUserId", "")) || !encryptedToken.equals(prefs.getString("encryptedToken", ""))) return false;
                 try {
                     HttpResult http = send(entry, apiBase, token);
                     int status = http.status;
                     if (status < 200 || status >= 300) {
                         String error = readError(status, http.body);
+                        if (status == 401 || status == 403) {
+                            queue.remove(index);
+                            OfflineQueueStore.writeQueue(context, queue);
+                            prefs.edit().putString("lastRejected", error).commit();
+                            Log.w(TAG, "Operación local rechazada por el servidor: HTTP " + status);
+                            return false;
+                        }
                         entry.put("lastError", error);
                         queue.put(index, entry);
                         OfflineQueueStore.writeQueue(context, queue);
@@ -104,9 +119,15 @@ public class OfflineSyncJobService extends JobService {
     }
 
     private static HttpResult send(JSONObject entry, String apiBase, String token) throws Exception {
-        String endpoint = apiBase.replaceAll("/+$", "") + entry.getString("url");
+        String path = entry.getString("url");
+        String method = entry.optString("method");
+        if (!OfflineQueueStore.isAllowedOperation(apiBase, path, method)) {
+            return new HttpResult(403, "");
+        }
+        String endpoint = apiBase.replaceAll("/+$", "") + path;
         HttpURLConnection connection = (HttpURLConnection) new URL(endpoint).openConnection();
-        connection.setRequestMethod(entry.optString("method", "POST"));
+        connection.setInstanceFollowRedirects(false);
+        connection.setRequestMethod(method);
         connection.setConnectTimeout(20_000);
         connection.setReadTimeout(20_000);
         connection.setRequestProperty("Authorization", "Bearer " + token);

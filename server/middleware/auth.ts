@@ -1,3 +1,4 @@
+import type { Module } from "../utils/roles";
 import { createHmac } from "crypto";
 import { pool } from "../models/db";
 import { Request, Response, NextFunction } from "express";
@@ -8,7 +9,8 @@ export type UserRole = "admin" | "student" | "teacher";
 export interface AuthPayload extends JwtPayload {
   id: number;
   role: UserRole;
-  version: number;
+  tokenVersion: number;
+  permissions?: Module[];
 }
 
 export interface AuthRequest extends Request {
@@ -33,15 +35,15 @@ export async function verifyToken(req: AuthRequest, res: Response, next: NextFun
     }
 
     const decoded = jwt.verify(token, secret) as AuthPayload;
-    if (!Number.isSafeInteger(decoded.version) || !Number.isSafeInteger(decoded.id) || !["admin", "teacher", "student"].includes(decoded.role)) {
+    if (!Number.isSafeInteger(decoded.tokenVersion) || !Number.isSafeInteger(decoded.id) || !["admin", "teacher", "student"].includes(decoded.role)) {
       return res.status(401).json({ message: "Invalid token" });
     }
-    const result = await pool.query("SELECT role, password, auth_version FROM users WHERE id = $1", [decoded.id]);
+    const result = await pool.query("SELECT role, password, token_version, permissions FROM users WHERE id = $1", [decoded.id]);
     const current = result.rows[0];
-    if (!current || Number(current.auth_version) !== decoded.version || current.role !== decoded.role || decoded.session !== sessionFingerprint(current.password)) {
-      return res.status(401).json({ message: "La sesión expiró. Inicia sesión nuevamente." });
+    if (!current || Number(current.token_version) !== decoded.tokenVersion || current.role !== decoded.role || decoded.session !== sessionFingerprint(current.password)) {
+      return res.status(401).json({ message: "La sesiÃ³n expirÃ³. Inicia sesiÃ³n nuevamente." });
     }
-    req.user = decoded;
+    req.user = { ...decoded, permissions: current.permissions ?? [] };
     next();
   } catch (err) {
     if (err instanceof TokenExpiredError) {
@@ -80,3 +82,19 @@ export const canTeach = (req: AuthRequest, res: Response, next: NextFunction) =>
   if (req.user?.role !== "admin" && req.user?.role !== "teacher") return res.status(403).json({ message: "Solo administradores y docentes" });
   next();
 };
+
+export function requireModuleAccess(...modules: Module[]) {
+  return (req: AuthRequest, res: Response, next: NextFunction) => {
+    res.locals.securityModule = modules.join(",");
+    if (req.user?.role === "admin" || req.user?.role === "student" ||
+        (req.user?.role === "teacher" && modules.some(module => req.user?.permissions?.includes(module)))) {
+      return next();
+    }
+    return res.status(403).json({ message: "No tienes permiso para acceder a este módulo." });
+  };
+}
+
+export function adminOrTeacher(req: AuthRequest, res: Response, next: NextFunction) {
+  if (req.user?.role === "admin" || req.user?.role === "teacher") return next();
+  return res.status(403).json({ message: "No tienes permiso para esta operaciÃ³n." });
+}

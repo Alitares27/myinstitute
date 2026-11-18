@@ -1,8 +1,8 @@
+import { readSessionUser } from "../utils/access";
 import { IoAddOutline } from "react-icons/io5";
 import FormModal from "../components/FormModal";
 import { confirmAppAction } from "../components/AppDialogHost";
 import { useEffect, useState, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
 import { IoCreateOutline, IoTrashOutline, IoArchiveOutline } from "react-icons/io5";
 import { FiBriefcase } from "react-icons/fi";
 import { TbPlus, TbPencil, TbAlertTriangle, TbBuilding } from "react-icons/tb";
@@ -33,7 +33,7 @@ const getStatusClass = (status: string) => {
 };
 
 export default function TemplosMaintenance() {
-  const navigate = useNavigate();
+  const canManage = readSessionUser()?.role === "admin";
   const [formOpen, setFormOpen] = useState(false);
   const [templos, setTemplos] = useState<Templo[]>([]);
   const [search, setSearch] = useState("");
@@ -48,13 +48,8 @@ export default function TemplosMaintenance() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const role = JSON.parse(localStorage.getItem("user") || "{}").role;
-    if (role !== "admin") {
-      navigate("/panel", { replace: true });
-      return;
-    }
     fetchTemplos();
-  }, [navigate]);
+  }, []);
 
   const fetchTemplos = async () => {
     try {
@@ -173,12 +168,21 @@ export default function TemplosMaintenance() {
 
   return (
     <div className="dashboard-container">
-      <h1><span className="page-title-icon"><FiBriefcase /></span> Gestión de Templos</h1>
+      <header className="asistencia-header">
+        <div className="asistencia-header-info">
+          <h1><span className="page-title-icon"><FiBriefcase /></span> Gestión de Templos</h1>
+        </div>
+        {canManage && (
+          <button type="button" className="btn primary mobile-add" aria-label="Agregar templo"
+            onClick={() => setFormOpen(true)}>
+            <IoAddOutline className="mobile-only-action-icon" aria-hidden="true" /> <span>Agregar</span>
+          </button>
+        )}
+      </header>
 
       {error && !formOpen && <div className="error"><TbAlertTriangle /> {error}</div>}
 
       <>
-        <button type="button" className="btn primary form-launch mobile-add" aria-label="Agregar templo" onClick={() => setFormOpen(true)}><IoAddOutline className="mobile-only-action-icon" aria-hidden="true" /> <span>Agregar</span></button>
         {formOpen && <FormModal title={form.id ? "Editar templo" : "Agregar templo"} onClose={() => { setForm({ id: "", name: "", city: "", province: "", address: "", dedicated_date: "", status: "operating" }); setError(null); setFormOpen(false); }}>
           {error && <p role="alert">{error}</p>}
           <form onSubmit={handleSubmit} className="grid-form">
@@ -267,7 +271,7 @@ export default function TemplosMaintenance() {
                   {sortConfig?.key === "status" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
                 </span>
               </th>
-              <th>Acciones</th>
+              {canManage && <th>Acciones</th>}
             </tr>
           </thead>
           <tbody>
@@ -290,7 +294,7 @@ export default function TemplosMaintenance() {
                       {getStatusLabel(t.status)}
                     </span>
                   </td>
-                  <td>
+                  {canManage && <td>
                     <button className="btn secondary btn-icon" onClick={() => handleEdit(t)} aria-label="Editar">
                       <IoCreateOutline />
                     </button>
@@ -298,12 +302,12 @@ export default function TemplosMaintenance() {
 <button className="btn secondary btn-icon danger-outline" onClick={() => handleDelete(t.id)} aria-label="Eliminar">
                       <IoTrashOutline />
                     </button>
-                  </td>
+                  </td>}
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan={5}>No hay templos registrados.</td>
+                <td colSpan={canManage ? 5 : 4}>No hay templos registrados.</td>
               </tr>
             )}
           </tbody>
@@ -365,14 +369,14 @@ export default function TemplosMaintenance() {
               )}
             </div>
 
-            <div style={{ marginTop: "1.5rem", display: "flex", gap: "0.5rem", justifyContent: "flex-end" }}>
+            {canManage && <div style={{ marginTop: "1.5rem", display: "flex", gap: "0.5rem", justifyContent: "flex-end" }}>
               <button
                 className="btn secondary"
                 onClick={() => { handleEdit(selectedTemplo); setSelectedTemplo(null); }}
               >
                 <TbPencil /> Editar
               </button>
-            </div>
+            </div>}
           </div>
         </div>
       )}

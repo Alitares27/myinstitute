@@ -6,15 +6,15 @@ import {
   updateReservation,
   deleteReservation
 } from "../controllers/tripReservations";
-import { verifyToken, isAdmin } from "../middleware/auth";
+import { verifyToken, adminOrTeacher, isAdmin, requireModuleAccess } from "../middleware/auth";
 
 const router = asyncRouter();
 
-router.get("/options", verifyToken, isAdmin, reservationOptions);
-router.get("/report", verifyToken, isAdmin, reservationReport);
-router.get("/", verifyToken, isAdmin, getReservations);
-router.post("/", verifyToken, isAdmin, createReservation);
-router.put("/:id", verifyToken, isAdmin, updateReservation);
-router.delete("/:id", verifyToken, isAdmin, deleteReservation);
+router.get("/options", verifyToken, requireModuleAccess("reservar-viajes", "pagos-templos"), adminOrTeacher, reservationOptions);
+router.get("/report", verifyToken, requireModuleAccess("reservar-viajes"), adminOrTeacher, reservationReport);
+router.get("/", verifyToken, requireModuleAccess("reservar-viajes"), adminOrTeacher, getReservations);
+router.post("/", verifyToken, requireModuleAccess("reservar-viajes"), isAdmin, createReservation);
+router.put("/:id", verifyToken, requireModuleAccess("reservar-viajes"), isAdmin, updateReservation);
+router.delete("/:id", verifyToken, requireModuleAccess("reservar-viajes"), isAdmin, deleteReservation);
 
 export default router;

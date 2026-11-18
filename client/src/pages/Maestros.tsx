@@ -1,3 +1,5 @@
+import LeaderPermissions from "../components/LeaderPermissions";
+import type { AppModule } from "../shared/constants";
 import FormModal from "../components/FormModal";
 import { confirmAppAction } from "../components/AppDialogHost";
 import React, { useEffect, useState, useMemo } from "react";
@@ -56,12 +58,14 @@ export default function Maestros() {
     name: string;
     specialty: string;
     selectedCourses: number[];
+    permissions: AppModule[];
   }>({
     id: "",
     user_id: "",
     name: "",
     specialty: "",
     selectedCourses: [],
+    permissions: [],
   });
 
   const [courseSearch, setCourseSearch] = useState("");
@@ -95,7 +99,7 @@ export default function Maestros() {
 
       const [teachersRes, usersRes, coursesRes] = await Promise.all([
         api.get("/teachers"),
-        api.get("/users"),
+        userRes.role === "admin" ? api.get("/users") : Promise.resolve({ data: [] }),
         api.get("/courses"),
       ]);
 
@@ -140,6 +144,7 @@ export default function Maestros() {
         const res = await api.put(`/teachers/${form.id}`, {
           specialty: form.specialty,
           course_ids: form.selectedCourses,
+          permissions: form.permissions,
         });
 
         setTeachers((prev) =>
@@ -152,6 +157,7 @@ export default function Maestros() {
           user_id: form.user_id,
           specialty: form.specialty || "General",
           course_ids: form.selectedCourses,
+          permissions: form.permissions,
         });
 
         setTeachers((prev) => [...prev, res.data]);
@@ -174,6 +180,7 @@ export default function Maestros() {
       name: "",
       specialty: "",
       selectedCourses: [],
+    permissions: [],
     });
     setCourseSearch("");
   };
@@ -187,6 +194,7 @@ export default function Maestros() {
       name: teacher.name,
       specialty: teacher.specialty || "",
       selectedCourses: courseIds,
+      permissions: users.find(user => Number(user.id) === Number(teacher.user_id))?.permissions ?? [],
     });
   };
 
@@ -421,6 +429,12 @@ export default function Maestros() {
           >
             <IoPrintOutline aria-hidden="true" /> <span>Imprimir</span>
           </button>
+          {role === "admin" && (
+            <button type="button" className="btn primary mobile-add" aria-label="Agregar maestro"
+              onClick={() => setFormOpen(true)}>
+              <IoAddOutline className="mobile-only-action-icon" aria-hidden="true" /> <span>Agregar</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -468,7 +482,6 @@ export default function Maestros() {
 
       {role === "admin" && (
         <>
-          <button type="button" className="btn primary form-launch mobile-add" aria-label="Agregar maestro" onClick={() => setFormOpen(true)}><IoAddOutline className="mobile-only-action-icon" aria-hidden="true" /> <span>Agregar</span></button>
           {formOpen && <FormModal title={form.id ? "Editar maestro" : "Agregar maestro"} onClose={() => { resetForm(); setFormOpen(false); }}>
             <form onSubmit={handleSubmit}>
               <div className="form-row" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "1rem" }}>
@@ -485,7 +498,7 @@ export default function Maestros() {
                   ) : (
                     <select
                       value={form.user_id}
-                      onChange={(e) => setForm({ ...form, user_id: e.target.value })}
+                      onChange={(e) => setForm({ ...form, user_id: e.target.value, permissions: users.find(user => String(user.id) === e.target.value)?.permissions ?? [] })}
                       required
                     >
                       <option value="">-- Seleccionar Miembro --</option>
@@ -519,6 +532,7 @@ export default function Maestros() {
               </div>
 
               <div className="course-selection-box">
+                <LeaderPermissions value={form.permissions} onChange={permissions => setForm({ ...form, permissions })} />
                 <div className="course-selection-header">
                   <span>
                     <IoBookOutline style={{ verticalAlign: "middle", marginRight: "4px" }} />

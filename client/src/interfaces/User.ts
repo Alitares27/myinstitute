@@ -1,9 +1,12 @@
+import type { AppModule } from "../shared/constants";
+
 export interface User {
   id: number;
   name: string;
   email: string;
   telefono: string;
-  role: string;
+  role: MemberRole;
+  permissions?: AppModule[];
   document: string;
   specialty?: string;
   grade?: string;
@@ -16,6 +19,7 @@ export interface Member {
   email:string;
   telefono:string|null;
   role:MemberRole;
+  permissions?: AppModule[];
   document:string|null;
   student_id:number|null;
   grade:string|null;

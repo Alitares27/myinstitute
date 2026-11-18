@@ -1,3 +1,4 @@
+import { canAccessModule, readSessionUser } from "../utils/access";
 import { TbCoin } from "react-icons/tb";
 import { isAndroidApp } from "../utils/androidReports";
 import FormModal from "../components/FormModal";
@@ -39,6 +40,7 @@ const capitalizarMedio = (value: string = "efectivo") => {
 };
 
 export default function PagosTemplos() {
+  const canManage = readSessionUser()?.role === "admin";
   const navigate = useNavigate();
 
   const [role, setRole] = useState<string>("");
@@ -74,7 +76,7 @@ export default function PagosTemplos() {
   });
 
   const listParams={page:currentPage,limit:recordsPerPage,trip_id:filterTripId||undefined,member_id:filterUserId||undefined,payment_type:filterPaymentType||undefined,search:searchQuery||undefined,sort:sortConfig?.key,direction:sortConfig?.direction};
-  const page=usePagedList<any>("/temple-amortizations",listParams,JSON.parse(localStorage.getItem("user")||"{}").role==="admin");
+  const page=usePagedList<any>("/temple-amortizations",listParams,canAccessModule(readSessionUser(), "pagos-templos", false));
   const pagos=page.items;
   const options=useReservationOptions([paymentForm.trip_id],optionsRevision);
   const reservations=options.items;
@@ -82,7 +84,7 @@ export default function PagosTemplos() {
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("user") || "{}");
     setRole(user.role || "");
-    if (!user.role || user.role !== "admin") {
+    if (!canAccessModule(user, "pagos-templos", false)) {
       navigate("/", { replace: true });
       return;
     }
@@ -94,14 +96,14 @@ export default function PagosTemplos() {
   };
 
   const fetchUsers = async () => {
-    const { data } = await api.get("/users");
+    const { data } = await api.get(readSessionUser()?.role === "teacher" ? "/users/travel-members" : "/users");
     setUsers(data);
   };
 
   const fetchReservations=()=>setOptionsRevision(value=>value+1);
   const fetchPagos=()=>{page.refresh();setStatisticsRevision(value=>value+1);};
   useEffect(()=>{
-    if(JSON.parse(localStorage.getItem("user")||"{}").role!=="admin")return;
+    if(!canAccessModule(readSessionUser(), "pagos-templos", false))return;
     Promise.all([fetchTrips(),fetchUsers()]).catch(()=>setPaymentError("Error al cargar los catálogos"))
       .finally(()=>setLoading(false));
   },[]);
@@ -286,7 +288,7 @@ export default function PagosTemplos() {
           <p>Historial de amortizaciones de los viajes al templo</p>
         </div>
         <div className="asistencia-header-actions">
-          <button type="button" className="btn primary mobile-header-action mobile-pay" aria-label="Registrar pago" onClick={handleOpenPaymentModal}><FaPlus className="desktop-action-icon" aria-hidden="true" /><TbCoin className="mobile-only-action-icon" aria-hidden="true" /> <span>Agregar</span></button>
+          {canManage && <button type="button" className="btn primary mobile-header-action mobile-pay" aria-label="Registrar pago" onClick={handleOpenPaymentModal}><FaPlus className="desktop-action-icon" aria-hidden="true" /><TbCoin className="mobile-only-action-icon" aria-hidden="true" /> <span>Agregar</span></button>}
           <button type="button" onClick={() => setShowReportModal(true)} className="btn secondary mobile-header-action mobile-print" aria-label="Imprimir"><IoPrintOutline aria-hidden="true" /> <span>Imprimir</span></button>
         </div>
       </div>
@@ -528,7 +530,7 @@ export default function PagosTemplos() {
                     {sortConfig?.key === "payment_type" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
                   </span>
                 </th>
-                <th style={{ width: "96px", textAlign: "center" }}>Acciones</th>
+                {canManage && <th style={{ width: "96px", textAlign: "center" }}>Acciones</th>}
               </tr>
             </thead>
             <tbody>
@@ -562,7 +564,7 @@ export default function PagosTemplos() {
                   </td>
                   <td>{formatDate(p.payment_date)}</td>
                   <td>{capitalizarMedio(p.payment_type)}</td>
-                  <td>
+                  {canManage && <td>
                     <div style={{ display: "flex", gap: "4px" }}>
                       <button
                         className="btn secondary btn-icon"
@@ -580,7 +582,7 @@ export default function PagosTemplos() {
                         {isDeletingId === p.id ? "⏳" : <IoTrashOutline />}
                       </button>
                     </div>
-                  </td>
+                  </td>}
                 </tr>
               ))}
             </tbody>

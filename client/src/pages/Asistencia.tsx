@@ -279,14 +279,16 @@ export default function Attendance() {
 
         <div className="asistencia-header-actions">
           {(role === "admin" || role === "teacher") && (
-            <button
-              type="button"
-              className="btn primary mobile-header-action mobile-print"
-              aria-label="Imprimir"
-              onClick={() => setShowReportModal(true)}
-            >
-              <IoPrintOutline aria-hidden="true" /> <span>Imprimir</span>
-            </button>
+            <>
+              <button type="button" className="btn primary mobile-header-action mobile-print"
+                aria-label="Imprimir" onClick={() => setShowReportModal(true)}>
+                <IoPrintOutline aria-hidden="true" /> <span>Imprimir</span>
+              </button>
+              <button type="button" className="btn primary mobile-add" aria-label="Agregar asistencia"
+                onClick={() => setFormOpen(true)}>
+                <IoAddOutline className="mobile-only-action-icon" aria-hidden="true" /> <span>Agregar</span>
+              </button>
+            </>
           )}
         </div>
       </div>
@@ -335,7 +337,6 @@ export default function Attendance() {
 
       {(role === "admin" || role === "teacher") && (
         <>
-          <button type="button" className="btn primary form-launch mobile-add" aria-label="Agregar asistencia" onClick={() => setFormOpen(true)}><IoAddOutline className="mobile-only-action-icon" aria-hidden="true" /> <span>Agregar</span></button>
           {formOpen && <FormModal title="Agregar asistencia" onClose={() => { setForm({ ...form, student_id: "", topic_id: "", status: "Present" }); setError(null); setFormOpen(false); }}>
             {error && <p role="alert">{error}</p>}
             <form onSubmit={handleSubmit}>

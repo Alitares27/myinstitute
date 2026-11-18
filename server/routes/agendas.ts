@@ -1,5 +1,5 @@
 import { asyncRouter } from "../middleware/asyncRouter";
-import { isAdmin, verifyToken } from "../middleware/auth";
+import { isAdmin, verifyToken, requireModuleAccess } from "../middleware/auth";
 import { pool } from "../models/db";
 import { InputError, isoDate, positiveId } from "../utils/validation";
 
@@ -62,17 +62,17 @@ function valuesFrom(body: Record<string, unknown>) {
     text(body.closing_hymn, "Segundo himno"), ...memberIds];
 }
 
-router.get("/", verifyToken, async (_req, res) => {
+router.get("/", verifyToken, requireModuleAccess("agendas"), async (_req, res) => {
   const result = await queryAgendas(agendaSelect + " ORDER BY a.scheduled_at DESC, a.id DESC");
   res.json(result.rows);
 });
 
-router.get("/members", verifyToken, isAdmin, async (_req, res) => {
+router.get("/members", verifyToken, requireModuleAccess("agendas"), isAdmin, async (_req, res) => {
   const result = await pool.query("SELECT id, name FROM users ORDER BY name, id");
   res.json(result.rows);
 });
 
-router.post("/", verifyToken, isAdmin, async (req, res) => {
+router.post("/", verifyToken, requireModuleAccess("agendas"), isAdmin, async (req, res) => {
   const values = valuesFrom(req.body ?? {});
   try {
     const result = await queryAgendas(`
@@ -90,7 +90,7 @@ router.post("/", verifyToken, isAdmin, async (req, res) => {
   }
 });
 
-router.put("/:id", verifyToken, isAdmin, async (req, res) => {
+router.put("/:id", verifyToken, requireModuleAccess("agendas"), isAdmin, async (req, res) => {
   const id = positiveId(req.params.id);
   const values = valuesFrom(req.body ?? {});
   try {
@@ -110,7 +110,7 @@ router.put("/:id", verifyToken, isAdmin, async (req, res) => {
   }
 });
 
-router.delete("/:id", verifyToken, isAdmin, async (req, res) => {
+router.delete("/:id", verifyToken, requireModuleAccess("agendas"), isAdmin, async (req, res) => {
   const result = await queryAgendas("DELETE FROM baptism_agendas WHERE id = $1", [positiveId(req.params.id)]);
   if (!result.rowCount) return res.status(404).json({ message: "Agenda no encontrada." });
   res.json({ message: "Agenda eliminada." });

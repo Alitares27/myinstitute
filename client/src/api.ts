@@ -10,6 +10,10 @@ import {
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
+function requiresConnection(path: string): boolean {
+  return /\/(?:users|teachers|logout)(?:\/|\?|$)/i.test(path);
+}
+
 const api = axios.create({
   baseURL: API_BASE_URL,
   timeout: 25000,
@@ -30,7 +34,7 @@ api.interceptors.request.use((config) => {
         return { data: cached.data, status: 200, statusText: "OK (local)", headers: {}, config: offlineConfig, request: {} };
       }
       const path = offlineConfig.url || "";
-      if (/\/users\/(login|register)|\/logout|\/password/.test(path)) {
+      if (requiresConnection(path)) {
         throw new Error("Esta acciÃ³n requiere conexiÃ³n a internet.");
       }
       const queued = await enqueueMutation(offlineConfig);
@@ -68,7 +72,7 @@ api.interceptors.response.use(
 
     if (!error.response && config && !config.signal?.aborted && ["post", "put", "patch", "delete"].includes(method)) {
       const path = config.url || "";
-      if (!/\/users\/(login|register)|\/logout|\/password/.test(path)) {
+      if (!requiresConnection(path)) {
         try {
           const queued = await enqueueMutation(config);
           return { data: queued.data, status: 202, statusText: "Guardado para sincronizar", headers: {}, config, request: {} };

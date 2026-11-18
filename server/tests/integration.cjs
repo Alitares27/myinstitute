@@ -10,7 +10,7 @@ let db, server, base;
 const sqlCalls = [];
 const fixtures = { 1: { role: "admin" }, 2: { role: "teacher" }, 3: { role: "teacher" }, 42: { role: "student" }, 43: { role: "student" } };
 const hash = bcrypt.hashSync("test-password", 4);
-function token(id = 1, extra = {}) { const { sessionFingerprint } = require("../dist/middleware/auth"); return jwt.sign({ id, role: fixtures[id].role, version: 0, session: sessionFingerprint(hash), ...extra }, process.env.JWT_SECRET, { expiresIn: "1h" }); }
+function token(id = 1, extra = {}) { const { sessionFingerprint } = require("../dist/middleware/auth"); return jwt.sign({ id, role: fixtures[id].role, tokenVersion: id === 2 || id === 3 ? 2 : 1, session: sessionFingerprint(hash), ...extra }, process.env.JWT_SECRET, { expiresIn: "1h" }); }
 async function request(route, { id = 1, method = "GET", body, auth, headers = {} } = {}) {
     const response = await fetch(base + route, { method, headers: { ...(id ? { Authorization: `Bearer ${auth || token(id)}` } : {}), ...(body !== undefined ? { "Content-Type": "application/json" } : {}), ...headers }, body: body === undefined ? undefined : typeof body === "string" ? body : JSON.stringify(body), signal: AbortSignal.timeout(8000) });
     const data = await response.json(); return { status: response.status, data };
@@ -23,7 +23,10 @@ before(async () => {
     await db.exec(agendasMigration); await db.exec(agendasMigration);
     const activityColorMigration = fs.readFileSync(path.join(__dirname, "../migrations/activity_color.sql"), "utf8");
     await db.exec(activityColorMigration); await db.exec(activityColorMigration);
+    await db.exec(fs.readFileSync(path.join(__dirname, "../migrations/leader_permissions.sql"), "utf8"));
+    await db.exec(fs.readFileSync(path.join(__dirname, "../migrations/session_hardening.sql"), "utf8"));
     for (const [id, user] of Object.entries(fixtures)) await db.query("INSERT INTO users(id,name,email,password,role) VALUES($1,$2,$3,$4,$5)", [Number(id), `Member ${id}`, `user${id}@test.invalid`, hash, user.role]);
+    await db.exec("UPDATE users SET permissions=ARRAY['asistencia','calificaciones','inscripciones','miembros','panel','maestros'] WHERE role='teacher'");
     await db.exec(`INSERT INTO teachers(id,user_id,specialty) VALUES(5,2,'A'),(6,3,'B');
  INSERT INTO students(id,user_id) VALUES(7,42),(8,43);
  INSERT INTO courses(id,title,teacher_id) VALUES(1,'Assigned course',5),(2,'Other course',6);
@@ -44,6 +47,30 @@ after(async () => { if (server) await new Promise(resolve => server.close(resolv
 test("real PostgreSQL migration is idempotent and adds revocation, archive and audit fields", async () => {
     const result = await db.query("SELECT auth_version FROM users WHERE id=1"); assert.equal(result.rows[0].auth_version, 0);
     assert.equal((await db.query("SELECT COUNT(*)::int AS count FROM financial_events")).rows[0].count, 0);
+});
+test("leader permissions are explicit and changes invalidate the previous JWT", async () => {
+    const route = "/api/users";
+    const body = { name: "Permission Leader", email: "permissions@test.invalid", role: "teacher", password: "test-password" };
+    await db.exec("SELECT setval(pg_get_serial_sequence('users','id'), (SELECT max(id) FROM users)); SELECT setval(pg_get_serial_sequence('students','id'), (SELECT max(id) FROM students));");
+    const registration = await request(route + "/register", { id: null, method: "POST", body: { ...body, permissions: ["agendas"] } });
+    assert.equal(registration.status, 201);
+    assert.equal(registration.data.user.role, "student");
+    assert.deepEqual(registration.data.user.permissions, []);
+    await db.query("DELETE FROM students WHERE user_id=$1", [registration.data.user.id]);
+    await db.query("DELETE FROM users WHERE id=$1", [registration.data.user.id]);
+    assert.equal((await request(route + "/1", { method: "PUT", body: { ...body, permissions: [] } })).status, 409);
+    assert.equal((await request(route + "/2", { method: "PUT", body: { ...body, permissions: ["unknown"] } })).status, 400);
+    const oldToken = token(2);
+    const existing = await request(route + "/me", { id: 2 });
+    const changed = await request(route + "/2", { method: "PUT", body: { ...existing.data, permissions: ["agendas"] } });
+    assert.equal(changed.status, 200);
+    assert.deepEqual(changed.data.permissions, ["agendas"]);
+    assert.equal((await request("/api/agendas", { id: 2, auth: oldToken })).status, 401);
+    const updatedToken = token(2, { tokenVersion: 3, permissions: ["actividades"] });
+    assert.equal((await request("/api/agendas", { id: 2, auth: updatedToken })).status, 200);
+    assert.equal((await request("/api/activities", { id: 2, auth: updatedToken })).status, 403);
+    await db.query("UPDATE users SET permissions=$1::text[] WHERE id=2", [existing.data.permissions]);
+    await db.query("UPDATE users SET token_version=2 WHERE id=2");
 });
 test("activity colors persist and legacy updates retain the assigned color", async () => {
     const route = "/api/activities";
@@ -234,5 +261,5 @@ test("trip-specific statistics never include another trip's reservations or paym
 test("logout increments persisted version and invalidates copies of every previous token", async () => {
     const old = token(1); assert.equal((await request('/api/logout', { method: 'POST', auth: old })).status, 200);
     assert.equal((await request('/api/users/me', { auth: old })).status, 401);
-    assert.equal((await db.query('SELECT auth_version FROM users WHERE id=1')).rows[0].auth_version, 1);
+    assert.equal((await db.query('SELECT token_version FROM users WHERE id=1')).rows[0].token_version, 2);
 });

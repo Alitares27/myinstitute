@@ -1,13 +1,14 @@
-import { prepareRoleChange } from "../utils/roles";
+import { accountMutationLimiter } from "../middleware/loginLimits";
+import { prepareRoleChange, leaderPermissions, saveLeaderPermissions, lockAccountAdministration } from "../utils/roles";
 import { InputError } from "../utils/validation";
 import { asyncRouter } from "../middleware/asyncRouter";
 import express, { Response } from "express";
 import { pool } from "../models/db";
-import { verifyToken, isAdmin, AuthRequest } from "../middleware/auth";
+import { verifyToken, isAdmin, AuthRequest, requireModuleAccess } from "../middleware/auth";
 
 const router = asyncRouter();
 
-router.get("/", verifyToken, async (req: AuthRequest, res: Response) => {
+router.get("/", verifyToken, requireModuleAccess("maestros"), async (req: AuthRequest, res: Response) => {
   try {
     const role = req.user?.role;
     const userId = req.user?.id;
@@ -62,18 +63,20 @@ router.get("/", verifyToken, async (req: AuthRequest, res: Response) => {
   }
 });
 
-router.post("/", verifyToken, isAdmin, async (req: AuthRequest, res: Response) => {
+router.post("/", verifyToken, requireModuleAccess("maestros"), isAdmin, accountMutationLimiter, async (req: AuthRequest, res: Response) => {
   const client = await pool.connect();
   try {
     const { user_id, specialty, course_ids } = req.body;
+    const permissions = leaderPermissions(req.body.permissions);
 
     if (!user_id) {
       return res.status(400).json({ message: "El miembro es requerido" });
     }
 
     await client.query("BEGIN");
+    await lockAccountAdministration(client, req.user!.id);
 
-    const userRes = await client.query("SELECT id, name, email, role FROM users WHERE id = $1", [user_id]);
+    const userRes = await client.query("SELECT role FROM users WHERE id = $1 FOR UPDATE", [user_id]);
     if (userRes.rows.length === 0) {
       await client.query("ROLLBACK");
       return res.status(404).json({ message: "Miembro no encontrado" });
@@ -98,8 +101,10 @@ router.post("/", verifyToken, isAdmin, async (req: AuthRequest, res: Response) =
     }
 
     if (userRes.rows[0].role !== "teacher") {
-      await client.query("UPDATE users SET role = 'teacher', auth_version=auth_version+1 WHERE id = $1", [user_id]);
+      await client.query("UPDATE users SET role = 'teacher' WHERE id = $1", [user_id]);
     }
+
+    if (permissions !== undefined) await saveLeaderPermissions(client, user_id, permissions);
 
     if (Array.isArray(course_ids)) {
       await client.query("UPDATE courses SET teacher_id = NULL WHERE teacher_id = $1", [teacherId]);
@@ -144,13 +149,20 @@ router.post("/", verifyToken, isAdmin, async (req: AuthRequest, res: Response) =
   }
 });
 
-router.put("/:id", verifyToken, isAdmin, async (req: AuthRequest, res: Response) => {
+router.put("/:id", verifyToken, requireModuleAccess("maestros"), isAdmin, accountMutationLimiter, async (req: AuthRequest, res: Response) => {
   const client = await pool.connect();
   try {
     const { specialty, course_ids } = req.body;
+    const permissions = leaderPermissions(req.body.permissions);
     const { id } = req.params;
 
     await client.query("BEGIN");
+    await lockAccountAdministration(client, req.user!.id);
+
+    const user = await client.query(
+      "SELECT u.id, u.role FROM users u JOIN teachers t ON t.user_id=u.id WHERE t.id=$1 FOR UPDATE OF u",
+      [id]
+    );
 
     const updateRes = await client.query(
       "UPDATE teachers SET specialty = $1 WHERE id = $2 RETURNING *",
@@ -160,6 +172,10 @@ router.put("/:id", verifyToken, isAdmin, async (req: AuthRequest, res: Response)
     if (updateRes.rows.length === 0) {
       await client.query("ROLLBACK");
       return res.status(404).json({ message: "Maestro no encontrado" });
+    }
+
+    if (permissions !== undefined && user.rows[0]?.role === "teacher") {
+      await saveLeaderPermissions(client, user.rows[0].id, permissions);
     }
 
     if (Array.isArray(course_ids)) {
@@ -205,11 +221,12 @@ router.put("/:id", verifyToken, isAdmin, async (req: AuthRequest, res: Response)
   }
 });
 
-router.delete("/:id", verifyToken, isAdmin, async (req: AuthRequest, res: Response) => {
+router.delete("/:id", verifyToken, requireModuleAccess("maestros"), isAdmin, accountMutationLimiter, async (req: AuthRequest, res: Response) => {
   const client = await pool.connect();
   try {
     const { id } = req.params;
     await client.query("BEGIN");
+    await lockAccountAdministration(client, req.user!.id);
 
     await client.query("UPDATE courses SET teacher_id = NULL WHERE teacher_id = $1", [id]);
 

@@ -1,21 +1,23 @@
+import type { Module } from "../utils/roles";
 import { Request, Response } from "express";
 import bcrypt from "bcryptjs"
 import jwt from "jsonwebtoken";
 import { pool } from "../models/db";
 import { AuthRequest, sessionFingerprint } from "../middleware/auth";
 
-function generateToken(id: number, role: string, passwordHash: string, version = 0): string {
+function generateToken(id: number, role: string, passwordHash: string, tokenVersion = 1, permissions: Module[] = []): string {
   const secret = process.env.JWT_SECRET;
   if (!secret) throw new Error("JWT_SECRET not defined");
-  return jwt.sign({ id, role, version, session: sessionFingerprint(passwordHash) }, secret, { expiresIn: "1h" });
+  return jwt.sign({ id, role, tokenVersion, permissions, session: sessionFingerprint(passwordHash) }, secret, { expiresIn: "1h" });
 }
 
 export async function registerUser(req: Request, res: Response) {
   const client = await pool.connect();
   try {
-    const { name, email, password, telefono, role, specialty, document } = req.body;
+    const { name, email, password, telefono, document } = req.body;
 
-    if (!name || !email || !password || !role) {
+    const role = "student";
+    if (!name || !email || !password) {
       return res.status(400).json({ message: "Campos requeridos faltantes" });
     }
 
@@ -23,10 +25,6 @@ export async function registerUser(req: Request, res: Response) {
       return res.status(400).json({ message: "La contraseña debe tener al menos 6 caracteres" });
     }
 
-    const allowedRoles = ["student", "teacher"];
-    if (!allowedRoles.includes(role)) {
-      return res.status(400).json({ message: "Rol no válido para registro público" });
-    }
 
     const existing = await client.query("SELECT id FROM users WHERE email = $1", [email]);
     if (existing.rows.length > 0) {
@@ -51,19 +49,12 @@ export async function registerUser(req: Request, res: Response) {
 
     const user = userResult.rows[0];
 
-    if (role === "student") {
-      await client.query("INSERT INTO students (user_id) VALUES ($1)", [user.id]);
-    } else if (role === "teacher") {
-      await client.query("INSERT INTO teachers (user_id, specialty) VALUES ($1, $2)", [
-        user.id,
-        specialty || "General",
-      ]);
-    }
+    await client.query("INSERT INTO students (user_id) VALUES ($1)", [user.id]);
 
     await client.query("COMMIT");
 
     const token = generateToken(user.id, user.role, hash);
-    return res.status(201).json({ token, user });
+    return res.status(201).json({ token, user: { ...user, permissions: [] } });
   } catch (err: any) {
     try {
       await client.query("ROLLBACK");
@@ -100,7 +91,7 @@ export async function loginUser(req: Request, res: Response) {
       return res.status(401).json({ message: "Credenciales inválidas" });
     }
 
-    const token = generateToken(user.id, user.role, user.password, Number(user.auth_version));
+    const token = generateToken(user.id, user.role, user.password, Number(user.token_version), user.permissions);
 
     const safeUser = {
       id: user.id,
@@ -108,6 +99,7 @@ export async function loginUser(req: Request, res: Response) {
       email: user.email,
       telefono: user.telefono,
       role: user.role,
+      permissions: user.permissions ?? [],
       document: user.document,
     };
 

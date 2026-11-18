@@ -1,7 +1,7 @@
 import { asyncRouter } from "../middleware/asyncRouter";
 import { Router, Request, Response } from "express";
 import { pool } from "../models/db";
-import { verifyToken, isAdmin, AuthRequest } from "../middleware/auth";
+import { verifyToken, isAdmin, AuthRequest, requireModuleAccess } from "../middleware/auth";
 
 const router = asyncRouter();
 
@@ -9,7 +9,7 @@ function validColor(value: unknown): boolean {
   return value === undefined || (typeof value === "string" && /^#[0-9a-f]{6}$/i.test(value));
 }
 
-router.get("/", verifyToken, async (req: AuthRequest, res: Response) => {
+router.get("/", verifyToken, requireModuleAccess("actividades"), async (req: AuthRequest, res: Response) => {
   try {
     const result = await pool.query(
       `SELECT a.*, a.activity_datetime::text AS activity_datetime, u.name AS assigned_to_name
@@ -23,7 +23,7 @@ router.get("/", verifyToken, async (req: AuthRequest, res: Response) => {
   }
 });
 
-router.post("/", verifyToken, isAdmin, async (req: AuthRequest, res: Response) => {
+router.post("/", verifyToken, requireModuleAccess("actividades"), isAdmin, async (req: AuthRequest, res: Response) => {
   try {
     const {
       activity_name, activity_datetime, assigned_to,
@@ -58,7 +58,7 @@ router.post("/", verifyToken, isAdmin, async (req: AuthRequest, res: Response) =
   }
 });
 
-router.put("/:id", verifyToken, isAdmin, async (req: AuthRequest, res: Response) => {
+router.put("/:id", verifyToken, requireModuleAccess("actividades"), isAdmin, async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     const {
@@ -95,7 +95,7 @@ router.put("/:id", verifyToken, isAdmin, async (req: AuthRequest, res: Response)
   }
 });
 
-router.delete("/:id", verifyToken, isAdmin, async (req: AuthRequest, res: Response) => {
+router.delete("/:id", verifyToken, requireModuleAccess("actividades"), isAdmin, async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     const result = await pool.query("DELETE FROM activity_plans WHERE id = $1 RETURNING *", [id]);

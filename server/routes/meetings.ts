@@ -11,26 +11,25 @@ import {
 
 import {
     verifyToken,
-    isAdmin
-} from "../middleware/auth";
+    isAdmin, requireModuleAccess } from "../middleware/auth";
 
 const router = asyncRouter();
 
 router.get(
     "/",
-    verifyToken,
+    verifyToken, requireModuleAccess("consejos"),
     getMeetings
 );
 
 router.get(
     "/:id",
-    verifyToken,
+    verifyToken, requireModuleAccess("consejos"),
     getMeeting
 );
 
 router.post(
     "/",
-    verifyToken,
+    verifyToken, requireModuleAccess("consejos"),
     isAdmin,
     createMeeting
 );
@@ -38,14 +37,14 @@ router.post(
 
 router.put(
     "/:id",
-    verifyToken,
+    verifyToken, requireModuleAccess("consejos"),
     isAdmin,
     updateMeeting
 );
 
 router.delete(
     "/:id",
-    verifyToken,
+    verifyToken, requireModuleAccess("consejos"),
     isAdmin,
     deleteMeeting
 );
