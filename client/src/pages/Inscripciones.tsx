@@ -1,3 +1,6 @@
+import { TABLE_PAGE_SIZE } from "../shared/constants";
+import Pagination from "../components/Pagination";
+import { useTablePagination } from "../hooks/useTablePagination";
 import FormModal from "../components/FormModal";
 import { confirmAppAction } from "../components/AppDialogHost";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
@@ -21,7 +24,7 @@ import type { SortConfig } from "../interfaces/Common";
 import { obtenerEstudiantes, obtenerCursos, invalidarCursos } from "../utils/clienteCache";
 import "../styles/Inscripciones.css";
 
-const ITEMS_PER_PAGE = 7;
+const ITEMS_PER_PAGE = TABLE_PAGE_SIZE;
 
 export default function Enrollments() {
   const location = useLocation();
@@ -55,6 +58,7 @@ export default function Enrollments() {
 
   const [selectedCurso, setSelectedCurso] = useState<any | null>(null);
   const [topics, setTopics] = useState<any[]>([]);
+  const topicPage=useTablePagination(topics,selectedCurso?.id);
   const [loadingTopics, setLoadingTopics] = useState(false);
   const [topicForm, setTopicForm] = useState({ title: "", description: "", order_index: "" });
   const [editingTopicId, setEditingTopicId] = useState<number | null>(null);
@@ -731,21 +735,7 @@ export default function Enrollments() {
         </table>
       </div>
 
-      {totalPages > 1 && (
-        <div className="pagination-dropdown">
-          <span>PÁGINA:</span>
-          <select
-            value={currentPage}
-            onChange={(e) => setCurrentPage(Number(e.target.value))}
-          >
-            {Array.from({ length: totalPages }, (_, i) => (
-              <option key={i + 1} value={i + 1}>
-                {i + 1} de {totalPages}
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
+      <Pagination currentPage={currentPage} totalPages={totalPages} onChange={setCurrentPage} />
 
       {showCursosModal && !selectedCurso && (
         <FormModal title="Catálogo de cursos" onClose={() => setShowCursosModal(false)}>
@@ -879,7 +869,7 @@ export default function Enrollments() {
                     </tr>
                   </thead>
                   <tbody>
-                    {topics.map((t) => (
+                    {topicPage.items.map((t) => (
                       <tr key={t.id}>
                         <td><strong>{t.title}</strong></td>
                         <td style={{ textAlign: "center" }}>
@@ -908,6 +898,7 @@ export default function Enrollments() {
                     ))}
                   </tbody>
                 </table>
+                <Pagination currentPage={topicPage.currentPage} totalPages={topicPage.totalPages} onChange={topicPage.setPage} />
               </div>
             ) : (
               <p style={{ textAlign: "center", color: "var(--text-muted)", padding: "1.5rem" }}>

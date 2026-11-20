@@ -1,3 +1,5 @@
+import { TABLE_PAGE_SIZE } from "../shared/constants";
+import Pagination from "../components/Pagination";
 import { ViewRecordButton, RecordDetails } from "../components/RecordDetails";
 import { canAccessModule, readSessionUser } from "../utils/access";
 import { TbCoin } from "react-icons/tb";
@@ -65,7 +67,7 @@ export default function TripReservations() {
     const [filterUserId, setFilterUserId] = useState<string>("");
     const [searchQuery, setSearchQuery] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
-    const recordsPerPage = 5;
+    const recordsPerPage = TABLE_PAGE_SIZE;
     const [loading, setLoading] = useState(true);
 
     const [sortConfig, setSortConfig] = useState<{ key: string; direction: "asc" | "desc" } | null>(null);
@@ -662,19 +664,7 @@ export default function TripReservations() {
                 </table>
             </div>
 
-            {totalPages > 1 && (
-                <div className="pagination-dropdown">
-                    <span>PÁGINA:</span>
-                    <select
-                        value={currentPage}
-                        onChange={(e) => setCurrentPage(Number(e.target.value))}
-                    >
-                        {Array.from({ length: totalPages }, (_, i) => (
-                            <option key={i + 1} value={i + 1}>{i + 1} de {totalPages}</option>
-                        ))}
-                    </select>
-                </div>
-            )}
+            <Pagination currentPage={currentPage} totalPages={totalPages} onChange={setCurrentPage} />
             {showReportModal && <ReportFilterModal
                 title="Imprimir reservas"
                 description="Elige el viaje cuyas reservas quieres incluir en el informe."

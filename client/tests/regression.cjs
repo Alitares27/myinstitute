@@ -141,7 +141,7 @@ test("reservation form keeps entered values after server rejection and consumes 
   await act(async()=>{root.render(React.createElement(MemoryRouter,{future:{v7_startTransition:true,v7_relativeSplatPath:true}},React.createElement(Component)));});
   await act(async()=>{await new Promise(resolve=>setTimeout(resolve,260));});
   assert.ok(container.textContent.includes("20"));
-  assert.equal(calls.find(([url,config])=>url==="/trip-reservations"&&!config.params.trip_id)[1].params.limit,5);
+  assert.equal(calls.find(([url,config])=>url==="/trip-reservations"&&!config.params.trip_id)[1].params.limit,7);
   assert.equal(container.querySelector('form'),null);
   const addReservation = container.querySelector('.reservation-header-actions [aria-label="Reservar viaje"]');
   await act(async()=>Simulate.click(addReservation));
@@ -301,7 +301,7 @@ for(const filename of ['ReservarViajes.tsx','PagosTemplos.tsx']){
    const figures=()=>Array.from(view.node.querySelectorAll('.asistencia-stat-content h3')).map(x=>x.textContent);
    assert.equal(figures()[0],'2');assert.equal(figures()[1],'$20');assert.equal(figures()[2],'$80');
    const statsCalls=calls.filter(([url,config])=>url===resource&&config.params.limit===1);assert.ok(statsCalls.length);assert.ok(statsCalls.every(([,config])=>config.params.trip_id==='2'));
-   assert.ok(calls.some(([url,config])=>url===resource&&!config.params.trip_id&&config.params.limit===5));
+   assert.ok(calls.some(([url,config])=>url===resource&&!config.params.trip_id&&config.params.limit===7));
   }finally{await view.close();}
  });
  test(filename+': no upcoming scheduled trip shows zero statistics despite historical totals',async()=>{
@@ -342,6 +342,103 @@ test('header keeps icon-only theme and logout controls in order and preserves lo
   await view.act(async()=>Simulate.click(nav.querySelector('[aria-label="Enseñanza"]')));assert.ok(nav.querySelector('a[aria-label="Mi perfil"][href="/miembros"]'));
   await view.act(async()=>Simulate.click(actions.children[2]));assert.deepEqual(posts,['/logout']);assert.equal(localStorage.getItem('token'),null);assert.equal(localStorage.getItem('user'),null);assert.equal(localStorage.getItem('theme'),'dark');
  }finally{await view.close();document.documentElement.setAttribute('data-theme','light');localStorage.setItem('theme','light');}
+});
+
+test("pagination handles long lists and keeps navigation within page boundaries",async()=>{
+ const {Simulate}=require('react-dom/test-utils');const changes=[];
+ const React=require('react'),{act}=React,{createRoot}=require('react-dom/client');
+ const Pagination=loadComponent('components/Pagination.tsx',{}),node=document.createElement('div');document.body.appendChild(node);const root=createRoot(node);
+ try{
+  await act(async()=>root.render(React.createElement(Pagination,{currentPage:50,totalPages:100,onChange:page=>changes.push(page)})));
+  assert.equal(node.querySelector('[aria-current="page"]').textContent,'50');assert.ok(node.querySelectorAll('button').length<=7);assert.ok(node.textContent.includes('…'));
+  await act(async()=>Simulate.click([...node.querySelectorAll('button')].find(button=>button.textContent==='Siguiente')));assert.deepEqual(changes,[51]);
+  await act(async()=>root.render(React.createElement(Pagination,{currentPage:1,totalPages:2,onChange:()=>{}})));
+  assert.equal([...node.querySelectorAll('button')].find(button=>button.textContent==='Anterior').disabled,true);
+ }finally{await act(async()=>root.unmount());node.remove();}
+});
+
+test("closing overlapping modals in either order always restores document scrolling",()=>{
+ const {lockBodyScroll}=load('utils/scrollLock.ts');
+ for(const reverse of [false,true]){
+  document.body.style.overflow='auto';document.documentElement.style.overflowY='scroll';
+  const first=lockBodyScroll(),second=lockBodyScroll();
+  assert.equal(document.body.style.overflow,'hidden');assert.equal(document.documentElement.style.overflowY,'hidden');
+  (reverse?second:first)();assert.equal(document.body.style.overflow,'hidden');
+  (reverse?first:second)();assert.equal(document.body.style.overflow,'auto');assert.equal(document.documentElement.style.overflowY,'scroll');
+  first();second();assert.equal(document.body.style.overflow,'auto');
+ }
+ document.body.style.overflow='';document.documentElement.style.overflowY='';
+});
+
+test("agendas paginate seven records and keep remaining rows reachable",async()=>{
+ const {Simulate}=require('react-dom/test-utils');
+ const data=Array.from({length:15},(_,index)=>({id:index+1,friend:`Amigo ${index+1}`,scheduled_at:`2026-12-${String(index+1).padStart(2,'0')}T10:00`,member_names:{}}));
+ const view=await mountPage('pages/Agendas.tsx',{get:async()=>({data})},{id:42,role:'student'});
+ try{
+  await view.wait();assert.equal(view.node.querySelectorAll('tbody tr').length,7);
+  assert.equal(view.node.querySelector('tbody tr td').textContent,'Amigo 15');
+  await view.act(async()=>Simulate.click(view.node.querySelector('[aria-label="Página 3"]')));
+  assert.equal(view.node.querySelectorAll('tbody tr').length,1);assert.equal(view.node.querySelector('tbody tr td').textContent,'Amigo 1');
+ }finally{await view.close();}
+});
+
+test("dashboard combines upcoming activities and councils over three months without exposing restricted modules",async()=>{
+ const {upcomingWindow,localDateKey}=load('utils/upcomingEvents.ts');
+ const now=new Date(),range=upcomingWindow(now),tomorrow=new Date(now),after=new Date(range.end+'T12:00:00');tomorrow.setDate(now.getDate()+1);after.setDate(after.getDate()+1);
+ const calls=[],activities=[
+  {id:'2',activity_name:'Last activity',activity_datetime:`${range.end} 19:00:00`,assigned_to_name:'Ana'},
+  {id:'1',activity_name:'First activity',activity_datetime:`${range.start} 10:30:00`,assigned_to_name:null},
+  {id:'3',activity_name:'Past activity',activity_datetime:'2000-01-01 12:00:00'},
+  {id:'4',activity_name:'Outside activity',activity_datetime:`${localDateKey(after)} 12:00:00`},
+ ],meetings=[{id:1,title:'Council',meeting_date:localDateKey(tomorrow),start_time:'18:00:00',created_by_name:'María',status:'scheduled'}];
+ const api={get:async url=>{calls.push(url);return {data:url==='/activities'?activities:meetings};}};
+ const view=await mountPage('pages/Panel.tsx',api,{id:1,role:'admin'});
+ try{await view.wait();assert.deepEqual(calls,['/activities','/meetings']);assert.deepEqual([...view.node.querySelectorAll('.monthly-activity-card h3')].map(node=>node.textContent),['First activity','Council','Last activity']);assert.ok(view.node.textContent.includes('10:30'));assert.ok(view.node.textContent.includes('María'));assert.ok(view.node.textContent.includes('Sin asignar'));assert.ok(!view.node.textContent.includes('Outside activity'));assert.equal(view.node.querySelector('.stat-card'),null);assert.equal(view.node.querySelectorAll('.shortcut-card').length,4);}finally{await view.close();}
+ const deniedCalls=[];
+ const denied=await mountPage('pages/Panel.tsx',{get:async url=>{deniedCalls.push(url);return {data:[]};}},{id:2,role:'teacher',permissions:['panel']});
+ try{await denied.wait();assert.deepEqual(deniedCalls,[]);assert.equal(denied.node.querySelector('.monthly-activity-card'),null);}finally{await denied.close();}
+ const scopedCalls=[];
+ const scoped=await mountPage('pages/Panel.tsx',{get:async url=>{scopedCalls.push(url);return {data:meetings};}},{id:2,role:'teacher',permissions:['panel','consejos']});
+ try{await scoped.wait();assert.deepEqual(scopedCalls,['/meetings']);assert.equal(scoped.node.querySelector('.monthly-activity-card h3').textContent,'Council');}finally{await scoped.close();}
+ const partial=await mountPage('pages/Panel.tsx',{get:async url=>{if(url==='/activities')throw Error('offline');return {data:meetings};}},{id:1,role:'admin'});
+ try{await partial.wait();assert.equal(partial.node.querySelector('.monthly-activity-card h3').textContent,'Council');assert.ok(partial.node.querySelector('[role="alert"]'));}finally{await partial.close();}
+});
+
+test("three-month windows clamp month endings, cross the year and include both boundary dates",()=>{
+ const {upcomingWindow,upcomingEvents}=load('utils/upcomingEvents.ts');
+ assert.equal(upcomingWindow(new Date(2027,0,31)).end,'2027-04-30');
+ assert.equal(upcomingWindow(new Date(2027,10,30)).end,'2028-02-29');
+ const result=upcomingEvents([
+  {id:'1',activity_name:'Start',activity_datetime:'2026-11-20T09:00'},
+  {id:'2',activity_name:'End',activity_datetime:'2027-02-20T23:59'},
+  {id:'3',activity_name:'Outside',activity_datetime:'2027-02-21T00:00'},
+ ],[],{start:'2026-11-20',end:'2027-02-20'});
+ assert.deepEqual(Array.from(result,item=>item.title),['Start','End']);
+});
+
+test("appearance exposes exactly twelve colors and keeps Android's palette until explicitly disabled",async()=>{
+ const {Simulate}=require('react-dom/test-utils');localStorage.removeItem('appearance');document.documentElement.classList.add('native-android');
+ const view=await mountPage('components/AppearanceSettings.tsx',{}, {id:1,role:'admin'},true);
+ try{
+  await view.wait();assert.equal(view.node.querySelectorAll('.appearance-swatch').length,36);assert.ok(document.documentElement.style.getPropertyValue('--primary').includes('--android-primary'));
+  assert.ok([...view.node.querySelectorAll('.appearance-colors')].every(fieldset=>fieldset.disabled));
+  await view.act(async()=>Simulate.change(view.node.querySelector('.appearance-device input'),{target:{checked:false}}));
+  await view.act(async()=>Simulate.click(view.node.querySelector('[aria-label="Botones: Verde"]')));
+  assert.equal(JSON.parse(localStorage.getItem('appearance')).buttonColor,8);
+  assert.ok(!document.documentElement.style.getPropertyValue('--primary').includes('--android-primary'));
+  await view.act(async()=>Simulate.change([...view.node.querySelectorAll('select')][1],{target:{value:'serif'}}));
+  assert.ok(document.documentElement.style.getPropertyValue('--app-font').includes('Georgia'));
+ }finally{await view.close();document.documentElement.classList.remove('native-android');localStorage.removeItem('appearance');}
+});
+
+test("appearance colors maintain readable button labels in both modes and reject invalid saved choices",()=>{
+ const {ACCENT_COLORS,readAppearance}=load('shared/appearance.ts');
+ const luminance=hex=>{const rgb=[1,3,5].map(index=>parseInt(hex.slice(index,index+2),16)/255).map(value=>value<=.04045?value/12.92:((value+.055)/1.055)**2.4);return rgb[0]*.2126+rgb[1]*.7152+rgb[2]*.0722;};
+ const ratio=(a,b)=>{const x=luminance(a),y=luminance(b);return (Math.max(x,y)+.05)/(Math.min(x,y)+.05);};
+ assert.equal(ACCENT_COLORS.length,12);
+ for(const color of ACCENT_COLORS){assert.ok(ratio(color.light,'#FFFFFF')>=4.5,color.name+' light');assert.ok(ratio(color.dark,'#111111')>=4.5,color.name+' dark');}
+ localStorage.setItem('appearance',JSON.stringify({buttonColor:99,iconColor:-4,fontColor:14,font:'invalid',textSize:'invalid'}));
+ const config=readAppearance();assert.equal(config.buttonColor,0);assert.equal(config.iconColor,0);assert.equal(config.fontColor,-1);assert.equal(config.font,'system');localStorage.removeItem('appearance');
 });
 
 test("an expired token keeps the previously authenticated local session available",()=>{

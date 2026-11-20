@@ -263,6 +263,18 @@
 
 /* Dashboard surfaces follow the restrained, system-colored Paywall mobile UI. */
 .dashboard-header { margin-bottom: 2rem; }
+.monthly-activities-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; }
+.monthly-activities-header h2 { margin: 0; }
+.monthly-activities-header > div { display: flex; gap: .5rem; flex-shrink: 0; }
+.activity-carousel { display: flex; gap: 1rem; overflow-x: auto; scroll-snap-type: x mandatory; overscroll-behavior-x: contain; padding: .25rem .25rem 1rem; scrollbar-width: thin; }
+.monthly-activity-card { flex: 0 0 clamp(250px,32%,360px); min-width: 0; scroll-snap-align: start; border: 1px solid var(--border-color); border-radius: 22px; background: var(--bg-surface); box-shadow: var(--shadow-xs); padding: 1.25rem; overflow-wrap: anywhere; }
+.monthly-activity-icon { color: var(--icon-color,var(--primary)); width: 28px; height: 28px; }
+.upcoming-event-kind { display: inline-block; vertical-align: top; margin-left: .75rem; padding: .25rem .625rem; border-radius: 999px; background: var(--primary-light); color: var(--text-main); font-size: .8125rem; font-weight: 600; }
+.monthly-activity-card h3 { margin-block: .75rem 1rem; }
+.monthly-activity-card dl { display: grid; gap: .75rem; margin: 0; }
+.monthly-activity-card dt { color: var(--text-muted); font-size: .8125rem; }
+.monthly-activity-card dd { margin: .125rem 0 0; }
+@media(max-width:700px) { .monthly-activity-card { flex-basis: 85%; } .monthly-activities-header { align-items: flex-start; } }
 
 .dashboard-title {
   color: var(--text-main);

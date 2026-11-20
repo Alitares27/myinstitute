@@ -1,3 +1,4 @@
+import { lockBodyScroll } from "../../utils/scrollLock";
 import {useEffect,useRef} from "react";
 import type {ReactNode} from "react";
 export default function MemberModal({children,onClose}:{children:ReactNode;onClose:()=>void}){
@@ -5,7 +6,7 @@ export default function MemberModal({children,onClose}:{children:ReactNode;onClo
  const close=useRef(onClose);close.current=onClose;
  useEffect(()=>{
   const previous=document.activeElement as HTMLElement|null;
-  const overflow=document.body.style.overflow;document.body.style.overflow='hidden';
+  const unlockScroll=lockBodyScroll();
   ref.current?.focus();
   function keyboard(event:KeyboardEvent){
    if(event.key==='Escape'){event.preventDefault();close.current();}
@@ -17,7 +18,7 @@ export default function MemberModal({children,onClose}:{children:ReactNode;onClo
    else if(!event.shiftKey&&(document.activeElement===last||document.activeElement===ref.current)){event.preventDefault();first.focus();}
   }
   document.addEventListener('keydown',keyboard);
-  return()=>{document.removeEventListener('keydown',keyboard);document.body.style.overflow=overflow;previous?.focus();};
+  return()=>{document.removeEventListener('keydown',keyboard);unlockScroll();previous?.focus();};
  },[]);
  return <div className="miembros-modal-overlay" onClick={event=>{if(event.target===event.currentTarget)onClose();}}>
   <div className="miembros-modal" role="dialog" aria-modal="true" aria-labelledby="miembros-modal-title" tabIndex={-1} ref={ref}>

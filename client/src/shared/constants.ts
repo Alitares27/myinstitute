@@ -4,6 +4,7 @@ export enum TripStatus {
   COMPLETADO = "completado",
   EN_CURSO = "en_curso",
 }
+export const TABLE_PAGE_SIZE = 7;
 
 export const UI_STRINGS = {
   LOADING: "Cargando...",

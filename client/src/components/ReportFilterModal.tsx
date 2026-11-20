@@ -1,3 +1,4 @@
+import { lockBodyScroll } from "../utils/scrollLock";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { IoPrintOutline } from "react-icons/io5";
@@ -24,8 +25,7 @@ export default function ReportFilterModal({ title, description, label, allLabel,
 
   useEffect(() => {
     const previous = document.activeElement as HTMLElement | null;
-    const overflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    const unlockScroll = lockBodyScroll();
     const select = document.getElementById("report-filter-select") as HTMLSelectElement | null;
     select?.focus();
 
@@ -59,7 +59,7 @@ export default function ReportFilterModal({ title, description, label, allLabel,
     window.addEventListener("keydown", handleKeyDown);
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
-      document.body.style.overflow = overflow;
+      unlockScroll();
       previous?.focus();
     };
   }, [onClose, printing]);

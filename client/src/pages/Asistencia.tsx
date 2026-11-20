@@ -1,3 +1,5 @@
+import { TABLE_PAGE_SIZE } from "../shared/constants";
+import Pagination from "../components/Pagination";
 import { RecordDetails, ViewRecordButton } from "../components/RecordDetails";
 import { confirmAppAction } from "../components/AppDialogHost";
 import { isAndroidApp } from "../utils/androidReports";
@@ -31,7 +33,7 @@ import type { Student, Course, Topic, SortDirection } from "../interfaces/Common
 import { obtenerEstudiantes, obtenerCursos, obtenerTemas } from "../utils/clienteCache";
 import "../styles/Asistencia.css";
 
-const ITEMS_PER_PAGE = 7;
+const ITEMS_PER_PAGE = TABLE_PAGE_SIZE;
 
 export default function Attendance() {
 
@@ -619,21 +621,7 @@ export default function Attendance() {
         </table>
       </div>
 
-      {totalPages > 1 && (
-        <div className="pagination-dropdown">
-          <span>PÁGINA:</span>
-          <select
-            value={currentPage}
-            onChange={(e) => setCurrentPage(Number(e.target.value))}
-          >
-            {Array.from({ length: totalPages }, (_, i) => (
-              <option key={i + 1} value={i + 1}>
-                {i + 1} de {totalPages}
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
+      <Pagination currentPage={currentPage} totalPages={totalPages} onChange={setCurrentPage} />
       {showReportModal && <ReportFilterModal
         title="Imprimir asistencias"
         description="Elige el curso para incluir sus asistencias en el informe."

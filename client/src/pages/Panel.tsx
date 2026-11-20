@@ -1,158 +1,44 @@
-import { canAccessModule, moduleForPath } from "../utils/access";
-import { useEffect, useState } from "react";
+import { canAccessModule, moduleForPath, readSessionUser } from "../utils/access";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import api from "../api";
 import "../styles/Panel.css";
-import { Skeleton } from "../components/Esqueleto";
-import {
-  TbSchool, TbUser, TbBooks, TbCalendar,
-  TbBook, TbChartLine, TbStar, TbCircleCheck,
-  TbBuilding, TbSettings, TbPencil,
-  TbChartBar, TbRocket, TbAlertTriangle,
-  TbCalendarCheck, TbRefresh
-} from "react-icons/tb";
+import { IoCalendarOutline, IoChevronBackOutline, IoChevronForwardOutline } from "react-icons/io5";
+import { TbBooks, TbCalendar, TbBook, TbStar, TbBuilding, TbSettings, TbPencil, TbChartBar, TbRocket, TbRefresh } from "react-icons/tb";
+import type { Activity } from "../interfaces/Activity";
+import type { Meeting } from "../interfaces/Meeting";
+import { localDateKey, upcomingEvents, upcomingWindow } from "../utils/upcomingEvents";
+import type { UpcomingEvent } from "../utils/upcomingEvents";
+import { formatDate } from "../utils/utilidadesFecha";
 
 function Dashboard() {
-  const [stats, setStats] = useState<any>({
-    students: 0,
-    teachers: 0,
-    courses: 0,
-    enrollments: 0,
-    completedActivities: 0,
-    attendanceRate: "0%",
-    averageGrade: 0,
-  });
-
-  const [user, setUser] = useState<any>(() => {
-    try {
-      return JSON.parse(localStorage.getItem("user") || "null");
-    } catch {
-      return null;
-    }
-  });
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-
-    if (!token) {
-      setError("No hay una sesión activa. Por favor, inicia sesión.");
+  const [user] = useState(readSessionUser);
+  const canViewActivities=canAccessModule(user,"actividades");
+  const canViewMeetings=canAccessModule(user,"consejos");
+  const [day,setDay]=useState(()=>localDateKey(new Date()));
+  const [events,setEvents]=useState<UpcomingEvent[]>([]);
+  const [error,setError]=useState("");
+  const [loading,setLoading]=useState(canViewActivities||canViewMeetings);
+  const carousel=useRef<HTMLDivElement>(null);
+  const range=upcomingWindow(new Date(`${day}T12:00:00`));
+  useEffect(()=>{const update=()=>setDay(localDateKey(new Date()));const timer=window.setInterval(update,60000);document.addEventListener("visibilitychange",update);return()=>{window.clearInterval(timer);document.removeEventListener("visibilitychange",update);};},[]);
+  useEffect(()=>{
+    if(!canViewActivities&&!canViewMeetings){setEvents([]);setLoading(false);return;}
+    const controller=new AbortController();setLoading(true);setError("");
+    void Promise.allSettled([
+      canViewActivities?api.get<Activity[]>("/activities",{signal:controller.signal}):Promise.resolve({data:[]}),
+      canViewMeetings?api.get<Meeting[]>("/meetings",{signal:controller.signal}):Promise.resolve({data:[]}),
+    ]).then(([activities,meetings])=>{
+      if(controller.signal.aborted)return;
+      const activityRows=activities.status==="fulfilled"&&Array.isArray(activities.value.data)?activities.value.data:[];
+      const meetingRows=meetings.status==="fulfilled"&&Array.isArray(meetings.value.data)?meetings.value.data:[];
+      setEvents(upcomingEvents(activityRows,meetingRows,range));
+      if(activities.status==="rejected"||meetings.status==="rejected")setError("No se pudieron cargar todos los eventos. Se muestran los disponibles.");
       setLoading(false);
-      return;
-    }
-
-    api
-      .get("/dashboard-stats")
-      .then((res) => {
-        setStats(res.data);
-        setLoading(false);
-      })
-      .catch(() => {
-        setError("Error al cargar las estadísticas. Reintente más tarde.");
-        setLoading(false);
-      });
-  }, []);
-
-  if (loading) {
-    return (
-        <div className="dashboard-page">
-            <div className="dashboard-header">
-                <Skeleton width="80px" height="1.2rem" />
-                <Skeleton width="240px" height="2rem" style={{ marginTop: "8px" }} />
-                <Skeleton width="400px" height="0.9rem" style={{ marginTop: "8px" }} />
-            </div>
-            <div className="stats-grid desktop-statistics">
-                {Array.from({ length: 4 }).map((_, i) => (
-                    <div key={i} className="stat-card" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px", padding: "1.5rem" }}>
-                        <Skeleton width="40px" height="40px" style={{ borderRadius: "50%" }} />
-                        <Skeleton width="60px" height="1.5rem" />
-                        <Skeleton width="80px" height="0.8rem" />
-                    </div>
-                ))}
-            </div>
-            <div className="shortcuts-section">
-                <Skeleton width="180px" height="1.5rem" style={{ marginBottom: "16px" }} />
-                <div className="shortcuts-grid">
-                    {Array.from({ length: 4 }).map((_, i) => (
-                        <div key={i} className="shortcut-card" style={{ display: "flex", alignItems: "center", gap: "12px", padding: "1rem" }}>
-                            <Skeleton width="48px" height="48px" style={{ borderRadius: "12px", flexShrink: 0 }} />
-                            <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "6px" }}>
-                                <Skeleton width="100px" height="1rem" />
-                                <Skeleton width="160px" height="0.75rem" />
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            </div>
-        </div>
-    );
-  }
-
-  const renderAdminStats = () => (
-    <div className="stats-grid desktop-statistics">
-      <div className="stat-card">
-        <div className="stat-icon"><TbSchool /></div>
-        <div className="stat-value">{stats.students}</div>
-        <div className="stat-label">Miembros</div>
-      </div>
-      <div className="stat-card">
-        <div className="stat-icon"><TbUser /></div>
-        <div className="stat-value">{stats.teachers}</div>
-        <div className="stat-label">Maestros</div>
-      </div>
-      <div className="stat-card">
-        <div className="stat-icon"><TbBooks /></div>
-        <div className="stat-value">{stats.courses}</div>
-        <div className="stat-label">Cursos</div>
-      </div>
-      <div className="stat-card">
-        <div className="stat-icon"><TbCalendarCheck /></div>
-        <div className="stat-value">{stats.completedActivities}</div>
-        <div className="stat-label">Actividades Completadas</div>
-      </div>
-    </div>
-  );
-
-  const renderTeacherStats = () => (
-    <div className="stats-grid desktop-statistics">
-      <div className="stat-card">
-        <div className="stat-icon"><TbSchool /></div>
-        <div className="stat-value">{stats.students}</div>
-        <div className="stat-label">Mis Estudiantes</div>
-      </div>
-      <div className="stat-card">
-        <div className="stat-icon"><TbBook /></div>
-        <div className="stat-value">{stats.courses}</div>
-        <div className="stat-label">Mis Cursos</div>
-      </div>
-      <div className="stat-card">
-        <div className="stat-icon"><TbChartLine /></div>
-        <div className="stat-value">{stats.attendanceRate}</div>
-        <div className="stat-label">Asistencia Promedio</div>
-      </div>
-    </div>
-  );
-
-  const renderStudentStats = () => (
-    <div className="stats-grid desktop-statistics">
-      <div className="stat-card">
-        <div className="stat-icon"><TbBook /></div>
-        <div className="stat-value">{stats.courses}</div>
-        <div className="stat-label">Cursos Inscritos</div>
-      </div>
-      <div className="stat-card">
-        <div className="stat-icon"><TbStar /></div>
-        <div className="stat-value">{stats.averageGrade}</div>
-        <div className="stat-label">Promedio General</div>
-      </div>
-      <div className="stat-card">
-        <div className="stat-icon"><TbCircleCheck /></div>
-        <div className="stat-value">{stats.attendanceRate}</div>
-        <div className="stat-label">Mi Asistencia</div>
-      </div>
-    </div>
-  );
+    });
+    return()=>controller.abort();
+  },[day,canViewActivities,canViewMeetings]);
+  function move(direction:number){const node=carousel.current;if(node)node.scrollBy({left:direction*node.clientWidth*.85,behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?"auto":"smooth"});}
 
   const shortcuts = user?.role === "admin" ? [
     { to: "/consejos", title: "Consejos", description: "Gestionar consejos", Icon: TbCalendar },
@@ -177,16 +63,25 @@ function Dashboard() {
         <p className="dashboard-subtitle">
           Bienvenido de nuevo. Aquí tienes un resumen de lo que está sucediendo en tu cuenta hoy.
         </p>
-        {error && (
-          <p className="error-message desktop-statistics" role="status">
-            <TbAlertTriangle /> {error} Se muestra el panel sin estadísticas actualizadas.
-          </p>
-        )}
       </div>
-
-      {user?.role === "admin" && renderAdminStats()}
-      {user?.role === "teacher" && renderTeacherStats()}
-      {user?.role === "student" && renderStudentStats()}
+      <section className="monthly-activities" aria-label="Actividades y consejos de los próximos tres meses">
+        <header className="monthly-activities-header"><h2>Próximos 3 meses</h2>
+          <div><button type="button" className="btn secondary btn-icon" aria-label="Evento anterior" disabled={events.length<2} onClick={()=>move(-1)}><IoChevronBackOutline aria-hidden="true"/></button><button type="button" className="btn secondary btn-icon" aria-label="Evento siguiente" disabled={events.length<2} onClick={()=>move(1)}><IoChevronForwardOutline aria-hidden="true"/></button></div>
+        </header>
+        <p className="text-muted">Actividades y consejos del {formatDate(range.start)} al {formatDate(range.end)}.</p>
+        {loading&&<p role="status">Cargando eventos…</p>}
+        {error&&<p role="alert">{error}</p>}
+        {!canViewActivities&&!canViewMeetings&&<p>Tu cuenta no tiene acceso a actividades ni consejos.</p>}
+        {(canViewActivities||canViewMeetings)&&!loading&&!error&&!events.length&&<p>No hay eventos registrados para los próximos tres meses.</p>}
+        <div className="activity-carousel" ref={carousel} tabIndex={0} role="region" aria-label="Carrusel de actividades y consejos" aria-roledescription="carrusel">
+          {events.map(event=><article key={event.id} className="monthly-activity-card">
+            <IoCalendarOutline className="monthly-activity-icon" aria-hidden="true"/>
+            <span className="upcoming-event-kind">{event.kind}</span>
+            <h3>{event.title}</h3>
+            <dl><div><dt>Día</dt><dd>{formatDate(event.datetime,{weekday:"long",day:"numeric",month:"long",year:"numeric"})}</dd></div><div><dt>Hora</dt><dd>{event.datetime.split("T")[1]?.slice(0,5)||"Sin hora"}</dd></div><div><dt>Responsable</dt><dd>{event.responsible}</dd></div>{event.kind==="Consejo"&&event.status&&<div><dt>Estado</dt><dd>{({scheduled:"Programado",pending:"Pendiente",completed:"Completado",cancelled:"Cancelado"} as Record<string,string>)[event.status]||event.status}</dd></div>}</dl>
+          </article>)}
+        </div>
+      </section>
 
       <div className="shortcuts-section">
         <h2 className="section-title">

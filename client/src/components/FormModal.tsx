@@ -1,3 +1,4 @@
+import { lockBodyScroll } from "../utils/scrollLock";
 import { useEffect, useId, useRef } from "react";
 import type { ReactNode } from "react";
 
@@ -12,11 +13,10 @@ export default function FormModal({ title, onClose, children, busy = false }: {
 
   useEffect(() => {
     const previous = document.activeElement as HTMLElement | null;
-    const overflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    const unlockScroll = lockBodyScroll();
     dialog.current?.focus();
     return () => {
-      document.body.style.overflow = overflow;
+      unlockScroll();
       previous?.focus();
     };
   }, []);

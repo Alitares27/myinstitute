@@ -1,8 +1,11 @@
+import { TABLE_PAGE_SIZE } from "../shared/constants";
+import Pagination from "../components/Pagination";
 import api from "../api";
 import { IoCashOutline, IoShieldCheckmarkOutline } from "react-icons/io5";
 import { canAccessModule, readSessionUser } from "../utils/access";
 import { useEffect, useState } from "react";
 import { usePagedList } from "../hooks/usePagedList";
+import { useTablePagination } from "../hooks/useTablePagination";
 import { formatDate, formatDateTime } from "../utils/utilidadesFecha";
 import { RecordDetails, ViewRecordButton } from "../components/RecordDetails";
 
@@ -19,6 +22,7 @@ type SecurityEvent = {
 function SecurityHistory() {
   const [selected, setSelected] = useState<SecurityEvent | null>(null);
   const [events, setEvents] = useState<SecurityEvent[]>([]);
+  const eventPage=useTablePagination(events);
   const [status, setStatus] = useState("Cargando eventos…");
   useEffect(() => {
     const controller = new AbortController();
@@ -38,7 +42,7 @@ function SecurityHistory() {
         <table>
           <thead><tr><th className="table-desktop-only">Fecha</th><th>Acción</th><th className="table-desktop-only">Actor</th><th className="table-desktop-only">Cuenta</th><th className="table-desktop-only">Módulo</th><th className="table-mobile-only">Detalle</th><th scope="col">Acciones</th></tr></thead>
           <tbody>
-            {events.map(event => (
+            {eventPage.items.map(event => (
               <tr key={event.id}>
                 <td className="table-desktop-only">{formatDateTime(event.occurred_at)}</td>
                 <td>{event.outcome === "denied" ? `Acceso denegado (${event.action})`
@@ -53,6 +57,7 @@ function SecurityHistory() {
           </tbody>
         </table>
       </div>}
+      <Pagination currentPage={eventPage.currentPage} totalPages={eventPage.totalPages} onChange={eventPage.setPage} />
       {selected && <RecordDetails title="Evento de seguridad" onClose={() => setSelected(null)} fields={[
         ["Fecha", formatDateTime(selected.occurred_at)], ["Acción", selected.action],
         ["Resultado", selected.outcome === "denied" ? "Acceso denegado" : selected.outcome],
@@ -62,7 +67,7 @@ function SecurityHistory() {
   );
 }
 
-const RECORDS_PER_PAGE = 20;
+const RECORDS_PER_PAGE = TABLE_PAGE_SIZE;
 
 type DetailFields = Record<string, unknown>;
 type FinancialEvent = {
@@ -245,22 +250,7 @@ export default function Auditorias() {
       ]} />}
       {!page.items.length && !page.loading && <p>No hay movimientos de auditoría.</p>}
 
-      {totalPages > 1 && (
-        <nav className="pagination-dropdown" aria-label="Paginación de auditorías">
-          <span>PÁGINA:</span>
-          <select
-            aria-label="Página de auditorías"
-            value={currentPage}
-            onChange={(event) => setCurrentPage(Number(event.target.value))}
-          >
-            {Array.from({ length: totalPages }, (_, index) => (
-              <option key={index + 1} value={index + 1}>
-                {index + 1} de {totalPages}
-              </option>
-            ))}
-          </select>
-        </nav>
-      )}
+      <Pagination currentPage={currentPage} totalPages={totalPages} onChange={setCurrentPage} />
     </div>
   );
 }

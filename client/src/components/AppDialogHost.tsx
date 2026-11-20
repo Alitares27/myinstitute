@@ -1,3 +1,4 @@
+import { lockBodyScroll } from "../utils/scrollLock";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 
@@ -34,8 +35,7 @@ export default function AppDialogHost() {
   useEffect(() => {
     if (!dialog) return;
     const previous = document.activeElement as HTMLElement | null;
-    const overflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    const unlockScroll = lockBodyScroll();
 
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
@@ -63,7 +63,7 @@ export default function AppDialogHost() {
     window.addEventListener("keydown", onKeyDown);
     return () => {
       window.removeEventListener("keydown", onKeyDown);
-      document.body.style.overflow = overflow;
+      unlockScroll();
       previous?.focus();
     };
   }, [dialog]);

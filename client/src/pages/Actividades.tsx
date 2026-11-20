@@ -1,3 +1,5 @@
+import { TABLE_PAGE_SIZE } from "../shared/constants";
+import Pagination from "../components/Pagination";
 import { ViewRecordButton } from "../components/RecordDetails";
 import ActivityCalendar from "../components/activities/CalendarioActividades";
 import { confirmAppAction } from "../components/AppDialogHost";
@@ -26,7 +28,7 @@ export default function Actividades() {
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
-  const recordsPerPage = 6;
+  const recordsPerPage = TABLE_PAGE_SIZE;
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
   const [selectedToPrint, setSelectedToPrint] = useState<string[]>([]);
   const [generatingPDF, setGeneratingPDF] = useState(false);
@@ -255,16 +257,7 @@ export default function Actividades() {
             </tbody>
           </table>
 
-          {totalPages > 1 && (
-            <div className="pagination-dropdown">
-              <span>PÁGINA:</span>
-              <select value={currentPage} onChange={e => setCurrentPage(Number(e.target.value))}>
-                {Array.from({ length: totalPages }, (_, i) => (
-                  <option key={i + 1} value={i + 1}>{i + 1} de {totalPages}</option>
-                ))}
-              </select>
-            </div>
-          )}
+          <Pagination currentPage={currentPage} totalPages={totalPages} onChange={setCurrentPage} />
         </div>
       )}
 

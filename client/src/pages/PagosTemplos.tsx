@@ -1,3 +1,5 @@
+import { TABLE_PAGE_SIZE } from "../shared/constants";
+import Pagination from "../components/Pagination";
 import { ViewRecordButton, RecordDetails } from "../components/RecordDetails";
 import { canAccessModule, readSessionUser } from "../utils/access";
 import { TbCoin } from "react-icons/tb";
@@ -47,7 +49,7 @@ export default function PagosTemplos() {
   const [searchQuery, setSearchQuery] = useState("");
 
   const [currentPage, setCurrentPage] = useState(1);
-  const recordsPerPage = 5;
+  const recordsPerPage = TABLE_PAGE_SIZE;
 
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: "asc" | "desc" } | null>(null);
 
@@ -580,19 +582,7 @@ export default function PagosTemplos() {
         )}
       </div>
 
-      {totalPages > 1 && (
-        <div className="pagination-dropdown">
-          <span>PÁGINA:</span>
-          <select
-            value={currentPage}
-            onChange={e => setCurrentPage(Number(e.target.value))}
-          >
-            {Array.from({ length: totalPages }, (_, i) => (
-              <option key={i + 1} value={i + 1}>{i + 1} de {totalPages}</option>
-            ))}
-          </select>
-        </div>
-      )}
+      <Pagination currentPage={currentPage} totalPages={totalPages} onChange={setCurrentPage} />
       {showReportModal && <ReportFilterModal
         title="Imprimir pagos"
         description="Elige el viaje cuyos pagos quieres incluir en el informe."

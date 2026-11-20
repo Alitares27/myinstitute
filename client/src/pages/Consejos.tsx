@@ -1,3 +1,5 @@
+import { TABLE_PAGE_SIZE } from "../shared/constants";
+import Pagination from "../components/Pagination";
 import { ViewRecordButton } from "../components/RecordDetails";
 import { confirmAppAction } from "../components/AppDialogHost";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -29,7 +31,7 @@ export default function Meetings() {
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedMeeting, setSelectedMeeting] = useState<Meeting | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
-  const recordsPerPage = 5;
+  const recordsPerPage = TABLE_PAGE_SIZE;
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
   const [selectedToPrint, setSelectedToPrint] = useState<number[]>([]);
   const [generatingPDF, setGeneratingPDF] = useState(false);
@@ -290,19 +292,7 @@ export default function Meetings() {
             </tbody>
           </table>
 
-          {totalPages > 1 && (
-            <div className="pagination-dropdown">
-              <span>PAGINA:</span>
-              <select
-                value={currentPage}
-                onChange={(e) => setCurrentPage(Number(e.target.value))}
-              >
-                {Array.from({ length: totalPages }, (_, i) => (
-                  <option key={i + 1} value={i + 1}>{i + 1} de {totalPages}</option>
-                ))}
-              </select>
-            </div>
-          )}
+          <Pagination currentPage={currentPage} totalPages={totalPages} onChange={setCurrentPage} />
         </div>
 
       )}

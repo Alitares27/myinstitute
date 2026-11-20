@@ -1,3 +1,5 @@
+import { TABLE_PAGE_SIZE } from "../shared/constants";
+import Pagination from "../components/Pagination";
 import { ViewRecordButton, RecordDetails } from "../components/RecordDetails";
 import LeaderPermissions from "../components/LeaderPermissions";
 import type { AppModule } from "../shared/constants";
@@ -80,7 +82,7 @@ export default function Maestros() {
   const [savingQuickCourses, setSavingQuickCourses] = useState(false);
 
   const [currentPage, setCurrentPage] = useState(1);
-  const [recordsPerPage, setRecordsPerPage] = useState(5);
+  const recordsPerPage = TABLE_PAGE_SIZE;
   const [sortConfig, setSortConfig] = useState<SortConfig>({ key: "name", direction: "asc" });
 
   useEffect(() => {
@@ -683,19 +685,6 @@ export default function Maestros() {
               </option>
             ))}
           </select>
-
-          <select
-            value={recordsPerPage}
-            onChange={(e) => {
-              setRecordsPerPage(Number(e.target.value));
-              setCurrentPage(1);
-            }}
-            title="Registros por página"
-          >
-            <option value={5}>5 por página</option>
-            <option value={10}>10 por página</option>
-            <option value={20}>20 por página</option>
-          </select>
         </div>
       </div>
 
@@ -798,44 +787,7 @@ export default function Maestros() {
         </table>
       </div>
 
-      {totalPages > 1 && (
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "1rem", flexWrap: "wrap", gap: "0.5rem" }}>
-          <span style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>
-            Mostrando {paginatedTeachers.length} de {filteredTeachers.length} maestros (Página {currentPage} de {totalPages})
-          </span>
-
-          <div style={{ display: "flex", gap: "0.4rem" }}>
-            <button
-              className="btn secondary"
-              disabled={currentPage === 1}
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              style={{ padding: "0.3rem 0.8rem", fontSize: "0.85rem" }}
-            >
-              Anterior
-            </button>
-
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-              <button
-                key={page}
-                className={`btn ${page === currentPage ? "primary" : "secondary"}`}
-                onClick={() => setCurrentPage(page)}
-                style={{ padding: "0.3rem 0.75rem", fontSize: "0.85rem", minWidth: "34px" }}
-              >
-                {page}
-              </button>
-            ))}
-
-            <button
-              className="btn secondary"
-              disabled={currentPage === totalPages}
-              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              style={{ padding: "0.3rem 0.8rem", fontSize: "0.85rem" }}
-            >
-              Siguiente
-            </button>
-          </div>
-        </div>
-      )}
+      <Pagination currentPage={currentPage} totalPages={totalPages} onChange={setCurrentPage} />
 
       {quickTeacher && (
         <div className="course-modal-overlay" onClick={() => setQuickTeacher(null)}>

@@ -1,3 +1,4 @@
+import { lockBodyScroll } from "../utils/scrollLock";
 import { canAccessModule, firstAllowedPage, moduleForPath, readSessionUser } from "../utils/access";
 import api from "../api";
 import {invalidarCache} from "../utils/clienteCache";
@@ -7,12 +8,13 @@ import {Link,NavLink,useLocation,useNavigate} from "react-router-dom";
 import {useTheme} from "../context/ContextoTema";
 import appMetadata from "../../package.json";
 import NotificationBell from "./NotificationBell";
+import AppearanceSettings from "./AppearanceSettings";
 import "../styles/BarraLateral.css";
 import type { IconType } from "react-icons";
-import { IoChevronBackOutline, IoChevronForwardOutline } from "react-icons/io5";
+import { IoChevronBackOutline, IoChevronForwardOutline, IoColorPaletteOutline } from "react-icons/io5";
 import {IoHomeOutline,IoSchoolOutline,IoPersonOutline,IoClipboardOutline,IoCalendarOutline,IoRibbonOutline,IoBriefcaseOutline,IoMicOutline,IoPeopleOutline,IoDocumentTextOutline,IoBusinessOutline,IoSettingsOutline,IoLogOutOutline,IoMoonOutline,IoSunnyOutline,IoCashOutline,IoChevronUp,IoEllipsisHorizontalOutline,IoInformationCircleOutline,IoSyncOutline} from "react-icons/io5";
 
-type NavItem = {to?:string;label:string;Icon:IconType;state?:Record<string,boolean>;action?:"about"};
+type NavItem = {to?:string;label:string;Icon:IconType;state?:Record<string,boolean>;action?:"about"|"appearance"};
 type NavGroup = {id:string;label:string;Icon:IconType;links:NavItem[]};
 
 const descriptions: Record<string, string> = {
@@ -36,6 +38,7 @@ const descriptions: Record<string, string> = {
 
 function SubmenuLabel({ item }: { item: NavItem }) {
  const description = item.action === "about" ? "Información de la aplicación"
+  : item.action === "appearance" ? "Colores, fuentes y modo de pantalla"
   : item.state?.openCourseManager ? "Catálogo y temas de los cursos"
   : item.state?.openTopicManager ? "Catálogo de temas para discursos"
   : descriptions[item.to ?? ""];
@@ -55,12 +58,13 @@ export default function Sidebar(){
  const {theme,preference,setPreference,toggleTheme}=useTheme();
  const [open,setOpen]=useState<string|null>(null),[loggingOut,setLoggingOut]=useState(false);
  const [showAbout,setShowAbout]=useState(false);
+ const [showAppearance,setShowAppearance]=useState(false);
  const [collapsed,setCollapsed]=useState(()=>{
   const saved=localStorage.getItem("sidebar-collapsed");
   return saved===null?window.matchMedia('(max-width: 1100px)').matches:saved==="true";
  });
  const aboutTriggerRef=useRef<HTMLButtonElement|null>(null);
- const [isMobile,setIsMobile]=useState(()=>window.matchMedia('(max-width: 700px)').matches);
+ const [isMobile,setIsMobile]=useState(()=>document.documentElement.classList.contains('native-android')||window.matchMedia('(max-width: 700px)').matches);
  const nav=useRef<HTMLElement>(null);
  const triggers=useRef<Record<string,HTMLButtonElement|null>>({});
  const templeGroup:NavGroup={id:'temple',label:'Templo',Icon:IoBusinessOutline,links:[{to:'/viajes-templo',label:'Viajes',Icon:IoCalendarOutline},{to:'/reservar-viajes',label:'Reservas',Icon:IoPeopleOutline},{to:'/pagos',label:'Pagos',Icon:IoCashOutline}]};
@@ -87,13 +91,14 @@ export default function Sidebar(){
    ...(role!=='student'?[{to:'/templos',label:'Administrar templos',Icon:IoBusinessOutline},{to:'/miembros',label:'Miembros',Icon:IoPersonOutline}]:[]),
    {to:'/sincronizacion',label:'Sincronización',Icon:IoSyncOutline},
    ...(role==='admin'?[{to:'/notificaciones',label:'Notificaciones',Icon:IoSettingsOutline}]:[]),
+   {label:'Apariencia',Icon:IoColorPaletteOutline,action:'appearance'},
    {label:'Acerca de',Icon:IoInformationCircleOutline,action:'about'}
   ]}
  ];
  useEffect(()=>{
   const query=window.matchMedia('(max-width: 700px)');
-  const update=(event:MediaQueryListEvent)=>setIsMobile(event.matches);
-  setIsMobile(query.matches);
+  const update=(event:MediaQueryListEvent)=>setIsMobile(document.documentElement.classList.contains('native-android')||event.matches);
+  setIsMobile(document.documentElement.classList.contains('native-android')||query.matches);
   query.addEventListener('change',update);
   return()=>query.removeEventListener('change',update);
  },[]);
@@ -101,8 +106,7 @@ export default function Sidebar(){
  useEffect(() => {
   if (!showAbout) return;
   const previous = aboutTriggerRef.current || (document.activeElement as HTMLElement | null);
-  const overflow = document.body.style.overflow;
-  document.body.style.overflow = "hidden";
+  const unlockScroll = lockBodyScroll();
   const closeBtn = document.getElementById("about-dialog-close-btn");
   closeBtn?.focus();
 
@@ -131,7 +135,7 @@ export default function Sidebar(){
   window.addEventListener("keydown", handleKeyDown);
   return () => {
    window.removeEventListener("keydown", handleKeyDown);
-   document.body.style.overflow = overflow;
+   unlockScroll();
    previous?.focus();
   };
  }, [showAbout]);
@@ -184,6 +188,7 @@ export default function Sidebar(){
      {group.links.map(link=><NavLink key={link.to} to={link.to!} title={link.label} aria-label={link.label}><link.Icon aria-hidden="true"/><span>{link.label}</span></NavLink>)}
     </section>)}
    </nav>
+   <button type="button" className="desktop-sidebar-about" title="Apariencia" onClick={()=>setShowAppearance(true)}><IoColorPaletteOutline aria-hidden="true"/><span>Apariencia</span></button>
    <button type="button" className="desktop-sidebar-about" title="Acerca de GestionAR" onClick={event=>{aboutTriggerRef.current=event.currentTarget;setShowAbout(true);}}><IoInformationCircleOutline aria-hidden="true"/><span>Acerca de GestionAR</span></button>
   </aside>}
   <header className="app-topbar">
@@ -211,8 +216,8 @@ export default function Sidebar(){
      {open === group.id && <ul className="floating-nav-submenu" id={`nav-${group.id}`} aria-label={group.label}>
       {group.links.map(link => (
        <li key={link.label}>
-        {link.action === "about" ? (
-         <button type="button" aria-label={link.label} onClick={() => { setOpen(null); setShowAbout(true); }}>
+        {link.action ? (
+         <button type="button" aria-label={link.label} onClick={() => { setOpen(null); if(link.action==="about")setShowAbout(true);else setShowAppearance(true); }}>
           <SubmenuLabel item={link} />
          </button>
         ) : (
@@ -226,6 +231,7 @@ export default function Sidebar(){
     </li>;
    })}</ul>
   </nav>
+  {showAppearance&&<AppearanceSettings onClose={()=>setShowAppearance(false)}/>}
   {showAbout&&<div className="ios-dialog-backdrop" onClick={event=>{if(event.target===event.currentTarget)setShowAbout(false);}}>
    <section className="ios-dialog about-app-dialog" role="dialog" aria-modal="true" aria-labelledby="about-app-title">
     <IoInformationCircleOutline className="about-app-icon" aria-hidden="true"/>

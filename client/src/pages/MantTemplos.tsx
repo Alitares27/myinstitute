@@ -1,3 +1,5 @@
+import { TABLE_PAGE_SIZE } from "../shared/constants";
+import Pagination from "../components/Pagination";
 import { readSessionUser } from "../utils/access";
 import { IoAddOutline } from "react-icons/io5";
 import FormModal from "../components/FormModal";
@@ -41,7 +43,7 @@ export default function TemplosMaintenance() {
   const [form, setForm] = useState({ id: "", name: "", city: "", province: "", address: "", dedicated_date: "", status: "operating" });
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const recordsPerPage = 8;
+  const recordsPerPage = TABLE_PAGE_SIZE;
 
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: "asc" | "desc" } | null>(null);
   const [selectedTemplo, setSelectedTemplo] = useState<Templo | null>(null);
@@ -311,16 +313,7 @@ export default function TemplosMaintenance() {
         </table>
       </div>
 
-      {totalPages > 1 && (
-        <div className="pagination-dropdown">
-          <span>PÁGINA:</span>
-          <select value={currentPage} onChange={e => setCurrentPage(Number(e.target.value))}>
-            {Array.from({ length: totalPages }, (_, i) => (
-              <option key={i + 1} value={i + 1}>{i + 1} de {totalPages}</option>
-            ))}
-          </select>
-        </div>
-      )}
+      <Pagination currentPage={currentPage} totalPages={totalPages} onChange={setCurrentPage} />
 
       {selectedTemplo && (
         <FormModal title="Detalles del templo" onClose={() => setSelectedTemplo(null)}>

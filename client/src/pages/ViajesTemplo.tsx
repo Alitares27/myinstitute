@@ -1,3 +1,5 @@
+import { TABLE_PAGE_SIZE } from "../shared/constants";
+import Pagination from "../components/Pagination";
 import { ViewRecordButton, RecordDetails } from "../components/RecordDetails";
 import { IoAddOutline } from "react-icons/io5";
 import FormModal from "../components/FormModal";
@@ -21,7 +23,7 @@ export default function TempleTrip() {
     const [trips, setTrips] = useState<Trip[]>([]);
     const [editingId, setEditingId] = useState<number | null>(null);
     const [currentPage, setCurrentPage] = useState(1);
-    const recordsPerPage = 5;
+    const recordsPerPage = TABLE_PAGE_SIZE;
     const [role, setRole] = useState<string>("");
 
     const [searchQuery, setSearchQuery] = useState("");
@@ -414,19 +416,7 @@ export default function TempleTrip() {
                     </tbody>
                 </table>
 
-                {totalPages > 1 && (
-                    <div className="pagination-dropdown">
-                        <span>PAGINA:</span>
-                        <select
-                            value={currentPage}
-                            onChange={(e) => setCurrentPage(Number(e.target.value))}
-                        >
-                            {Array.from({ length: totalPages }, (_, i) => (
-                                <option key={i + 1} value={i + 1}>{i + 1} de {totalPages}</option>
-                            ))}
-                        </select>
-                    </div>
-                )}
+                <Pagination currentPage={currentPage} totalPages={totalPages} onChange={setCurrentPage} />
             </div>
       {detail && <RecordDetails title="Detalles del viaje" onClose={() => setDetail(null)} fields={[
         ["Templo", detail.temple_name],

@@ -11,7 +11,7 @@
 }
 
 html:root body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family: var(--app-font, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
   font-size: 1rem;
   line-height: 1.5;
   color: var(--text-main);
@@ -27,6 +27,29 @@ html:root body h3 { font-size: 1.0625rem; line-height: 1.4; font-weight: 600; }
 html:root body :is(.page-subtitle, .section-subtitle, .text-muted) { color: var(--text-muted); }
 html:root body main.content { min-width: 0; }
 html:root body main.content > :is(section, div) { min-width: 0; }
+/* Seven records limit the data page, never the document's height. */
+html:root { min-height: 100%; height: auto; overflow-y: auto; scrollbar-gutter: stable; }
+html:root body { min-height: 100dvh; height: auto; }
+html:root body #root { min-height: 100dvh; }
+html:root body :is(.app-layout, .main-content, main.content) {
+  height: auto;
+  max-height: none;
+  overflow: visible;
+}
+html:root body .table-container {
+  height: auto;
+  min-height: 0;
+  max-height: none;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
+html:root body .table-container > table { height: auto; max-height: none; }
+.app-pagination { display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; margin-block: 1rem; }
+.app-pagination > span { font-size: .875rem; color: var(--text-muted); }
+.app-pagination-buttons, .pagination-slot { display: flex; align-items: center; gap: .375rem; flex-wrap: wrap; }
+html:root body .app-pagination .btn { min-width: 44px; padding: .5rem .75rem; margin: 0; font-size: .875rem; }
+.pagination-gap { padding-inline: .125rem; color: var(--text-muted); }
+@media (max-width:700px) { .app-pagination-buttons { gap: .25rem; } html:root body .app-pagination .btn { padding-inline: .625rem; } }
 
 html:root body :is(.asistencia-header, .calificaciones-header, .inscripciones-header,
   .maestros-header, .actividades-header, .meetings-header, .speakers-header, .miembros-header, .audit-header) {

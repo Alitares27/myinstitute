@@ -1,4 +1,6 @@
 import { ViewRecordButton } from "../components/RecordDetails";
+import Pagination from "../components/Pagination";
+import { useTablePagination } from "../hooks/useTablePagination";
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { IoAddOutline, IoCreateOutline, IoTrashOutline } from "react-icons/io5";
@@ -43,6 +45,7 @@ function formatDate(value: string) {
 export default function Agendas() {
   const admin = JSON.parse(localStorage.getItem("user") || "{}")?.role === "admin";
   const [agendas, setAgendas] = useState<Agenda[]>([]);
+  const agendaPage=useTablePagination([...agendas].sort((a,b)=>b.scheduled_at.localeCompare(a.scheduled_at)||b.id-a.id));
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [membersLoading, setMembersLoading] = useState(admin);
@@ -154,7 +157,7 @@ export default function Agendas() {
             <th scope="col">Acciones</th>
           </tr></thead>
           <tbody>
-            {[...agendas].sort((a, b) => b.scheduled_at.localeCompare(a.scheduled_at) || b.id - a.id).map(agenda => (
+            {agendaPage.items.map(agenda => (
               <tr key={agenda.id}>
                 <td>{agenda.friend}</td>
                 <td><time dateTime={agenda.scheduled_at}>{formatDate(agenda.scheduled_at)}</time></td>
@@ -174,6 +177,7 @@ export default function Agendas() {
         </table>
       </div>
       {!loading && !error && agendas.length === 0 && <p>Todavía no hay agendas registradas.</p>}
+      <Pagination currentPage={agendaPage.currentPage} totalPages={agendaPage.totalPages} onChange={agendaPage.setPage} />
 
       {editor && <FormModal title={editor.id === undefined ? "Agregar agenda" : "Editar agenda"} busy={busy} onClose={() => setEditor(null)}>
         {membersLoading && <p role="status">Cargando miembros…</p>}

@@ -1,3 +1,5 @@
+import { TABLE_PAGE_SIZE } from "../shared/constants";
+import Pagination from "../components/Pagination";
 import { ViewRecordButton } from "../components/RecordDetails";
 import { IoAddOutline } from "react-icons/io5";
 import FormModal from "../components/FormModal";
@@ -37,7 +39,7 @@ export default function Speakers() {
   const [dateFilter, setDateFilter] = useState("");
 
   const [currentPage, setCurrentPage] = useState(1);
-  const recordsPerPage = 6;
+  const recordsPerPage = TABLE_PAGE_SIZE;
 
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: "asc" | "desc" } | null>(null);
   const [loading, setLoading] = useState(true);
@@ -482,20 +484,7 @@ export default function Speakers() {
         </table>
       </div>
 
-      {totalPages > 1 && (
-        <div className="pagination-dropdown">
-          <span className="extracted-style-8">PÁGINA:</span>
-          <select
-            value={currentPage}
-            onChange={(e) => setCurrentPage(Number(e.target.value))}
-            className="extracted-style-9"
-          >
-            {Array.from({ length: totalPages }, (_, i) => (
-              <option key={i + 1} value={i + 1}>{i + 1} de {totalPages}</option>
-            ))}
-          </select>
-        </div>
-      )}
+      <Pagination currentPage={currentPage} totalPages={totalPages} onChange={setCurrentPage} />
       {selectedSpeaker && <FormModal title="Detalles del discursante" onClose={() => setSelectedSpeaker(null)}>
         <dl className="speakers-details">
           <div className="speakers-details-date">

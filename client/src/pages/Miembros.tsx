@@ -1,3 +1,4 @@
+import Pagination from "../components/Pagination";
 import FormModal from "../components/FormModal";
 import { confirmAppAction } from "../components/AppDialogHost";
 import { useEffect, useState } from "react";
@@ -75,7 +76,7 @@ export default function Miembros() {
                     {admin && <><button type="button" className="btn secondary btn-icon" title="Editar" onClick={() => { setEditing(member); setEditorOpen(true); }} aria-label={`Editar ${member.name}`}><IoCreateOutline aria-hidden="true" /></button><button type="button" className="btn btn-icon miembros-delete" title="Eliminar" disabled={member.id === me.id} onClick={() => removeMember(member)} aria-label={`Eliminar ${member.name}`}><IoTrashOutline aria-hidden="true" /></button></>}
                 </div></td></tr>)}</tbody></table></div>
             {!directory.loading && !directory.items.length && <p>No hay miembros para los filtros seleccionados.</p>}
-            {totalPages > 1 && <nav className="pagination-dropdown" aria-label="Paginación de miembros"><span>PÁGINA:</span><select aria-label="Página de miembros" value={currentPage} onChange={e => setCurrentPage(Number(e.target.value))}>{Array.from({ length: totalPages }, (_, index) => <option key={index + 1} value={index + 1}>{index + 1} de {totalPages}</option>)}</select></nav>}
+            <Pagination currentPage={currentPage} totalPages={totalPages} onChange={setCurrentPage} />
             {selected !== null && <MemberModal onClose={() => setSelected(null)}><MemberDetails key={selected} id={selected} viewerId={me.id} viewerRole={me.role} revision={revision} /></MemberModal>}
         </>}
     </div>;

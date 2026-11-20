@@ -1,3 +1,5 @@
+import { TABLE_PAGE_SIZE } from "../shared/constants";
+import Pagination from "../components/Pagination";
 import { ViewRecordButton, RecordDetails } from "../components/RecordDetails";
 import { IoAddOutline } from "react-icons/io5";
 import { isAndroidApp } from "../utils/androidReports";
@@ -31,7 +33,7 @@ export default function Grades() {
   const [filterStudent, setFilterStudent] = useState(searchParams.get("student_id") || "");
   const [filterType, setFilterType] = useState("");
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const recordsPerPage = 5;
+  const recordsPerPage = TABLE_PAGE_SIZE;
   const [sortConfig, setSortConfig] = useState<SortConfig>(null);
   const [loading, setLoading] = useState(true);
 
@@ -511,19 +513,7 @@ export default function Grades() {
         </table>
       </div>
 
-      {totalPages > 1 && (
-        <div className="pagination-dropdown">
-          <span>PÁGINA:</span>
-          <select
-            value={currentPage}
-            onChange={(e) => setCurrentPage(Number(e.target.value))}
-          >
-            {Array.from({ length: totalPages }, (_, i) => (
-              <option key={i + 1} value={i + 1}>{i + 1} de {totalPages}</option>
-            ))}
-          </select>
-        </div>
-      )}
+      <Pagination currentPage={currentPage} totalPages={totalPages} onChange={setCurrentPage} />
 
       {error && !formOpen && <p>{error}</p>}
       {detail && <RecordDetails title="Detalle de calificación" onClose={() => setDetail(null)} fields={[
