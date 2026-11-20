@@ -32,6 +32,7 @@ const PagosTemplos = lazy(() => import("./pages/PagosTemplos"));
 
 
 const Sincronizacion = lazy(() => import("./pages/Sincronizacion"));
+const Notificaciones = lazy(() => import("./pages/Notificaciones"));
 
 function App() {
   return (
@@ -73,6 +74,7 @@ function App() {
           <Route path="/auditorias" element={<RutaPrivada module="auditorias"><Disposicion><Auditorias /></Disposicion></RutaPrivada>} />
           <Route path="/templos" element={<RutaPrivada module="templos"><Disposicion><MantTemplos /></Disposicion></RutaPrivada>} />
           <Route path="/sincronizacion" element={<RutaPrivada module="sincronizacion"><Disposicion><Sincronizacion /></Disposicion></RutaPrivada>} />
+          <Route path="/notificaciones" element={<RutaPrivada adminOnly><Disposicion><Notificaciones /></Disposicion></RutaPrivada>} />
           <Route path="/pagos" element={<RutaPrivada module="pagos-templos"><Disposicion><PagosTemplos /></Disposicion></RutaPrivada>} />
 
           <Route path="/sin-acceso" element={<RutaPrivada><Disposicion><p role="status">Tu cuenta no tiene páginas habilitadas. Pide a un administrador que revise tus permisos.</p></Disposicion></RutaPrivada>} />

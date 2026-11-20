@@ -262,7 +262,8 @@ test("teacher member directory is read only and links use academic profile ident
  const view=await mountPage('pages/Miembros.tsx',api,{id:2,role:'teacher'});await view.wait();
  try{
   assert.ok(!view.node.textContent.includes('Registrar miembro'));assert.equal(view.node.querySelector('[aria-label="Editar Academic member"]'),null);
-  assert.deepEqual(Array.from(view.node.querySelectorAll('thead th')).map(x=>x.textContent),['Nombre','Documento','Organización','Acciones']);
+  assert.deepEqual(Array.from(view.node.querySelectorAll('thead th')).map(x=>x.textContent),['Nombre','Documento','Organización','Contacto','Rol de acceso','Acciones']);
+  assert.deepEqual(Array.from(view.node.querySelectorAll('thead th:not(.table-desktop-only)')).map(x=>x.textContent),['Nombre','Documento','Acciones']);
   assert.equal(view.node.querySelectorAll('.table-record-actions button').length,1);
   const name=view.node.querySelector('[aria-label="Ver ficha de Academic member"]');name.focus();
   await view.act(async()=>Simulate.click(name));
@@ -334,12 +335,12 @@ test('header keeps icon-only theme and logout controls in order and preserves lo
  const {Simulate}=require('react-dom/test-utils');const posts=[];global.caches=window.caches;localStorage.setItem('theme','light');
  const view=await mountPage('components/BarraLateral.tsx',{post:async route=>{posts.push(route);}}, {id:42,role:'student'},true);
  try{
-  const actions=view.node.querySelector('.app-topbar-actions');assert.equal(actions.children.length,2);assert.equal(actions.textContent,'');
-  assert.equal(actions.children[0].getAttribute('aria-label'),'Activar tema oscuro');assert.equal(actions.children[1].getAttribute('aria-label'),'Cerrar sesión');
+  const actions=view.node.querySelector('.app-topbar-actions');assert.equal(actions.children.length,3);assert.equal(actions.textContent,'');
+  assert.equal(actions.children[0].getAttribute('aria-label'),'Activar tema oscuro');assert.equal(actions.children[1].getAttribute('aria-label'),'Notificaciones');assert.equal(actions.children[2].getAttribute('aria-label'),'Cerrar sesión');
   await view.act(async()=>Simulate.click(actions.children[0]));assert.equal(document.documentElement.getAttribute('data-theme'),'dark');
   const nav=view.node.querySelector('[aria-label="Menú principal"]');assert.equal(nav.querySelector('[aria-label="Mantenimiento"]'),null);
   await view.act(async()=>Simulate.click(nav.querySelector('[aria-label="Enseñanza"]')));assert.ok(nav.querySelector('a[aria-label="Mi perfil"][href="/miembros"]'));
-  await view.act(async()=>Simulate.click(actions.children[1]));assert.deepEqual(posts,['/logout']);assert.equal(localStorage.getItem('token'),null);assert.equal(localStorage.getItem('user'),null);assert.equal(localStorage.getItem('theme'),'dark');
+  await view.act(async()=>Simulate.click(actions.children[2]));assert.deepEqual(posts,['/logout']);assert.equal(localStorage.getItem('token'),null);assert.equal(localStorage.getItem('user'),null);assert.equal(localStorage.getItem('theme'),'dark');
  }finally{await view.close();document.documentElement.setAttribute('data-theme','light');localStorage.setItem('theme','light');}
 });
 
@@ -355,6 +356,42 @@ test("an expired token keeps the previously authenticated local session availabl
  localStorage.removeItem("user");
  assert.equal(PrivateRoute({children:protectedPage}).props.to,"/iniciar-sesion");
  localStorage.removeItem("token");
+});
+
+test("notification bell opens reminders and persists reading through the API",async()=>{
+ const {Simulate}=require('react-dom/test-utils');const posts=[];
+ const notice={id:'activity:9:2026-11-27',title:'Próxima actividad',message:'Servicio comunitario',date:'2026-11-27 18:00:00',href:'/actividades',read:false};
+ const api={get:async()=>({data:[notice]}),post:async(url,body)=>{posts.push([url,body]);return {data:{ok:true}};}};
+ const view=await mountPage('components/NotificationBell.tsx',api,{id:1,role:'admin'});
+ try {
+  await view.wait();assert.equal(view.node.querySelector('.notification-count').textContent,'1');
+  await view.act(async()=>Simulate.click(view.node.querySelector('[aria-label="Notificaciones: 1 sin leer"]')));
+  assert.ok(view.node.querySelector('[role="dialog"]'));assert.ok(view.node.textContent.includes('Servicio comunitario'));
+  assert.equal(view.node.querySelector('.notification-list a').getAttribute('href'),'/actividades');
+  await view.act(async()=>Simulate.click([...view.node.querySelectorAll('button')].find(button=>button.textContent==='Marcar leídas')));
+  assert.deepEqual(posts,[['/notifications/read',{ids:[notice.id]}]]);
+  assert.equal(view.node.querySelector('.notification-count'),null);
+  await view.act(async()=>Simulate.click(view.node.querySelector('.form-modal-overlay')));
+  assert.equal(view.node.querySelector('[role="dialog"]'),null);
+ } finally {await view.close();}
+});
+
+test("notification settings keep the form in a modal and persist days and weekly time",async()=>{
+ const {Simulate}=require('react-dom/test-utils');const writes=[];
+ const config={activity_days:7,meeting_days:3,attendance_day:6,attendance_time:'19:00:00',time_zone:'America/Argentina/Buenos_Aires',activities_enabled:true,meetings_enabled:true,attendance_enabled:true};
+ const api={get:async()=>({data:config}),put:async(url,body)=>{writes.push([url,body]);return {data:body};}};
+ const view=await mountPage('pages/Notificaciones.tsx',api,{id:1,role:'admin'});
+ try {
+  await view.wait();assert.equal(view.node.querySelector('form'),null);
+  await view.act(async()=>Simulate.click([...view.node.querySelectorAll('button')].find(button=>button.textContent==='Configurar')));
+  const modal=view.node.querySelector('[role="dialog"]');assert.ok(modal);
+  await view.act(async()=>Simulate.change(modal.querySelector('input[type="number"]'),{target:{value:'10'}}));
+  await view.act(async()=>Simulate.change(modal.querySelector('input[type="time"]'),{target:{value:'20:30'}}));
+  await view.act(async()=>Simulate.submit(modal.querySelector('form')));
+  assert.equal(writes[0][0],'/notifications/settings');assert.equal(writes[0][1].activity_days,10);assert.equal(writes[0][1].attendance_time,'20:30');
+  assert.equal(view.node.querySelector('[role="dialog"]'),null);
+  assert.ok(view.node.textContent.includes('Configuración guardada.'));
+ } finally {await view.close();}
 });
 
 test("every mobile submenu shows the backdrop until it closes", async () => {
@@ -394,8 +431,18 @@ test("leader navigation and direct access use the same page permissions", async 
   const view = await mountPage("components/BarraLateral.tsx", {}, leader, true);
   try {
    assert.equal(view.node.querySelector('[aria-label="Enseñanza"]'), null);
-   await view.act(async () => Simulate.click(view.node.querySelector('[aria-label="Liderazgo"]')));
-   assert.deepEqual([...view.node.querySelectorAll(".floating-nav-submenu a")].map(link => link.getAttribute("href")), ["/agendas"]);
+   if (mobile) {
+    assert.equal(view.node.querySelector(".desktop-sidebar"), null);
+    await view.act(async () => Simulate.click(view.node.querySelector('.floating-nav [aria-label="Liderazgo"]')));
+    assert.deepEqual([...view.node.querySelectorAll(".floating-nav-submenu a")].map(link => link.getAttribute("href")), ["/agendas"]);
+   } else {
+    assert.deepEqual([...view.node.querySelectorAll(".desktop-sidebar-pages a")].map(link => link.getAttribute("href")), ["/agendas"]);
+    const sidebar = view.node.querySelector(".desktop-sidebar");
+    const wasCollapsed = sidebar.classList.contains("is-collapsed");
+    await view.act(async () => Simulate.click(sidebar.querySelector(".sidebar-collapse")));
+    assert.equal(sidebar.classList.contains("is-collapsed"), !wasCollapsed);
+    assert.equal(localStorage.getItem("sidebar-collapsed"), String(!wasCollapsed));
+   }
    const PrivateRoute = loadComponent("components/RutaPrivada.tsx", {});
    const child = require("react").createElement("p", null, "Agendas");
    assert.equal(PrivateRoute({ module: "agendas", children: child }), child);

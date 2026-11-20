@@ -4,6 +4,8 @@ import App from "./App";
 import "./styles/Global.css";
 import "./styles/Tablas.css";
 import "./styles/Impresion.css";
+import "./styles/DesignSystem.css";
+import "./styles/SidebarDesktop.css";
 import { ThemeProvider } from "./context/ContextoTema";
 import { initializeAndroidShell } from "./native/androidShell";
 

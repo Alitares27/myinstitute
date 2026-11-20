@@ -416,11 +416,12 @@ export default function Speakers() {
           <thead>
             <tr>
               <th onClick={() => handleSort("member_id")} className="sortable-header">
-                Miembro / Fecha
+                <span className="table-desktop-only">Miembro</span><span className="table-mobile-only">Miembro / Fecha</span>
                 <span className="sort-icon">
                   {sortConfig?.key === "member_id" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
                 </span>
               </th>
+              <th scope="col" className="table-desktop-only">Fecha</th>
               <th onClick={() => handleSort("completed")} className="sortable-header table-desktop-only">
                 Estado
                 <span className="sort-icon">
@@ -433,6 +434,7 @@ export default function Speakers() {
                   {sortConfig?.key === "topic" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
                 </span>
               </th>
+              <th scope="col" className="table-desktop-only">Duración</th>
               <th>Acciones</th>
             </tr>
           </thead>
@@ -441,15 +443,13 @@ export default function Speakers() {
               <tr key={s.id}>
                 <td>
                   {memberName(s)}
-                  <div className="text-muted-sm">
+                  <div className="text-muted-sm speakers-mobile-date">
                     {formatDate(s.date, { weekday: 'short', day: 'numeric', month: 'short' })}
                   </div>
                 </td>
+                <td className="table-desktop-only">{formatDate(s.date)}</td>
                 <td className="table-desktop-only">
                   <SpeakerStatus completed={s.completed} />
-                  <div className="flex-icon-text speakers-desktop-detail">
-                    <IoTimeOutline /> {s.time || 0} min
-                  </div>
                 </td>
                 <td className="speakers-desktop-detail">
                   <div className="flex-icon-text">{s.topic}</div>
@@ -457,6 +457,7 @@ export default function Speakers() {
                     "{s.speech_title}"
                   </div>
                 </td>
+                <td className="table-desktop-only">{s.time || 0} min</td>
                 <td>
                   <div className="table-record-actions">
                     <ViewRecordButton label="Ver discurso" onClick={() => setSelectedSpeaker(s)} />
@@ -474,7 +475,7 @@ export default function Speakers() {
             ))}
             {currentRecords.length === 0 && (
               <tr>
-                <td colSpan={4} >No hay registros que coincidan</td>
+                <td colSpan={6} >No hay registros que coincidan</td>
               </tr>
             )}
           </tbody>

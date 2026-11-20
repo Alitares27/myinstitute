@@ -712,6 +712,7 @@ export default function Maestros() {
               <th className="sortable-header table-desktop-only" onClick={() => requestSort("courses_count")}>
                 Cursos Dictados {sortConfig?.key === "courses_count" && (sortConfig.direction === "asc" ? "▲" : "▼")}
               </th>
+              <th scope="col" className="table-desktop-only">Contacto</th>
               <th style={{ textAlign: "right" }}>Acciones</th>
             </tr>
           </thead>
@@ -746,6 +747,7 @@ export default function Maestros() {
                       )}
                     </td>
 
+                    <td className="table-desktop-only"><div>{teacher.email || "—"}</div><div className="text-muted">{teacher.telefono || "—"}</div></td>
                     <td>
                       <div className="table-record-actions">
                         <ViewRecordButton label="Ver maestro" onClick={() => setDetail(teacher)} />
@@ -782,7 +784,7 @@ export default function Maestros() {
               })
             ) : (
               <tr>
-                <td colSpan={4} style={{ textAlign: "center", padding: "2.5rem 1rem", color: "var(--text-muted)" }}>
+                <td colSpan={5} style={{ textAlign: "center", padding: "2.5rem 1rem", color: "var(--text-muted)" }}>
                   <IoSchoolOutline style={{ fontSize: "2.5rem", marginBottom: "0.5rem", opacity: 0.5 }} />
                   <p style={{ margin: 0, fontSize: "1rem" }}>
                     {searchQuery || filterSpecialty || filterCourse

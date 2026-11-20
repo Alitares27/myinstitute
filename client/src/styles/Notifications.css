@@ -1,0 +1,12 @@
+.notification-bell { position: relative; }
+.notification-count { position: absolute; top: -3px; right: -3px; min-width: 19px; height: 19px; padding: 0 4px; border-radius: 999px; background: var(--danger); color: var(--button-on-danger); font-size: .6875rem; line-height: 19px; text-align: center; border: 1px solid var(--bg-surface); }
+.notification-list { list-style: none; margin: 1rem 0; padding: 0; display: grid; gap: .75rem; }
+.notification-list li { border: 1px solid var(--border-color); border-radius: 14px; background: var(--bg-body); }
+.notification-list .is-unread { border-inline-start: 3px solid var(--primary); }
+.notification-list a { display: grid; gap: .375rem; padding: 1rem; color: var(--text-main); text-decoration: none; overflow-wrap: anywhere; }
+.notification-list strong { display: flex; flex-wrap: wrap; gap: .5rem; justify-content: space-between; }
+.notification-list :is(time,small), .notification-help { color: var(--text-muted); font-size: .8125rem; }
+.notification-settings-form { display: grid; gap: 1rem; }
+.notification-settings-form fieldset { min-width: 0; display: grid; gap: .75rem; border: 1px solid var(--border-color); border-radius: 12px; padding: 1rem; }
+.notification-settings-form legend { padding-inline: .25rem; font-weight: 600; }
+.notification-settings-form input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--primary); }

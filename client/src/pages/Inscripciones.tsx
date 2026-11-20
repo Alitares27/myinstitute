@@ -15,6 +15,7 @@ import {
 } from "react-icons/io5";
 import { TbBooks, TbList, TbCertificate } from "react-icons/tb";
 import { Skeleton } from "../components/Esqueleto";
+import { formatDate } from "../utils/utilidadesFecha";
 import { openPrintWindow } from "../utils/utilidadesReportes";
 import type { SortConfig } from "../interfaces/Common";
 import { obtenerEstudiantes, obtenerCursos, invalidarCursos } from "../utils/clienteCache";
@@ -660,6 +661,7 @@ export default function Enrollments() {
                   {sortConfig?.key === "course_title" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
                 </span>
               </th>
+              <th scope="col" className="table-desktop-only">Fecha de matrícula</th>
               {role === "admin" && <th scope="col" style={{ width: "120px", textAlign: "center" }}>Acciones</th>}
             </tr>
           </thead>
@@ -689,6 +691,7 @@ export default function Enrollments() {
                       </div>
                     </td>
 
+                    <td className="table-desktop-only">{formatDate(en.enrollment_date)}</td>
                     {role === "admin" && (
                       <td style={{ textAlign: "center" }}>
                         <div style={{ display: "inline-flex", gap: "0.5rem", justifyContent: "center" }}>
@@ -716,7 +719,7 @@ export default function Enrollments() {
               })
             ) : (
               <tr>
-                <td colSpan={role === "admin" ? 3 : 2} style={{ textAlign: "center", padding: "2.5rem 1rem", color: "var(--text-muted)" }}>
+                <td colSpan={role === "admin" ? 4 : 3} style={{ textAlign: "center", padding: "2.5rem 1rem", color: "var(--text-muted)" }}>
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.5rem" }}>
                     <TbCertificate style={{ fontSize: "2rem", opacity: 0.5 }} />
                     <p style={{ margin: 0, fontSize: "0.95rem" }}>No se encontraron matrículas con los criterios especificados.</p>

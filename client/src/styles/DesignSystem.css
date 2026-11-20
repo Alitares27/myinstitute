@@ -1,0 +1,174 @@
+/* Shared visual contract. Page styles may arrange content, but use these controls. */
+:root {
+  --space-1: .25rem;
+  --space-2: .5rem;
+  --space-3: .75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --control-height: 44px;
+  --focus-ring: 0 0 0 3px color-mix(in srgb, var(--primary) 28%, transparent);
+}
+
+html:root body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--text-main);
+  background: var(--bg-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+html:root body :is(input, select, textarea, button) { font: inherit; }
+html:root body :is(h1, h2, h3) { color: var(--text-main); text-wrap: balance; }
+html:root body h1 { font-size: clamp(1.5rem, 2.5vw, 2rem); line-height: 1.2; font-weight: 650; letter-spacing: -.025em; }
+html:root body h2 { font-size: 1.25rem; line-height: 1.3; font-weight: 600; letter-spacing: -.015em; }
+html:root body h3 { font-size: 1.0625rem; line-height: 1.4; font-weight: 600; }
+html:root body :is(.page-subtitle, .section-subtitle, .text-muted) { color: var(--text-muted); }
+html:root body main.content { min-width: 0; }
+html:root body main.content > :is(section, div) { min-width: 0; }
+
+html:root body :is(.asistencia-header, .calificaciones-header, .inscripciones-header,
+  .maestros-header, .actividades-header, .meetings-header, .speakers-header, .miembros-header, .audit-header) {
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+  align-items: center;
+}
+html:root body :is(.asistencia-header, .calificaciones-header, .inscripciones-header,
+  .maestros-header, .actividades-header, .meetings-header, .speakers-header, .miembros-header, .audit-header) h1 { margin: 0; }
+
+/* No positional hover transforms: anchored input icons must remain anchored. */
+html:root body :is(button, .btn) {
+  min-height: var(--control-height);
+  border-radius: 999px;
+  text-align: center;
+  justify-content: center;
+  align-items: center;
+  line-height: 1.25;
+  font-weight: 600;
+  transition: background-color .2s ease, border-color .2s ease, box-shadow .2s ease, opacity .2s ease;
+}
+html:root body :is(button, .btn):is(:hover, :active) { translate: none; transform: none; }
+html:root body .auth-form .login-password-toggle:is(:hover, :active) { transform: translateY(-50%); }
+html:root body :is(button, .btn):disabled { opacity: .5; cursor: not-allowed; box-shadow: none; }
+html:root body :is(button, a, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 3px;
+  box-shadow: var(--focus-ring);
+}
+html:root body :is(.btn-icon, .app-icon-button) { min-width: 44px; min-height: 44px; border-radius: 50%; }
+html:root body .table-record-actions { gap: var(--space-1); align-items: center; }
+html:root body .table-record-actions .btn { width: 44px; height: 44px; padding: 0; }
+html:root body .table-record-actions svg { width: 1.125rem; height: 1.125rem; flex-shrink: 0; }
+
+html:root body :is(input, select, textarea):not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([type="range"]):not([type="hidden"]) {
+  min-height: var(--control-height);
+  max-width: 100%;
+  min-width: 0;
+  border: 1px solid var(--input-border);
+  border-radius: 12px;
+  background: var(--bg-surface);
+  color: var(--text-main);
+  padding: .625rem .875rem;
+  font-size: 1rem;
+}
+html:root body textarea { min-height: 104px; resize: vertical; }
+html:root body input::placeholder, html:root body textarea::placeholder { color: var(--text-muted); opacity: 1; }
+html:root body .form-group { min-width: 0; gap: var(--space-2); }
+html:root body .form-group > label { font-size: .875rem; font-weight: 600; color: var(--text-main); }
+html:root body :is(.grid-form, .asistencia-form-grid, .agenda-form-grid) { gap: var(--space-4); }
+html:root body :is(.login-password-field, .password-field) input { padding-right: 3.25rem !important; }
+
+/* Dense content stays opaque; glass is reserved for navigation and backdrops. */
+html:root body :is(.modal-content, .course-modal-content, .form-modal, .miembros-modal, .report-filter-modal, .ios-dialog,
+  .table-container, .miembros-card, .course-selection-box) {
+  background: var(--bg-surface);
+  color: var(--text-main);
+  border: 1px solid var(--border-color);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+html:root body :is(.modal-content, .course-modal-content, .miembros-modal, .report-filter-modal, .ios-dialog) {
+  border-radius: 24px;
+  padding: clamp(1rem, 3vw, 2rem);
+  box-shadow: var(--shadow-lg);
+  max-width: calc(100vw - 2rem);
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+html:root body .miembros-modal .miembros-details { background: transparent; border: 0; padding: 0; }
+html:root body .form-modal-header { gap: 1rem; margin-bottom: 1.5rem; }
+html:root body .form-modal-header h2 { margin: 0; }
+html:root body :is(.modal-overlay, .course-modal-overlay, .miembros-modal-overlay, .ios-dialog-backdrop, .floating-nav-backdrop) {
+  background-color: rgb(0 0 0 / 32%);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+html:root body :is(.modal-overlay, .course-modal-overlay, .miembros-modal-overlay) { z-index: 15000; }
+html:root body .ios-dialog-backdrop { z-index: 15001; }
+html:root body .course-modal-footer { background: var(--bg-surface); border-color: var(--border-color); }
+html:root body button.floating-nav-backdrop { border-radius: 0; box-shadow: none; }
+html:root body .record-details { margin: 0; gap: 1rem; }
+html:root body .record-details > div { background: var(--bg-body); border-radius: 12px; padding: 1rem; }
+html:root body .record-details dd { font-weight: 500; }
+html:root body .table-container { border-radius: 16px; box-shadow: var(--shadow-xs); }
+html:root body .table-container th { background: var(--bg-body); color: var(--text-secondary); font-size: .8125rem; font-weight: 600; }
+html:root body .table-container td { color: var(--text-main); vertical-align: middle; }
+html:root body .table-container :is(th, td) { border-color: var(--border-color); }
+html:root body .floating-nav-submenu a, html:root body .floating-nav-submenu button { text-align: left; justify-content: flex-start; }
+html:root body .appearance-setting { display: grid; gap: .5rem; text-align: left; font-size: .875rem; font-weight: 600; margin-block: 1rem; }
+html:root body :is(.stat-card, .shortcut-card) {
+  background: color-mix(in srgb, var(--bg-surface) 94%, transparent);
+  color: var(--text-main);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-xs);
+  text-align: left;
+  align-items: flex-start;
+}
+html:root body .stat-value { color: var(--text-main); font-weight: 500; }
+html:root body :is(.stat-label, .dashboard-subtitle, .shortcut-info p) { color: var(--text-muted); }
+html:root body .shortcut-icon-bg { color: var(--primary); background: var(--primary-light); }
+html:root body :is(.empty-state, .loading-state) { padding: 2rem 1rem; text-align: center; color: var(--text-muted); }
+html:root body :is(.error-message, .form-error) { color: var(--text-danger); border-radius: 12px; }
+
+@media (max-width: 700px) {
+  html:root body { font-size: 1rem; }
+  html:root body .table-record-actions { max-width: 100%; }
+  html:root body .table-container table:has(.table-record-actions) thead th:last-child { width: 7rem; }
+  html:root body :is(.modal-content, .miembros-modal, .report-filter-modal) { border-radius: 20px; padding: 1rem; }
+  html:root body .leader-permissions-options { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+/* Desktop tables retain useful context while mobile keeps its compact columns. */
+@media (min-width: 701px) {
+  html:root body .table-container > table { table-layout: auto; }
+  html:root body .table-container :is(th, td) { padding: .75rem .875rem; }
+  html:root body .table-container td { font-size: .875rem; }
+  html:root body .table-container .table-record-actions { flex-wrap: nowrap; width: max-content; max-width: none; }
+  html:root body .speakers-mobile-date,
+  html:root body .speakers-page span.table-mobile-only { display: none; }
+}
+@media (max-width: 360px) {
+  html:root body .leader-permissions-options { grid-template-columns: minmax(0, 1fr); }
+}
+@media (prefers-reduced-transparency: reduce) {
+  html:root body :is(.floating-nav, .floating-nav-submenu, .app-topbar) { background: var(--bg-surface); backdrop-filter: none; -webkit-backdrop-filter: none; }
+  html:root body :is(.modal-overlay, .course-modal-overlay, .miembros-modal-overlay, .ios-dialog-backdrop, .floating-nav-backdrop) { background: rgb(0 0 0 / 65%); backdrop-filter: none; -webkit-backdrop-filter: none; }
+}
+@media (prefers-contrast: more) {
+  html:root body { --border-color: var(--text-muted); --input-border: var(--text-secondary); }
+}
+@media (forced-colors: active) {
+  html:root body :is(button, .btn, input, select, textarea) { border: 1px solid ButtonText; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html:root body *, html:root body *::before, html:root body *::after {
+    transition-duration: .01ms !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+  }
+}
+@media print {
+  html:root body { background: white; color: black; }
+  html:root body .table-container { box-shadow: none; border-radius: 0; }
+}

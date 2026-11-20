@@ -149,7 +149,8 @@ export default function Agendas() {
           <thead><tr>
             <th scope="col">Amigo</th>
             <th scope="col">Fecha y hora</th>
-            <th className="table-desktop-only" scope="col">Ordenanza</th>
+            <th className="table-desktop-only" scope="col">Bautismo</th>
+            <th className="table-desktop-only" scope="col">Confirmación</th>
             <th scope="col">Acciones</th>
           </tr></thead>
           <tbody>
@@ -157,10 +158,8 @@ export default function Agendas() {
               <tr key={agenda.id}>
                 <td>{agenda.friend}</td>
                 <td><time dateTime={agenda.scheduled_at}>{formatDate(agenda.scheduled_at)}</time></td>
-                <td className="table-desktop-only">
-                  <div>Bautismo: {memberName(agenda, agenda.baptism_id)}</div>
-                  <div>Confirmación: {memberName(agenda, agenda.confirmation_id)}</div>
-                </td>
+                <td className="table-desktop-only">{memberName(agenda, agenda.baptism_id)}</td>
+                <td className="table-desktop-only">{memberName(agenda, agenda.confirmation_id)}</td>
                 <td><div className="table-record-actions"><ViewRecordButton label="Ver agenda" onClick={() => setDetail(agenda)} />{admin && <>
                   <button type="button" className="btn secondary btn-icon" disabled={busy} aria-label={`Editar bautismo de ${agenda.friend}`} onClick={() => openEditor(agenda)}>
                     <IoCreateOutline aria-hidden="true" />

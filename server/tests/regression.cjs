@@ -7,6 +7,16 @@ const { app } = require("../dist/index");
 const { sessionFingerprint } = require("../dist/middleware/auth");
 const { cents, isoDate, positiveId, reservationBalance } = require("../dist/utils/validation");
 const { prepareRoleChange } = require("../dist/utils/roles");
+const { attendanceReminder } = require("../dist/utils/notificationSchedule");
+test("weekly attendance reminder respects local Saturday 19:00, expires after a day and crosses the year",()=>{
+ const zone='America/Argentina/Buenos_Aires';
+ assert.equal(attendanceReminder(new Date('2026-11-21T21:59:00Z'),zone,6,'19:00'),null);
+ assert.equal(attendanceReminder(new Date('2026-11-21T22:00:00Z'),zone,6,'19:00'),'2026-11-21T19:00');
+ assert.equal(attendanceReminder(new Date('2026-11-22T21:59:00Z'),zone,6,'19:00'),'2026-11-21T19:00');
+ assert.equal(attendanceReminder(new Date('2026-11-22T22:00:00Z'),zone,6,'19:00'),null);
+ assert.equal(attendanceReminder(new Date('2027-01-01T00:30:00Z'),zone,4,'21:00'),'2026-12-31T21:00');
+ assert.equal(attendanceReminder(new Date('2026-11-21T19:00:00Z'),'UTC',6,'19:00'),'2026-11-21T19:00');
+});
 const users = new Map([[1,{role:"admin",password:"hash-admin",token_version:0}],[2,{role:"teacher",password:"hash-teacher",token_version:0,permissions:["asistencia","calificaciones","inscripciones","miembros","panel"]}],[3,{role:"student",password:"hash-student",token_version:0}]]);
 let server, base, calls, transaction, queryHandler, connectError;
 const rows = (...values) => ({ rows:values, rowCount:values.length });

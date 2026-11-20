@@ -1,6 +1,7 @@
 import { readSessionUser } from "../utils/access";
 import { IoAddOutline } from "react-icons/io5";
 import FormModal from "../components/FormModal";
+import { ViewRecordButton } from "../components/RecordDetails";
 import { confirmAppAction } from "../components/AppDialogHost";
 import { useEffect, useState, useMemo } from "react";
 import { IoCreateOutline, IoTrashOutline, IoArchiveOutline } from "react-icons/io5";
@@ -186,39 +187,40 @@ export default function TemplosMaintenance() {
         {formOpen && <FormModal title={form.id ? "Editar templo" : "Agregar templo"} onClose={() => { setForm({ id: "", name: "", city: "", province: "", address: "", dedicated_date: "", status: "operating" }); setError(null); setFormOpen(false); }}>
           {error && <p role="alert">{error}</p>}
           <form onSubmit={handleSubmit} className="grid-form">
-        <input
+        <label className="form-group">Nombre del templo<input
           type="text"
           placeholder="Nombre del templo"
           value={form.name}
           onChange={e => setForm({ ...form, name: e.target.value })}
           required
-        />
-        <input
+        /></label>
+        <label className="form-group">Ciudad<input
           type="text"
           placeholder="Ciudad"
           value={form.city}
           onChange={e => setForm({ ...form, city: e.target.value })}
           required
-        />
-        <input
+        /></label>
+        <label className="form-group">Provincia / Estado<input
           type="text"
           placeholder="Provincia / Estado"
           value={form.province}
           onChange={e => setForm({ ...form, province: e.target.value })}
           required
-        />
-        <select value={form.status} onChange={e => setForm({ ...form, status: e.target.value })}>
+        /></label>
+        <label className="form-group">Estado<select value={form.status} onChange={e => setForm({ ...form, status: e.target.value })}>
           {STATUS_OPTIONS.map(opt => (
             <option key={opt.value} value={opt.value}>{opt.label}</option>
           ))}
-        </select>
-        <input
+        </select></label>
+        <label className="form-group">Dirección<input
           type="text"
           placeholder="Dirección"
           value={form.address}
           onChange={e => setForm({ ...form, address: e.target.value })}
-        />
+        /></label>
         <div className="form-group">
+          <label htmlFor="dedicated_date">Fecha de dedicación</label>
           <input
             id="dedicated_date"
             type="date"
@@ -253,13 +255,13 @@ export default function TemplosMaintenance() {
                   {sortConfig?.key === "name" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
                 </span>
               </th>
-              <th onClick={() => handleSort("city")} className="sortable-header">
+              <th onClick={() => handleSort("city")} className="sortable-header table-desktop-only">
                 Ciudad
                 <span className="sort-icon">
                   {sortConfig?.key === "city" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
                 </span>
               </th>
-              <th onClick={() => handleSort("province")} className="sortable-header">
+              <th onClick={() => handleSort("province")} className="sortable-header table-desktop-only">
                 Provincia
                 <span className="sort-icon">
                   {sortConfig?.key === "province" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
@@ -271,43 +273,38 @@ export default function TemplosMaintenance() {
                   {sortConfig?.key === "status" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
                 </span>
               </th>
-              {canManage && <th>Acciones</th>}
+              <th>Acciones</th>
             </tr>
           </thead>
           <tbody>
             {currentRecords.length > 0 ? (
               currentRecords.map(t => (
                 <tr key={t.id}>
-                  <td>
-                    <button
-                      className="btn-link"
-                      onClick={() => setSelectedTemplo(t)}
-                      style={{ background: "none", border: "none", color: "var(--primary)", cursor: "pointer", fontWeight: 600, padding: 0, textDecoration: "underline" }}
-                    >
-                      {t.name}
-                    </button>
-                  </td>
-                  <td>{t.city || "—"}</td>
-                  <td>{t.province || "—"}</td>
+                  <td>{t.name}</td>
+                  <td className="table-desktop-only">{t.city || "—"}</td>
+                  <td className="table-desktop-only">{t.province || "—"}</td>
                   <td>
                     <span className={getStatusClass(t.status)}>
                       {getStatusLabel(t.status)}
                     </span>
                   </td>
-                  {canManage && <td>
+                  <td><div className="table-record-actions">
+                    <ViewRecordButton label={`Ver detalles de ${t.name}`} onClick={() => setSelectedTemplo(t)} />
+                    {canManage && <>
                     <button className="btn secondary btn-icon" onClick={() => handleEdit(t)} aria-label="Editar">
                       <IoCreateOutline />
                     </button>
-                    <button className="btn secondary" onClick={() => handleArchive(t.id)} aria-label="Archivar" title="Archivar"><IoArchiveOutline /></button>
+                    <span className="table-desktop-only"><button className="btn secondary btn-icon" onClick={() => handleArchive(t.id)} aria-label="Archivar" title="Archivar"><IoArchiveOutline /></button></span>
 <button className="btn secondary btn-icon danger-outline" onClick={() => handleDelete(t.id)} aria-label="Eliminar">
                       <IoTrashOutline />
                     </button>
-                  </td>}
+                    </>}
+                  </div></td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan={canManage ? 5 : 4}>No hay templos registrados.</td>
+                <td colSpan={5}>No hay templos registrados.</td>
               </tr>
             )}
           </tbody>
@@ -326,15 +323,7 @@ export default function TemplosMaintenance() {
       )}
 
       {selectedTemplo && (
-        <div
-          className="modal-overlay"
-          onClick={() => setSelectedTemplo(null)}
-        >
-          <div
-            className="modal-content"
-            style={{ minWidth: "320px", maxWidth: "480px" }}
-            onClick={e => e.stopPropagation()}
-          >
+        <FormModal title="Detalles del templo" onClose={() => setSelectedTemplo(null)}>
 
             <h2 style={{ marginBottom: "1.2rem", color: "var(--text-main)", fontSize: "1.2rem", marginTop: '8px' }}>
               <TbBuilding /> {selectedTemplo.name}
@@ -377,8 +366,7 @@ export default function TemplosMaintenance() {
                 <TbPencil /> Editar
               </button>
             </div>}
-          </div>
-        </div>
+        </FormModal>
       )}
     </div>
   );

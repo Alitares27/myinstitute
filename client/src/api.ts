@@ -11,7 +11,7 @@ import {
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 function requiresConnection(path: string): boolean {
-  return /\/(?:users|teachers|logout)(?:\/|\?|$)/i.test(path);
+  return /\/(?:users|teachers|logout|notifications)(?:\/|\?|$)/i.test(path);
 }
 
 const api = axios.create({

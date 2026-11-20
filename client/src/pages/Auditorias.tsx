@@ -4,6 +4,7 @@ import { canAccessModule, readSessionUser } from "../utils/access";
 import { useEffect, useState } from "react";
 import { usePagedList } from "../hooks/usePagedList";
 import { formatDate, formatDateTime } from "../utils/utilidadesFecha";
+import { RecordDetails, ViewRecordButton } from "../components/RecordDetails";
 
 type SecurityEvent = {
   id: number;
@@ -16,6 +17,7 @@ type SecurityEvent = {
 };
 
 function SecurityHistory() {
+  const [selected, setSelected] = useState<SecurityEvent | null>(null);
   const [events, setEvents] = useState<SecurityEvent[]>([]);
   const [status, setStatus] = useState("Cargando eventos…");
   useEffect(() => {
@@ -34,21 +36,28 @@ function SecurityHistory() {
       {status && <p role="status">{status}</p>}
       {events.length > 0 && <div className="audit-table-scroll table-container">
         <table>
-          <thead><tr><th>Fecha</th><th>Acción</th><th>Actor</th><th>Cuenta</th><th>Módulo</th></tr></thead>
+          <thead><tr><th className="table-desktop-only">Fecha</th><th>Acción</th><th className="table-desktop-only">Actor</th><th className="table-desktop-only">Cuenta</th><th className="table-desktop-only">Módulo</th><th className="table-mobile-only">Detalle</th><th scope="col">Acciones</th></tr></thead>
           <tbody>
             {events.map(event => (
               <tr key={event.id}>
-                <td>{formatDateTime(event.occurred_at)}</td>
+                <td className="table-desktop-only">{formatDateTime(event.occurred_at)}</td>
                 <td>{event.outcome === "denied" ? `Acceso denegado (${event.action})`
                   : event.action === "account_created" ? "Cuenta creada" : "Acceso modificado"}</td>
-                <td>{event.actor_id ?? "—"}</td>
-                <td>{event.target_id ?? "—"}</td>
-                <td>{event.module ?? "—"}</td>
+                <td className="table-desktop-only">{event.actor_id ?? "—"}</td>
+                <td className="table-desktop-only">{event.target_id ?? "—"}</td>
+                <td className="table-desktop-only">{event.module ?? "—"}</td>
+                <td className="table-mobile-only">{event.module ?? "Sin módulo"} · Cuenta {event.target_id ?? "—"}</td>
+                <td><div className="table-record-actions"><ViewRecordButton label="Ver detalles del evento" onClick={() => setSelected(event)} /></div></td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>}
+      {selected && <RecordDetails title="Evento de seguridad" onClose={() => setSelected(null)} fields={[
+        ["Fecha", formatDateTime(selected.occurred_at)], ["Acción", selected.action],
+        ["Resultado", selected.outcome === "denied" ? "Acceso denegado" : selected.outcome],
+        ["Actor", selected.actor_id], ["Cuenta", selected.target_id], ["Módulo", selected.module],
+      ]} />}
     </section>
   );
 }
@@ -144,6 +153,7 @@ function EventDetails({ event }: { event: FinancialEvent }) {
 
 
 export default function Auditorias() {
+  const [selected, setSelected] = useState<FinancialEvent | null>(null);
   const [showSecurity, setShowSecurity] = useState(false);
   const canSeeSecurity = readSessionUser()?.role === "admin";
   const [currentPage, setCurrentPage] = useState(1);
@@ -202,29 +212,37 @@ export default function Auditorias() {
       <table>
         <thead>
           <tr>
-            <th>Fecha</th>
+            <th className="table-desktop-only">Fecha</th>
             <th>Acción</th>
-            <th>Responsable</th>
-            <th>Reserva</th>
+            <th className="table-desktop-only">Responsable</th>
+            <th className="table-desktop-only">Reserva</th>
             <th>Detalle</th>
+            <th scope="col">Acciones</th>
           </tr>
         </thead>
         <tbody>
           {page.items.map((event) => (
             <tr key={event.id}>
-              <td>{formatDateTime(event.created_at)}</td>
+              <td className="table-desktop-only">{formatDateTime(event.created_at)}</td>
               <td>{labels[event.event_type] || event.event_type}</td>
-              <td>{event.actor_name || `Cuenta ${event.actor_id}`}</td>
-              <td>
+              <td className="table-desktop-only">{event.actor_name || `Cuenta ${event.actor_id}`}</td>
+              <td className="table-desktop-only">
                 {event.reservation_member_name || "Miembro no disponible"}
                 {event.reservation_id != null && <small className="audit-reservation-id">Reserva #{event.reservation_id}</small>}
               </td>
               <td><EventDetails event={event} /></td>
+              <td><div className="table-record-actions"><ViewRecordButton label="Ver detalles de la auditoría" onClick={() => setSelected(event)} /></div></td>
             </tr>
           ))}
         </tbody>
       </table>
       </div>
+      {selected && <RecordDetails title="Detalle de auditoría" onClose={() => setSelected(null)} fields={[
+        ["Fecha", formatDateTime(selected.created_at)], ["Acción", labels[selected.event_type] || selected.event_type],
+        ["Responsable", selected.actor_name || (selected.actor_id != null ? `Cuenta ${selected.actor_id}` : "—")],
+        ["Miembro", selected.reservation_member_name], ["Reserva", selected.reservation_id != null ? `#${selected.reservation_id}` : "—"],
+        ["Detalle", <EventDetails event={selected} />],
+      ]} />}
       {!page.items.length && !page.loading && <p>No hay movimientos de auditoría.</p>}
 
       {totalPages > 1 && (

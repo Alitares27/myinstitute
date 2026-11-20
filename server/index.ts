@@ -27,6 +27,7 @@ import agendasRoutes from "./routes/agendas";
 import speakersRoutes from "./routes/speakers";
 import temasRoutes from "./routes/temas";
 import activitiesRoutes from "./routes/activities";
+import notificationsRoutes from "./routes/notifications";
 
 
 const app = express();
@@ -79,6 +80,7 @@ app.use("/api/speakers", speakersRoutes);
 app.use("/api/temas", temasRoutes);
 app.use("/api/meetings", meetingsRoutes);
 app.use("/api/activities", activitiesRoutes);
+app.use("/api/notifications", notificationsRoutes);
 
 app.get("/health", (req, res) => {
   res.status(200).json({ status: "ok" });

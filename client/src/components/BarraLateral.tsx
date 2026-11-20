@@ -6,8 +6,10 @@ import {useEffect,useRef,useState} from "react";
 import {Link,NavLink,useLocation,useNavigate} from "react-router-dom";
 import {useTheme} from "../context/ContextoTema";
 import appMetadata from "../../package.json";
+import NotificationBell from "./NotificationBell";
 import "../styles/BarraLateral.css";
 import type { IconType } from "react-icons";
+import { IoChevronBackOutline, IoChevronForwardOutline } from "react-icons/io5";
 import {IoHomeOutline,IoSchoolOutline,IoPersonOutline,IoClipboardOutline,IoCalendarOutline,IoRibbonOutline,IoBriefcaseOutline,IoMicOutline,IoPeopleOutline,IoDocumentTextOutline,IoBusinessOutline,IoSettingsOutline,IoLogOutOutline,IoMoonOutline,IoSunnyOutline,IoCashOutline,IoChevronUp,IoEllipsisHorizontalOutline,IoInformationCircleOutline,IoSyncOutline} from "react-icons/io5";
 
 type NavItem = {to?:string;label:string;Icon:IconType;state?:Record<string,boolean>;action?:"about"};
@@ -29,6 +31,7 @@ const descriptions: Record<string, string> = {
  "/pagos": "Pagos de viajes",
  "/templos": "Directorio de templos",
  "/sincronizacion": "Cambios pendientes de enviar",
+ "/notificaciones": "Anticipación y horarios de recordatorios",
 };
 
 function SubmenuLabel({ item }: { item: NavItem }) {
@@ -49,9 +52,13 @@ export default function Sidebar(){
  const navigate=useNavigate(),location=useLocation();
  const user = readSessionUser();
  const role = user?.role ?? "";
- const {theme,toggleTheme}=useTheme();
+ const {theme,preference,setPreference,toggleTheme}=useTheme();
  const [open,setOpen]=useState<string|null>(null),[loggingOut,setLoggingOut]=useState(false);
  const [showAbout,setShowAbout]=useState(false);
+ const [collapsed,setCollapsed]=useState(()=>{
+  const saved=localStorage.getItem("sidebar-collapsed");
+  return saved===null?window.matchMedia('(max-width: 1100px)').matches:saved==="true";
+ });
  const aboutTriggerRef=useRef<HTMLButtonElement|null>(null);
  const [isMobile,setIsMobile]=useState(()=>window.matchMedia('(max-width: 700px)').matches);
  const nav=useRef<HTMLElement>(null);
@@ -59,11 +66,11 @@ export default function Sidebar(){
  const templeGroup:NavGroup={id:'temple',label:'Templo',Icon:IoBusinessOutline,links:[{to:'/viajes-templo',label:'Viajes',Icon:IoCalendarOutline},{to:'/reservar-viajes',label:'Reservas',Icon:IoPeopleOutline},{to:'/pagos',label:'Pagos',Icon:IoCashOutline}]};
  const groups:NavGroup[]=[
   {id:'teaching',label:'Enseñanza',Icon:IoSchoolOutline,links:[
-   ...(role!=='admin'?[{to:'/miembros',label:role==='student'?'Mi perfil':'Miembros',Icon:IoPersonOutline}]:[]),
+   ...(role==='student'?[{to:'/miembros',label:'Mi perfil',Icon:IoPersonOutline}]:[]),
    {to:'/maestros',label:'Maestros',Icon:IoSchoolOutline},{to:'/inscripciones',label:'Matrículas',Icon:IoClipboardOutline},{to:'/asistencia',label:'Asistencia',Icon:IoCalendarOutline},{to:'/calificaciones',label:'Calificaciones',Icon:IoRibbonOutline}]},
   {id:'leadership',label:'Liderazgo',Icon:IoBriefcaseOutline,links:[{to:'/agendas',label:'Agendas',Icon:IoCalendarOutline},{to:'/discursantes',label:'Discursantes',Icon:IoMicOutline},{to:'/consejos',label:'Consejos',Icon:IoPeopleOutline},{to:'/actividades',label:'Actividades',Icon:IoCalendarOutline},{to:'/auditorias',label:'Auditorías',Icon:IoDocumentTextOutline}]},
   templeGroup,
-  ...(role!=='student'?[{id:'maintenance',label:'Mantenimiento',Icon:IoSettingsOutline,links:[{to:'/miembros',label:'Miembros',Icon:IoPersonOutline},{to:'/templos',label:'Templos',Icon:IoBusinessOutline},{to:'/sincronizacion',label:'Sincronización',Icon:IoSyncOutline}]}]:[])
+  ...(role!=='student'?[{id:'maintenance',label:'Mantenimiento',Icon:IoSettingsOutline,links:[{to:'/miembros',label:'Miembros',Icon:IoPersonOutline},{to:'/templos',label:'Templos',Icon:IoBusinessOutline},{to:'/sincronizacion',label:'Sincronización',Icon:IoSyncOutline},...(role==='admin'?[{to:'/notificaciones',label:'Notificaciones',Icon:IoSettingsOutline}]:[])]}]:[])
  ];
  const mobileGroups:NavGroup[]=[
   {id:'teaching',label:'Enseñanza',Icon:IoSchoolOutline,links:[
@@ -79,6 +86,7 @@ export default function Sidebar(){
    ...(role==='admin'?[{to:'/discursantes',label:'Temas para Discursantes',Icon:IoMicOutline,state:{openTopicManager:true}}]:[]),
    ...(role!=='student'?[{to:'/templos',label:'Administrar templos',Icon:IoBusinessOutline},{to:'/miembros',label:'Miembros',Icon:IoPersonOutline}]:[]),
    {to:'/sincronizacion',label:'Sincronización',Icon:IoSyncOutline},
+   ...(role==='admin'?[{to:'/notificaciones',label:'Notificaciones',Icon:IoSettingsOutline}]:[]),
    {label:'Acerca de',Icon:IoInformationCircleOutline,action:'about'}
   ]}
  ];
@@ -107,7 +115,7 @@ export default function Sidebar(){
    if (event.key === "Tab") {
     const dialog = document.querySelector(".about-app-dialog") as HTMLElement | null;
     if (!dialog) return;
-    const focusables = Array.from(dialog.querySelectorAll<HTMLElement>('button:not(:disabled), [tabindex="0"]'));
+    const focusables = Array.from(dialog.querySelectorAll<HTMLElement>('button:not(:disabled), select:not(:disabled), [tabindex="0"]'));
     if (!focusables.length) return;
     const first = focusables[0];
     const last = focusables[focusables.length - 1];
@@ -150,14 +158,39 @@ export default function Sidebar(){
   }),
  })).filter(group => group.links.length);
  const openGroup = visibleGroups.find(group => group.id === open);
+ const seenPaths = new Set<string>();
+ const sidebarGroups = groups.map(group => ({...group, links: group.links.filter(link => {
+  const module = link.to && moduleForPath(link.to);
+  if (module && !canAccessModule(user, module, !["templos", "reservar-viajes", "pagos-templos", "auditorias"].includes(module))) return false;
+  if (link.to && seenPaths.has(link.to)) return false;
+  if (link.to) seenPaths.add(link.to);
+  return true;
+ })})).filter(group=>group.links.length);
  const token=localStorage.getItem("token");
  const hasActiveSession=!!token&&!!localStorage.getItem("user");
  if(!hasActiveSession)return null;
  return <>
+  {!isMobile && <aside className={`desktop-sidebar ${collapsed?"is-collapsed":""}`} aria-label="Barra lateral de navegación">
+   <div className="desktop-sidebar-brand">
+    <Link to={firstAllowedPage(user)} aria-label="GestionAR, ir al inicio"><img src="/temple.webp" alt="" width="32" height="32"/><span>GestionAR</span></Link>
+    <button type="button" className="sidebar-collapse" aria-label={collapsed?"Expandir menú":"Plegar menú"} title={collapsed?"Expandir menú":"Plegar menú"} aria-expanded={!collapsed} onClick={()=>setCollapsed(previous=>{localStorage.setItem("sidebar-collapsed",String(!previous));return !previous;})}>
+     {collapsed?<IoChevronForwardOutline aria-hidden="true"/>:<IoChevronBackOutline aria-hidden="true"/>}
+    </button>
+   </div>
+   <nav className="desktop-sidebar-pages" aria-label="Páginas de la aplicación">
+    {canAccessModule(user,"panel")&&<NavLink to="/panel" end title="Inicio" aria-label="Inicio"><IoHomeOutline aria-hidden="true"/><span>Inicio</span></NavLink>}
+    {sidebarGroups.map(group=><section key={group.id} aria-label={group.label}>
+     <h2>{group.label}</h2>
+     {group.links.map(link=><NavLink key={link.to} to={link.to!} title={link.label} aria-label={link.label}><link.Icon aria-hidden="true"/><span>{link.label}</span></NavLink>)}
+    </section>)}
+   </nav>
+   <button type="button" className="desktop-sidebar-about" title="Acerca de GestionAR" onClick={event=>{aboutTriggerRef.current=event.currentTarget;setShowAbout(true);}}><IoInformationCircleOutline aria-hidden="true"/><span>Acerca de GestionAR</span></button>
+  </aside>}
   <header className="app-topbar">
    <Link to={firstAllowedPage(user)} className="app-brand" aria-label="GestionAR, ir al inicio"><img src="/temple.webp" alt="" width="65" height="65"/><span>GestionAR</span></Link>
    <div className="app-topbar-actions">
     <button type="button" className="app-icon-button" onClick={toggleTheme} title={theme==='light'?'Activar tema oscuro':'Activar tema claro'} aria-label={theme==='light'?'Activar tema oscuro':'Activar tema claro'}>{theme==='light'?<IoMoonOutline aria-hidden="true"/>:<IoSunnyOutline aria-hidden="true"/>}</button>
+    <NotificationBell />
     <button type="button" className="app-icon-button app-logout" onClick={logout} disabled={loggingOut} aria-label="Cerrar sesión" title="Cerrar sesión"><IoLogOutOutline aria-hidden="true"/></button>
    </div>
   </header>
@@ -197,6 +230,13 @@ export default function Sidebar(){
    <section className="ios-dialog about-app-dialog" role="dialog" aria-modal="true" aria-labelledby="about-app-title">
     <IoInformationCircleOutline className="about-app-icon" aria-hidden="true"/>
     <h2 id="about-app-title">Acerca de GestionAR</h2>
+    <label className="appearance-setting">Apariencia
+     <select value={preference} onChange={event=>setPreference(event.target.value as "system"|"light"|"dark")}>
+      <option value="system">Usar tema del dispositivo</option>
+      <option value="light">Claro</option>
+      <option value="dark">Oscuro</option>
+     </select>
+    </label>
     <p>GestionAR ayuda a organizar cursos, miembros, asistencia, calificaciones y actividades del instituto en un solo lugar.</p>
     <dl className="about-app-details">
      <div><dt>Versión</dt><dd>{appMetadata.version}</dd></div>

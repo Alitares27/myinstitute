@@ -2,19 +2,29 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import { hideAndroidSplash, updateAndroidSystemColors } from "../native/androidShell";
 
 type Theme = "light" | "dark";
+type ThemePreference = Theme | "system";
 
 interface ThemeContextType {
   theme: Theme;
+  preference: ThemePreference;
+  setPreference: (preference: ThemePreference) => void;
   toggleTheme: () => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [theme, setTheme] = useState<Theme>(() => {
+  const [preference, setPreference] = useState<ThemePreference>(() => {
     const saved = localStorage.getItem("theme");
-    return (saved as Theme) || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    return saved === "light" || saved === "dark" ? saved : "system";
   });
+  const [systemTheme, setSystemTheme] = useState<Theme>(() => window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+  const theme = preference === "system" ? systemTheme : preference;
+
+  useEffect(() => {
+    if (preference === "system") localStorage.removeItem("theme");
+    else localStorage.setItem("theme", preference);
+  }, [preference]);
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
@@ -29,23 +39,18 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, [theme]);
 
   const toggleTheme = () => {
-    setTheme((prev) => {
-      const next = prev === "light" ? "dark" : "light";
-      localStorage.setItem("theme", next);
-      return next;
-    });
+    setPreference(theme === "light" ? "dark" : "light");
   };
 
   useEffect(() => {
-    if (localStorage.getItem("theme")) return;
     const preference = window.matchMedia("(prefers-color-scheme: dark)");
-    const update = (event: MediaQueryListEvent) => setTheme(event.matches ? "dark" : "light");
+    const update = (event: MediaQueryListEvent) => setSystemTheme(event.matches ? "dark" : "light");
     preference.addEventListener("change", update);
     return () => preference.removeEventListener("change", update);
   }, []);
 
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme }}>
+    <ThemeContext.Provider value={{ theme, preference, setPreference, toggleTheme }}>
       {children}
     </ThemeContext.Provider>
   );

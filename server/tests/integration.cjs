@@ -25,6 +25,8 @@ before(async () => {
     await db.exec(activityColorMigration); await db.exec(activityColorMigration);
     await db.exec(fs.readFileSync(path.join(__dirname, "../migrations/leader_permissions.sql"), "utf8"));
     await db.exec(fs.readFileSync(path.join(__dirname, "../migrations/session_hardening.sql"), "utf8"));
+    const notificationsMigration=fs.readFileSync(path.join(__dirname,"../migrations/notifications.sql"),"utf8");
+    await db.exec(notificationsMigration);await db.exec(notificationsMigration);
     for (const [id, user] of Object.entries(fixtures)) await db.query("INSERT INTO users(id,name,email,password,role) VALUES($1,$2,$3,$4,$5)", [Number(id), `Member ${id}`, `user${id}@test.invalid`, hash, user.role]);
     await db.exec("UPDATE users SET permissions=ARRAY['asistencia','calificaciones','inscripciones','miembros','panel','maestros'] WHERE role='teacher'");
     await db.exec(`INSERT INTO teachers(id,user_id,specialty) VALUES(5,2,'A'),(6,3,'B');
@@ -48,6 +50,43 @@ test("real PostgreSQL migration is idempotent and adds revocation, archive and a
     const result = await db.query("SELECT auth_version FROM users WHERE id=1"); assert.equal(result.rows[0].auth_version, 0);
     assert.equal((await db.query("SELECT COUNT(*)::int AS count FROM financial_events")).rows[0].count, 0);
 });
+test("notifications persist settings and read state without exposing private meetings or restricted modules", async () => {
+    assert.equal((await request('/api/notifications',{id:null})).status,401);
+    assert.equal((await request('/api/notifications/settings',{id:2})).status,403);
+    const config=(await request('/api/notifications/settings')).data;
+    assert.equal(config.activity_days,7);assert.equal(config.meeting_days,3);assert.equal(config.attendance_day,6);assert.equal(config.attendance_time,'19:00:00');
+    assert.equal((await request('/api/notifications/settings',{method:'PUT',body:{...config,activity_days:-1,attendance_time:'19:00'}})).status,400);
+    assert.equal((await request('/api/notifications/settings',{method:'PUT',body:{...config,time_zone:'Invalid/Zone',attendance_time:'19:00'}})).status,400);
+    assert.equal((await request('/api/notifications/settings',{method:'PUT',body:{...config,attendance_time:'18:30'},id:2})).status,403);
+    await db.exec(`INSERT INTO activity_plans(id,activity_name,activity_datetime) VALUES
+      (900001,'Upcoming activity',(now() AT TIME ZONE 'America/Argentina/Buenos_Aires')+interval '6 days'),
+      (900002,'Outside window',(now() AT TIME ZONE 'America/Argentina/Buenos_Aires')+interval '20 days');
+      INSERT INTO meetings(id,title,meeting_date,start_time,created_by,status) VALUES
+      (900001,'Invited council',(now() AT TIME ZONE 'America/Argentina/Buenos_Aires')::date+2,'19:00',1,'scheduled'),
+      (900002,'Private council',(now() AT TIME ZONE 'America/Argentina/Buenos_Aires')::date+2,'19:00',1,'scheduled'),
+      (900003,'Cancelled council',(now() AT TIME ZONE 'America/Argentina/Buenos_Aires')::date+2,'19:00',1,'cancelled');
+      INSERT INTO meeting_attendees(meeting_id,user_id) VALUES(900001,42);`);
+    try {
+      const mine=await request('/api/notifications',{id:42});assert.equal(mine.status,200);
+      assert.ok(mine.data.some(item=>item.message==='Upcoming activity'));
+      assert.ok(mine.data.some(item=>item.message==='Invited council'));
+      assert.ok(!mine.data.some(item=>['Private council','Cancelled council','Outside window'].includes(item.message)));
+      const restricted=(await request('/api/notifications',{id:2})).data;
+      assert.ok(!restricted.some(item=>item.id.startsWith('activity:')||item.id.startsWith('meeting:')));
+      const item=mine.data.find(item=>item.message==='Upcoming activity');
+      assert.equal(item.read,false);
+      assert.equal((await request('/api/notifications/read',{id:42,method:'POST',body:{ids:[item.id]}})).status,200);
+      assert.equal((await request('/api/notifications',{id:42})).data.find(row=>row.id===item.id).read,true);
+      assert.equal((await request('/api/notifications',{id:43})).data.find(row=>row.id===item.id).read,false);
+      const updated=await request('/api/notifications/settings',{method:'PUT',body:{...config,activity_days:1,attendance_time:'18:30'}});
+      assert.equal(updated.status,200);assert.equal(updated.data.attendance_time,'18:30:00');
+      assert.ok(!(await request('/api/notifications',{id:42})).data.some(row=>row.id===item.id));
+    } finally {
+      await request('/api/notifications/settings',{method:'PUT',body:{...config,attendance_time:'19:00'}});
+      await db.exec("DELETE FROM notification_reads;DELETE FROM meetings WHERE id>=900001;DELETE FROM activity_plans WHERE id>=900001;");
+    }
+});
+
 test("leader permissions are explicit and changes invalidate the previous JWT", async () => {
     const route = "/api/users";
     const body = { name: "Permission Leader", email: "permissions@test.invalid", role: "teacher", password: "test-password" };

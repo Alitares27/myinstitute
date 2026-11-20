@@ -67,9 +67,10 @@ export default function Miembros() {
             {directory.error && <p role="alert">{directory.error}</p>}{directory.loading && <p role="status">Actualizando miembros...</p>}
             <p className="miembros-count">{directory.total} miembros encontrados</p>
             <div className="table-container"><table><thead><tr>
-                <th><button className="miembros-sort" type="button" onClick={() => requestSort('name')}>Nombre</button></th><th>Documento</th><th className="table-desktop-only"><button className="miembros-sort" type="button" onClick={() => requestSort('grade')}>Organización</button></th><th>Acciones</th>
+                <th><button className="miembros-sort" type="button" onClick={() => requestSort('name')}>Nombre</button></th><th>Documento</th><th className="table-desktop-only"><button className="miembros-sort" type="button" onClick={() => requestSort('grade')}>Organización</button></th><th scope="col" className="table-desktop-only">Contacto</th><th scope="col" className="table-desktop-only">Rol de acceso</th><th>Acciones</th>
             </tr></thead><tbody>{directory.items.map(member => <tr key={member.id}>
                 <td>{member.name}</td><td>{member.document || '—'}</td><td className="table-desktop-only">{member.grade || '—'}</td>
+                <td className="table-desktop-only"><div>{member.email || '—'}</div><div className="text-muted">{member.telefono || '—'}</div></td><td className="table-desktop-only">{MEMBER_ROLES[member.role]}</td>
                 <td><div className="table-record-actions"><button type="button" className="btn secondary btn-icon" title="Ver ficha" onClick={() => setSelected(member.id)} aria-label={`Ver ficha de ${member.name}`}><IoEyeOutline aria-hidden="true" /></button>
                     {admin && <><button type="button" className="btn secondary btn-icon" title="Editar" onClick={() => { setEditing(member); setEditorOpen(true); }} aria-label={`Editar ${member.name}`}><IoCreateOutline aria-hidden="true" /></button><button type="button" className="btn btn-icon miembros-delete" title="Eliminar" disabled={member.id === me.id} onClick={() => removeMember(member)} aria-label={`Eliminar ${member.name}`}><IoTrashOutline aria-hidden="true" /></button></>}
                 </div></td></tr>)}</tbody></table></div>
