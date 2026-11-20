@@ -1,5 +1,3 @@
-import MobileModalClose from "./MobileModalClose";
-import { lockBodyScroll } from "../utils/scrollLock";
 import { canAccessModule, firstAllowedPage, moduleForPath, readSessionUser } from "../utils/access";
 import api from "../api";
 import {invalidarCache} from "../utils/clienteCache";
@@ -7,15 +5,13 @@ import {limpiarSesion} from "../utils/sesion";
 import {useEffect,useRef,useState} from "react";
 import {Link,NavLink,useLocation,useNavigate} from "react-router-dom";
 import {useTheme} from "../context/ContextoTema";
-import appMetadata from "../../package.json";
 import NotificationBell from "./NotificationBell";
-import AppearanceSettings from "./AppearanceSettings";
 import "../styles/BarraLateral.css";
 import type { IconType } from "react-icons";
-import { IoChevronBackOutline, IoChevronForwardOutline, IoColorPaletteOutline, IoBuildOutline } from "react-icons/io5";
-import {IoHomeOutline,IoSchoolOutline,IoPersonOutline,IoClipboardOutline,IoCalendarOutline,IoRibbonOutline,IoBriefcaseOutline,IoMicOutline,IoPeopleOutline,IoDocumentTextOutline,IoBusinessOutline,IoSettingsOutline,IoLogOutOutline,IoMoonOutline,IoSunnyOutline,IoCashOutline,IoChevronUp,IoInformationCircleOutline,IoSyncOutline} from "react-icons/io5";
+import { IoChevronBackOutline, IoChevronForwardOutline, IoBuildOutline } from "react-icons/io5";
+import {IoHomeOutline,IoSchoolOutline,IoPersonOutline,IoClipboardOutline,IoCalendarOutline,IoRibbonOutline,IoBriefcaseOutline,IoMicOutline,IoPeopleOutline,IoDocumentTextOutline,IoBusinessOutline,IoSettingsOutline,IoLogOutOutline,IoMoonOutline,IoSunnyOutline,IoCashOutline,IoChevronUp} from "react-icons/io5";
 
-type NavItem = {to?:string;label:string;Icon:IconType;state?:Record<string,boolean>;action?:"about"|"appearance"};
+type NavItem = {to?:string;label:string;Icon:IconType;state?:Record<string,boolean>};
 type NavGroup = {id:string;label:string;Icon:IconType;links:NavItem[]};
 
 const descriptions: Record<string, string> = {
@@ -38,9 +34,7 @@ const descriptions: Record<string, string> = {
 };
 
 function SubmenuLabel({ item }: { item: NavItem }) {
- const description = item.action === "about" ? "Información de la aplicación"
-  : item.action === "appearance" ? "Colores, fuentes y modo de pantalla"
-  : item.state?.openCourseManager ? "Catálogo y temas de los cursos"
+ const description = item.state?.openCourseManager ? "Catálogo y temas de los cursos"
   : item.state?.openTopicManager ? "Catálogo de temas para discursos"
   : descriptions[item.to ?? ""];
  return <>
@@ -56,15 +50,12 @@ export default function Sidebar(){
  const navigate=useNavigate(),location=useLocation();
  const user = readSessionUser();
  const role = user?.role ?? "";
- const {theme,preference,setPreference,toggleTheme}=useTheme();
+ const {theme,toggleTheme}=useTheme();
  const [open,setOpen]=useState<string|null>(null),[loggingOut,setLoggingOut]=useState(false);
- const [showAbout,setShowAbout]=useState(false);
- const [showAppearance,setShowAppearance]=useState(false);
  const [collapsed,setCollapsed]=useState(()=>{
   const saved=localStorage.getItem("sidebar-collapsed");
   return saved===null?window.matchMedia('(max-width: 1100px)').matches:saved==="true";
  });
- const aboutTriggerRef=useRef<HTMLButtonElement|null>(null);
  const [isMobile,setIsMobile]=useState(()=>document.documentElement.classList.contains('native-android')||window.matchMedia('(max-width: 700px)').matches);
  const nav=useRef<HTMLElement>(null);
  const triggers=useRef<Record<string,HTMLButtonElement|null>>({});
@@ -82,12 +73,6 @@ export default function Sidebar(){
    {to:'/maestros',label:'Maestros',Icon:IoSchoolOutline},
    ...(role!=='student'?[{to:'/miembros',label:'Miembros',Icon:IoPersonOutline},{to:'/templos',label:'Templos',Icon:IoBusinessOutline}]:[]),
   ]},
-  {id:'settings',label:'Ajustes',Icon:IoSettingsOutline,links:[
-   {to:'/sincronizacion',label:'Sincronización',Icon:IoSyncOutline},
-   ...(role==='admin'?[{to:'/notificaciones',label:'Notificaciones',Icon:IoSettingsOutline}]:[]),
-   {label:'Apariencia',Icon:IoColorPaletteOutline,action:'appearance'},
-   {label:'Acerca de',Icon:IoInformationCircleOutline,action:'about'},
-  ]},
  ];
  useEffect(()=>{
   const query=window.matchMedia('(max-width: 700px)');
@@ -97,43 +82,6 @@ export default function Sidebar(){
   return()=>query.removeEventListener('change',update);
  },[]);
  
- useEffect(() => {
-  if (!showAbout) return;
-  const previous = aboutTriggerRef.current || (document.activeElement as HTMLElement | null);
-  const unlockScroll = lockBodyScroll();
-  const closeBtn = document.getElementById("about-dialog-close-btn");
-  closeBtn?.focus();
-
-  const handleKeyDown = (event: KeyboardEvent) => {
-   if (event.key === "Escape") {
-    event.stopPropagation();
-    setShowAbout(false);
-    return;
-   }
-   if (event.key === "Tab") {
-    const dialog = document.querySelector(".about-app-dialog") as HTMLElement | null;
-    if (!dialog) return;
-    const focusables = Array.from(dialog.querySelectorAll<HTMLElement>('button:not(:disabled), select:not(:disabled), [tabindex="0"]'));
-    if (!focusables.length) return;
-    const first = focusables[0];
-    const last = focusables[focusables.length - 1];
-    if (event.shiftKey && document.activeElement === first) {
-     event.preventDefault();
-     last.focus();
-    } else if (!event.shiftKey && document.activeElement === last) {
-     event.preventDefault();
-     first.focus();
-    }
-   }
-  };
-  window.addEventListener("keydown", handleKeyDown);
-  return () => {
-   window.removeEventListener("keydown", handleKeyDown);
-   unlockScroll();
-   previous?.focus();
-  };
- }, [showAbout]);
-
  useEffect(()=>{setOpen(null);},[location.pathname]);
  useEffect(()=>{
   if(!open)return;
@@ -180,10 +128,9 @@ export default function Sidebar(){
     {canAccessModule(user,"panel")&&<NavLink to="/panel" end title="Inicio" aria-label="Inicio"><IoHomeOutline aria-hidden="true"/><span>Inicio</span></NavLink>}
     {sidebarGroups.map(group=><section key={group.id} className={group.id==='settings'?'desktop-sidebar-settings':undefined} aria-label={group.label}>
      <h2>{group.label}</h2>
-     {group.links.map(link=>link.action?
-      <button type="button" className="desktop-sidebar-action" key={link.label} title={link.label} aria-label={link.label} onClick={event=>{if(link.action==='about'){aboutTriggerRef.current=event.currentTarget;setShowAbout(true);}else setShowAppearance(true);}}><link.Icon aria-hidden="true"/><span>{link.label}</span></button>:
-      <NavLink key={link.label} to={link.to!} state={link.state} title={link.label} aria-label={link.label}><link.Icon aria-hidden="true"/><span>{link.label}</span></NavLink>)}
+     {group.links.map(link=><NavLink key={link.label} to={link.to!} state={link.state} title={link.label} aria-label={link.label}><link.Icon aria-hidden="true"/><span>{link.label}</span></NavLink>)}
     </section>)}
+    <NavLink to="/ajustes" className="desktop-sidebar-settings-link" title="Ajustes" aria-label="Ajustes"><IoSettingsOutline aria-hidden="true"/><span>Ajustes</span></NavLink>
    </nav>
   </aside>}
   <header className="app-topbar">
@@ -195,7 +142,7 @@ export default function Sidebar(){
    </div>
   </header>
   {openGroup && <button type="button" className="floating-nav-backdrop" aria-label={`Cerrar el menú ${openGroup.label}`} onClick={() => setOpen(null)} />}
-  <nav hidden={!visibleGroups.length && !canAccessModule(user, "panel")} ref={nav} className="floating-nav" aria-label="Menú principal" onBlur={event=>{if(!event.currentTarget.contains(event.relatedTarget as Node))setOpen(null);}}>
+  <nav ref={nav} className="floating-nav" aria-label="Menú principal" onBlur={event=>{if(!event.currentTarget.contains(event.relatedTarget as Node))setOpen(null);}}>
    <ul className="floating-nav-groups">
     {canAccessModule(user, "panel") && <li className="floating-nav-home-item">
      <NavLink to="/panel" end className="floating-nav-home" aria-label="Inicio" title="Inicio" onClick={()=>setOpen(null)}>
@@ -211,41 +158,16 @@ export default function Sidebar(){
      {open === group.id && <ul className="floating-nav-submenu" id={`nav-${group.id}`} aria-label={group.label}>
       {group.links.map(link => (
        <li key={link.label}>
-        {link.action ? (
-         <button type="button" aria-label={link.label} onClick={() => { setOpen(null); if(link.action==="about"){aboutTriggerRef.current=triggers.current.settings;setShowAbout(true);}else setShowAppearance(true); }}>
+        <NavLink to={link.to!} state={link.state} aria-label={link.label} onClick={() => setOpen(null)}>
           <SubmenuLabel item={link} />
-         </button>
-        ) : (
-         <NavLink to={link.to!} state={link.state} aria-label={link.label} onClick={() => setOpen(null)}>
-          <SubmenuLabel item={link} />
-         </NavLink>
-        )}
+        </NavLink>
        </li>
       ))}
      </ul>}
     </li>;
-   })}</ul>
+   })}
+    <li className="floating-nav-settings-item"><NavLink to="/ajustes" className="floating-nav-trigger" aria-label="Ajustes" title="Ajustes" onClick={()=>setOpen(null)}><IoSettingsOutline aria-hidden="true"/><span className="floating-nav-label">Ajustes</span></NavLink></li>
+   </ul>
   </nav>
-  {showAppearance&&<AppearanceSettings onClose={()=>setShowAppearance(false)}/>}
-  {showAbout&&<div className="ios-dialog-backdrop" onClick={event=>{if(event.target===event.currentTarget)setShowAbout(false);}}>
-   <section className="ios-dialog about-app-dialog" role="dialog" aria-modal="true" aria-labelledby="about-app-title">
-    <IoInformationCircleOutline className="about-app-icon" aria-hidden="true"/>
-    <h2 id="about-app-title">Acerca de GestionAR</h2>
-    <label className="appearance-setting">Apariencia
-     <select value={preference} onChange={event=>setPreference(event.target.value as "system"|"light"|"dark")}>
-      <option value="system">Usar tema del dispositivo</option>
-      <option value="light">Claro</option>
-      <option value="dark">Oscuro</option>
-     </select>
-    </label>
-    <p>GestionAR ayuda a organizar cursos, miembros, asistencia, calificaciones y actividades del instituto en un solo lugar.</p>
-    <dl className="about-app-details">
-     <div><dt>Versión</dt><dd>{appMetadata.version}</dd></div>
-     <div><dt>Desarrollador</dt><dd>PayLab</dd></div>
-    </dl>
-    <MobileModalClose onClose={()=>setShowAbout(false)}/>
-    <p className="about-app-copyright">© {new Date().getFullYear()} GestionAR. Todos los derechos reservados.</p>
-   </section>
-  </div>}
  </>;
 }

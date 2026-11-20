@@ -1,0 +1,11 @@
+.settings-page { display: grid; gap: 1rem; min-width: 0; }
+.settings-page > h1 { margin: 0; }
+.settings-sections { display: flex; flex-wrap: wrap; gap: .5rem; }
+.settings-sections a { display: inline-flex; align-items: center; min-height: 44px; padding: .5rem 1rem; border: 1px solid var(--border-color); border-radius: 999px; background: var(--bg-surface); color: var(--text-main); }
+.settings-sections a:hover { background: var(--primary-light); }
+.settings-section { min-width: 0; padding: clamp(1rem,3vw,1.5rem); background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 20px; scroll-margin-top: 1rem; }
+.settings-section h2 { margin-bottom: 1rem; }
+.settings-section p { margin-block: .75rem; }
+.settings-section .appearance-options { max-width: 48rem; }
+.settings-section .dashboard-container { min-width: 0; padding: 0; margin: 0; }
+.settings-section .appearance-preview { background: var(--bg-body); }

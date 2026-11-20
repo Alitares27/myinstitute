@@ -50,7 +50,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, [theme]);
 
   useEffect(()=>{
-    localStorage.setItem("appearance",JSON.stringify(appearance));
+    localStorage.setItem("appearance",JSON.stringify({...appearance,paletteVersion:2}));
     const root=document.documentElement;
     const device=root.classList.contains("native-android")&&appearance.deviceColors;
     const color=ACCENT_COLORS[appearance.buttonColor][theme];

@@ -22,7 +22,7 @@ function describe(change: PendingMutation) {
   return `${actions[change.method] ?? "Actualizar"} ${collections[resource] ?? "registro"}${reference}`;
 }
 
-export default function Sincronizacion() {
+export default function Sincronizacion({embedded=false}:{embedded?:boolean}) {
   const [state, setState] = useState<OfflineState | null>(null);
   const [changes, setChanges] = useState<PendingMutation[]>([]);
   const [requesting, setRequesting] = useState(false);
@@ -70,7 +70,7 @@ export default function Sincronizacion() {
   const needsLogin = isTokenExpired(localStorage.getItem("token") ?? "");
   return (
     <section className="dashboard-container">
-      <h1>Sincronización</h1>
+      {embedded?<h2>Sincronización</h2>:<h1>Sincronización</h1>}
       <p>Envía los cambios guardados en este dispositivo y actualiza las copias locales.</p>
       <button type="button" className="btn primary" disabled={!state?.online || syncing || needsLogin} onClick={sync}>
         <IoSyncOutline aria-hidden="true" /> {syncing ? "Sincronizando…" : "Sincronizar"}
@@ -79,7 +79,7 @@ export default function Sincronizacion() {
       {state?.message && <p role="status">{state.message}</p>}
       {state?.online && needsLogin && <p>Para sincronizar, <Link to="/iniciar-sesion">vuelve a iniciar sesión</Link>.</p>}
       {error && <p role="alert">{error}</p>}
-      <h2>Cambios pendientes{state ? ` (${changes.length})` : ""}</h2>
+      {embedded?<h3>Cambios pendientes{state ? ` (${changes.length})` : ""}</h3>:<h2>Cambios pendientes{state ? ` (${changes.length})` : ""}</h2>}
       {!state && !error && <p role="status">Cargando cambios…</p>}
       {state && !changes.length && <p>No hay cambios pendientes.</p>}
       {changes.length > 0 && (

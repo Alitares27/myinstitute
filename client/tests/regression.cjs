@@ -109,7 +109,7 @@ function loadComponent(relativeFile,api,withTheme=false) {
       if(name.endsWith(".css"))return {};
       if(name.startsWith(".")) {
         const target=path.resolve(path.dirname(filename),name);
-        if(target.endsWith(path.sep+"offlineSync"))return {forgetOfflineSession:async()=>{}};
+        if(target.endsWith(path.sep+"offlineSync"))return {forgetOfflineSession:async()=>{},getOfflineState:async()=>({online:true,pending:0,syncing:false,message:""}),listPendingChanges:async()=>[],subscribeOfflineState:()=>()=>{},synchronizePendingChanges:async()=>{}};
         if(target.endsWith(path.sep+"api"))return {__esModule:true,default:api};
         const source=[target,target+".ts",target+".tsx"].find(file=>fs.existsSync(file)&&fs.statSync(file).isFile());
         return compile(source);
@@ -393,7 +393,7 @@ test("dashboard combines upcoming activities and councils over three months with
  ],meetings=[{id:1,title:'Council',meeting_date:localDateKey(tomorrow),start_time:'18:00:00',created_by_name:'María',status:'scheduled'}];
  const api={get:async url=>{calls.push(url);return {data:url==='/activities'?activities:meetings};}};
  const view=await mountPage('pages/Panel.tsx',api,{id:1,role:'admin'});
- try{await view.wait();assert.deepEqual(calls,['/activities','/meetings']);assert.deepEqual([...view.node.querySelectorAll('.monthly-activity-card h3')].map(node=>node.textContent),['First activity','Council','Last activity']);assert.ok(view.node.textContent.includes('10:30'));assert.ok(view.node.textContent.includes('María'));assert.ok(view.node.textContent.includes('Sin asignar'));assert.ok(!view.node.textContent.includes('Outside activity'));assert.equal(view.node.querySelector('.stat-card'),null);assert.equal(view.node.querySelectorAll('.shortcut-card').length,4);}finally{await view.close();}
+ try{await view.wait();assert.deepEqual(calls,['/activities','/meetings']);assert.deepEqual([...view.node.querySelectorAll('.monthly-activity-card h3')].map(node=>node.textContent),['First activity','Council','Last activity']);assert.ok(view.node.textContent.includes('10:30'));assert.ok(view.node.textContent.includes('María'));assert.ok(view.node.textContent.includes('Sin asignar'));assert.ok(!view.node.textContent.includes('Outside activity'));assert.equal(view.node.querySelector('.stat-card'),null);assert.equal(view.node.querySelectorAll('.shortcut-card').length,4);assert.ok(view.node.querySelector('.shortcut-card[href="/actividades"]'));assert.equal(view.node.querySelector('.shortcut-card[href="/sincronizacion"]'),null);}finally{await view.close();}
  const deniedCalls=[];
  const denied=await mountPage('pages/Panel.tsx',{get:async url=>{deniedCalls.push(url);return {data:[]};}},{id:2,role:'teacher',permissions:['panel']});
  try{await denied.wait();assert.deepEqual(deniedCalls,[]);assert.equal(denied.node.querySelector('.monthly-activity-card'),null);}finally{await denied.close();}
@@ -455,7 +455,7 @@ test("appearance exposes exactly twelve colors and keeps Android's palette until
   assert.ok([...view.node.querySelectorAll('.appearance-colors')].every(fieldset=>fieldset.disabled));
   await view.act(async()=>Simulate.change(view.node.querySelector('.appearance-device input'),{target:{checked:false}}));
   await view.act(async()=>Simulate.click(view.node.querySelector('[aria-label="Botones: Verde"]')));
-  assert.equal(JSON.parse(localStorage.getItem('appearance')).buttonColor,8);
+  assert.equal(JSON.parse(localStorage.getItem('appearance')).buttonColor,10);
   assert.ok(!document.documentElement.style.getPropertyValue('--primary').includes('--android-primary'));
   await view.act(async()=>Simulate.change([...view.node.querySelectorAll('select')][1],{target:{value:'serif'}}));
   assert.ok(document.documentElement.style.getPropertyValue('--app-font').includes('Georgia'));
@@ -463,13 +463,26 @@ test("appearance exposes exactly twelve colors and keeps Android's palette until
 });
 
 test("appearance colors maintain readable button labels in both modes and reject invalid saved choices",()=>{
- const {ACCENT_COLORS,readAppearance}=load('shared/appearance.ts');
+ const {ACCENT_COLORS,readAppearance,swatchTextColor}=load('shared/appearance.ts');
  const luminance=hex=>{const rgb=[1,3,5].map(index=>parseInt(hex.slice(index,index+2),16)/255).map(value=>value<=.04045?value/12.92:((value+.055)/1.055)**2.4);return rgb[0]*.2126+rgb[1]*.7152+rgb[2]*.0722;};
  const ratio=(a,b)=>{const x=luminance(a),y=luminance(b);return (Math.max(x,y)+.05)/(Math.min(x,y)+.05);};
  assert.equal(ACCENT_COLORS.length,12);
- for(const color of ACCENT_COLORS){assert.ok(ratio(color.light,'#FFFFFF')>=4.5,color.name+' light');assert.ok(ratio(color.dark,'#111111')>=4.5,color.name+' dark');}
+ assert.deepEqual(Array.from(ACCENT_COLORS,color=>color.name),['Azul','Azul violeta','Violeta','Rojo violeta','Rojo','Rojo naranja','Naranja','Amarillo naranja','Amarillo','Amarillo verde','Verde','Azul verde']);
+ for(const color of ACCENT_COLORS){assert.ok(ratio(color.light,'#FFFFFF')>=4.5,color.name+' light');assert.ok(ratio(color.dark,'#111111')>=4.5,color.name+' dark');assert.ok(ratio(color.color,swatchTextColor(color.color))>=4.5,color.name+' swatch');}
  localStorage.setItem('appearance',JSON.stringify({buttonColor:99,iconColor:-4,fontColor:14,font:'invalid',textSize:'invalid'}));
  const config=readAppearance();assert.equal(config.buttonColor,0);assert.equal(config.iconColor,0);assert.equal(config.fontColor,-1);assert.equal(config.font,'system');localStorage.removeItem('appearance');
+ localStorage.setItem('appearance',JSON.stringify({buttonColor:8}));assert.equal(readAppearance().buttonColor,10);
+ localStorage.setItem('appearance',JSON.stringify({buttonColor:10,paletteVersion:2}));assert.equal(readAppearance().buttonColor,10);localStorage.removeItem('appearance');
+});
+
+test("activity areas use consistent chips with full names instead of mixed status styling",async()=>{
+ const React=require('react'),{act}=React,{createRoot}=require('react-dom/client');
+ const Areas=loadComponent('components/activities/ActivityAreas.tsx',{}),node=document.createElement('div');document.body.appendChild(node);const root=createRoot(node);
+ try{
+  await act(async()=>root.render(React.createElement(Areas,{activity:{spiritual:true,social:true,physical:true,intellectual:true}})));
+  assert.deepEqual([...node.querySelectorAll('.activity-area-chip')].map(item=>item.textContent),['Espiritual','Social','Físico','Intelectual']);assert.equal(node.querySelector('.status-badge'),null);
+  await act(async()=>root.render(React.createElement(Areas,{activity:{spiritual:false,social:false,physical:false,intellectual:false}})));assert.equal(node.textContent,'—');
+ }finally{await act(async()=>root.unmount());node.remove();}
 });
 
 test("an expired token keeps the previously authenticated local session available",()=>{
@@ -522,6 +535,22 @@ test("notification settings keep the form in a modal and persist days and weekly
  } finally {await view.close();}
 });
 
+test("settings combines four sections with inline appearance and preserves restricted controls",async()=>{
+ const {Simulate}=require('react-dom/test-utils'),calls=[];
+ const config={activity_days:7,meeting_days:3,attendance_day:6,attendance_time:'19:00:00',time_zone:'America/Argentina/Buenos_Aires',activities_enabled:true,meetings_enabled:true,attendance_enabled:true};
+ const view=await mountPage('pages/Ajustes.tsx',{get:async url=>{calls.push(url);return {data:config};}},{id:1,role:'admin'},true);
+ try{
+  await view.wait();assert.equal(view.node.querySelectorAll('h1').length,1);assert.equal(view.node.querySelector('h1').textContent,'Ajustes');
+  for(const id of ['sincronizacion','notificaciones','apariencia','acerca-de'])assert.ok(view.node.querySelector('#'+id));
+  assert.ok(view.node.querySelector('#sincronizacion button'));assert.equal(view.node.querySelectorAll('#apariencia .appearance-swatch').length,36);assert.equal(view.node.querySelector('[role="dialog"]'),null);
+  assert.deepEqual(calls,['/notifications/settings']);
+  await view.act(async()=>Simulate.change(view.node.querySelector('#apariencia select'),{target:{value:'dark'}}));assert.equal(document.documentElement.getAttribute('data-theme'),'dark');
+ }finally{await view.close();localStorage.removeItem('appearance');localStorage.setItem('theme','light');}
+ const deniedCalls=[];
+ const restricted=await mountPage('pages/Ajustes.tsx',{get:async url=>{deniedCalls.push(url);return {data:{}};}},{id:2,role:'teacher',permissions:['panel']},true);
+ try{await restricted.wait();assert.deepEqual(deniedCalls,[]);assert.equal(restricted.node.querySelector('#sincronizacion button'),null);assert.equal(restricted.node.querySelector('#notificaciones button'),null);assert.ok(restricted.node.querySelector('#apariencia select'));}finally{await restricted.close();}
+});
+
 test("every mobile submenu shows the backdrop until it closes", async () => {
  const {Simulate}=require("react-dom/test-utils");
  const previous=window.matchMedia;
@@ -529,7 +558,7 @@ test("every mobile submenu shows the backdrop until it closes", async () => {
  const view=await mountPage("components/BarraLateral.tsx",{}, {id:1,role:"admin"},true);
  try {
   assert.equal(view.node.querySelector(".floating-nav-backdrop"),null);
-  for(const category of ["Enseñanza","Liderazgo","Templo","Mantenimiento","Ajustes"]){
+  for(const category of ["Enseñanza","Liderazgo","Templo","Mantenimiento"]){
    const trigger=view.node.querySelector(`.floating-nav-trigger[aria-label="${category}"]`);
    await view.act(async()=>Simulate.click(trigger));
    const submenu = view.node.querySelector(".floating-nav-submenu");
@@ -539,7 +568,7 @@ test("every mobile submenu shows the backdrop until it closes", async () => {
       ["Matrículas", "Asistencia", "Calificaciones"]);
    }
    if (category === "Mantenimiento") {assert.ok(submenu.querySelector('a[href="/maestros"]'));assert.equal(submenu.querySelector('a[href="/sincronizacion"]'),null);}
-   if (category === "Ajustes") assert.deepEqual([...submenu.querySelectorAll('a,button')].map(item=>item.getAttribute('aria-label')),["Sincronización","Notificaciones","Apariencia","Acerca de"]);
+
    const backdrop=view.node.querySelector(".floating-nav-backdrop");
    assert.equal(backdrop?.getAttribute("aria-label"),`Cerrar el menú ${category}`);
    await view.act(async()=>Simulate.click(backdrop));
@@ -565,7 +594,7 @@ test("leader navigation and direct access use the same page permissions", async 
     await view.act(async () => Simulate.click(view.node.querySelector('.floating-nav [aria-label="Liderazgo"]')));
     assert.deepEqual([...view.node.querySelectorAll(".floating-nav-submenu a")].map(link => link.getAttribute("href")), ["/agendas"]);
    } else {
-    assert.deepEqual([...view.node.querySelectorAll(".desktop-sidebar-pages a")].map(link => link.getAttribute("href")), ["/agendas"]);
+    assert.deepEqual([...view.node.querySelectorAll(".desktop-sidebar-pages a")].map(link => link.getAttribute("href")), ["/agendas","/ajustes"]);
     const sidebar = view.node.querySelector(".desktop-sidebar");
     const wasCollapsed = sidebar.classList.contains("is-collapsed");
     await view.act(async () => Simulate.click(sidebar.querySelector(".sidebar-collapse")));
@@ -588,12 +617,12 @@ test("desktop navigation puts teachers in maintenance and groups settings last",
  const view=await mountPage('components/BarraLateral.tsx',{}, {id:1,role:'admin'},true);
  try{
   const nav=view.node.querySelector('.desktop-sidebar-pages'),sections=[...nav.querySelectorAll('section')];
-  assert.equal(sections.at(-1).getAttribute('aria-label'),'Ajustes');
+  assert.equal(nav.lastElementChild.getAttribute('aria-label'),'Ajustes');
   assert.equal(nav.querySelector('[aria-label="Enseñanza"] a[href="/maestros"]'),null);
   assert.ok(nav.querySelector('[aria-label="Mantenimiento"] a[href="/maestros"]'));
   const settings=nav.querySelector('[aria-label="Ajustes"]');
-  assert.deepEqual([...settings.querySelectorAll('a,button')].map(item=>item.getAttribute('aria-label')),['Sincronización','Notificaciones','Apariencia','Acerca de']);
-  await view.act(async()=>Simulate.click(settings.querySelector('[aria-label="Apariencia"]')));assert.ok(view.node.querySelector('[role="dialog"]'));assert.ok(view.node.textContent.includes('Restablecer'));
+  assert.equal(settings.getAttribute('href'),'/ajustes');assert.equal(settings.tagName,'A');
+  assert.equal(nav.querySelector('a[href="/sincronizacion"]'),null);assert.equal(nav.querySelector('a[href="/notificaciones"]'),null);
  }finally{await view.close();window.matchMedia=previous;}
 });
 

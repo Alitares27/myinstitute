@@ -1,4 +1,5 @@
 import MobileModalClose from "../components/MobileModalClose";
+import ActivityAreas from "../components/activities/ActivityAreas";
 import { TABLE_PAGE_SIZE } from "../shared/constants";
 import Pagination from "../components/Pagination";
 import { ViewRecordButton } from "../components/RecordDetails";
@@ -233,12 +234,7 @@ export default function Actividades() {
                   <td>{formatDateTime(a.activity_datetime)}</td>
                   <td className="table-desktop-only">{a.assigned_to_name || "—"}</td>
                   <td className="table-desktop-only">
-                    <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
-                      {a.spiritual && <span className="status-badge status-scheduled">Esp</span>}
-                      {a.social && <span className="status-badge status-completed">Soc</span>}
-                      {a.physical && <span className="status-badge status-completed">Fís</span>}
-                      {a.intellectual && <span className="status-badge" style={{ background: "rgba(0,122,255,0.12)", color: "#007AFF" }}>Int</span>}
-                    </div>
+                    <ActivityAreas activity={a}/>
                   </td>
                   <td>
                     <div className="table-record-actions">
@@ -282,12 +278,7 @@ export default function Actividades() {
               <DetailRow label="Asistencia" value={selectedActivity.attendance + " hermanos"} />
               <DetailRow label="Presupuesto" value={selectedActivity.budget ? `$${Number(selectedActivity.budget).toLocaleString("es-AR")}` : null} />
               <DetailRow label="Asignaciones" value={selectedActivity.assignments} />
-              <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", paddingTop: "0.5rem" }}>
-                {selectedActivity.spiritual && <span className="status-badge status-scheduled">Espiritual</span>}
-                {selectedActivity.social && <span className="status-badge status-completed">Social</span>}
-                {selectedActivity.physical && <span className="status-badge" style={{ background: "rgba(52,199,89,0.12)", color: "#34C759" }}>Físico</span>}
-                {selectedActivity.intellectual && <span className="status-badge" style={{ background: "rgba(0,122,255,0.12)", color: "#007AFF" }}>Intelectual</span>}
-              </div>
+              <ActivityAreas activity={selectedActivity}/>
             </div>
             <MobileModalClose onClose={() => setSelectedActivity(null)}/>
           </div>

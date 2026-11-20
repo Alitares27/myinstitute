@@ -4,7 +4,7 @@ import FormModal from "../components/FormModal";
 import { IoCreateOutline } from "react-icons/io5";
 type Settings={activity_days:number;meeting_days:number;attendance_day:number;attendance_time:string;time_zone:string;activities_enabled:boolean;meetings_enabled:boolean;attendance_enabled:boolean};
 const days=["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"];
-export default function Notificaciones(){
+export default function Notificaciones({embedded=false}:{embedded?:boolean}){
   const [settings,setSettings]=useState<Settings|null>(null),[draft,setDraft]=useState<Settings|null>(null);
   const [error,setError]=useState(""),[message,setMessage]=useState(""),[busy,setBusy]=useState(false);
   useEffect(()=>{const controller=new AbortController();api.get<Settings>("/notifications/settings",{signal:controller.signal}).then(({data})=>{setSettings({...data,attendance_time:data.attendance_time.slice(0,5)});}).catch(()=>{if(!controller.signal.aborted)setError("No se pudo cargar la configuración.");});return()=>controller.abort();},[]);
@@ -14,7 +14,7 @@ export default function Notificaciones(){
     catch{setError("No se pudo guardar la configuración. Revisa los datos e inténtalo de nuevo.");}finally{setBusy(false);}
   }
   return <section className="dashboard-container">
-    <header className="audit-header"><h1>Notificaciones</h1>{settings&&<button type="button" className="btn secondary" onClick={()=>{setError("");setDraft({...settings});}}><IoCreateOutline aria-hidden="true"/>Configurar</button>}</header>
+    <header className="audit-header">{embedded?<h2>Notificaciones</h2>:<h1>Notificaciones</h1>}{settings&&<button type="button" className="btn secondary" onClick={()=>{setError("");setDraft({...settings});}}><IoCreateOutline aria-hidden="true"/>Configurar</button>}</header>
     <p>Recordatorios de la aplicación para todos los usuarios, según sus permisos. Solo los administradores pueden modificar estas opciones.</p>
     {error&&!draft&&<p role="alert">{error}</p>}{message&&<p role="status">{message}</p>}
     {!settings&&!error&&<p role="status">Cargando configuración…</p>}

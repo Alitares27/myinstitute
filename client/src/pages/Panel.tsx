@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import api from "../api";
 import "../styles/Panel.css";
 import { IoCalendarOutline, IoChevronBackOutline, IoChevronForwardOutline } from "react-icons/io5";
-import { TbBooks, TbCalendar, TbBook, TbStar, TbBuilding, TbSettings, TbPencil, TbChartBar, TbRocket, TbRefresh } from "react-icons/tb";
+import { TbBooks, TbCalendar, TbBook, TbStar, TbBuilding, TbSettings, TbPencil, TbChartBar, TbRocket } from "react-icons/tb";
 import type { Activity } from "../interfaces/Activity";
 import type { Meeting } from "../interfaces/Meeting";
 import { localDateKey, upcomingEvents, upcomingWindow } from "../utils/upcomingEvents";
@@ -62,7 +62,7 @@ function Dashboard() {
     { to: "/calificaciones", title: "Mis notas", description: "Consultar calificaciones", Icon: TbStar },
     { to: "/asistencia", title: "Mi asistencia", description: "Ver mi asistencia", Icon: TbCalendar },
   ];
-  shortcuts.push({ to: "/sincronizacion", title: "Sincronizar", description: "Cambios pendientes", Icon: TbRefresh });
+  shortcuts.push({ to: "/actividades", title: "Actividades", description: "Ver actividades", Icon: TbCalendar });
 
   return (
     <div className="dashboard-page">

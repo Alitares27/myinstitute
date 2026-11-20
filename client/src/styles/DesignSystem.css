@@ -150,6 +150,8 @@ html:root body .table-container { border-radius: 16px; box-shadow: var(--shadow-
 html:root body .table-container th { background: var(--bg-body); color: var(--text-secondary); font-size: .8125rem; font-weight: 600; }
 html:root body .table-container td { color: var(--text-main); vertical-align: middle; }
 html:root body .table-container :is(th, td) { border-color: var(--border-color); }
+.activity-areas { display: flex; flex-wrap: wrap; align-items: center; gap: .375rem; }
+html:root body .activity-areas .activity-area-chip { display: inline-flex; align-items: center; padding: .25rem .625rem; border-radius: 999px; border: 1px solid var(--border-color); background: var(--primary-light); color: var(--text-main); font-size: .8125rem; font-weight: 500; line-height: 1.4; white-space: nowrap; }
 html:root body .floating-nav-submenu a, html:root body .floating-nav-submenu button { text-align: left; justify-content: flex-start; }
 html:root body .appearance-setting { display: grid; gap: .5rem; text-align: left; font-size: .875rem; font-weight: 600; margin-block: 1rem; }
 html:root body :is(.stat-card, .shortcut-card) {

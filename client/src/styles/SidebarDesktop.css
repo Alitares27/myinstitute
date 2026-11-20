@@ -45,6 +45,7 @@
     text-align: left; border-radius: 10px; font-size: .875rem; font-weight: 500;
   }
   .desktop-sidebar-pages .desktop-sidebar-settings { border-top: 1px solid var(--border-color); padding-top: 1rem; margin-top: 1rem; }
+  .desktop-sidebar-pages .desktop-sidebar-settings-link { border-top: 1px solid var(--border-color); margin-top: 1rem; }
   html:root body .desktop-sidebar.is-collapsed .desktop-sidebar-action { justify-content: center; padding-inline: 0; }
   .desktop-sidebar svg { width: 20px; height: 20px; flex-shrink: 0; color: var(--primary); }
   .desktop-sidebar-pages a:hover, html:root body .desktop-sidebar button:hover { background: color-mix(in srgb, var(--text-main) 6%, transparent); }
