@@ -88,6 +88,10 @@ app.get("/health", (req, res) => {
 
 app.use(
   (err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+    if(err.code==='23514'&&['users_role_check','gestionar_user_role'].includes(err.constraint)){
+      console.error("La base de datos conserva una restricción de roles desactualizada.");
+      return res.status(503).json({message:"La configuración de roles está desactualizada. Actualiza las migraciones del servidor."});
+    }
     if (!err.status || err.status >= 500) console.error("❌ Error en Servidor:", err.stack);
     res.status(err.status || 500).json({
       message: err.status && err.status < 500 ? err.message : "Error interno del servidor"

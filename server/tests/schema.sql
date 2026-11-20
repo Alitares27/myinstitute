@@ -1,5 +1,5 @@
 -- Disposable integration fixture. Never applied to the configured application database.
-CREATE TABLE users(id serial PRIMARY KEY,name varchar(100) NOT NULL,email varchar(150) UNIQUE NOT NULL,password varchar(255) NOT NULL,telefono varchar(30),token_version integer NOT NULL DEFAULT 1,role varchar(20) NOT NULL,document bigint UNIQUE);
+CREATE TABLE users(id serial PRIMARY KEY,name varchar(100) NOT NULL,email varchar(150) UNIQUE NOT NULL,password varchar(255) NOT NULL,telefono varchar(30),token_version integer NOT NULL DEFAULT 1,role varchar(20) NOT NULL CONSTRAINT users_role_check CHECK(role IN ('admin','teacher','student')),document bigint UNIQUE);
 CREATE TABLE students(id serial PRIMARY KEY,user_id integer UNIQUE REFERENCES users(id),grade varchar(20),enrollment_date date DEFAULT CURRENT_DATE);
 CREATE TABLE teachers(id serial PRIMARY KEY,user_id integer UNIQUE REFERENCES users(id),specialty text,created_at timestamptz DEFAULT now());
 CREATE TABLE courses(id serial PRIMARY KEY,title text,description text,teacher_id integer REFERENCES teachers(id));

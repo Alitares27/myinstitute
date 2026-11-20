@@ -53,6 +53,7 @@ test("real PostgreSQL migration is idempotent and adds revocation, archive and a
     assert.equal((await db.query("SELECT COUNT(*)::int AS count FROM financial_events")).rows[0].count, 0);
 });
 test("financial role manages selected pages, records payments and cannot escalate accounts",async()=>{
+    assert.equal((await db.query("SELECT 1 FROM pg_constraint WHERE conrelid='users'::regclass AND conname='users_role_check'")).rows.length,0);
     await db.exec("SELECT setval(pg_get_serial_sequence('users','id'),(SELECT max(id) FROM users));SELECT setval(pg_get_serial_sequence('students','id'),(SELECT max(id) FROM students));SELECT setval(pg_get_serial_sequence('temples','id'),(SELECT max(id) FROM temples));SELECT setval(pg_get_serial_sequence('temple_trips','id'),(SELECT max(id) FROM temple_trips));SELECT setval(pg_get_serial_sequence('temple_amortizations','id'),(SELECT max(id) FROM temple_amortizations));");
     const data={name:'Finance staff',email:'finance@test.invalid',role:'finance',password:'test-password',permissions:['panel','miembros','templos','viajes-templo','reservar-viajes','pagos-templos','auditorias']};
     const created=await request('/api/users',{method:'POST',body:data});assert.equal(created.status,201,JSON.stringify(created.data));
