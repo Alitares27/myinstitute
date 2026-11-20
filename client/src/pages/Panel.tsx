@@ -10,6 +10,7 @@ import type { Meeting } from "../interfaces/Meeting";
 import { localDateKey, upcomingEvents, upcomingWindow } from "../utils/upcomingEvents";
 import type { UpcomingEvent } from "../utils/upcomingEvents";
 import { formatDate } from "../utils/utilidadesFecha";
+import DashboardEventDetails from "../components/DashboardEventDetails";
 
 function Dashboard() {
   const [user] = useState(readSessionUser);
@@ -17,6 +18,9 @@ function Dashboard() {
   const canViewMeetings=canAccessModule(user,"consejos");
   const [day,setDay]=useState(()=>localDateKey(new Date()));
   const [events,setEvents]=useState<UpcomingEvent[]>([]);
+  const [selectedEvent,setSelectedEvent]=useState<UpcomingEvent|null>(null);
+  const [desktop,setDesktop]=useState(()=>!document.documentElement.classList.contains("native-android")&&window.matchMedia("(min-width: 701px)").matches);
+  useEffect(()=>{const query=window.matchMedia("(min-width: 701px)");const update=()=>setDesktop(!document.documentElement.classList.contains("native-android")&&query.matches);query.addEventListener("change",update);return()=>query.removeEventListener("change",update);},[]);
   const [error,setError]=useState("");
   const [loading,setLoading]=useState(canViewActivities||canViewMeetings);
   const carousel=useRef<HTMLDivElement>(null);
@@ -74,7 +78,10 @@ function Dashboard() {
         {!canViewActivities&&!canViewMeetings&&<p>Tu cuenta no tiene acceso a actividades ni consejos.</p>}
         {(canViewActivities||canViewMeetings)&&!loading&&!error&&!events.length&&<p>No hay eventos registrados para los próximos tres meses.</p>}
         <div className="activity-carousel" ref={carousel} tabIndex={0} role="region" aria-label="Carrusel de actividades y consejos" aria-roledescription="carrusel">
-          {events.map(event=><article key={event.id} className="monthly-activity-card">
+          {events.map(event=><article key={event.id} className="monthly-activity-card"
+            role={desktop?"button":undefined} tabIndex={desktop?0:undefined} aria-haspopup={desktop?"dialog":undefined} aria-label={desktop?`Ver detalles de ${event.title}`:undefined}
+            onClick={desktop?()=>setSelectedEvent(event):undefined}
+            onKeyDown={desktop?e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();setSelectedEvent(event);}}:undefined}>
             <IoCalendarOutline className="monthly-activity-icon" aria-hidden="true"/>
             <span className="upcoming-event-kind">{event.kind}</span>
             <h3>{event.title}</h3>
@@ -102,6 +109,7 @@ function Dashboard() {
           ))}
         </div>
       </div>
+      {selectedEvent&&<DashboardEventDetails event={selectedEvent} onClose={()=>setSelectedEvent(null)}/>}
     </div>
   );
 }

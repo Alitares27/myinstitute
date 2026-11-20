@@ -416,6 +416,22 @@ test("three-month windows clamp month endings, cross the year and include both b
  assert.deepEqual(Array.from(result,item=>item.title),['Start','End']);
 });
 
+test("desktop dashboard cards open activity and council details without leaving the panel",async()=>{
+ const {Simulate}=require('react-dom/test-utils');const previous=window.matchMedia;
+ window.matchMedia=query=>({matches:query==='(min-width: 701px)',addEventListener(){},removeEventListener(){}});
+ const date=new Date(),day=`${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
+ const api={get:async url=>({data:url==='/activities'?[{id:1,activity_name:'Servicio',activity_datetime:day+'T18:00',description:'Detalle completo de actividad',purpose:'Ayudar',assigned_to_name:'Ana',attendance:0,budget:0}]:[{id:1,title:'Consejo de barrio',meeting_date:day,start_time:'19:00',end_time:'20:00',created_by_name:'Luis',topics:'Planificación',notes:'Observaciones del consejo',attendees:[{id:2,name:'María',status:'confirmed'}]}]})};
+ const view=await mountPage('pages/Panel.tsx',api,{id:1,role:'admin'});
+ try{
+  await view.wait();const card=view.node.querySelector('[aria-label="Ver detalles de Servicio"]');card.focus();
+  await view.act(async()=>Simulate.click(card));
+  let modal=view.node.querySelector('[role="dialog"]');assert.ok(modal.textContent.includes('Detalle completo de actividad'));assert.ok(modal.textContent.includes('0 hermanos'));
+  await view.act(async()=>Simulate.click(view.node.querySelector('.form-modal-overlay')));assert.equal(view.node.querySelector('[role="dialog"]'),null);assert.equal(document.activeElement,card);
+  await view.act(async()=>Simulate.keyDown(view.node.querySelector('[aria-label="Ver detalles de Consejo de barrio"]'),{key:'Enter'}));
+  modal=view.node.querySelector('[role="dialog"]');assert.ok(modal.textContent.includes('Planificación'));assert.ok(modal.textContent.includes('Observaciones del consejo'));assert.ok(modal.textContent.includes('María · Confirmado'));
+ }finally{await view.close();window.matchMedia=previous;}
+});
+
 test("appearance exposes exactly twelve colors and keeps Android's palette until explicitly disabled",async()=>{
  const {Simulate}=require('react-dom/test-utils');localStorage.removeItem('appearance');document.documentElement.classList.add('native-android');
  const view=await mountPage('components/AppearanceSettings.tsx',{}, {id:1,role:'admin'},true);

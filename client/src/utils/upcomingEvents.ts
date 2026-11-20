@@ -8,11 +8,11 @@ export function upcomingWindow(now=new Date()){
   end.setDate(Math.min(now.getDate(),lastDay));
   return {start:localDateKey(now),end:localDateKey(end)};
 }
-export type UpcomingEvent={id:string;kind:"Actividad"|"Consejo";title:string;datetime:string;responsible:string;status?:string};
+export type UpcomingEvent={id:string;title:string;datetime:string;responsible:string;status?:string}&({kind:"Actividad";record:Activity}|{kind:"Consejo";record:Meeting});
 export function upcomingEvents(activities:Activity[],meetings:Meeting[],window:{start:string;end:string}):UpcomingEvent[]{
   const items:UpcomingEvent[]=[
-    ...activities.map(activity=>({id:`activity-${activity.id}`,kind:"Actividad" as const,title:activity.activity_name,datetime:activity.activity_datetime.replace(" ","T"),responsible:activity.assigned_to_name||"Sin asignar"})),
-    ...meetings.map(meeting=>({id:`meeting-${meeting.id}`,kind:"Consejo" as const,title:meeting.title,datetime:`${meeting.meeting_date.slice(0,10)}T${meeting.start_time||"00:00"}`,responsible:meeting.created_by_name||"Sin asignar",status:meeting.status})),
+    ...activities.map(activity=>({id:`activity-${activity.id}`,kind:"Actividad" as const,record:activity,title:activity.activity_name,datetime:activity.activity_datetime.replace(" ","T"),responsible:activity.assigned_to_name||"Sin asignar"})),
+    ...meetings.map(meeting=>({id:`meeting-${meeting.id}`,kind:"Consejo" as const,record:meeting,title:meeting.title,datetime:`${meeting.meeting_date.slice(0,10)}T${meeting.start_time||"00:00"}`,responsible:meeting.created_by_name||"Sin asignar",status:meeting.status})),
   ];
   return items.filter(item=>item.datetime.slice(0,10)>=window.start&&item.datetime.slice(0,10)<=window.end).sort((a,b)=>a.datetime.localeCompare(b.datetime)||a.id.localeCompare(b.id));
 }
