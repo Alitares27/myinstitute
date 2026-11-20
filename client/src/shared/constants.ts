@@ -32,3 +32,4 @@ export const MODULE_ROUTES = {
 } as const;
 
 export type AppModule = keyof typeof MODULE_ROUTES;
+export const FINANCE_MODULES:readonly AppModule[]=["panel","miembros","templos","viajes-templo","reservar-viajes","pagos-templos","auditorias","sincronizacion"];

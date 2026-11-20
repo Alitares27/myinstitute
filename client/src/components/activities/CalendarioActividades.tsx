@@ -4,10 +4,11 @@ import { IoAddOutline, IoChevronBack, IoChevronForward } from "react-icons/io5";
 import { DEFAULT_ACTIVITY_COLOR } from "../../interfaces/Activity";
 import type { Activity } from "../../interfaces/Activity";
 import "../../styles/CalendarioActividades.css";
+import { shortWeekRange } from "../../utils/calendarPeriod";
 
 const weekdays = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
 const weekFormatter = new Intl.DateTimeFormat("es-AR", { day: "numeric", month: "short", year: "numeric" });
-const monthFormatter = new Intl.DateTimeFormat("es-AR", { month: "long", year: "numeric" });
+const monthFormatter = new Intl.DateTimeFormat("es-AR", { month: "long" });
 
 function dateKey(date: Date) {
   return [date.getFullYear(), date.getMonth() + 1, date.getDate()]
@@ -67,7 +68,7 @@ export default function ActivityCalendar({ month, week, activities, canAdd, onPe
     <section aria-label="Calendario de actividades">
       <div className="activity-calendar-toolbar">
         <button type="button" className="btn secondary btn-icon" aria-label={weekly ? "Semana anterior" : "Mes anterior"} onClick={() => movePeriod(-1)}><IoChevronBack /></button>
-        <h2 aria-live="polite">{weekly ? `${weekFormatter.format(monday)} al ${weekFormatter.format(sunday)}` : monthFormatter.format(first)}</h2>
+        <h2 className="activity-calendar-period" aria-live="polite" aria-label={weekly?`${weekFormatter.format(monday)} al ${weekFormatter.format(sunday)}`:new Intl.DateTimeFormat("es-AR",{month:"long",year:"numeric"}).format(first)}>{weekly ? shortWeekRange(monday,sunday) : monthFormatter.format(first)}</h2>
         <button type="button" className="btn secondary btn-icon" aria-label={weekly ? "Semana siguiente" : "Mes siguiente"} onClick={() => movePeriod(1)}><IoChevronForward /></button>
         <button type="button" className="btn secondary" onClick={() => onPeriod(today, weekly)}>Hoy</button>
       </div>

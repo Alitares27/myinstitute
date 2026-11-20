@@ -1,3 +1,4 @@
+import MobileModalClose from "../components/MobileModalClose";
 import { TABLE_PAGE_SIZE } from "../shared/constants";
 import Pagination from "../components/Pagination";
 import { ViewRecordButton } from "../components/RecordDetails";
@@ -358,6 +359,7 @@ export default function Meetings() {
 
               </div>
             )}
+            <MobileModalClose onClose={() => setSelectedMeeting(null)}/>
           </div>
         </div>
       )}

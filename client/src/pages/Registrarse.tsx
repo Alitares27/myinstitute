@@ -43,7 +43,7 @@ export default function Signup() {
   };
 
   return (
-    <FormModal title="Crear cuenta" onClose={() => navigate("/iniciar-sesion", { replace: true })} busy={loading}>
+    <FormModal title="Crear cuenta" onClose={() => navigate("/iniciar-sesion", { replace: true })} busy={loading} mobileCloseAction={false}>
   <form onSubmit={handleSubmit} className="auth-form">
     <div className="form-group">
       <label>Nombre Completo</label>

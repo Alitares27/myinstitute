@@ -39,6 +39,13 @@
     color: var(--text-secondary); font-size: .875rem; font-weight: 500;
     transition: background-color .2s ease, color .2s ease;
   }
+  html:root body .desktop-sidebar-pages .desktop-sidebar-action {
+    display: flex; align-items: center; justify-content: flex-start; gap: .75rem;
+    width: 100%; min-height: 44px; padding: .625rem .75rem; margin: .125rem 0;
+    text-align: left; border-radius: 10px; font-size: .875rem; font-weight: 500;
+  }
+  .desktop-sidebar-pages .desktop-sidebar-settings { border-top: 1px solid var(--border-color); padding-top: 1rem; margin-top: 1rem; }
+  html:root body .desktop-sidebar.is-collapsed .desktop-sidebar-action { justify-content: center; padding-inline: 0; }
   .desktop-sidebar svg { width: 20px; height: 20px; flex-shrink: 0; color: var(--primary); }
   .desktop-sidebar-pages a:hover, html:root body .desktop-sidebar button:hover { background: color-mix(in srgb, var(--text-main) 6%, transparent); }
   .desktop-sidebar-pages a.active { background: color-mix(in srgb, var(--primary) 16%, transparent); color: var(--text-main); font-weight: 600; }

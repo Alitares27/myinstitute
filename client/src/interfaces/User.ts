@@ -12,7 +12,7 @@ export interface User {
   grade?: string;
 }
 
-export type MemberRole = "admin" | "teacher" | "student";
+export type MemberRole = "admin" | "teacher" | "student" | "finance";
 export interface Member {
   id:number;
   name:string;
@@ -28,4 +28,4 @@ export interface Member {
   specialty:string|null;
   teacher_created_at:string|null;
 }
-export const MEMBER_ROLES:Record<MemberRole,string>={admin:"Administrador",teacher:"Docente / Líder",student:"Estudiante"};
+export const MEMBER_ROLES:Record<MemberRole,string>={admin:"Admin",teacher:"Líder / Maestro",student:"Miembro",finance:"Financiero"};

@@ -7,6 +7,7 @@
 }
 
 .activity-calendar-toolbar h2 { font-size: 1.15rem; text-transform: capitalize; }
+html:root body .activity-calendar-toolbar .activity-calendar-period { flex: 0 0 11rem; width: 11rem; margin: 0; text-align: center; font-size: 1rem; line-height: 1.3; text-transform: none; white-space: nowrap; }
 .activity-calendar-scroll { overflow-x: auto; }
 .activity-calendar {
   display: grid;

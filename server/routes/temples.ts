@@ -2,7 +2,7 @@ import { positiveId } from "../utils/validation";
 import { asyncRouter } from "../middleware/asyncRouter";
 import express, { Response } from "express";
 import { pool } from "../models/db";
-import { verifyToken, isAdmin, AuthRequest, requireModuleAccess } from "../middleware/auth";
+import { verifyToken, adminOrFinance, AuthRequest, requireModuleAccess } from "../middleware/auth";
 
 const router = asyncRouter();
 
@@ -21,7 +21,7 @@ router.get("/", verifyToken, requireModuleAccess("templos", "viajes-templo"), as
   }
 });
 
-router.post("/", verifyToken, requireModuleAccess("templos"), isAdmin, async (req: AuthRequest, res: Response) => {
+router.post("/", verifyToken, requireModuleAccess("templos"), adminOrFinance, async (req: AuthRequest, res: Response) => {
   try {
     const { name, city, province, address, dedicated_date, status } = req.body;
     if (!name) return res.status(400).json({ message: "El nombre es requerido" });
@@ -37,7 +37,7 @@ router.post("/", verifyToken, requireModuleAccess("templos"), isAdmin, async (re
   }
 });
 
-router.put("/:id", verifyToken, requireModuleAccess("templos"), isAdmin, async (req: AuthRequest, res: Response) => {
+router.put("/:id", verifyToken, requireModuleAccess("templos"), adminOrFinance, async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     const { name, city, province, address, dedicated_date, status } = req.body;
@@ -54,7 +54,7 @@ router.put("/:id", verifyToken, requireModuleAccess("templos"), isAdmin, async (
   }
 });
 
-router.delete("/:id", verifyToken, requireModuleAccess("templos"), isAdmin, async (req: AuthRequest, res: Response) => {
+router.delete("/:id", verifyToken, requireModuleAccess("templos"), adminOrFinance, async (req: AuthRequest, res: Response) => {
   const client = await pool.connect();
   try {
     const { id } = req.params;
@@ -89,7 +89,7 @@ router.delete("/:id", verifyToken, requireModuleAccess("templos"), isAdmin, asyn
   }
 });
 
-router.patch("/:id/archive", verifyToken, requireModuleAccess("templos"), isAdmin, async (req: AuthRequest, res: Response) => {
+router.patch("/:id/archive", verifyToken, requireModuleAccess("templos"), adminOrFinance, async (req: AuthRequest, res: Response) => {
   const client=await pool.connect();
   try {
     await client.query("BEGIN");

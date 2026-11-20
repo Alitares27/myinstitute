@@ -318,7 +318,7 @@ test('floating navigation opens only the selected category, closes on navigation
  const view=await mountPage('components/BarraLateral.tsx',{}, {id:1,role:'admin'},true);
  try{
   const nav=view.node.querySelector('[aria-label="Menú principal"]');
-  assert.equal(nav.querySelectorAll('.floating-nav-trigger').length,4);assert.equal(nav.querySelectorAll('.floating-nav-submenu').length,0);
+  assert.equal(nav.querySelectorAll('.floating-nav-trigger').length,5);assert.equal(nav.querySelectorAll('.floating-nav-submenu').length,0);
   const teaching=nav.querySelector('[aria-label="Enseñanza"]');
   await view.act(async()=>Simulate.click(teaching));assert.equal(teaching.getAttribute('aria-expanded'),'true');assert.ok(nav.querySelector('a[href="/asistencia"]'));
   await view.act(async()=>Simulate.click(nav.querySelector('[aria-label="Templo"]')));assert.equal(teaching.getAttribute('aria-expanded'),'false');assert.equal(nav.querySelectorAll('.floating-nav-submenu').length,1);
@@ -338,7 +338,7 @@ test('header keeps icon-only theme and logout controls in order and preserves lo
   const actions=view.node.querySelector('.app-topbar-actions');assert.equal(actions.children.length,3);assert.equal(actions.textContent,'');
   assert.equal(actions.children[0].getAttribute('aria-label'),'Activar tema oscuro');assert.equal(actions.children[1].getAttribute('aria-label'),'Notificaciones');assert.equal(actions.children[2].getAttribute('aria-label'),'Cerrar sesión');
   await view.act(async()=>Simulate.click(actions.children[0]));assert.equal(document.documentElement.getAttribute('data-theme'),'dark');
-  const nav=view.node.querySelector('[aria-label="Menú principal"]');assert.equal(nav.querySelector('[aria-label="Mantenimiento"]'),null);
+  const nav=view.node.querySelector('[aria-label="Menú principal"]');assert.ok(nav.querySelector('[aria-label="Mantenimiento"]'));
   await view.act(async()=>Simulate.click(nav.querySelector('[aria-label="Enseñanza"]')));assert.ok(nav.querySelector('a[aria-label="Mi perfil"][href="/miembros"]'));
   await view.act(async()=>Simulate.click(actions.children[2]));assert.deepEqual(posts,['/logout']);assert.equal(localStorage.getItem('token'),null);assert.equal(localStorage.getItem('user'),null);assert.equal(localStorage.getItem('theme'),'dark');
  }finally{await view.close();document.documentElement.setAttribute('data-theme','light');localStorage.setItem('theme','light');}
@@ -416,6 +416,21 @@ test("three-month windows clamp month endings, cross the year and include both b
  assert.deepEqual(Array.from(result,item=>item.title),['Start','End']);
 });
 
+test("calendar periods omit the year visually and preserve weekly navigation",async()=>{
+ const {shortWeekRange}=load('utils/calendarPeriod.ts');
+ assert.equal(shortWeekRange(new Date(2026,10,23),new Date(2026,10,29)),'23 a 29 nov.');
+ assert.equal(shortWeekRange(new Date(2026,10,30),new Date(2026,11,6)),'30 nov. a 6 dic.');
+ assert.equal(shortWeekRange(new Date(2026,11,28),new Date(2027,0,3)),'28 dic. a 3 ene.');
+ const React=require('react'),{act}=React,{createRoot}=require('react-dom/client'),{MemoryRouter}=require('react-router-dom'),{Simulate}=require('react-dom/test-utils');
+ const previous=window.matchMedia;window.matchMedia=()=>({matches:true,addEventListener(){},removeEventListener(){}});
+ const Calendar=loadComponent('components/activities/CalendarioActividades.tsx',{}),node=document.createElement('div');document.body.appendChild(node);const root=createRoot(node),changes=[];
+ try{
+  await act(async()=>root.render(React.createElement(MemoryRouter,null,React.createElement(Calendar,{month:'2026-11',week:'2026-11-23',activities:[],canAdd:false,onPeriod:(...args)=>changes.push(args),onSelect(){}}))));
+  const period=node.querySelector('.activity-calendar-period');assert.equal(period.textContent,'23 a 29 nov.');assert.ok(period.getAttribute('aria-label').includes('2026'));
+  await act(async()=>Simulate.click(node.querySelector('[aria-label="Semana siguiente"]')));assert.deepEqual(changes,[['2026-11-30',true]]);
+ }finally{await act(async()=>root.unmount());node.remove();window.matchMedia=previous;}
+});
+
 test("desktop dashboard cards open activity and council details without leaving the panel",async()=>{
  const {Simulate}=require('react-dom/test-utils');const previous=window.matchMedia;
  window.matchMedia=query=>({matches:query==='(min-width: 701px)',addEventListener(){},removeEventListener(){}});
@@ -484,7 +499,7 @@ test("notification bell opens reminders and persists reading through the API",as
   await view.act(async()=>Simulate.click([...view.node.querySelectorAll('button')].find(button=>button.textContent==='Marcar leídas')));
   assert.deepEqual(posts,[['/notifications/read',{ids:[notice.id]}]]);
   assert.equal(view.node.querySelector('.notification-count'),null);
-  await view.act(async()=>Simulate.click(view.node.querySelector('.form-modal-overlay')));
+  await view.act(async()=>Simulate.click(view.node.querySelector('.modal-mobile-close button')));
   assert.equal(view.node.querySelector('[role="dialog"]'),null);
  } finally {await view.close();}
 });
@@ -514,16 +529,17 @@ test("every mobile submenu shows the backdrop until it closes", async () => {
  const view=await mountPage("components/BarraLateral.tsx",{}, {id:1,role:"admin"},true);
  try {
   assert.equal(view.node.querySelector(".floating-nav-backdrop"),null);
-  for(const category of ["Enseñanza","Liderazgo","Templo","Más"]){
+  for(const category of ["Enseñanza","Liderazgo","Templo","Mantenimiento","Ajustes"]){
    const trigger=view.node.querySelector(`.floating-nav-trigger[aria-label="${category}"]`);
    await view.act(async()=>Simulate.click(trigger));
    const submenu = view.node.querySelector(".floating-nav-submenu");
    assert.ok([...submenu.querySelectorAll("li small")].every(description => description.textContent.trim()));
    if (category === "Enseñanza") {
     assert.deepEqual([...submenu.querySelectorAll("a")].map(link => link.getAttribute("aria-label")),
-      ["Asistencia", "Calificaciones", "Maestros y cursos"]);
+      ["Matrículas", "Asistencia", "Calificaciones"]);
    }
-   if (category === "Más") assert.equal(submenu.querySelector('a[href="/maestros"]'), null);
+   if (category === "Mantenimiento") {assert.ok(submenu.querySelector('a[href="/maestros"]'));assert.equal(submenu.querySelector('a[href="/sincronizacion"]'),null);}
+   if (category === "Ajustes") assert.deepEqual([...submenu.querySelectorAll('a,button')].map(item=>item.getAttribute('aria-label')),["Sincronización","Notificaciones","Apariencia","Acerca de"]);
    const backdrop=view.node.querySelector(".floating-nav-backdrop");
    assert.equal(backdrop?.getAttribute("aria-label"),`Cerrar el menú ${category}`);
    await view.act(async()=>Simulate.click(backdrop));
@@ -565,6 +581,47 @@ test("leader navigation and direct access use the same page permissions", async 
    window.matchMedia = previous;
   }
  }
+});
+
+test("desktop navigation puts teachers in maintenance and groups settings last",async()=>{
+ const {Simulate}=require('react-dom/test-utils');const previous=window.matchMedia;window.matchMedia=()=>({matches:false,addEventListener(){},removeEventListener(){}});
+ const view=await mountPage('components/BarraLateral.tsx',{}, {id:1,role:'admin'},true);
+ try{
+  const nav=view.node.querySelector('.desktop-sidebar-pages'),sections=[...nav.querySelectorAll('section')];
+  assert.equal(sections.at(-1).getAttribute('aria-label'),'Ajustes');
+  assert.equal(nav.querySelector('[aria-label="Enseñanza"] a[href="/maestros"]'),null);
+  assert.ok(nav.querySelector('[aria-label="Mantenimiento"] a[href="/maestros"]'));
+  const settings=nav.querySelector('[aria-label="Ajustes"]');
+  assert.deepEqual([...settings.querySelectorAll('a,button')].map(item=>item.getAttribute('aria-label')),['Sincronización','Notificaciones','Apariencia','Acerca de']);
+  await view.act(async()=>Simulate.click(settings.querySelector('[aria-label="Apariencia"]')));assert.ok(view.node.querySelector('[role="dialog"]'));assert.ok(view.node.textContent.includes('Restablecer'));
+ }finally{await view.close();window.matchMedia=previous;}
+});
+
+test("admin can assign financial pages and finance members can create/edit without privileged controls",async()=>{
+ const {Simulate}=require('react-dom/test-utils');
+ const admin={id:1,name:'Admin',role:'admin',permissions:[]};
+ const editor=await mountPage('pages/Miembros.tsx',{get:async url=>({data:url==='/users/me'?admin:{items:[],total:0}})},admin);
+ try{
+  await editor.wait();await editor.act(async()=>Simulate.click(editor.node.querySelector('[aria-label="Agregar miembro"]')));
+  await editor.act(async()=>Simulate.change(editor.node.querySelector('[name="role"]'),{target:{value:'finance'}}));
+  const fieldset=editor.node.querySelector('.leader-permissions');assert.ok(fieldset.textContent.includes('Páginas del Financiero'));assert.ok(fieldset.textContent.includes('Pagos'));assert.ok(!fieldset.textContent.includes('Asistencia'));
+ }finally{await editor.close();}
+ const finance={id:9,name:'Financiero',role:'finance',permissions:['miembros']};
+ const member={...directoryMember,role:'student'},privileged={...directoryMember,id:1,name:'Admin',role:'admin'};
+ const view=await mountPage('pages/Miembros.tsx',{get:async url=>({data:url==='/users/me'?finance:{items:[member,privileged],total:2}})},finance);
+ try{
+  await view.wait();assert.ok(view.node.querySelector('[aria-label="Agregar miembro"]'));assert.ok(view.node.querySelector('[aria-label="Editar Academic member"]'));assert.equal(view.node.querySelector('[aria-label="Editar Admin"]'),null);assert.equal(view.node.querySelector('[title="Eliminar"]'),null);
+  await view.act(async()=>Simulate.click(view.node.querySelector('[aria-label="Editar Academic member"]')));
+  assert.equal(view.node.querySelector('[name="role"]'),null);assert.equal(view.node.querySelector('[name="password"]'),null);assert.equal(view.node.querySelector('.leader-permissions'),null);
+ }finally{await view.close();}
+});
+
+test("finance authorization requires each selected page and rejects forged academic permissions",()=>{
+ const constants=load('shared/constants.ts');
+ const {canAccessModule,canManageModule}=load('utils/access.ts',{}, {'../shared/constants':constants});
+ const user={role:'finance',permissions:['miembros','pagos-templos','asistencia']};
+ assert.equal(canManageModule(user,'miembros'),true);assert.equal(canManageModule(user,'pagos-templos'),true);
+ assert.equal(canManageModule(user,'reservar-viajes'),false);assert.equal(canAccessModule(user,'asistencia'),false);
 });
 
 test("grade details and permitted mutations are in the Actions column", async () => {

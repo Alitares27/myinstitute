@@ -1,7 +1,7 @@
 import { TABLE_PAGE_SIZE } from "../shared/constants";
 import Pagination from "../components/Pagination";
 import { ViewRecordButton, RecordDetails } from "../components/RecordDetails";
-import { canAccessModule, readSessionUser } from "../utils/access";
+import { canAccessModule, canManageModule, readSessionUser } from "../utils/access";
 import { TbCoin } from "react-icons/tb";
 import { IoAddOutline } from "react-icons/io5";
 import { isAndroidApp } from "../utils/androidReports";
@@ -30,7 +30,7 @@ import type { BasicUser } from "../interfaces/Common";
 const getTodayYMD = businessDate;
 
 export default function TripReservations() {
-  const canManage = readSessionUser()?.role === "admin";
+  const canManage = canManageModule(readSessionUser(),"reservar-viajes");
     const navigate = useNavigate();
     const [detail, setDetail] = useState<{ user_name: string; user_document?: string; trip_date: string; adelanto: number; abonos: number; pagado: number; saldo: number } | null>(null);
     const [formOpen, setFormOpen] = useState(false);
@@ -93,7 +93,7 @@ export default function TripReservations() {
     }, [navigate]);
 
     const fetchUsers = async () => {
-        const { data } = await api.get(readSessionUser()?.role === "teacher" ? "/users/travel-members" : "/users");
+        const { data } = await api.get(readSessionUser()?.role !== "admin" ? "/users/travel-members" : "/users");
         setUsers(data);
     };
 
@@ -384,7 +384,7 @@ export default function TripReservations() {
                     <p>Gestión de reservas y pagos a los viajes al templo</p>
                 </div>
                 <div className="asistencia-header-actions reservation-header-actions">
-                    {canManage && <button type="button" className="btn primary mobile-header-action mobile-pay" aria-label="Registrar pago" onClick={handleOpenPaymentModal}><FaPlus className="desktop-action-icon" aria-hidden="true" /><TbCoin className="mobile-only-action-icon" aria-hidden="true" /> <span>Pago</span></button>}
+                    {canManageModule(readSessionUser(),"pagos-templos") && <button type="button" className="btn primary mobile-header-action mobile-pay" aria-label="Registrar pago" onClick={handleOpenPaymentModal}><FaPlus className="desktop-action-icon" aria-hidden="true" /><TbCoin className="mobile-only-action-icon" aria-hidden="true" /> <span>Pago</span></button>}
                     {canManage && <button type="button" className="btn primary mobile-add" aria-label="Reservar viaje" onClick={() => setFormOpen(true)}>
                         <IoAddOutline className="mobile-only-action-icon" aria-hidden="true" /> <span>Reservar</span>
                     </button>}

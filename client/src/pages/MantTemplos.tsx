@@ -1,6 +1,6 @@
 import { TABLE_PAGE_SIZE } from "../shared/constants";
 import Pagination from "../components/Pagination";
-import { readSessionUser } from "../utils/access";
+import { readSessionUser, canManageModule } from "../utils/access";
 import { IoAddOutline } from "react-icons/io5";
 import FormModal from "../components/FormModal";
 import { ViewRecordButton } from "../components/RecordDetails";
@@ -36,7 +36,7 @@ const getStatusClass = (status: string) => {
 };
 
 export default function TemplosMaintenance() {
-  const canManage = readSessionUser()?.role === "admin";
+  const canManage = canManageModule(readSessionUser(),"templos");
   const [formOpen, setFormOpen] = useState(false);
   const [templos, setTemplos] = useState<Templo[]>([]);
   const [search, setSearch] = useState("");

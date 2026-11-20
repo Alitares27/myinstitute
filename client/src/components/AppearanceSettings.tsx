@@ -8,7 +8,7 @@ export default function AppearanceSettings({onClose}:{onClose:()=>void}){
   const {theme,preference,setPreference,appearance,setAppearance}=useTheme();
   const android=document.documentElement.classList.contains("native-android");
   const device=android&&appearance.deviceColors;
-  return <FormModal title="Apariencia" onClose={onClose}>
+  return <FormModal title="Apariencia" onClose={onClose} mobileCloseAction={false}>
     <div className="appearance-options">
       <p>Los cambios se aplican al instante y se guardan en este dispositivo.</p>
       <label className="form-group">Modo<select value={preference} onChange={e=>setPreference(e.target.value as "system"|"light"|"dark")}><option value="system">Tema del dispositivo</option><option value="light">Claro</option><option value="dark">Oscuro</option></select></label>
@@ -18,7 +18,7 @@ export default function AppearanceSettings({onClose}:{onClose:()=>void}){
       <label className="form-group">Fuente<select value={appearance.font} onChange={e=>setAppearance({...appearance,font:e.target.value as typeof appearance.font})}><option value="system">Sistema</option><option value="sans">Sans serif</option><option value="serif">Serif</option><option value="mono">Monoespaciada</option></select></label>
       <label className="form-group">Tamaño del texto<select value={appearance.textSize} onChange={e=>setAppearance({...appearance,textSize:e.target.value as "normal"|"large"})}><option value="normal">Normal</option><option value="large">Grande</option></select></label>
       <div className="appearance-preview"><strong>Vista previa</strong><p>Así se verán las páginas, menús y formularios.</p><button type="button" className="btn primary"><IoCheckmarkOutline aria-hidden="true"/>Botón</button><button type="button" className="btn secondary btn-icon" aria-label="Ejemplo de icono"><IoCheckmarkOutline aria-hidden="true"/></button></div>
-      <button type="button" className="btn secondary" onClick={()=>{setAppearance({...DEFAULT_APPEARANCE});setPreference("system");}}>Restablecer</button>
+      <div className="appearance-footer"><button type="button" className="btn secondary" onClick={()=>{setAppearance({...DEFAULT_APPEARANCE});setPreference("system");}}>Restablecer</button><button type="button" className="btn secondary modal-mobile-close-button" onClick={onClose}>Cerrar</button></div>
     </div>
   </FormModal>;
 }

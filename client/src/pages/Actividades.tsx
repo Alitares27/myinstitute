@@ -1,3 +1,4 @@
+import MobileModalClose from "../components/MobileModalClose";
 import { TABLE_PAGE_SIZE } from "../shared/constants";
 import Pagination from "../components/Pagination";
 import { ViewRecordButton } from "../components/RecordDetails";
@@ -288,6 +289,7 @@ export default function Actividades() {
                 {selectedActivity.intellectual && <span className="status-badge" style={{ background: "rgba(0,122,255,0.12)", color: "#007AFF" }}>Intelectual</span>}
               </div>
             </div>
+            <MobileModalClose onClose={() => setSelectedActivity(null)}/>
           </div>
         </div>
       )}

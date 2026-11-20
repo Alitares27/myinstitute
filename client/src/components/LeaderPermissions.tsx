@@ -1,15 +1,16 @@
-import { MODULE_ROUTES } from "../shared/constants";
+import { MODULE_ROUTES,FINANCE_MODULES } from "../shared/constants";
 import type { AppModule } from "../shared/constants";
 
-export default function LeaderPermissions({ value, onChange }: {
+export default function LeaderPermissions({ value, onChange, financial=false }: {
   value: AppModule[];
   onChange: (modules: AppModule[]) => void;
+  financial?:boolean;
 }) {
   return (
     <fieldset className="leader-permissions">
-      <legend>Páginas del Líder</legend>
+      <legend>{financial?"Páginas del Financiero":"Páginas del Líder"}</legend>
       <div className="leader-permissions-options">
-        {(Object.keys(MODULE_ROUTES) as AppModule[]).map(module => (
+        {(financial?FINANCE_MODULES:Object.keys(MODULE_ROUTES) as AppModule[]).map(module => (
           <label key={module}>
             <input type="checkbox" checked={value.includes(module)} onChange={event => {
               onChange(event.target.checked ? [...value, module] : value.filter(item => item !== module));

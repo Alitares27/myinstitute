@@ -27,6 +27,8 @@ before(async () => {
     await db.exec(fs.readFileSync(path.join(__dirname, "../migrations/session_hardening.sql"), "utf8"));
     const notificationsMigration=fs.readFileSync(path.join(__dirname,"../migrations/notifications.sql"),"utf8");
     await db.exec(notificationsMigration);await db.exec(notificationsMigration);
+    const financialRoleMigration=fs.readFileSync(path.join(__dirname,"../migrations/financial_role.sql"),"utf8");
+    await db.exec(financialRoleMigration);await db.exec(financialRoleMigration);
     for (const [id, user] of Object.entries(fixtures)) await db.query("INSERT INTO users(id,name,email,password,role) VALUES($1,$2,$3,$4,$5)", [Number(id), `Member ${id}`, `user${id}@test.invalid`, hash, user.role]);
     await db.exec("UPDATE users SET permissions=ARRAY['asistencia','calificaciones','inscripciones','miembros','panel','maestros'] WHERE role='teacher'");
     await db.exec(`INSERT INTO teachers(id,user_id,specialty) VALUES(5,2,'A'),(6,3,'B');
@@ -50,6 +52,49 @@ test("real PostgreSQL migration is idempotent and adds revocation, archive and a
     const result = await db.query("SELECT auth_version FROM users WHERE id=1"); assert.equal(result.rows[0].auth_version, 0);
     assert.equal((await db.query("SELECT COUNT(*)::int AS count FROM financial_events")).rows[0].count, 0);
 });
+test("financial role manages selected pages, records payments and cannot escalate accounts",async()=>{
+    await db.exec("SELECT setval(pg_get_serial_sequence('users','id'),(SELECT max(id) FROM users));SELECT setval(pg_get_serial_sequence('students','id'),(SELECT max(id) FROM students));SELECT setval(pg_get_serial_sequence('temples','id'),(SELECT max(id) FROM temples));SELECT setval(pg_get_serial_sequence('temple_trips','id'),(SELECT max(id) FROM temple_trips));SELECT setval(pg_get_serial_sequence('temple_amortizations','id'),(SELECT max(id) FROM temple_amortizations));");
+    const data={name:'Finance staff',email:'finance@test.invalid',role:'finance',password:'test-password',permissions:['panel','miembros','templos','viajes-templo','reservar-viajes','pagos-templos','auditorias']};
+    const created=await request('/api/users',{method:'POST',body:data});assert.equal(created.status,201,JSON.stringify(created.data));
+    const fid=created.data.user.id;let memberId,templeId,tripId,reservationId;
+    const login=await request('/api/users/login',{id:null,method:'POST',body:{email:data.email,password:data.password}});assert.equal(login.status,200);const auth=login.data.token;
+    const finance=(path,options={})=>request(path,{...options,auth});
+    try{
+      assert.equal((await finance('/api/users/me')).data.role,'finance');
+      assert.equal((await finance('/api/users/members')).status,200);
+      assert.equal((await finance('/api/activities')).status,403);
+      assert.equal((await finance('/api/teachers')).status,403);
+      assert.equal((await finance('/api/security-events')).status,403);
+      assert.equal((await finance('/api/notifications/settings')).status,403);
+      const member=await finance('/api/users',{method:'POST',body:{name:'Managed member',email:'managed@test.invalid',password:'test-password',role:'student'}});
+      assert.equal(member.status,201,JSON.stringify(member.data));memberId=member.data.user.id;
+      const edit={name:'Updated member',email:'managed@test.invalid',role:'student',telefono:'12345'};
+      assert.equal((await finance(`/api/users/${memberId}`,{method:'PUT',body:edit})).status,200);
+      for(const role of ['admin','teacher','finance'])assert.equal((await finance(`/api/users/${memberId}`,{method:'PUT',body:{...edit,role}})).status,403);
+      assert.equal((await finance(`/api/users/${memberId}`,{method:'PUT',body:{...edit,password:'changed-password'}})).status,403);
+      assert.equal((await finance('/api/users/1',{method:'PUT',body:edit})).status,403);
+      assert.equal((await finance(`/api/users/${memberId}`,{method:'DELETE'})).status,403);
+      assert.equal((await request('/api/users',{method:'POST',body:{...data,email:'badfinance@test.invalid',permissions:['asistencia']}})).status,400);
+      const temple=await finance('/api/temples',{method:'POST',body:{name:'Finance temple'}});assert.equal(temple.status,201);templeId=temple.data.id;
+      const trip=await finance('/api/temple-trips',{method:'POST',body:{temple_id:templeId,date:'2999-12-02',cost:100}});assert.equal(trip.status,201,JSON.stringify(trip.data));tripId=trip.data.id;
+      const reservation=await finance('/api/trip-reservations',{method:'POST',body:{user_id:memberId,trip_id:tripId,register_date:'2026-11-20',initial_payment:0}});assert.equal(reservation.status,201,JSON.stringify(reservation.data));reservationId=reservation.data.id;
+      const payment=await finance('/api/temple-amortizations',{method:'POST',body:{attendance_id:reservationId,payment_amount:20,payment_date:'2026-11-20',payment_type:'efectivo'}});assert.equal(payment.status,201,JSON.stringify(payment.data));
+      assert.equal((await finance('/api/temple-amortizations/report')).status,200);
+      assert.equal((await finance('/api/trip-reservations/report')).status,200);
+      assert.equal((await finance('/api/temple-amortizations/events')).status,200);
+      const own=await request(`/api/users/${fid}`,{method:'PUT',body:{...data,permissions:['miembros']}});assert.equal(own.status,200);
+      assert.equal((await finance('/api/temple-amortizations')).status,401);
+      const newLogin=await request('/api/users/login',{id:null,method:'POST',body:{email:data.email,password:data.password}});
+      for(const path of ['/api/temple-amortizations','/api/trip-reservations','/api/temple-trips','/api/temples'])assert.equal((await request(path,{auth:newLogin.data.token})).status,403,path);
+      assert.equal((await request('/api/users/members',{auth:newLogin.data.token})).status,200);
+    }finally{
+      if(reservationId){await db.query('DELETE FROM financial_events WHERE reservation_id=$1',[reservationId]);await db.query('DELETE FROM temple_amortizations WHERE attendance_id=$1',[reservationId]);await db.query('DELETE FROM temple_attendance WHERE id=$1',[reservationId]);}
+      if(tripId)await db.query('DELETE FROM temple_trips WHERE id=$1',[tripId]);if(templeId)await db.query('DELETE FROM temples WHERE id=$1',[templeId]);
+      if(memberId){await db.query('DELETE FROM students WHERE user_id=$1',[memberId]);await db.query('DELETE FROM users WHERE id=$1',[memberId]);}
+      await db.query('DELETE FROM users WHERE id=$1',[fid]);
+    }
+});
+
 test("notifications persist settings and read state without exposing private meetings or restricted modules", async () => {
     assert.equal((await request('/api/notifications',{id:null})).status,401);
     assert.equal((await request('/api/notifications/settings',{id:2})).status,403);

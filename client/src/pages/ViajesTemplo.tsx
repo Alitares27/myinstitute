@@ -1,3 +1,4 @@
+import { canManageModule,readSessionUser } from "../utils/access";
 import { TABLE_PAGE_SIZE } from "../shared/constants";
 import Pagination from "../components/Pagination";
 import { ViewRecordButton, RecordDetails } from "../components/RecordDetails";
@@ -212,9 +213,9 @@ export default function TempleTrip() {
             <div className="asistencia-header">
                 <div className="asistencia-header-info">
                     <h1><span className="page-title-icon"><FiTruck /></span> Gestionar Viajes</h1>
-                    <p>{role === "admin" ? "Registro y seguimiento de viajes al templo" : "Viajes disponibles"}</p>
+                    <p>{canManageModule(readSessionUser(),"viajes-templo") ? "Registro y seguimiento de viajes al templo" : "Viajes disponibles"}</p>
                 </div>
-                {role === "admin" && (
+                {canManageModule(readSessionUser(),"viajes-templo") && (
                     <button type="button" className="btn primary mobile-add" aria-label="Agregar viaje"
                         onClick={() => setFormOpen(true)}>
                         <IoAddOutline className="mobile-only-action-icon" aria-hidden="true" /> <span>Agregar</span>
@@ -253,7 +254,7 @@ export default function TempleTrip() {
                 </div>
             </div>
 
-            {role === "admin" && (
+            {canManageModule(readSessionUser(),"viajes-templo") && (
                 <>
                   {formOpen && <FormModal title={editingId ? "Editar viaje" : "Agregar viaje"} onClose={() => { setEditingId(null); setFormData({ temple_id: "", date: "", status: "programado", cost: "" }); setFormOpen(false); }}>
                     <form onSubmit={handleSubmit} className="asistencia-form-grid">
@@ -391,7 +392,7 @@ export default function TempleTrip() {
                                     <td>
                                       <div className="table-record-actions">
                                         <ViewRecordButton label="Ver viaje" onClick={() => setDetail(trip)} />
-                                        {role === "admin" && <>
+                                        {canManageModule(readSessionUser(),"viajes-templo") && <>
                                           <button
                                             className="btn secondary btn-icon"
                                             onClick={() => handleEdit(trip)}

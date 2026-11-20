@@ -1,6 +1,6 @@
 # Recordatorios de la aplicación
 
-La campana del encabezado muestra actividades desde siete días antes, consejos desde tres días antes y un recordatorio de asistencia los sábados a las 19:00, con la zona horaria Argentina por defecto. Los administradores pueden cambiar días, hora, zona horaria y activar o desactivar cada tipo desde Mantenimiento → Notificaciones (en móvil, Más → Notificaciones).
+La campana del encabezado muestra actividades desde siete días antes, consejos desde tres días antes y un recordatorio de asistencia los sábados a las 19:00, con la zona horaria Argentina por defecto. Los administradores pueden cambiar días, hora, zona horaria y activar o desactivar cada tipo desde Ajustes → Notificaciones, tanto en web como en móvil.
 
 ## Instalación
 

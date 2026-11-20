@@ -10,6 +10,7 @@ import type { Meeting } from "../interfaces/Meeting";
 import { localDateKey, upcomingEvents, upcomingWindow } from "../utils/upcomingEvents";
 import type { UpcomingEvent } from "../utils/upcomingEvents";
 import { formatDate } from "../utils/utilidadesFecha";
+import { MEMBER_ROLES } from "../interfaces/User";
 import DashboardEventDetails from "../components/DashboardEventDetails";
 
 function Dashboard() {
@@ -44,7 +45,11 @@ function Dashboard() {
   },[day,canViewActivities,canViewMeetings]);
   function move(direction:number){const node=carousel.current;if(node)node.scrollBy({left:direction*node.clientWidth*.85,behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?"auto":"smooth"});}
 
-  const shortcuts = user?.role === "admin" ? [
+  const shortcuts = user?.role === "finance" ? [
+    {to:"/miembros",title:"Miembros",description:"Gestionar miembros",Icon:TbSettings},
+    {to:"/reservar-viajes",title:"Reservas",description:"Reservas de viajes",Icon:TbBuilding},
+    {to:"/pagos",title:"Pagos",description:"Registrar pagos",Icon:TbBook},
+  ] : user?.role === "admin" ? [
     { to: "/consejos", title: "Consejos", description: "Gestionar consejos", Icon: TbCalendar },
     { to: "/reservar-viajes", title: "Templo", description: "Reservas y viajes", Icon: TbBuilding },
     { to: "/miembros", title: "Miembros", description: "Directorio de miembros", Icon: TbSettings },
@@ -62,7 +67,7 @@ function Dashboard() {
   return (
     <div className="dashboard-page">
       <div className="dashboard-header">
-        <span className="role-badge">{user?.role}</span>
+        <span className="role-badge">{user?MEMBER_ROLES[user.role]:""}</span>
         <h1 className="dashboard-title">Hola, {user?.name}</h1>
         <p className="dashboard-subtitle">
           Bienvenido de nuevo. Aquí tienes un resumen de lo que está sucediendo en tu cuenta hoy.

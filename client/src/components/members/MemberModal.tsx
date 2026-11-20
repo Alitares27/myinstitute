@@ -1,4 +1,5 @@
 import { lockBodyScroll } from "../../utils/scrollLock";
+import MobileModalClose from "../MobileModalClose";
 import {useEffect,useRef} from "react";
 import type {ReactNode} from "react";
 export default function MemberModal({children,onClose}:{children:ReactNode;onClose:()=>void}){
@@ -24,6 +25,7 @@ export default function MemberModal({children,onClose}:{children:ReactNode;onClo
   <div className="miembros-modal" role="dialog" aria-modal="true" aria-labelledby="miembros-modal-title" tabIndex={-1} ref={ref}>
    <header className="miembros-modal-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}><h2 id="miembros-modal-title">Información del miembro</h2><button type="button" className="btn secondary btn-icon modal-close-icon" aria-label="Cerrar modal de miembro" onClick={onClose} style={{ minHeight: "44px", minWidth: "44px" }}>×</button></header>
    {children}
+   <MobileModalClose onClose={onClose}/>
   </div>
  </div>;
 }

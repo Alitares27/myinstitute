@@ -1,7 +1,7 @@
 import { accountMutationLimiter } from "../middleware/loginLimits";
 import { academicDetails, findMember, listMembers, memberInput, memberSelect, saveProfiles, removeStudentProfile, hasAcademicHistory } from "../services/members";
 import { positiveId } from "../utils/validation";
-import { prepareRoleChange, leaderPermissions, saveLeaderPermissions, lockAccountAdministration, requireAnotherAdmin } from "../utils/roles";
+import { prepareRoleChange, permissionsForRole, lockMemberAdministration, saveLeaderPermissions, lockAccountAdministration, requireAnotherAdmin } from "../utils/roles";
 import { InputError } from "../utils/validation";
 import { asyncRouter } from "../middleware/asyncRouter";
 import express, { Response } from "express";
@@ -9,7 +9,7 @@ import bcrypt from "bcryptjs";
 import { loginIpLimiter, loginAccountLimiter, registrationLimiter } from "../middleware/loginLimits";
 import { pool } from "../models/db";
 import { registerUser, loginUser } from "../controllers/users";
-import { verifyToken, isAdmin, adminOrTeacher, AuthRequest, requireModuleAccess } from "../middleware/auth";
+import { verifyToken, isAdmin, adminOrFinance, adminOrTeacher, AuthRequest, requireModuleAccess } from "../middleware/auth";
 
 const router = asyncRouter();
 
@@ -21,7 +21,7 @@ router.get("/me",verifyToken,async(req:AuthRequest,res:Response)=>{
   if(!member)return res.status(404).json({message:"Miembro no encontrado"});
   res.json(member);
 });
-router.get("/organizations",verifyToken, requireModuleAccess("miembros"),isAdmin,async(_req,res:Response)=>{
+router.get("/organizations",verifyToken, requireModuleAccess("miembros"),adminOrFinance,async(_req,res:Response)=>{
   const result=await pool.query("SELECT DISTINCT grade FROM students WHERE grade IS NOT NULL AND grade<>'' ORDER BY grade");
   res.json(result.rows.map(row=>row.grade));
 });
@@ -65,38 +65,49 @@ router.put("/me/password", verifyToken, accountMutationLimiter, async (req: Auth
 router.get("/",verifyToken, requireModuleAccess("miembros"),isAdmin,async(req:AuthRequest,res:Response)=>{
   const result=await pool.query(memberSelect+" ORDER BY u.name,u.id",[req.user!.role,req.user!.id]);res.json(result.rows);
 });
-router.post("/",verifyToken, requireModuleAccess("miembros"),isAdmin, accountMutationLimiter,async(req:AuthRequest,res:Response)=>{
+router.post("/",verifyToken, requireModuleAccess("miembros"),adminOrFinance, accountMutationLimiter,async(req:AuthRequest,res:Response)=>{
   const input=memberInput(req.body,true);
-  const permissions = leaderPermissions(req.body.permissions);
+  const permissions = permissionsForRole(input.role,req.body.permissions);
   const hashed=await bcrypt.hash(input.password,10);
   const client=await pool.connect();
   try{
     await client.query("BEGIN");
-    await lockAccountAdministration(client, req.user!.id);
+    if(req.user!.role==='finance'){
+      await lockMemberAdministration(client,req.user!.id);
+      if(input.role!=='student'||(permissions?.length??0)>0){const error=new InputError("Solo puedes gestionar miembros sin asignar roles ni permisos.");error.status=403;throw error;}
+    }else await lockAccountAdministration(client, req.user!.id);
     const created=await client.query("INSERT INTO users(name,email,password,telefono,role,document) VALUES($1,$2,$3,$4,$5,$6) RETURNING id",[input.name,input.email,hashed,input.telefono,input.role,input.document]);
     const id=created.rows[0].id;
-    if (input.role !== "teacher" || permissions !== undefined) {
-      await saveLeaderPermissions(client, id, input.role === "teacher" ? permissions ?? [] : []);
+    if (!["teacher","finance"].includes(input.role) || permissions !== undefined) {
+      await saveLeaderPermissions(client, id, ["teacher","finance"].includes(input.role) ? permissions ?? [] : []);
     }
     await saveProfiles(client,id,input);
     const member=await findMember(id,req.user!,client);
     await client.query("COMMIT");res.status(201).json({user:member});
   }catch(error:any){await client.query("ROLLBACK");if(error.code==='23505')return res.status(409).json({message:"El correo o documento ya está registrado"});throw error;}finally{client.release();}
 });
-router.put("/:id",verifyToken, requireModuleAccess("miembros"),isAdmin, accountMutationLimiter,async(req:AuthRequest,res:Response)=>{
+router.put("/:id",verifyToken, requireModuleAccess("miembros"),adminOrFinance, accountMutationLimiter,async(req:AuthRequest,res:Response)=>{
   const id=positiveId(req.params.id),input=memberInput(req.body,false);
-  const permissions = leaderPermissions(req.body.permissions);
+  const permissions = permissionsForRole(input.role,req.body.permissions);
   const hashed=input.password?await bcrypt.hash(input.password,10):null;
   const client=await pool.connect();
   try{
     await client.query("BEGIN");
-    await lockAccountAdministration(client, req.user!.id);
+    if(req.user!.role==='finance'){
+      await lockMemberAdministration(client,req.user!.id);
+      if(input.role!=='student'||(permissions?.length??0)>0){const error=new InputError("Solo puedes gestionar miembros sin asignar roles ni permisos.");error.status=403;throw error;}
+    }else await lockAccountAdministration(client, req.user!.id);
+    if(req.user!.role==='finance'){
+      const target=await client.query("SELECT role FROM users WHERE id=$1 FOR UPDATE",[id]);
+      if(!target.rowCount){const error=new InputError("Miembro no encontrado");error.status=404;throw error;}
+      if(target.rows[0].role!=='student'||input.password){const error=new InputError("No puedes modificar cuentas privilegiadas ni cambiar contraseñas de otros miembros.");error.status=403;throw error;}
+    }
     await prepareRoleChange(client,id,input.role);
     await client.query(`UPDATE users SET name=$1,email=$2,telefono=$3,role=$4::varchar,document=$5,
       password=COALESCE($6,password)
       WHERE id=$7`,[input.name,input.email,input.telefono,input.role,input.document,hashed,id]);
-    if (input.role !== "teacher" || permissions !== undefined) {
-      await saveLeaderPermissions(client, id, input.role === "teacher" ? permissions ?? [] : []);
+    if (!["teacher","finance"].includes(input.role) || permissions !== undefined) {
+      await saveLeaderPermissions(client, id, ["teacher","finance"].includes(input.role) ? permissions ?? [] : []);
     }
     await saveProfiles(client,id,input);
     const member=await findMember(id,req.user!,client);

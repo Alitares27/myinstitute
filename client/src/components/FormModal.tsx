@@ -1,12 +1,14 @@
 import { lockBodyScroll } from "../utils/scrollLock";
+import MobileModalClose from "./MobileModalClose";
 import { useEffect, useId, useRef } from "react";
 import type { ReactNode } from "react";
 
-export default function FormModal({ title, onClose, children, busy = false }: {
+export default function FormModal({ title, onClose, children, busy = false, mobileCloseAction=true }: {
   title: string;
   onClose: () => void;
   children: ReactNode;
   busy?: boolean;
+  mobileCloseAction?:boolean;
 }) {
   const titleId = useId();
   const dialog = useRef<HTMLDivElement>(null);
@@ -49,6 +51,7 @@ export default function FormModal({ title, onClose, children, busy = false }: {
           <button type="button" className="btn secondary btn-icon modal-close-icon" aria-label="Cerrar formulario" disabled={busy} onClick={onClose}>×</button>
         </header>
         {children}
+        {mobileCloseAction&&<MobileModalClose onClose={onClose} busy={busy}/>}
       </div>
     </div>
   );

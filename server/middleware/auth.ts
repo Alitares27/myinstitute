@@ -1,10 +1,11 @@
+import { FINANCE_MODULES } from "../utils/roles";
 import type { Module } from "../utils/roles";
 import { createHmac } from "crypto";
 import { pool } from "../models/db";
 import { Request, Response, NextFunction } from "express";
 import jwt, { JwtPayload, TokenExpiredError, JsonWebTokenError } from "jsonwebtoken";
 
-export type UserRole = "admin" | "student" | "teacher";
+export type UserRole = "admin" | "student" | "teacher" | "finance";
 
 export interface AuthPayload extends JwtPayload {
   id: number;
@@ -35,7 +36,7 @@ export async function verifyToken(req: AuthRequest, res: Response, next: NextFun
     }
 
     const decoded = jwt.verify(token, secret) as AuthPayload;
-    if (!Number.isSafeInteger(decoded.tokenVersion) || !Number.isSafeInteger(decoded.id) || !["admin", "teacher", "student"].includes(decoded.role)) {
+    if (!Number.isSafeInteger(decoded.tokenVersion) || !Number.isSafeInteger(decoded.id) || !["admin", "teacher", "student", "finance"].includes(decoded.role)) {
       return res.status(401).json({ message: "Invalid token" });
     }
     const result = await pool.query("SELECT role, password, token_version, permissions FROM users WHERE id = $1", [decoded.id]);
@@ -71,6 +72,10 @@ function hasRole(role: UserRole) {
 }
 
 export const isAdmin = hasRole("admin");
+export const adminOrFinance=(req:AuthRequest,res:Response,next:NextFunction)=>{
+  if(req.user?.role==="admin"||req.user?.role==="finance")return next();
+  return res.status(403).json({message:"Solo administradores y financieros."});
+};
 export const isStudent = hasRole("student");
 export const isTeacher = hasRole("teacher");
 export function sessionFingerprint(passwordHash: string): string {
@@ -87,7 +92,8 @@ export function requireModuleAccess(...modules: Module[]) {
   return (req: AuthRequest, res: Response, next: NextFunction) => {
     res.locals.securityModule = modules.join(",");
     if (req.user?.role === "admin" || req.user?.role === "student" ||
-        (req.user?.role === "teacher" && modules.some(module => req.user?.permissions?.includes(module)))) {
+        (req.user?.role === "teacher" && modules.some(module => req.user?.permissions?.includes(module))) ||
+        (req.user?.role === "finance" && modules.some(module=>FINANCE_MODULES.includes(module)&&req.user?.permissions?.includes(module)))) {
       return next();
     }
     return res.status(403).json({ message: "No tienes permiso para acceder a este módulo." });
@@ -95,6 +101,6 @@ export function requireModuleAccess(...modules: Module[]) {
 }
 
 export function adminOrTeacher(req: AuthRequest, res: Response, next: NextFunction) {
-  if (req.user?.role === "admin" || req.user?.role === "teacher") return next();
+  if (req.user?.role === "admin" || req.user?.role === "teacher" || req.user?.role === "finance") return next();
   return res.status(403).json({ message: "No tienes permiso para esta operaciÃ³n." });
 }

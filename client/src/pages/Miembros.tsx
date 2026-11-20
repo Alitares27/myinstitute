@@ -1,3 +1,4 @@
+import { canManageModule } from "../utils/access";
 import Pagination from "../components/Pagination";
 import FormModal from "../components/FormModal";
 import { confirmAppAction } from "../components/AppDialogHost";
@@ -23,7 +24,7 @@ export default function Miembros() {
     const [editorOpen, setEditorOpen] = useState(false), [editing, setEditing] = useState<Member | null>(null), [selected, setSelected] = useState<number | null>(null), [revision, setRevision] = useState(0);
     const [passwordOpen, setPasswordOpen] = useState(false);
     const [password, setPassword] = useState({ current: "", next: "", confirm: "" }), [passwordBusy, setPasswordBusy] = useState(false);
-    const admin = me?.role === 'admin', profileView = me?.role === 'student' || searchParams.get('view') === 'profile';
+    const admin = me?.role === 'admin', canManage=canManageModule(me,'miembros'), profileView = me?.role === 'student' || searchParams.get('view') === 'profile';
     const directory = usePagedList<Member>("/users/members", { page: currentPage, limit: 10, search: search || undefined, role: roleFilter || undefined, profile: profileFilter || undefined, sort: sort.key, direction: sort.direction }, !!me && !profileView);
     useEffect(() => { let active = true; const controller = new AbortController(); api.get('/users/me', { signal: controller.signal }).then(({ data }) => { if (active) { setMe(data); localStorage.setItem('user', JSON.stringify(data)); } }).catch(() => { if (active) setError('No se pudo cargar la cuenta'); }).finally(() => { if (active) setLoading(false); }); return () => { active = false; controller.abort(); }; }, []);
 
@@ -44,9 +45,9 @@ export default function Miembros() {
     async function changePassword(event: React.FormEvent) { event.preventDefault(); setError(''); if (password.next !== password.confirm) { setError('Las contraseñas nuevas no coinciden'); return; } setPasswordBusy(true); try { await api.put('/users/me/password', { currentPassword: password.current, newPassword: password.next }); invalidarCache(); await limpiarSesion(); window.location.assign('/iniciar-sesion'); } catch (error: any) { setError(error.response?.data?.message || 'No se pudo cambiar la contraseña'); } finally { setPasswordBusy(false); } }
     if (loading) return <p role="status">Cargando miembros...</p>;
     if (!me) return <p role="alert">{error || 'No hay una sesión válida'}</p>;
-    return <div className="miembros-page"><header className="miembros-header"><div><h1>{profileView ? 'Mi perfil' : admin ? 'Miembros' : 'Estudiantes de mis cursos'}</h1><p>{profileView ? 'Información personal y seguimiento académico' : 'Consulta y gestiona la información personal y académica.'}</p></div>
+    return <div className="miembros-page"><header className="miembros-header"><div><h1>{profileView ? 'Mi perfil' : canManage ? 'Miembros' : 'Estudiantes de mis cursos'}</h1><p>{profileView ? 'Información personal y seguimiento académico' : 'Consulta y gestiona la información personal y académica.'}</p></div>
         {me.role !== 'student' && <div className="miembros-actions"><button type="button" className="btn secondary mobile-header-action" aria-label={profileView ? "Miembros" : "Mi perfil"} onClick={() => { setSearchParams(profileView ? {} : { view: 'profile' }); setEditorOpen(false); closePassword(); setSelected(null); }}><IoPersonCircleOutline aria-hidden="true" /><span>{profileView ? 'Miembros' : 'Mi perfil'}</span></button>
-            {admin && !profileView && <button type="button" className="btn primary mobile-add" aria-label="Agregar miembro" onClick={() => { setEditing(null); setEditorOpen(true); }}><IoAddOutline aria-hidden="true" /> <span>Agregar</span></button>}</div>}</header>
+            {canManage && !profileView && <button type="button" className="btn primary mobile-add" aria-label="Agregar miembro" onClick={() => { setEditing(null); setEditorOpen(true); }}><IoAddOutline aria-hidden="true" /> <span>Agregar</span></button>}</div>}</header>
         {error && !passwordOpen && <p role="alert">{error}</p>}
         {profileView ? <>
             <MemberDetails id={me.id} viewerId={me.id} viewerRole={me.role} revision={revision} />
@@ -60,7 +61,7 @@ export default function Miembros() {
                 <button className="btn primary" type="submit">{passwordBusy ? 'Guardando...' : 'Guardar'}</button>
             </fieldset></form></FormModal>}
         </> : <>
-            {admin && editorOpen && <MemberEditor key={editing?.id || 'new'} member={editing} onSave={save} onCancel={() => { setEditorOpen(false); setEditing(null); }} onRemoveStudent={removeStudent} />}
+            {canManage && editorOpen && <MemberEditor key={editing?.id || 'new'} member={editing} onSave={save} onCancel={() => { setEditorOpen(false); setEditing(null); }} onRemoveStudent={admin?removeStudent:undefined} />}
             <div className="miembros-toolbar"><label className="miembros-search"><IoSearchOutline aria-hidden="true" /><input aria-label="Buscar miembros" type="search" name="member_search" placeholder="Buscar miembros..." value={search} onChange={e => filter(setSearch, e.target.value)} /></label>
                 {admin && <div className="miembros-filters"><select aria-label="Rol de acceso" name="role_filter" value={roleFilter} onChange={e => filter(setRoleFilter, e.target.value)}><option value="">Todos los roles</option>{Object.entries(MEMBER_ROLES).map(([role, label]) => <option key={role} value={role}>{label}</option>)}</select>
                     <select aria-label="Tipo de registro" name="profile_filter" value={profileFilter} onChange={e => filter(setProfileFilter, e.target.value)}><option value="">Todos los registros</option><option value="student">Estudiantes</option><option value="teacher">Docentes</option></select></div>}
@@ -73,7 +74,7 @@ export default function Miembros() {
                 <td>{member.name}</td><td>{member.document || '—'}</td><td className="table-desktop-only">{member.grade || '—'}</td>
                 <td className="table-desktop-only"><div>{member.email || '—'}</div><div className="text-muted">{member.telefono || '—'}</div></td><td className="table-desktop-only">{MEMBER_ROLES[member.role]}</td>
                 <td><div className="table-record-actions"><button type="button" className="btn secondary btn-icon" title="Ver ficha" onClick={() => setSelected(member.id)} aria-label={`Ver ficha de ${member.name}`}><IoEyeOutline aria-hidden="true" /></button>
-                    {admin && <><button type="button" className="btn secondary btn-icon" title="Editar" onClick={() => { setEditing(member); setEditorOpen(true); }} aria-label={`Editar ${member.name}`}><IoCreateOutline aria-hidden="true" /></button><button type="button" className="btn btn-icon miembros-delete" title="Eliminar" disabled={member.id === me.id} onClick={() => removeMember(member)} aria-label={`Eliminar ${member.name}`}><IoTrashOutline aria-hidden="true" /></button></>}
+                    {(admin||(canManage&&member.role==='student')) && <><button type="button" className="btn secondary btn-icon" title="Editar" onClick={() => { setEditing(member); setEditorOpen(true); }} aria-label={`Editar ${member.name}`}><IoCreateOutline aria-hidden="true" /></button>{admin&&<button type="button" className="btn btn-icon miembros-delete" title="Eliminar" disabled={member.id === me.id} onClick={() => removeMember(member)} aria-label={`Eliminar ${member.name}`}><IoTrashOutline aria-hidden="true" /></button>}</>}
                 </div></td></tr>)}</tbody></table></div>
             {!directory.loading && !directory.items.length && <p>No hay miembros para los filtros seleccionados.</p>}
             <Pagination currentPage={currentPage} totalPages={totalPages} onChange={setCurrentPage} />

@@ -49,6 +49,18 @@ html:root body .table-container > table { height: auto; max-height: none; }
 .app-pagination-buttons, .pagination-slot { display: flex; align-items: center; gap: .375rem; flex-wrap: wrap; }
 html:root body .app-pagination .btn { min-width: 44px; padding: .5rem .75rem; margin: 0; font-size: .875rem; }
 .pagination-gap { padding-inline: .125rem; color: var(--text-muted); }
+.modal-mobile-close, html:root body .modal-mobile-close-button { display: none; }
+.appearance-footer { display: flex; flex-wrap: wrap; gap: .75rem; }
+.appearance-footer > .btn { flex: 1; }
+@media (max-width:700px) {
+  html:root body .modal-close-icon { display: none; }
+  .modal-mobile-close { display: flex; justify-content: flex-end; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color); }
+  .modal-mobile-close > .btn { min-width: 7rem; }
+  html:root body .modal-mobile-close-button { display: inline-flex; }
+}
+.native-android .modal-mobile-close { display: flex; justify-content: flex-end; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color); }
+html:root.native-android body .modal-close-icon { display: none; }
+html:root.native-android body .modal-mobile-close-button { display: inline-flex; }
 @media (max-width:700px) { .app-pagination-buttons { gap: .25rem; } html:root body .app-pagination .btn { padding-inline: .625rem; } }
 
 html:root body :is(.asistencia-header, .calificaciones-header, .inscripciones-header,

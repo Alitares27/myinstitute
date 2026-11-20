@@ -82,7 +82,7 @@ export default function AppDialogHost() {
         <div className="ios-dialog-actions">
           {dialog.confirm && <button type="button" className="ios-dialog-cancel" onClick={() => close(false)}>Cancelar</button>}
           <button type="button" className={dialog.confirm ? "ios-dialog-destructive" : "ios-dialog-primary"} autoFocus onClick={() => close(true)}>
-            {dialog.confirm ? "Confirmar" : "Aceptar"}
+            {dialog.confirm ? "Confirmar" : "Cerrar"}
           </button>
         </div>
       </section>

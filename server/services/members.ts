@@ -7,7 +7,7 @@ import { addSearch, readPage } from "../utils/pagination";
 
 export const memberSelect = `SELECT u.id,u.name,u.email,u.telefono,u.role,
   CASE WHEN $1='admin' OR u.id=$2 THEN u.permissions ELSE '{}'::text[] END AS permissions,
-  CASE WHEN $1='admin' OR u.id=$2 THEN u.document::text ELSE NULL END AS document,
+  CASE WHEN $1 IN ('admin','finance') OR u.id=$2 THEN u.document::text ELSE NULL END AS document,
   s.id AS student_id,s.grade,s.enrollment_date AS student_enrollment_date,
   t.id AS teacher_id,t.specialty,t.created_at AS teacher_created_at
   FROM users u LEFT JOIN students s ON s.user_id=u.id LEFT JOIN teachers t ON t.user_id=u.id`;
@@ -15,9 +15,9 @@ const assignedStudent = `EXISTS (SELECT 1 FROM enrollments own JOIN courses c ON
   JOIN teachers teacher ON teacher.id=c.teacher_id WHERE own.student_id=s.id AND teacher.user_id=$2)`;
 export async function listMembers(req: AuthRequest) {
   const params:any[]=[req.user!.role,req.user!.id];
-  const where=[`($1='admin' OR ($1='teacher' AND ${assignedStudent}) OR ($1='student' AND u.id=$2))`];
+  const where=[`($1 IN ('admin','finance') OR ($1='teacher' AND ${assignedStudent}) OR ($1='student' AND u.id=$2))`];
   if(req.query.role){
-    if(!["admin","teacher","student"].includes(String(req.query.role)))throw new InputError("Rol inválido");
+    if(!["admin","teacher","student","finance"].includes(String(req.query.role)))throw new InputError("Rol inválido");
     params.push(String(req.query.role));where.push(`u.role=$${params.length}`);
   }
   if(req.query.profile==='student')where.push("s.id IS NOT NULL");
@@ -28,13 +28,13 @@ export async function listMembers(req: AuthRequest) {
     {name:"name",email:"email",role:"role",grade:"grade",student_enrollment_date:"student_enrollment_date"},"name");
 }
 export async function findMember(id:number,viewer:{id:number;role:string},client=pool as Pick<PoolClient,'query'>){
-  const result=await client.query(memberSelect+` WHERE u.id=$3 AND ($1='admin' OR u.id=$2 OR ($1='teacher' AND ${assignedStudent}))`,[viewer.role,viewer.id,id]);
+  const result=await client.query(memberSelect+` WHERE u.id=$3 AND ($1 IN ('admin','finance') OR u.id=$2 OR ($1='teacher' AND ${assignedStudent}))`,[viewer.role,viewer.id,id]);
   return result.rows[0];
 }
 export async function academicDetails(id:number,viewer:{id:number;role:string}){
   const member=await findMember(id,viewer);
   if(!member)return null;
-  if(!member.student_id)return {member,courses:[],summary:null};
+  if(!member.student_id||viewer.role==='finance')return {member,courses:[],summary:null};
   const params=[member.student_id,viewer.id,viewer.role==='admin'||viewer.id===id];
   const courseScope="($3::boolean OR c.teacher_id IN (SELECT id FROM teachers WHERE user_id=$2))";
   const [courses,summary]=await Promise.all([
@@ -59,7 +59,7 @@ function text(value:unknown,label:string,max:number,required=false){
 export function memberInput(body:any,creating:boolean){
   const name=text(body.name,"Nombre",100,true),email=text(body.email,"Correo",150,true)!;
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))throw new InputError("Correo inválido");
-  if(!["admin","teacher","student"].includes(body.role))throw new InputError("Rol inválido");
+  if(!["admin","teacher","student","finance"].includes(body.role))throw new InputError("Rol inválido");
   if(body.include_student_profile!==undefined&&typeof body.include_student_profile!=="boolean")throw new InputError("Registro académico inválido");
   const password=body.password;
   if(password!==undefined && typeof password!=="string")throw new InputError("Contraseña inválida");

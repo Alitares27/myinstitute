@@ -4,7 +4,7 @@ import { cents, isoDate, positiveId } from "../utils/validation";
 import { asyncRouter } from "../middleware/asyncRouter";
 import { Router, Request, Response } from "express";
 import { pool } from "../models/db";
-import { verifyToken, adminOrTeacher, isAdmin, AuthRequest, requireModuleAccess } from "../middleware/auth";
+import { verifyToken, adminOrTeacher, adminOrFinance, AuthRequest, requireModuleAccess } from "../middleware/auth";
 
 const router = asyncRouter();
 
@@ -49,7 +49,7 @@ router.get("/", verifyToken, requireModuleAccess("pagos-templos"), adminOrTeache
 router.post(
   "/",
   verifyToken, requireModuleAccess("pagos-templos"),
-  isAdmin,
+  adminOrFinance,
   async (req: AuthRequest, res: Response) => {
     try {
       const { attendance_id, payment_amount, payment_date, payment_type } = req.body;
@@ -136,7 +136,7 @@ router.post(
 router.put(
   "/:id",
   verifyToken, requireModuleAccess("pagos-templos"),
-  isAdmin,
+  adminOrFinance,
   async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
     const { payment_amount, payment_date, payment_type } = req.body;
@@ -231,7 +231,7 @@ router.put(
 router.delete(
   "/:id",
   verifyToken, requireModuleAccess("pagos-templos"),
-  isAdmin,
+  adminOrFinance,
   async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
 

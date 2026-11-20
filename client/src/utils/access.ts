@@ -1,4 +1,4 @@
-import { MODULE_ROUTES } from "../shared/constants";
+import { MODULE_ROUTES, FINANCE_MODULES } from "../shared/constants";
 import type { AppModule } from "../shared/constants";
 import type { User } from "../interfaces/User";
 
@@ -10,11 +10,13 @@ export function readSessionUser(): User | null {
   }
 }
 
-export function canAccessModule(user: User | null, module: AppModule, studentAllowed = true) {
+export function canAccessModule(user: Pick<User,"role"|"permissions"> | null, module: AppModule, studentAllowed = true) {
   return user?.role === "admin" ||
     (user?.role === "teacher" && user.permissions?.includes(module) === true) ||
+    (user?.role === "finance" && FINANCE_MODULES.includes(module) && user.permissions?.includes(module) === true) ||
     (user?.role === "student" && studentAllowed);
 }
+export function canManageModule(user:Pick<User,"role"|"permissions">|null,module:AppModule){return user?.role==="admin"||(user?.role==="finance"&&canAccessModule(user,module,false));}
 
 export function moduleForPath(path: string): AppModule | undefined {
   if (path === "/usuarios") return "miembros";

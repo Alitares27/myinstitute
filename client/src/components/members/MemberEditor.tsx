@@ -1,5 +1,7 @@
 import LeaderPermissions from "../LeaderPermissions";
+import { FINANCE_MODULES } from "../../shared/constants";
 import type { AppModule } from "../../shared/constants";
+import { readSessionUser } from "../../utils/access";
 import FormModal from "../FormModal";
 import { confirmAppAction } from "../AppDialogHost";
 import { IoSaveOutline } from "react-icons/io5";
@@ -15,24 +17,25 @@ export interface MemberForm {
     grade: string; specialty: string; student_enrollment_date: string; include_student_profile: boolean;
 }
 export default function MemberEditor({ member, onSave, onCancel, onRemoveStudent }: { member: Member | null; onSave: (data: MemberForm) => Promise<void>; onCancel: () => void; onRemoveStudent?: () => Promise<void> }) {
+    const financialEditor=readSessionUser()?.role==="finance";
     const [form, setForm] = useState<MemberForm>({ permissions: member?.permissions ?? [], name: member?.name || "", email: member?.email || "", telefono: member?.telefono || "", document: member?.document || "", role: member?.role || "student", password: "", grade: member?.grade || "", specialty: member?.specialty || "", student_enrollment_date: member ? (member.student_enrollment_date?.slice(0, 10) || "") : businessDate(), include_student_profile: !!member?.student_id });
     const [saving, setSaving] = useState(false), [error, setError] = useState("");
     const academic = form.role === 'student' || !!member?.student_id || form.include_student_profile;
     const set = (key: keyof MemberForm, value: string | boolean | AppModule[]) => setForm(previous => ({ ...previous, [key]: value }));
     async function submit(event: React.FormEvent) { event.preventDefault(); setSaving(true); setError(""); try { await onSave({ ...form, include_student_profile: academic }); } catch (error: any) { setError(error.response?.data?.message || "No se pudo guardar el miembro"); } finally { setSaving(false); } }
     async function remove() { if (!onRemoveStudent || !await confirmAppAction("¿Quitar solo el registro de estudiante? La cuenta se conserva. No se permite si hay matrículas, asistencias o notas.")) return; setSaving(true); setError(""); try { await onRemoveStudent(); } catch (error: any) { setError(error.response?.data?.message || "No se pudo retirar el registro académico"); } finally { setSaving(false); } }
-    return <FormModal title={member ? "Editar miembro" : "Agregar miembro"} onClose={onCancel} busy={saving}>
+    return <FormModal title={member ? "Editar miembro" : "Agregar miembro"} onClose={onCancel} busy={saving} mobileCloseAction={false}>
         <form onSubmit={submit}><fieldset disabled={saving} className="miembros-fields"><div className="miembros-form-grid">
             <label>Nombre completo<input name="name" required maxLength={100} value={form.name} onChange={e => set('name', e.target.value)} /></label>
             <label>Correo electrónico<input name="email" type="email" required maxLength={150} value={form.email} onChange={e => set('email', e.target.value)} /></label>
             <label>Teléfono<input name="telefono" type="tel" maxLength={30} value={form.telefono} onChange={e => set('telefono', e.target.value)} /></label>
             <label>Documento<input name="document" inputMode="numeric" pattern="[0-9]*" maxLength={19} value={form.document} onChange={e => set('document', e.target.value)} /></label>
-            <label>{member ? "Nueva contraseña (dejar vacía para conservarla)" : "Contraseña"}<input name="password" type="password" required={!member} minLength={6} autoComplete="new-password" value={form.password} onChange={e => set('password', e.target.value)} /></label>
-            <label>Rol de acceso<select name="role" value={form.role} onChange={e => set('role', e.target.value)}>{Object.entries(MEMBER_ROLES).map(([role, label]) => <option key={role} value={role}>{label}</option>)}</select></label>
+            {(!financialEditor||!member)&&<label>{member ? "Nueva contraseña (dejar vacía para conservarla)" : "Contraseña"}<input name="password" type="password" required={!member} minLength={6} autoComplete="new-password" value={form.password} onChange={e => set('password', e.target.value)} /></label>}
+            {!financialEditor&&<label>Rol de acceso<select name="role" value={form.role} onChange={e => {const role=e.target.value;setForm(previous=>({...previous,role:role as MemberRole,permissions:role==='finance'?previous.permissions.filter(module=>FINANCE_MODULES.includes(module)):previous.permissions}));}}>{Object.entries(MEMBER_ROLES).map(([role, label]) => <option key={role} value={role}>{label}</option>)}</select></label>}
             <label className="miembros-checkbox"><input type="checkbox" name="include_student_profile" checked={academic} disabled={form.role === 'student' || !!member?.student_id} onChange={e => set('include_student_profile', e.target.checked)} /> Registro de estudiante</label>
             {academic && <><label>Organización<select name="grade" value={form.grade} onChange={e => set('grade', e.target.value)}><option value="">Seleccionar organización</option>{member?.grade && !ORGANIZATIONS.includes(member.grade) && <option value={member.grade} disabled>{member.grade} (actual)</option>}{ORGANIZATIONS.map(value => <option key={value} value={value}>{value}</option>)}</select></label>
                 <label>Fecha de alta como estudiante<input name="student_enrollment_date" type="date" value={form.student_enrollment_date} onChange={e => set('student_enrollment_date', e.target.value)} /></label></>}
-            {form.role === "teacher" && <LeaderPermissions value={form.permissions} onChange={permissions => set("permissions", permissions)} />}
+            {!financialEditor&&(form.role === "teacher"||form.role === "finance") && <LeaderPermissions financial={form.role==='finance'} value={form.permissions} onChange={permissions => set("permissions", permissions)} />}
             {(form.role === 'teacher' || member?.teacher_id) && <label>Especialidad del docente<input name="specialty" maxLength={100} value={form.specialty} onChange={e => set('specialty', e.target.value)} /></label>}
         </div>
             {error && <p role="alert">{error}</p>}

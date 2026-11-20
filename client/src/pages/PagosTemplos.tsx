@@ -1,7 +1,7 @@
 import { TABLE_PAGE_SIZE } from "../shared/constants";
 import Pagination from "../components/Pagination";
 import { ViewRecordButton, RecordDetails } from "../components/RecordDetails";
-import { canAccessModule, readSessionUser } from "../utils/access";
+import { canAccessModule, canManageModule, readSessionUser } from "../utils/access";
 import { TbCoin } from "react-icons/tb";
 import { isAndroidApp } from "../utils/androidReports";
 import FormModal from "../components/FormModal";
@@ -31,7 +31,7 @@ const capitalizarMedio = (value: string = "efectivo") => {
 };
 
 export default function PagosTemplos() {
-  const canManage = readSessionUser()?.role === "admin";
+  const canManage = canManageModule(readSessionUser(),"pagos-templos");
   const navigate = useNavigate();
 
   const [detail, setDetail] = useState<{ miembro_nombre: string; payment_amount: number; monto_adeudado: number; payment_date: string; payment_type: string } | null>(null);
@@ -88,7 +88,7 @@ export default function PagosTemplos() {
   };
 
   const fetchUsers = async () => {
-    const { data } = await api.get(readSessionUser()?.role === "teacher" ? "/users/travel-members" : "/users");
+    const { data } = await api.get(readSessionUser()?.role !== "admin" ? "/users/travel-members" : "/users");
     setUsers(data);
   };
 
