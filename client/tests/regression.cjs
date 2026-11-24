@@ -91,7 +91,7 @@ test("logout removes authentication and legacy API cache while retaining theme",
   const filename=path.resolve(__dirname,"../src/utils/sesion.ts"),mod={exports:{}};
   const js=ts.transpileModule(fs.readFileSync(filename,"utf8"),{compilerOptions:{module:ts.ModuleKind.CommonJS}}).outputText;
   localStorage.setItem("theme","dark");localStorage.setItem("token","secret");localStorage.setItem("user","private");localStorage.setItem("role","admin");
-  vm.runInNewContext(js,{exports:mod.exports,module:mod,window,localStorage,caches:window.caches,Promise,require:()=>({forgetOfflineSession:async()=>{},invalidarCache:()=>{}})});
+  vm.runInNewContext(js,{exports:mod.exports,module:mod,window,localStorage,caches:window.caches,Promise,require:()=>({forgetOfflineSession:async()=>{},invalidarCache:()=>{},clearAndroidReminders:async()=>{}})});
   await mod.exports.limpiarSesion();
   for(const key of ["token","user","role"]) assert.equal(localStorage.getItem(key),null);
   assert.equal(localStorage.getItem("theme"),"dark");assert.deepEqual(deleted,["api-cache"]);
@@ -396,10 +396,10 @@ test("dashboard combines upcoming activities and councils over three months with
  try{await view.wait();assert.deepEqual(calls,['/activities','/meetings']);assert.deepEqual([...view.node.querySelectorAll('.monthly-activity-card h3')].map(node=>node.textContent),['First activity','Council','Last activity']);assert.ok(view.node.textContent.includes('10:30'));assert.ok(view.node.textContent.includes('María'));assert.ok(view.node.textContent.includes('Sin asignar'));assert.ok(!view.node.textContent.includes('Outside activity'));assert.equal(view.node.querySelector('.stat-card'),null);assert.equal(view.node.querySelectorAll('.shortcut-card').length,4);assert.ok(view.node.querySelector('.shortcut-card[href="/actividades"]'));assert.equal(view.node.querySelector('.shortcut-card[href="/sincronizacion"]'),null);}finally{await view.close();}
  const deniedCalls=[];
  const denied=await mountPage('pages/Panel.tsx',{get:async url=>{deniedCalls.push(url);return {data:[]};}},{id:2,role:'teacher',permissions:['panel']});
- try{await denied.wait();assert.deepEqual(deniedCalls,[]);assert.equal(denied.node.querySelector('.monthly-activity-card'),null);}finally{await denied.close();}
+ try{await denied.wait();assert.deepEqual(deniedCalls,['/dashboard-cards']);assert.equal(denied.node.querySelector('.monthly-activity-card'),null);}finally{await denied.close();}
  const scopedCalls=[];
  const scoped=await mountPage('pages/Panel.tsx',{get:async url=>{scopedCalls.push(url);return {data:meetings};}},{id:2,role:'teacher',permissions:['panel','consejos']});
- try{await scoped.wait();assert.deepEqual(scopedCalls,['/meetings']);assert.equal(scoped.node.querySelector('.monthly-activity-card h3').textContent,'Council');}finally{await scoped.close();}
+ try{await scoped.wait();assert.deepEqual(scopedCalls,['/dashboard-cards','/meetings']);assert.equal(scoped.node.querySelector('.monthly-activity-card h3').textContent,'Council');}finally{await scoped.close();}
  const partial=await mountPage('pages/Panel.tsx',{get:async url=>{if(url==='/activities')throw Error('offline');return {data:meetings};}},{id:1,role:'admin'});
  try{await partial.wait();assert.equal(partial.node.querySelector('.monthly-activity-card h3').textContent,'Council');assert.ok(partial.node.querySelector('[role="alert"]'));}finally{await partial.close();}
 });
@@ -512,7 +512,7 @@ test("notification bell opens reminders and persists reading through the API",as
   await view.act(async()=>Simulate.click([...view.node.querySelectorAll('button')].find(button=>button.textContent==='Marcar leídas')));
   assert.deepEqual(posts,[['/notifications/read',{ids:[notice.id]}]]);
   assert.equal(view.node.querySelector('.notification-count'),null);
-  await view.act(async()=>Simulate.click(view.node.querySelector('.modal-mobile-close button')));
+  await view.act(async()=>Simulate.click(view.node.querySelector('.form-modal-header [aria-label="Cerrar formulario"]')));
   assert.equal(view.node.querySelector('[role="dialog"]'),null);
  } finally {await view.close();}
 });
@@ -528,8 +528,12 @@ test("notification settings keep the form in a modal and persist days and weekly
   const modal=view.node.querySelector('[role="dialog"]');assert.ok(modal);
   await view.act(async()=>Simulate.change(modal.querySelector('input[type="number"]'),{target:{value:'10'}}));
   await view.act(async()=>Simulate.change(modal.querySelector('input[type="time"]'),{target:{value:'20:30'}}));
+  const zones=modal.querySelector('select[name="time_zone"]')||[...modal.querySelectorAll('select')].find(select=>select.value===config.time_zone);
+  assert.ok(zones);assert.ok(zones.options.length>20);
+  await view.act(async()=>Simulate.change(zones,{target:{value:'Europe/Madrid'}}));
   await view.act(async()=>Simulate.submit(modal.querySelector('form')));
   assert.equal(writes[0][0],'/notifications/settings');assert.equal(writes[0][1].activity_days,10);assert.equal(writes[0][1].attendance_time,'20:30');
+  assert.equal(writes[0][1].time_zone,'Europe/Madrid');
   assert.equal(view.node.querySelector('[role="dialog"]'),null);
   assert.ok(view.node.textContent.includes('Configuración guardada.'));
  } finally {await view.close();}
@@ -674,4 +678,80 @@ test("grade details and permitted mutations are in the Actions column", async ()
    await view.close();
   }
  }
+});
+
+test('mobile action menu opens details and preserves role-specific edit/delete controls',async()=>{
+ const {Simulate}=require('react-dom/test-utils'),previous=window.matchMedia;
+ window.matchMedia=()=>({matches:true,addEventListener(){},removeEventListener(){}});
+ const grade={id:9,student_id:7,student_name:'Ana',course_title:'Curso',grade:85,grade_type:'examen',created_at:'2026-11-15'};
+ const api={get:async url=>({data:url==='/grades'?{items:[grade],total:1}:[]})};
+ try{for(const role of ['admin','student']){
+  const view=await mountPage('pages/Calificaciones.tsx',api,{id:7,role});
+  try{
+   await view.wait();const row=view.node.querySelector('tbody tr');
+   assert.equal(row.querySelectorAll('button').length,1);
+   const trigger=row.querySelector('[aria-label="Acciones del registro"]');assert.ok(trigger);
+   await view.act(async()=>Simulate.click(trigger));
+   const menu=document.querySelector('.record-actions-menu');assert.ok(menu);
+   assert.deepEqual([...menu.querySelectorAll('span')].map(el=>el.textContent),role==='admin'?['Ver','Editar','Eliminar']:['Ver']);
+   await view.act(async()=>Simulate.click(menu.querySelector('button')));
+   assert.equal(document.querySelector('.record-actions-menu'),null);
+   assert.match(view.node.querySelector('[role="dialog"]').textContent,/85/);
+  }finally{await view.close();}
+ }}finally{window.matchMedia=previous;}
+});
+
+test('Android reminder scheduling deduplicates, reschedules changes and clears account data',async()=>{
+ let pending=[],scheduled=[],cancelled=[],permission='granted',deliveredCleared=0;
+ const native=load('native/androidNotifications.ts',{}, {
+  '@capacitor/core':{Capacitor:{getPlatform:()=> 'android'}},
+  '@capacitor/local-notifications':{LocalNotifications:{
+   checkPermissions:async()=>({display:permission}),requestPermissions:async()=>({display:permission}),createChannel:async()=>{},
+   getPending:async()=>({notifications:pending}),
+   schedule:async({notifications})=>{scheduled.push(...notifications);for(const n of notifications)pending=[...pending.filter(p=>p.id!==n.id),n];},
+   cancel:async({notifications})=>{cancelled.push(...notifications);pending=pending.filter(p=>!notifications.some(n=>n.id===p.id));},
+   removeAllDeliveredNotifications:async()=>{deliveredCleared++;}
+  }}
+ });
+ localStorage.setItem('user',JSON.stringify({id:42}));localStorage.removeItem('android-reminder-plan');
+ try{
+  assert.equal(await native.enableAndroidNotifications(),true);
+  const plan=[{key:'activity:1:date',title:'Actividad',body:'Servicio',href:'/actividades',at:new Date(Date.now()+86400000).toISOString()}];
+  await native.synchronizeAndroidReminders('42',plan);assert.equal(scheduled.length,1);assert.ok(scheduled[0].id>0);
+  assert.equal(scheduled[0].extra.userId,'42');assert.equal(scheduled[0].smallIcon,'ic_notification');
+  await native.synchronizeAndroidReminders('42',plan);assert.equal(scheduled.length,1);
+  plan[0].at=new Date(Date.now()+172800000).toISOString();await native.synchronizeAndroidReminders('42',plan);assert.equal(scheduled.length,2);
+  await native.synchronizeAndroidReminders('43',plan);assert.equal(scheduled.length,2);
+  await native.synchronizeAndroidReminders('42',[]);assert.equal(pending.length,0);assert.ok(cancelled.length);
+  permission='denied';await native.synchronizeAndroidReminders('42',plan);assert.equal(scheduled.length,2);
+  await native.clearAndroidReminders();assert.equal(localStorage.getItem('android-reminder-plan'),null);assert.equal(deliveredCleared,1);
+ }finally{localStorage.removeItem('android-reminders-enabled');localStorage.removeItem('android-reminder-plan');}
+});
+
+test('appearance modal closes from its header and restores scrolling on mobile',async()=>{
+ const React=require('react'),{act}=React,{createRoot}=require('react-dom/client'),{Simulate}=require('react-dom/test-utils');
+ global.IS_REACT_ACT_ENVIRONMENT=true;global.getComputedStyle=window.getComputedStyle.bind(window);
+ const previous=window.matchMedia;window.matchMedia=()=>({matches:true,addEventListener(){},removeEventListener(){}});
+ const Appearance=loadComponent('components/AppearanceSettings.tsx',{},true),node=document.createElement('div');document.body.appendChild(node);const root=createRoot(node);
+ function Host(){const [open,setOpen]=React.useState(true);return open?React.createElement(Appearance,{onClose:()=>setOpen(false)}):React.createElement('p',null,'Cerrado');}
+ try{await act(async()=>root.render(React.createElement(Host)));
+  const close=node.querySelector('.form-modal-header [aria-label="Cerrar formulario"]');assert.ok(close);assert.equal(node.querySelectorAll('.modal-close-control').length,1);assert.equal(node.querySelector('.appearance-footer .modal-mobile-close-button'),null);assert.equal(close.querySelector('.modal-close-mobile').textContent,'Cerrar');
+  await act(async()=>Simulate.click(close));assert.equal(node.querySelector('[role="dialog"]'),null);assert.equal(document.body.style.overflow,'');
+ }finally{await act(async()=>root.unmount());node.remove();window.matchMedia=previous;}
+});
+
+
+test('dashboard carousel shows role-specific temple trip and own courses on mobile and desktop',async()=>{
+ const previous=window.matchMedia;
+ try{for(const mobile of [false,true])for(const role of ['finance','teacher','student']){
+  window.matchMedia=()=>({matches:!mobile,addEventListener(){},removeEventListener(){}});
+  const cards=role==='finance'?{trip:{id:1,temple_name:'Templo próximo',date:'2999-12-01',cost:100,status:'programado'},courses:[]}:{trip:null,courses:[{id:1,title:role==='teacher'?'Curso que enseño':'Curso inscrito propio',teacher_name:'Maestro propio',description:'Descripción del curso'}]};
+  const calls=[];
+  const view=await mountPage('pages/Panel.tsx',{get:async url=>{calls.push(url);return {data:url==='/dashboard-cards'?cards:[]};}},{id:42,role,permissions:['panel','reservar-viajes']});
+  try{await view.wait();assert.ok(calls.includes('/dashboard-cards'));
+   const card=view.node.querySelector(role==='finance'?'.dashboard-trip-card':'.dashboard-course-card');assert.ok(card);
+   assert.match(card.textContent,role==='finance'?/Templo próximo/:role==='teacher'?/Curso que enseño/:/Curso inscrito propio/);
+   if(role==='finance')assert.match(card.textContent,/Programado/);else assert.match(card.textContent,/Maestro propio/);
+  }finally{await view.close();}
+ }}finally{window.matchMedia=previous;}
 });

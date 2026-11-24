@@ -1,3 +1,4 @@
+import RecordActions from "../components/RecordActions";
 import { ViewRecordButton } from "../components/RecordDetails";
 import Pagination from "../components/Pagination";
 import { useTablePagination } from "../hooks/useTablePagination";
@@ -163,14 +164,14 @@ export default function Agendas() {
                 <td><time dateTime={agenda.scheduled_at}>{formatDate(agenda.scheduled_at)}</time></td>
                 <td className="table-desktop-only">{memberName(agenda, agenda.baptism_id)}</td>
                 <td className="table-desktop-only">{memberName(agenda, agenda.confirmation_id)}</td>
-                <td><div className="table-record-actions"><ViewRecordButton label="Ver agenda" onClick={() => setDetail(agenda)} />{admin && <>
+                <td><RecordActions><ViewRecordButton label="Ver agenda" onClick={() => setDetail(agenda)} />{admin && <>
                   <button type="button" className="btn secondary btn-icon" disabled={busy} aria-label={`Editar bautismo de ${agenda.friend}`} onClick={() => openEditor(agenda)}>
                     <IoCreateOutline aria-hidden="true" />
                   </button>
                   <button type="button" className="btn secondary btn-icon danger-outline" disabled={busy} aria-label={`Eliminar agenda de ${agenda.friend}`} onClick={() => void remove(agenda)}>
                     <IoTrashOutline aria-hidden="true" />
                   </button>
-                </>}</div></td>
+                </>}</RecordActions></td>
               </tr>
             ))}
           </tbody>

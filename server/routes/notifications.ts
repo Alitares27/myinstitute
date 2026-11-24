@@ -4,11 +4,12 @@ import { verifyToken, isAdmin, AuthRequest } from "../middleware/auth";
 import { pool } from "../models/db";
 import { attendanceReminder } from "../utils/notificationSchedule";
 import type { Module } from "../utils/roles";
+import { FINANCE_MODULES } from "../utils/roles";
 
 const router = asyncRouter();
 router.use(verifyToken);
 const settings = async () => (await pool.query("SELECT * FROM notification_settings WHERE id=1")).rows[0];
-const allowed = (req: AuthRequest, module: Module) => req.user?.role === "admin" || req.user?.role === "student" || req.user?.permissions?.includes(module);
+const allowed = (req: AuthRequest, module: Module) => req.user?.role === "admin" || req.user?.role === "student" || (req.user?.permissions?.includes(module)&& (req.user.role!=="finance"||FINANCE_MODULES.includes(module)));
 
 async function feed(req: AuthRequest) {
   const config = await settings();
@@ -47,6 +48,38 @@ router.put("/settings",isAdmin,async (req,res: Response)=>{
   try { if (typeof b.time_zone!=="string" || b.time_zone.length>100) throw Error(); new Intl.DateTimeFormat("es",{timeZone:b.time_zone}); } catch { return res.status(400).json({message:"Zona horaria inválida."}); }
   const result=await pool.query(`UPDATE notification_settings SET activity_days=$1,meeting_days=$2,attendance_day=$3,attendance_time=$4,time_zone=$5,activities_enabled=$6,meetings_enabled=$7,attendance_enabled=$8 WHERE id=1 RETURNING *`,[b.activity_days,b.meeting_days,b.attendance_day,b.attendance_time,b.time_zone,b.activities_enabled,b.meetings_enabled,b.attendance_enabled]);
   res.json(result.rows[0]);
+});
+router.get("/plan",async(req:AuthRequest,res:Response)=>{
+  const config=await settings();
+  const items:{key:string;title:string;body:string;href:string;at:string}[]=[];
+  if(config.activities_enabled&&allowed(req,'actividades')){
+    const result=await pool.query(`SELECT id,activity_name,activity_datetime::text AS date,
+      ((activity_datetime-($2::int*interval '1 day')) AT TIME ZONE $1) AS at
+      FROM activity_plans WHERE activity_datetime>=(now() AT TIME ZONE $1)
+      AND activity_datetime<=(now() AT TIME ZONE $1)+interval '90 days' ORDER BY activity_datetime LIMIT 200`,[config.time_zone,config.activity_days]);
+    for(const row of result.rows)items.push({key:`activity:${row.id}:${row.date}`,title:'Próxima actividad',body:row.activity_name,href:'/actividades',at:row.at});
+  }
+  if(config.meetings_enabled&&allowed(req,'consejos')){
+    const result=await pool.query(`SELECT m.id,m.title,(m.meeting_date+COALESCE(m.start_time,'00:00'::time))::text AS date,
+      ((m.meeting_date+COALESCE(m.start_time,'00:00'::time)-($2::int*interval '1 day')) AT TIME ZONE $1) AS at
+      FROM meetings m WHERE (m.meeting_date+COALESCE(m.start_time,'00:00'::time))>=(now() AT TIME ZONE $1)
+      AND m.meeting_date<=(now() AT TIME ZONE $1)::date+90 AND lower(COALESCE(m.status,'')) NOT IN ('cancelled','completed','cancelado','completado')
+      AND ($3='admin' OR m.created_by=$4 OR EXISTS(SELECT 1 FROM meeting_attendees ma WHERE ma.meeting_id=m.id AND ma.user_id=$4))
+      ORDER BY m.meeting_date,m.start_time LIMIT 200`,[config.time_zone,config.meeting_days,req.user!.role,req.user!.id]);
+    for(const row of result.rows)items.push({key:`meeting:${row.id}:${row.date}`,title:'Próximo consejo',body:row.title,href:`/consejos/${row.id}`,at:row.at});
+  }
+  if(config.attendance_enabled&&req.user!.role!=='student'&&allowed(req,'asistencia')){
+    const assigned=req.user!.role==='admin'||(await pool.query('SELECT 1 FROM courses c JOIN teachers t ON t.id=c.teacher_id WHERE t.user_id=$1 LIMIT 1',[req.user!.id])).rows.length>0;
+    if(assigned){
+      const result=await pool.query(`SELECT to_char(day::date+$3::time,'YYYY-MM-DD"T"HH24:MI') AS date,((day::date+$3::time) AT TIME ZONE $1) AS at
+        FROM generate_series((now() AT TIME ZONE $1)::date-1,(now() AT TIME ZONE $1)::date+90,interval '1 day') AS dates(day)
+        WHERE EXTRACT(DOW FROM day)=$2::int AND ((day::date+$3::time) AT TIME ZONE $1)>now()-interval '24 hours'`,[config.time_zone,config.attendance_day,config.attendance_time]);
+      for(const row of result.rows)items.push({key:`attendance:${row.date}`,title:'Registrar asistencia',body:'Recuerda registrar la asistencia de tus cursos.',href:'/asistencia',at:row.at});
+    }
+  }
+  const reads=await pool.query('SELECT notification_key FROM notification_reads WHERE user_id=$1 AND notification_key=ANY($2::text[])',[req.user!.id,items.map(item=>item.key)]);
+  const keys=new Set(reads.rows.map(row=>row.notification_key));
+  res.json(items.filter(item=>!keys.has(item.key)).sort((a,b)=>new Date(a.at).getTime()-new Date(b.at).getTime()));
 });
 router.get("/",async(req:AuthRequest,res:Response)=>res.json(await feed(req)));
 router.post("/read",async(req:AuthRequest,res:Response)=>{

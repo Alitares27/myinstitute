@@ -2,6 +2,7 @@ import { useEffect,useState } from "react";
 import api from "../api";
 import FormModal from "../components/FormModal";
 import { IoCreateOutline } from "react-icons/io5";
+import { timeZoneOptions } from "../utils/timeZones";
 type Settings={activity_days:number;meeting_days:number;attendance_day:number;attendance_time:string;time_zone:string;activities_enabled:boolean;meetings_enabled:boolean;attendance_enabled:boolean};
 const days=["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"];
 export default function Notificaciones({embedded=false}:{embedded?:boolean}){
@@ -30,7 +31,7 @@ export default function Notificaciones({embedded=false}:{embedded?:boolean}){
         <fieldset disabled={busy}><legend>Actividades</legend><label><input type="checkbox" checked={draft.activities_enabled} onChange={e=>setDraft({...draft,activities_enabled:e.target.checked})}/> Activar recordatorio</label><label className="form-group">Días de anticipación<input required type="number" min={0} max={365} value={draft.activity_days} onChange={e=>setDraft({...draft,activity_days:Number(e.target.value)})}/></label></fieldset>
         <fieldset disabled={busy}><legend>Consejos</legend><label><input type="checkbox" checked={draft.meetings_enabled} onChange={e=>setDraft({...draft,meetings_enabled:e.target.checked})}/> Activar recordatorio</label><label className="form-group">Días de anticipación<input required type="number" min={0} max={365} value={draft.meeting_days} onChange={e=>setDraft({...draft,meeting_days:Number(e.target.value)})}/></label></fieldset>
         <fieldset disabled={busy}><legend>Asistencia de cursos</legend><label><input type="checkbox" checked={draft.attendance_enabled} onChange={e=>setDraft({...draft,attendance_enabled:e.target.checked})}/> Activar recordatorio</label><label className="form-group">Día de la semana<select value={draft.attendance_day} onChange={e=>setDraft({...draft,attendance_day:Number(e.target.value)})}>{days.map((day,index)=><option key={day} value={index}>{day}</option>)}</select></label><label className="form-group">Hora<input required type="time" value={draft.attendance_time} onChange={e=>setDraft({...draft,attendance_time:e.target.value})}/></label></fieldset>
-        <label className="form-group">Zona horaria<input required value={draft.time_zone} onChange={e=>setDraft({...draft,time_zone:e.target.value})}/><small>Ejemplo: America/Argentina/Buenos_Aires</small></label>
+        <label className="form-group">Zona horaria<select required value={draft.time_zone} onChange={e=>setDraft({...draft,time_zone:e.target.value})}>{timeZoneOptions(draft.time_zone).map(zone=><option key={zone.value} value={zone.value}>{zone.label}</option>)}</select></label>
         <button type="submit" className="btn primary" disabled={busy}>{busy?"Guardando…":"Guardar"}</button>
       </form>
     </FormModal>}

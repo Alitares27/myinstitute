@@ -1,3 +1,4 @@
+import RecordActions from "../components/RecordActions";
 import { canManageModule } from "../utils/access";
 import Pagination from "../components/Pagination";
 import FormModal from "../components/FormModal";
@@ -73,9 +74,9 @@ export default function Miembros() {
             </tr></thead><tbody>{directory.items.map(member => <tr key={member.id}>
                 <td>{member.name}</td><td>{member.document || '—'}</td><td className="table-desktop-only">{member.grade || '—'}</td>
                 <td className="table-desktop-only"><div>{member.email || '—'}</div><div className="text-muted">{member.telefono || '—'}</div></td><td className="table-desktop-only">{MEMBER_ROLES[member.role]}</td>
-                <td><div className="table-record-actions"><button type="button" className="btn secondary btn-icon" title="Ver ficha" onClick={() => setSelected(member.id)} aria-label={`Ver ficha de ${member.name}`}><IoEyeOutline aria-hidden="true" /></button>
+                <td><RecordActions><button type="button" className="btn secondary btn-icon" title="Ver ficha" onClick={() => setSelected(member.id)} aria-label={`Ver ficha de ${member.name}`}><IoEyeOutline aria-hidden="true" /></button>
                     {(admin||(canManage&&member.role==='student')) && <><button type="button" className="btn secondary btn-icon" title="Editar" onClick={() => { setEditing(member); setEditorOpen(true); }} aria-label={`Editar ${member.name}`}><IoCreateOutline aria-hidden="true" /></button>{admin&&<button type="button" className="btn btn-icon miembros-delete" title="Eliminar" disabled={member.id === me.id} onClick={() => removeMember(member)} aria-label={`Eliminar ${member.name}`}><IoTrashOutline aria-hidden="true" /></button>}</>}
-                </div></td></tr>)}</tbody></table></div>
+                </RecordActions></td></tr>)}</tbody></table></div>
             {!directory.loading && !directory.items.length && <p>No hay miembros para los filtros seleccionados.</p>}
             <Pagination currentPage={currentPage} totalPages={totalPages} onChange={setCurrentPage} />
             {selected !== null && <MemberModal onClose={() => setSelected(null)}><MemberDetails key={selected} id={selected} viewerId={me.id} viewerRole={me.role} revision={revision} /></MemberModal>}

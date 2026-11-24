@@ -21,4 +21,4 @@ export function AppearanceOptions({onClose}:{onClose?:()=>void}){
     </div>;
 }
 
-export default function AppearanceSettings({onClose}:{onClose:()=>void}){return <FormModal title="Apariencia" onClose={onClose} mobileCloseAction={false}><AppearanceOptions onClose={onClose}/></FormModal>;}
+export default function AppearanceSettings({onClose}:{onClose:()=>void}){return <FormModal title="Apariencia" onClose={onClose}><AppearanceOptions/></FormModal>;}

@@ -95,6 +95,10 @@ html:root body :is(.btn-icon, .app-icon-button) { min-width: 44px; min-height: 4
 html:root body .table-record-actions { gap: var(--space-1); align-items: center; }
 html:root body .table-record-actions .btn { width: 44px; height: 44px; padding: 0; }
 html:root body .table-record-actions svg { width: 1.125rem; height: 1.125rem; flex-shrink: 0; }
+html:root body .record-actions-menu { display: grid; gap: .75rem; }
+html:root body .record-actions-menu .record-action-option { width: 100%; height: auto; min-height: 48px; justify-content: flex-start; padding: .75rem 1rem; gap: .75rem; border-radius: 12px; }
+html:root body .record-actions-compact { width: auto; max-width: 100%; }
+@media(max-width:700px) { html:root body .table-container table:has(.record-actions-compact) th:last-child { width: 4.5rem !important; } }
 
 html:root body :is(input, select, textarea):not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([type="range"]):not([type="hidden"]) {
   min-height: var(--control-height);
@@ -134,6 +138,12 @@ html:root body :is(.modal-content, .course-modal-content, .miembros-modal, .repo
 html:root body .miembros-modal .miembros-details { background: transparent; border: 0; padding: 0; }
 html:root body .form-modal-header { gap: 1rem; margin-bottom: 1.5rem; }
 html:root body .form-modal-header h2 { margin: 0; }
+html:root body .form-modal-header { position: sticky; top: 0; z-index: 3; background: var(--bg-surface); padding-block: .5rem; }
+html:root body .modal-close-control { flex-shrink: 0; margin-inline-start: auto; min-width: 44px; height: 44px; padding: .5rem .75rem; }
+.modal-close-mobile { display: none; }
+@media(max-width:700px) { .modal-close-mobile { display: inline; } .modal-close-desktop { display: none; } }
+.native-android .modal-close-mobile { display: inline; }
+.native-android .modal-close-desktop { display: none; }
 html:root body :is(.modal-overlay, .course-modal-overlay, .miembros-modal-overlay, .ios-dialog-backdrop, .floating-nav-backdrop) {
   background-color: rgb(0 0 0 / 32%);
   backdrop-filter: blur(8px);

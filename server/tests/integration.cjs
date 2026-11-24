@@ -48,6 +48,25 @@ before(async () => {
     const { startServer } = require("../dist/index"); server = await startServer(); if (!server.listening) await new Promise(resolve => server.once("listening", resolve)); base = `http://127.0.0.1:${server.address().port}`;
 });
 after(async () => { if (server) await new Promise(resolve => server.close(resolve)); if (db) await db.close(); await pool.end(); });
+test('dashboard cards scope courses to each account and return only the nearest permitted trip',async()=>{
+    assert.equal((await request('/api/dashboard-cards',{id:null})).status,401);
+    const teacher=await request('/api/dashboard-cards',{id:2});assert.equal(teacher.status,200);
+    assert.deepEqual(teacher.data.courses.map(c=>c.title),['Assigned course']);assert.equal(teacher.data.trip,null);
+    const student=await request('/api/dashboard-cards',{id:42});assert.equal(student.status,200);
+    assert.deepEqual(student.data.courses.map(c=>c.title),['Assigned course']);
+    const other=await request('/api/dashboard-cards',{id:43});assert.deepEqual(other.data.courses.map(c=>c.title),['Other course']);
+    await db.exec("INSERT INTO users(id,name,email,password,role,permissions) SELECT 900090,'Financial cards','cards@test.invalid',password,'finance',ARRAY['panel','reservar-viajes'] FROM users WHERE id=1; INSERT INTO temple_trips(id,temple_id,trip_date,status,cost) VALUES(900090,1,'2998-01-01','programado',80),(900091,1,'2997-01-01','cancelado',80),(900092,1,'2000-01-01','programado',80)");
+    const auth=token(1,{id:900090,role:'finance'});
+    try{
+      const finance=await request('/api/dashboard-cards',{auth});assert.equal(finance.status,200);assert.equal(finance.data.trip.id,900090);assert.deepEqual(finance.data.courses,[]);
+      await db.exec("UPDATE users SET permissions=ARRAY['panel'] WHERE id=900090");
+      const currentAuth=async()=>token(1,{id:900090,role:'finance',tokenVersion:(await db.query('SELECT token_version FROM users WHERE id=900090')).rows[0].token_version});
+      assert.equal((await request('/api/dashboard-cards',{auth:await currentAuth()})).data.trip,null);
+      await db.exec("UPDATE users SET permissions=ARRAY['reservar-viajes'] WHERE id=900090");
+      assert.equal((await request('/api/dashboard-cards',{auth:await currentAuth()})).status,403);
+    }finally{await db.exec('DELETE FROM temple_trips WHERE id IN (900090,900091,900092);DELETE FROM users WHERE id=900090');}
+});
+
 test("real PostgreSQL migration is idempotent and adds revocation, archive and audit fields", async () => {
     const result = await db.query("SELECT auth_version FROM users WHERE id=1"); assert.equal(result.rows[0].auth_version, 0);
     assert.equal((await db.query("SELECT COUNT(*)::int AS count FROM financial_events")).rows[0].count, 0);
@@ -114,6 +133,18 @@ test("notifications persist settings and read state without exposing private mee
       INSERT INTO meeting_attendees(meeting_id,user_id) VALUES(900001,42);`);
     try {
       const mine=await request('/api/notifications',{id:42});assert.equal(mine.status,200);
+      assert.equal((await request('/api/notifications/plan',{id:null})).status,401);
+      const plan=await request('/api/notifications/plan',{id:42});assert.equal(plan.status,200);
+      assert.ok(plan.data.some(row=>row.body==='Outside window'));
+      assert.ok(plan.data.some(row=>row.body==='Invited council'));
+      assert.ok(!plan.data.some(row=>['Private council','Cancelled council'].includes(row.body)));
+      const adminPlan=await request('/api/notifications/plan');assert.equal(adminPlan.status,200);
+      const weekly=adminPlan.data.filter(row=>row.key.startsWith('attendance:'));assert.ok(weekly.length>=12);
+      for(const row of weekly){const local=new Intl.DateTimeFormat('en-US',{timeZone:config.time_zone,weekday:'short',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date(row.at));assert.match(local,/Sat/);assert.match(local,/19:00/);}
+      const scheduled=plan.data.find(row=>row.body==='Upcoming activity');
+      const source=(await db.query('SELECT activity_datetime AT TIME ZONE $1 AS at FROM activity_plans WHERE id=900001',[config.time_zone])).rows[0];
+      assert.equal(new Date(source.at).getTime()-new Date(scheduled.at).getTime(),7*86400000);
+      assert.ok(!(await request('/api/notifications/plan',{id:2})).data.some(row=>row.key.startsWith('activity:')||row.key.startsWith('meeting:')));
       assert.ok(mine.data.some(item=>item.message==='Upcoming activity'));
       assert.ok(mine.data.some(item=>item.message==='Invited council'));
       assert.ok(!mine.data.some(item=>['Private council','Cancelled council','Outside window'].includes(item.message)));
@@ -123,6 +154,7 @@ test("notifications persist settings and read state without exposing private mee
       assert.equal(item.read,false);
       assert.equal((await request('/api/notifications/read',{id:42,method:'POST',body:{ids:[item.id]}})).status,200);
       assert.equal((await request('/api/notifications',{id:42})).data.find(row=>row.id===item.id).read,true);
+      assert.ok(!(await request('/api/notifications/plan',{id:42})).data.some(row=>row.key===item.id));
       assert.equal((await request('/api/notifications',{id:43})).data.find(row=>row.id===item.id).read,false);
       const updated=await request('/api/notifications/settings',{method:'PUT',body:{...config,activity_days:1,attendance_time:'18:30'}});
       assert.equal(updated.status,200);assert.equal(updated.data.attendance_time,'18:30:00');

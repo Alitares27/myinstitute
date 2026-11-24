@@ -1,3 +1,4 @@
+import RecordActions from "../components/RecordActions";
 import { TABLE_PAGE_SIZE } from "../shared/constants";
 import Pagination from "../components/Pagination";
 import { ViewRecordButton, RecordDetails } from "../components/RecordDetails";
@@ -494,13 +495,13 @@ export default function Grades() {
                   <td className="table-desktop-only">{formatDate(g.created_at)}</td>
 
                   <td>
-                    <div className="table-record-actions">
+                    <RecordActions>
                       <ViewRecordButton label="Ver calificación" onClick={() => setDetail(g)} />
                       {role !== "student" && <>
                         <button className="btn secondary btn-icon" onClick={() => handleEditClick(g)} aria-label="Editar"><IoCreateOutline /></button>
                         <button className="btn secondary btn-icon danger-outline" onClick={() => handleDelete(g.id)} aria-label="Eliminar"><IoTrashOutline /></button>
                       </>}
-                    </div>
+                    </RecordActions>
                   </td>
                 </tr>
               ))

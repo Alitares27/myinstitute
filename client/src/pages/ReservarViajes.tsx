@@ -1,3 +1,4 @@
+import RecordActions from "../components/RecordActions";
 import { TABLE_PAGE_SIZE } from "../shared/constants";
 import Pagination from "../components/Pagination";
 import { ViewRecordButton, RecordDetails } from "../components/RecordDetails";
@@ -650,13 +651,13 @@ export default function TripReservations() {
                                     )}
                                 </td>
                                 <td>
-                                  <div className="table-record-actions">
+                                  <RecordActions>
                                     <ViewRecordButton label="Ver reserva" onClick={() => setDetail(res)} />
                                     {canManage && <>
                                       <button className="btn secondary btn-icon" onClick={() => handleEdit(res)} aria-label="Editar"><IoCreateOutline /></button>
                                       <button className="btn secondary btn-icon danger-outline" onClick={() => handleDelete(res.id)} aria-label="Eliminar"><IoTrashOutline /></button>
                                     </>}
-                                  </div>
+                                  </RecordActions>
                                 </td>
                             </tr>
                         ))}

@@ -1,9 +1,29 @@
 import { asyncRouter } from "../middleware/asyncRouter";
 import express from "express";
 import { pool } from "../models/db";
-import { verifyToken, requireModuleAccess } from "../middleware/auth";
+import { verifyToken, requireModuleAccess, AuthRequest } from "../middleware/auth";
+import { courseAccess } from "../utils/courseAccess";
 
 const router = asyncRouter();
+
+router.get("/dashboard-cards", verifyToken, requireModuleAccess("panel"), async (req:AuthRequest,res) => {
+  const {role,id,permissions=[]}=req.user!;
+  if(role==='teacher'||role==='student'){
+    const courses=await pool.query(`SELECT c.id,c.title,c.description,u.name AS teacher_name
+      FROM courses c LEFT JOIN teachers t ON t.id=c.teacher_id LEFT JOIN users u ON u.id=t.user_id
+      WHERE ${courseAccess('c','$1','$2')} ORDER BY c.title,c.id`,[role,id]);
+    return res.json({courses:courses.rows,trip:null});
+  }
+  if(role==='finance'&&permissions.some(module=>module==='viajes-templo'||module==='reservar-viajes'||module==='pagos-templos')){
+    const trip=await pool.query(`SELECT tt.id,t.name AS temple_name,tt.trip_date AS date,tt.cost,tt.status
+      FROM temple_trips tt JOIN temples t ON t.id=tt.temple_id
+      WHERE tt.archived_at IS NULL AND t.archived_at IS NULL AND tt.status='programado'
+      AND tt.trip_date >= (now() AT TIME ZONE 'America/Argentina/Buenos_Aires')::date
+      ORDER BY tt.trip_date,tt.id LIMIT 1`);
+    return res.json({courses:[],trip:trip.rows[0]??null});
+  }
+  return res.json({courses:[],trip:null});
+});
 
 router.get("/dashboard-stats", verifyToken, requireModuleAccess("panel"), async (req: any, res) => {
   try {

@@ -1,4 +1,5 @@
-import MobileModalClose from "../components/MobileModalClose";
+import RecordActions from "../components/RecordActions";
+import ModalCloseButton from "../components/ModalCloseButton";
 import { TABLE_PAGE_SIZE } from "../shared/constants";
 import Pagination from "../components/Pagination";
 import { ViewRecordButton } from "../components/RecordDetails";
@@ -272,7 +273,7 @@ export default function Meetings() {
                     </span>
                   </td>
                   <td>
-                    <div className="table-record-actions">
+                    <RecordActions>
                       <ViewRecordButton label="Ver consejo" onClick={() => handleViewMeeting(meeting.id!)} />
                       {role === "admin" && <>
                         <Link to={`/consejos/editar/${meeting.id}`} className="btn secondary btn-icon" aria-label="Editar">
@@ -286,7 +287,7 @@ export default function Meetings() {
                         <IoTrashOutline />
                         </button>
                       </>}
-                    </div>
+                    </RecordActions>
                   </td>
                 </tr>
               ))}
@@ -301,6 +302,7 @@ export default function Meetings() {
       {selectedMeeting && (
         <div className="modal-overlay" onClick={() => setSelectedMeeting(null)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <header className="form-modal-header"><h2>Detalles del consejo</h2><ModalCloseButton onClose={() => setSelectedMeeting(null)}/></header>
             {loadingDetail ? (
               <p>Cargando consejo...</p>
             ) : (
@@ -359,7 +361,7 @@ export default function Meetings() {
 
               </div>
             )}
-            <MobileModalClose onClose={() => setSelectedMeeting(null)}/>
+
           </div>
         </div>
       )}

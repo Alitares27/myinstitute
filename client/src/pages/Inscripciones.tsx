@@ -1,3 +1,4 @@
+import RecordActions from "../components/RecordActions";
 import { TABLE_PAGE_SIZE } from "../shared/constants";
 import Pagination from "../components/Pagination";
 import { useTablePagination } from "../hooks/useTablePagination";
@@ -698,7 +699,7 @@ export default function Enrollments() {
                     <td className="table-desktop-only">{formatDate(en.enrollment_date)}</td>
                     {role === "admin" && (
                       <td style={{ textAlign: "center" }}>
-                        <div style={{ display: "inline-flex", gap: "0.5rem", justifyContent: "center" }}>
+                        <RecordActions>
                           <button
                             className="btn secondary btn-icon"
                             onClick={() => handleEdit(en)}
@@ -715,7 +716,7 @@ export default function Enrollments() {
                           >
                             <IoTrashOutline />
                           </button>
-                        </div>
+                        </RecordActions>
                       </td>
                     )}
                   </tr>
@@ -873,7 +874,7 @@ export default function Enrollments() {
                       <tr key={t.id}>
                         <td><strong>{t.title}</strong></td>
                         <td style={{ textAlign: "center" }}>
-                          <div style={{ display: "inline-flex", gap: "0.4rem", justifyContent: "center" }}>
+                          <RecordActions>
                             <button
                               type="button"
                               className="btn secondary btn-icon"
@@ -892,7 +893,7 @@ export default function Enrollments() {
                             >
                               <IoTrashOutline />
                             </button>
-                          </div>
+                          </RecordActions>
                         </td>
                       </tr>
                     ))}

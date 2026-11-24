@@ -1,3 +1,4 @@
+import RecordActions from "../components/RecordActions";
 import { TABLE_PAGE_SIZE } from "../shared/constants";
 import Pagination from "../components/Pagination";
 import { RecordDetails, ViewRecordButton } from "../components/RecordDetails";
@@ -596,13 +597,13 @@ export default function Attendance() {
                       </span>
                     </td>
                     <td>
-                      <div className="table-record-actions">
+                      <RecordActions>
                         <ViewRecordButton label="Ver asistencia" onClick={() => setDetail(a)} />
                         {(role === "admin" || role === "teacher") && <>
                           <button type="button" className="btn secondary btn-icon" aria-label="Editar" onClick={() => openEdit(a)}><IoCreateOutline aria-hidden="true" /></button>
                           <button type="button" className="btn secondary btn-icon danger-outline" aria-label="Eliminar" onClick={() => void deleteAttendance(a)}><IoTrashOutline aria-hidden="true" /></button>
                         </>}
-                      </div>
+                      </RecordActions>
                     </td>
                   </tr>
                 );

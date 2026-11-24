@@ -1,4 +1,5 @@
-import MobileModalClose from "../components/MobileModalClose";
+import RecordActions from "../components/RecordActions";
+import ModalCloseButton from "../components/ModalCloseButton";
 import ActivityAreas from "../components/activities/ActivityAreas";
 import { TABLE_PAGE_SIZE } from "../shared/constants";
 import Pagination from "../components/Pagination";
@@ -237,7 +238,7 @@ export default function Actividades() {
                     <ActivityAreas activity={a}/>
                   </td>
                   <td>
-                    <div className="table-record-actions">
+                    <RecordActions>
                       <ViewRecordButton label="Ver actividad" onClick={() => setSelectedActivity(a)} />
                       {role === "admin" && <>
                         <Link to={`/actividades/editar/${a.id}`} className="btn secondary btn-icon" aria-label="Editar">
@@ -247,7 +248,7 @@ export default function Actividades() {
                         <IoTrashOutline />
                         </button>
                       </>}
-                    </div>
+                    </RecordActions>
                   </td>
                 </tr>
               ))}
@@ -269,6 +270,7 @@ export default function Actividades() {
                   <IoCreateOutline aria-hidden="true" />
                 </button>
               )}
+              <ModalCloseButton onClose={() => setSelectedActivity(null)}/>
             </header>
             <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
               <DetailRow label="Fecha y hora" value={formatDateTimeLong(selectedActivity.activity_datetime)} />
@@ -280,7 +282,7 @@ export default function Actividades() {
               <DetailRow label="Asignaciones" value={selectedActivity.assignments} />
               <ActivityAreas activity={selectedActivity}/>
             </div>
-            <MobileModalClose onClose={() => setSelectedActivity(null)}/>
+
           </div>
         </div>
       )}

@@ -24,7 +24,7 @@ export default function MemberEditor({ member, onSave, onCancel, onRemoveStudent
     const set = (key: keyof MemberForm, value: string | boolean | AppModule[]) => setForm(previous => ({ ...previous, [key]: value }));
     async function submit(event: React.FormEvent) { event.preventDefault(); setSaving(true); setError(""); try { await onSave({ ...form, include_student_profile: academic }); } catch (error: any) { setError(error.response?.data?.message || "No se pudo guardar el miembro"); } finally { setSaving(false); } }
     async function remove() { if (!onRemoveStudent || !await confirmAppAction("¿Quitar solo el registro de estudiante? La cuenta se conserva. No se permite si hay matrículas, asistencias o notas.")) return; setSaving(true); setError(""); try { await onRemoveStudent(); } catch (error: any) { setError(error.response?.data?.message || "No se pudo retirar el registro académico"); } finally { setSaving(false); } }
-    return <FormModal title={member ? "Editar miembro" : "Agregar miembro"} onClose={onCancel} busy={saving} mobileCloseAction={false}>
+    return <FormModal title={member ? "Editar miembro" : "Agregar miembro"} onClose={onCancel} busy={saving}>
         <form onSubmit={submit}><fieldset disabled={saving} className="miembros-fields"><div className="miembros-form-grid">
             <label>Nombre completo<input name="name" required maxLength={100} value={form.name} onChange={e => set('name', e.target.value)} /></label>
             <label>Correo electrónico<input name="email" type="email" required maxLength={150} value={form.email} onChange={e => set('email', e.target.value)} /></label>

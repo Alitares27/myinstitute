@@ -1,3 +1,4 @@
+import RecordActions from "../components/RecordActions";
 import { TABLE_PAGE_SIZE } from "../shared/constants";
 import Pagination from "../components/Pagination";
 import { readSessionUser, canManageModule } from "../utils/access";
@@ -290,7 +291,7 @@ export default function TemplosMaintenance() {
                       {getStatusLabel(t.status)}
                     </span>
                   </td>
-                  <td><div className="table-record-actions">
+                  <td><RecordActions>
                     <ViewRecordButton label={`Ver detalles de ${t.name}`} onClick={() => setSelectedTemplo(t)} />
                     {canManage && <>
                     <button className="btn secondary btn-icon" onClick={() => handleEdit(t)} aria-label="Editar">
@@ -301,7 +302,7 @@ export default function TemplosMaintenance() {
                       <IoTrashOutline />
                     </button>
                     </>}
-                  </div></td>
+                  </RecordActions></td>
                 </tr>
               ))
             ) : (

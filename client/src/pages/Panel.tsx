@@ -12,6 +12,9 @@ import type { UpcomingEvent } from "../utils/upcomingEvents";
 import { formatDate } from "../utils/utilidadesFecha";
 import { MEMBER_ROLES } from "../interfaces/User";
 import DashboardEventDetails from "../components/DashboardEventDetails";
+import type { Trip } from "../interfaces/Trip";
+
+type DashboardCourse={id:number;title:string;description?:string;teacher_name?:string};
 
 function Dashboard() {
   const [user] = useState(readSessionUser);
@@ -19,6 +22,21 @@ function Dashboard() {
   const canViewMeetings=canAccessModule(user,"consejos");
   const [day,setDay]=useState(()=>localDateKey(new Date()));
   const [events,setEvents]=useState<UpcomingEvent[]>([]);
+  const [courses,setCourses]=useState<DashboardCourse[]>([]);
+  const [trip,setTrip]=useState<Trip|null>(null);
+  const [roleError,setRoleError]=useState('');
+  const [roleLoading,setRoleLoading]=useState(false);
+  const personalized=user?.role==='finance'||user?.role==='teacher'||user?.role==='student';
+  useEffect(()=>{
+    if(!personalized)return;
+    const controller=new AbortController();setRoleLoading(true);setRoleError('');
+    void api.get<{courses:DashboardCourse[];trip:Trip|null}>('/dashboard-cards',{signal:controller.signal}).then(({data})=>{
+      if(controller.signal.aborted)return;
+      setCourses(Array.isArray(data.courses)?data.courses:[]);setTrip(data.trip??null);
+    }).catch(()=>{if(!controller.signal.aborted)setRoleError('No se pudo cargar tu resumen. Intenta nuevamente al recuperar la conexión.');})
+      .finally(()=>{if(!controller.signal.aborted)setRoleLoading(false);});
+    return()=>controller.abort();
+  },[personalized,day]);
   const [selectedEvent,setSelectedEvent]=useState<UpcomingEvent|null>(null);
   const [desktop,setDesktop]=useState(()=>!document.documentElement.classList.contains("native-android")&&window.matchMedia("(min-width: 701px)").matches);
   useEffect(()=>{const query=window.matchMedia("(min-width: 701px)");const update=()=>setDesktop(!document.documentElement.classList.contains("native-android")&&query.matches);query.addEventListener("change",update);return()=>query.removeEventListener("change",update);},[]);
@@ -44,6 +62,7 @@ function Dashboard() {
     return()=>controller.abort();
   },[day,canViewActivities,canViewMeetings]);
   function move(direction:number){const node=carousel.current;if(node)node.scrollBy({left:direction*node.clientWidth*.85,behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?"auto":"smooth"});}
+  const cardCount=events.length+courses.length+(trip?1:0);
 
   const shortcuts = user?.role === "finance" ? [
     {to:"/miembros",title:"Miembros",description:"Gestionar miembros",Icon:TbSettings},
@@ -73,16 +92,22 @@ function Dashboard() {
           Bienvenido de nuevo. Aquí tienes un resumen de lo que está sucediendo en tu cuenta hoy.
         </p>
       </div>
-      <section className="monthly-activities" aria-label="Actividades y consejos de los próximos tres meses">
+      <section className="monthly-activities" aria-label="Resumen de cursos, viajes y próximos eventos">
         <header className="monthly-activities-header"><h2>Próximos 3 meses</h2>
-          <div><button type="button" className="btn secondary btn-icon" aria-label="Evento anterior" disabled={events.length<2} onClick={()=>move(-1)}><IoChevronBackOutline aria-hidden="true"/></button><button type="button" className="btn secondary btn-icon" aria-label="Evento siguiente" disabled={events.length<2} onClick={()=>move(1)}><IoChevronForwardOutline aria-hidden="true"/></button></div>
+          <div><button type="button" className="btn secondary btn-icon" aria-label="Evento anterior" disabled={cardCount<2} onClick={()=>move(-1)}><IoChevronBackOutline aria-hidden="true"/></button><button type="button" className="btn secondary btn-icon" aria-label="Evento siguiente" disabled={cardCount<2} onClick={()=>move(1)}><IoChevronForwardOutline aria-hidden="true"/></button></div>
         </header>
         <p className="text-muted">Actividades y consejos del {formatDate(range.start)} al {formatDate(range.end)}.</p>
         {loading&&<p role="status">Cargando eventos…</p>}
         {error&&<p role="alert">{error}</p>}
-        {!canViewActivities&&!canViewMeetings&&<p>Tu cuenta no tiene acceso a actividades ni consejos.</p>}
+        {roleLoading&&<p role="status">Cargando tu resumen…</p>}
+        {roleError&&<p role="alert">{roleError}</p>}
+        {!canViewActivities&&!canViewMeetings&&!personalized&&<p>Tu cuenta no tiene acceso a actividades ni consejos.</p>}
+        {personalized&&!roleLoading&&!roleError&&user?.role==='finance'&&!trip&&<p>No hay próximos viajes al templo disponibles para tu cuenta.</p>}
+        {personalized&&!roleLoading&&!roleError&&user?.role!=='finance'&&!courses.length&&<p>{user?.role==='teacher'?'No tienes cursos asignados.':'No estás inscrito en ningún curso.'}</p>}
         {(canViewActivities||canViewMeetings)&&!loading&&!error&&!events.length&&<p>No hay eventos registrados para los próximos tres meses.</p>}
-        <div className="activity-carousel" ref={carousel} tabIndex={0} role="region" aria-label="Carrusel de actividades y consejos" aria-roledescription="carrusel">
+        <div className="activity-carousel" ref={carousel} tabIndex={0} role="region" aria-label="Carrusel de novedades y cursos" aria-roledescription="carrusel">
+          {trip&&<article className="monthly-activity-card dashboard-trip-card"><TbBuilding className="monthly-activity-icon" aria-hidden="true"/><span className="upcoming-event-kind">Próximo viaje al templo</span><h3>{trip.temple_name}</h3><dl><div><dt>Fecha</dt><dd>{formatDate(trip.date)}</dd></div><div><dt>Costo</dt><dd>{Number(trip.cost).toLocaleString('es-AR',{style:'currency',currency:'ARS'})}</dd></div><div><dt>Estado</dt><dd>Programado</dd></div></dl></article>}
+          {courses.map(course=><article key={`course:${course.id}`} className="monthly-activity-card dashboard-course-card"><TbBook className="monthly-activity-icon" aria-hidden="true"/><span className="upcoming-event-kind">{user?.role==='teacher'?'Curso que dictas':'Curso inscrito'}</span><h3>{course.title}</h3><dl><div><dt>Maestro</dt><dd>{course.teacher_name||'Sin asignar'}</dd></div>{course.description&&<div><dt>Descripción</dt><dd>{course.description}</dd></div>}</dl></article>)}
           {events.map(event=><article key={event.id} className="monthly-activity-card"
             role={desktop?"button":undefined} tabIndex={desktop?0:undefined} aria-haspopup={desktop?"dialog":undefined} aria-label={desktop?`Ver detalles de ${event.title}`:undefined}
             onClick={desktop?()=>setSelectedEvent(event):undefined}

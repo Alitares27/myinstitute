@@ -1,3 +1,4 @@
+import RecordActions from "../components/RecordActions";
 import { TABLE_PAGE_SIZE } from "../shared/constants";
 import Pagination from "../components/Pagination";
 import { ViewRecordButton, RecordDetails } from "../components/RecordDetails";
@@ -738,7 +739,7 @@ export default function Maestros() {
 
                     <td className="table-desktop-only"><div>{teacher.email || "—"}</div><div className="text-muted">{teacher.telefono || "—"}</div></td>
                     <td>
-                      <div className="table-record-actions">
+                      <RecordActions>
                         <ViewRecordButton label="Ver maestro" onClick={() => setDetail(teacher)} />
                         {role === "admin" && <>
                           <button
@@ -766,7 +767,7 @@ export default function Maestros() {
                             <IoTrashOutline />
                           </button>
                         </>}
-                      </div>
+                      </RecordActions>
                     </td>
                   </tr>
                 );

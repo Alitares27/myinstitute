@@ -1,3 +1,4 @@
+import RecordActions from "../components/RecordActions";
 import { TABLE_PAGE_SIZE } from "../shared/constants";
 import Pagination from "../components/Pagination";
 import { ViewRecordButton, RecordDetails } from "../components/RecordDetails";
@@ -553,7 +554,7 @@ export default function PagosTemplos() {
                   <td className="table-desktop-only">{formatDate(p.payment_date)}</td>
                   <td className="table-desktop-only">{capitalizarMedio(p.payment_type)}</td>
                   <td>
-                    <div className="table-record-actions">
+                    <RecordActions>
                       <ViewRecordButton label="Ver pago" onClick={() => setDetail(p)} />
                       {canManage && <>
                         <button
@@ -572,7 +573,7 @@ export default function PagosTemplos() {
                           {isDeletingId === p.id ? "⏳" : <IoTrashOutline />}
                         </button>
                       </>}
-                    </div>
+                    </RecordActions>
                   </td>
                 </tr>
               ))}

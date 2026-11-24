@@ -1,3 +1,4 @@
+import RecordActions from "../components/RecordActions";
 import { TABLE_PAGE_SIZE } from "../shared/constants";
 import Pagination from "../components/Pagination";
 import { ViewRecordButton } from "../components/RecordDetails";
@@ -461,7 +462,7 @@ export default function Speakers() {
                 </td>
                 <td className="table-desktop-only">{s.time || 0} min</td>
                 <td>
-                  <div className="table-record-actions">
+                  <RecordActions>
                     <ViewRecordButton label="Ver discurso" onClick={() => setSelectedSpeaker(s)} />
                     {role === "admin" && <>
                       <button type="button" className="btn secondary btn-icon" onClick={() => handleEdit(s)} aria-label="Editar">
@@ -471,7 +472,7 @@ export default function Speakers() {
                       <IoTrashOutline />
                       </button>
                     </>}
-                  </div>
+                  </RecordActions>
                 </td>
               </tr>
             ))}

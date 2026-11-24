@@ -1,3 +1,4 @@
+import RecordActions from "../components/RecordActions";
 import { TABLE_PAGE_SIZE } from "../shared/constants";
 import Pagination from "../components/Pagination";
 import api from "../api";
@@ -51,7 +52,7 @@ function SecurityHistory() {
                 <td className="table-desktop-only">{event.target_id ?? "—"}</td>
                 <td className="table-desktop-only">{event.module ?? "—"}</td>
                 <td className="table-mobile-only">{event.module ?? "Sin módulo"} · Cuenta {event.target_id ?? "—"}</td>
-                <td><div className="table-record-actions"><ViewRecordButton label="Ver detalles del evento" onClick={() => setSelected(event)} /></div></td>
+                <td><RecordActions><ViewRecordButton label="Ver detalles del evento" onClick={() => setSelected(event)} /></RecordActions></td>
               </tr>
             ))}
           </tbody>
@@ -236,7 +237,7 @@ export default function Auditorias() {
                 {event.reservation_id != null && <small className="audit-reservation-id">Reserva #{event.reservation_id}</small>}
               </td>
               <td><EventDetails event={event} /></td>
-              <td><div className="table-record-actions"><ViewRecordButton label="Ver detalles de la auditoría" onClick={() => setSelected(event)} /></div></td>
+              <td><RecordActions><ViewRecordButton label="Ver detalles de la auditoría" onClick={() => setSelected(event)} /></RecordActions></td>
             </tr>
           ))}
         </tbody>

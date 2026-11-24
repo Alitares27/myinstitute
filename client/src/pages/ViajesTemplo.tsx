@@ -1,3 +1,4 @@
+import RecordActions from "../components/RecordActions";
 import { canManageModule,readSessionUser } from "../utils/access";
 import { TABLE_PAGE_SIZE } from "../shared/constants";
 import Pagination from "../components/Pagination";
@@ -390,7 +391,7 @@ export default function TempleTrip() {
                                     <td className="table-desktop-only"><span className={`status-${trip.status}`}>{formatStatus(trip.status)}</span></td>
                                     <td className="table-desktop-only">${Number(trip.cost).toLocaleString()}</td>
                                     <td>
-                                      <div className="table-record-actions">
+                                      <RecordActions>
                                         <ViewRecordButton label="Ver viaje" onClick={() => setDetail(trip)} />
                                         {canManageModule(readSessionUser(),"viajes-templo") && <>
                                           <button
@@ -409,7 +410,7 @@ export default function TempleTrip() {
                                             <IoTrashOutline />
                                           </button>
                                         </>}
-                                      </div>
+                                      </RecordActions>
                                     </td>
                                 </tr>
                             ))
