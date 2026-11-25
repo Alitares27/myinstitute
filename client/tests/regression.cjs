@@ -10,7 +10,7 @@ function load(file, api={get:async()=>({data:[]})}, modules={}) {
   const filename=path.resolve(__dirname,"../src",file), mod={exports:{}};
   const js=ts.transpileModule(fs.readFileSync(filename,"utf8"),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2020,esModuleInterop:true}}).outputText;
   const localRequire=createRequire(filename);
-  vm.runInNewContext(js,{exports:mod.exports,module:mod,require:name=>name==="../api"?{__esModule:true,default:api}:modules[name] ?? localRequire(name),window,document,localStorage,Map,Date,setTimeout,Promise,console},{filename});
+  vm.runInNewContext(js,{exports:mod.exports,module:mod,require:name=>name==="../api"?{__esModule:true,default:api}:modules[name] ?? localRequire(name),window,document,localStorage,URL:window.URL,Map,Date,setTimeout,Promise,console},{filename});
   return mod.exports;
 }
 test("report sanitizer removes stored XSS from names, documents, URLs and nested SVG",()=>{
@@ -754,4 +754,127 @@ test('dashboard carousel shows role-specific temple trip and own courses on mobi
    if(role==='finance')assert.match(card.textContent,/Programado/);else assert.match(card.textContent,/Maestro propio/);
   }finally{await view.close();}
  }}finally{window.matchMedia=previous;}
+});
+
+
+test('speech search filters references and selects one into a speaker assignment on web and mobile',async()=>{
+ const {Simulate}=require('react-dom/test-utils'),previous=window.matchMedia;
+ const references=[{id:1,title:'Discurso de fe',author:'Autor',conference:'Abril de 2023',url:'https://www.churchofjesuschrist.org/study/general-conference/2023/04/47nelson?lang=spa',topics:['Fe']},{id:2,title:'Paz y caridad',author:'Otro autor',conference:'Octubre de 2023',url:'https://www.churchofjesuschrist.org/study/general-conference/2023/10/51nelson?lang=spa',topics:['Paz']}];
+ try{for(const mobile of [false,true]){
+  window.matchMedia=()=>({matches:mobile,addEventListener(){},removeEventListener(){}});const writes=[];
+  const api={get:async url=>({data:url==='/speakers/members'?[{id:42,name:'Ana'}]:url==='/temas'?[{id:1,title:'Fe'}]:url==='/speakers/catalog'?references:[]}),post:async(url,body)=>{writes.push([url,body]);return {data:{...body,id:9}};}};
+  const view=await mountPage('pages/Discursantes.tsx',api);
+  try{
+   await view.wait();await view.act(async()=>Simulate.click(view.node.querySelector('.speakers-header [aria-label="Buscar discurso"]')));await view.wait();
+   const dialog=document.querySelector('[role="dialog"]');assert.ok(dialog);assert.equal(dialog.querySelectorAll('.speech-search-results li').length,2);
+   await view.act(async()=>Simulate.change(dialog.querySelector('select'),{target:{value:'Fe'}}));assert.equal(dialog.querySelectorAll('.speech-search-results li').length,1);
+   await view.act(async()=>Simulate.change(dialog.querySelector('input[type="search"]'),{target:{value:'FÉ'}}));assert.equal(dialog.querySelectorAll('.speech-search-results li').length,1);
+   await view.act(async()=>Simulate.click([...dialog.querySelectorAll('button')].find(b=>b.textContent==='Seleccionar')));
+   assert.equal(document.querySelector('.speech-search-results'),null);const form=view.node.querySelector('form');assert.ok(form);
+   await view.act(async()=>Simulate.change(form.querySelector('select'),{target:{value:'42'}}));
+   assert.equal(form.querySelector('input[type="text"]').value,'Discurso de fe');assert.ok(form.textContent.includes('Abril de 2023'));
+   await view.act(async()=>Simulate.submit(form));assert.equal(writes[0][0],'/speakers');assert.equal(writes[0][1].speech_reference_id,'1');assert.equal(writes[0][1].tema_id,'1');
+  }finally{await view.close();}
+ }}finally{window.matchMedia=previous;}
+});
+
+test('speech catalog opens a separate reference form and preserves errors and read-only access',async()=>{
+ const {Simulate}=require('react-dom/test-utils');let writes=[];
+ const api={get:async url=>({data:[]}),post:async(url,body)=>{writes.push([url,body]);throw {response:{data:{message:'Enlace no válido'}}};}};
+ const view=await mountPage('pages/Discursantes.tsx',api);
+ try{await view.wait();await view.act(async()=>Simulate.click(view.node.querySelector('[aria-label="Buscar discurso"]')));await view.wait();
+  await view.act(async()=>Simulate.click([...document.querySelectorAll('button')].find(b=>b.textContent==='Referencia')));
+  const form=document.querySelector('.speech-reference-form');assert.ok(form);assert.equal(form.querySelectorAll('input').length,5);
+  const values=['Título','Autor','Abril de 2024','https://example.test','Fe, Servicio'];
+  for(const [index,input] of [...form.querySelectorAll('input')].entries())await view.act(async()=>Simulate.change(input,{target:{value:values[index]}}));
+  await view.act(async()=>Simulate.submit(form));assert.deepEqual(writes[0][1].topics,['Fe','Servicio']);assert.equal(form.querySelector('input').value,'Título');assert.match(document.querySelector('[role="alert"]').textContent,/Enlace no válido/);
+ }finally{await view.close();}
+ const readOnly=await mountPage('pages/Discursantes.tsx',api,{id:2,role:'teacher',permissions:['discursantes']});
+ try{await readOnly.wait();await readOnly.act(async()=>Simulate.click(readOnly.node.querySelector('[aria-label="Buscar discurso"]')));await readOnly.wait();assert.ok(document.querySelector('[role="dialog"]'));assert.equal(document.querySelector('.speech-reference-form'),null);assert.ok(![...document.querySelectorAll('button')].some(b=>b.textContent==='Referencia'));}finally{await readOnly.close();}
+});
+
+
+test('online speech search paginates and imports the selected reference on web and mobile',async()=>{
+ const {Simulate}=require('react-dom/test-utils'),previous=window.matchMedia;
+ const reference={id:91,title:'Felicidad y paz',author:'Autor de prueba',conference:'Octubre de 2023',url:'https://www.churchofjesuschrist.org/study/general-conference/2023/10/31sabin?lang=spa',topics:['felicidad']};
+ try{for(const mobile of [false,true]){
+  window.matchMedia=()=>({matches:mobile,addEventListener(){},removeEventListener(){}});const calls=[],writes=[];
+  const api={get:async(url,config)=>{calls.push([url,config]);return {data:url==='/speakers/search-online'?{items:[{...reference,snippet:'Texto <img src=x onerror=alert(1)>'}],page:config.params.page,hasNext:config.params.page===1}:[]};},post:async(url,body)=>{writes.push([url,body]);if(mobile)throw {response:{status:409,data:{reference}}};return {data:reference};}};
+  const view=await mountPage('pages/Discursantes.tsx',api);
+  try{await view.wait();await view.act(async()=>Simulate.click(view.node.querySelector('.speakers-header [aria-label="Buscar discurso"]')));await view.wait();
+   let dialog=document.querySelector('[role="dialog"]');await view.act(async()=>Simulate.click([...dialog.querySelectorAll('button')].find(b=>b.textContent==='En línea')));
+   await view.act(async()=>Simulate.change(dialog.querySelector('input[type="search"]'),{target:{value:'felicidad'}}));
+   await view.act(async()=>Simulate.submit(dialog.querySelector('form')));
+   assert.match(dialog.textContent,/Felicidad y paz/);assert.equal(dialog.querySelector('img'),null);assert.match(dialog.querySelector('a').href,/query=felicidad/);
+   await view.act(async()=>Simulate.click([...dialog.querySelectorAll('button')].find(b=>b.textContent==='Siguiente')));
+   assert.equal(calls.filter(([url])=>url==='/speakers/search-online')[1][1].params.page,2);assert.match(dialog.textContent,/Página 2/);
+   await view.act(async()=>Simulate.click([...dialog.querySelectorAll('button')].find(b=>b.textContent==='Seleccionar')));
+   assert.equal(writes[0][0],'/speakers/catalog');assert.equal(writes[0][1].url,reference.url);
+   assert.equal(view.node.querySelector('form input[type="text"]').value,reference.title);assert.match(view.node.querySelector('.speech-reference-preview').textContent,/Autor de prueba/);
+  }finally{await view.close();}
+ }}finally{window.matchMedia=previous;}
+});
+
+test('online speech errors keep an official-site fallback and preserve catalog browsing',async()=>{
+ const {Simulate}=require('react-dom/test-utils');
+ const api={get:async(url)=>{if(url==='/speakers/search-online')throw {response:{data:{message:'Buscador temporalmente no disponible'}}};return {data:[]};}};
+ const view=await mountPage('pages/Discursantes.tsx',api,{id:2,role:'teacher',permissions:['discursantes']});
+ try{await view.wait();await view.act(async()=>Simulate.click(view.node.querySelector('[aria-label="Buscar discurso"]')));await view.wait();
+  const dialog=document.querySelector('[role="dialog"]');await view.act(async()=>Simulate.click([...dialog.querySelectorAll('button')].find(b=>b.textContent==='En línea')));
+  await view.act(async()=>Simulate.change(dialog.querySelector('input[type="search"]'),{target:{value:'fe y esperanza'}}));await view.act(async()=>Simulate.submit(dialog.querySelector('form')));
+  assert.match(dialog.querySelector('[role="alert"]').textContent,/temporalmente/);const official=dialog.querySelector('a');assert.equal(new URL(official.href).searchParams.get('query'),'fe y esperanza');assert.equal(new URL(official.href).searchParams.get('facet'),'general-conference');
+  await view.act(async()=>Simulate.click([...dialog.querySelectorAll('button')].find(b=>b.textContent==='Catálogo')));assert.ok(!dialog.textContent.includes('temporalmente'));assert.ok(![...dialog.querySelectorAll('button')].some(b=>b.textContent==='Referencia'));
+ }finally{await view.close();}
+});
+
+
+test('speaker warnings detect repeated references and the inclusive 30-day calendar window',()=>{
+ const dates=load('utils/utilidadesFecha.ts');const {speakerSelectionWarnings}=load('utils/speakerWarnings.ts',{}, {'./utilidadesFecha':dates});
+ const records=[{id:1,member_id:42,date:'2026-10-26',completed:'No',speech_title:'Discurso uno',speech_reference_id:71,speech_url:'https://www.churchofjesuschrist.org/study/general-conference/2023/10/31sabin?lang=spa'}, {id:2,member_id:43,date:'2026-10-25',speech_title:'¡Fé y esperanza!',completed:'Si'}, {id:3,member_id:44,date:'2026-11-26',speech_title:'Futuro',completed:'No'}];
+ let result=speakerSelectionWarnings(records,{member_id:'42',speech_title:'Discurso uno',speech_reference_id:'71'},null,'2026-11-25');assert.equal(result.previousSpeech.id,1);assert.equal(result.recentMember.id,1);assert.equal(result.daysAgo,30);
+ assert.equal(speakerSelectionWarnings(records,{member_id:'43',speech_title:'fe y ESPERANZA'},null,'2026-11-25').previousSpeech.id,2);
+ assert.equal(speakerSelectionWarnings(records,{member_id:'43',speech_title:''},null,'2026-11-25').recentMember,null);
+ assert.equal(speakerSelectionWarnings(records,{member_id:'44',speech_title:''},null,'2026-11-25').recentMember,null);
+ result=speakerSelectionWarnings(records,{member_id:'42',speech_title:'Discurso uno',speech_reference_id:'71'},1,'2026-11-25');assert.equal(result.previousSpeech,null);assert.equal(result.recentMember,null);
+ assert.equal(speakerSelectionWarnings(records,{member_id:'',speech_title:'Discurso uno',speech_reference_id:'72'},null,'2026-11-25').previousSpeech,null);
+ assert.equal(speakerSelectionWarnings(records,{member_id:'',speech_title:'Otro título',speech_url:'https://churchofjesuschrist.org/study/general-conference/2023/10/31sabin?lang=eng#p1'},null,'2026-11-25').previousSpeech.id,1);
+ assert.equal(speakerSelectionWarnings([{...records[0],date:'2026-11-25'}],{member_id:'42',speech_title:''},null,'2026-11-25').daysAgo,0);
+});
+
+test('speaker form shows persistent duplicate and recent-member alerts inside the modal on web and mobile',async()=>{
+ const {Simulate}=require('react-dom/test-utils'),previous=window.matchMedia;const {businessDate}=load('utils/utilidadesFecha.ts');
+ const reference={id:71,title:'Discurso elegido',author:'Autor',conference:'Abril de 2023',url:'https://www.churchofjesuschrist.org/study/general-conference/2023/04/47nelson?lang=spa',topics:['Fe']};
+ const record={id:8,member_id:42,member_name:'Ana',tema_id:1,topic:'Fe',date:businessDate(),completed:'No',speech_title:reference.title,speech_reference_id:71,speech_url:reference.url,time:10};
+ try{for(const mobile of [false,true]){
+  window.matchMedia=()=>({matches:mobile,addEventListener(){},removeEventListener(){}});
+  const api={get:async url=>({data:url==='/speakers'?[record]:url==='/speakers/catalog'?[reference]:url==='/speakers/members'?[{id:42,name:'Ana'},{id:43,name:'Luis'}]:url==='/temas'?[{id:1,title:'Fe'}]:[]})};
+  const view=await mountPage('pages/Discursantes.tsx',api);
+  try{await view.wait();await view.act(async()=>Simulate.click(view.node.querySelector('.speakers-header [aria-label="Buscar discurso"]')));await view.wait();
+   const search=document.querySelector('[role="dialog"]');await view.act(async()=>Simulate.click([...search.querySelectorAll('button')].find(b=>b.textContent==='Seleccionar')));
+   const form=view.node.querySelector('form');assert.ok(form.querySelector('.speech-reuse-warning[role="alert"]'));assert.match(form.querySelector('.speech-reuse-warning').textContent,/Ana/);
+   await view.act(async()=>Simulate.change(form.querySelector('select'),{target:{value:'42'}}));assert.match(form.querySelector('.speaker-recent-warning').textContent,/30 días/);assert.match(form.querySelector('.speaker-recent-warning').textContent,/pendiente/);
+   await view.act(async()=>Simulate.change(form.querySelector('select'),{target:{value:'43'}}));assert.equal(form.querySelector('.speaker-recent-warning'),null);
+   await view.act(async()=>Simulate.change(form.querySelector('input[type="text"]'),{target:{value:'Otro discurso'}}));assert.equal(form.querySelector('.speech-reuse-warning'),null);
+   await view.act(async()=>Simulate.click(view.node.querySelector('[aria-label="Cerrar formulario"]')));
+   if(mobile){await view.act(async()=>Simulate.click(view.node.querySelector('[aria-label="Acciones del registro"]')));await view.act(async()=>Simulate.click(document.querySelector('.record-actions-menu [aria-label="Editar"]')));}
+   else await view.act(async()=>Simulate.click(view.node.querySelector('[aria-label="Editar"]')));
+   assert.equal(view.node.querySelector('.speech-reuse-warning'),null);assert.equal(view.node.querySelector('.speaker-recent-warning'),null);
+  }finally{await view.close();}
+ }}finally{window.matchMedia=previous;}
+});
+
+
+test('speaker selectors include every registered member and save the user identity',async()=>{
+ const {Simulate}=require('react-dom/test-utils');const people=Array.from({length:65},(_,i)=>({id:100+i,name:'Miembro '+String(i+1).padStart(2,'0')}));const calls=[],writes=[];
+ const api={get:async url=>{calls.push(url);return {data:url==='/speakers/members'?people:url==='/temas'?[{id:1,title:'Fe'}]:[]};},post:async(url,body)=>{writes.push([url,body]);return {data:{id:1,...body}};}};
+ const view=await mountPage('pages/Discursantes.tsx',api);
+ try{await view.wait();assert.ok(calls.includes('/speakers/members'));assert.ok(!calls.includes('/students'));
+  const filter=view.node.querySelector('select');assert.equal(filter.options.length,66);assert.ok(filter.textContent.includes('Miembro 65'));
+  await view.act(async()=>Simulate.click(view.node.querySelector('[aria-label="Agregar discursante"]')));
+  const form=view.node.querySelector('form'),select=form.querySelector('select');assert.equal(select.options.length,66);
+  await view.act(async()=>Simulate.change(select,{target:{value:'164'}}));
+  await view.act(async()=>Simulate.change(form.querySelectorAll('select')[1],{target:{value:'1'}}));
+  await view.act(async()=>Simulate.change(form.querySelector('input[type="text"]'),{target:{value:'Discurso'}}));
+  await view.act(async()=>Simulate.submit(form));assert.equal(writes[0][1].member_id,'164');assert.match(view.node.querySelector('tbody').textContent,/Miembro 65/);
+ }finally{await view.close();}
 });

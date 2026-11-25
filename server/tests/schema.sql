@@ -15,4 +15,5 @@ CREATE TABLE meetings(id serial PRIMARY KEY,title text,meeting_date date,start_t
 CREATE TABLE meeting_attendees(meeting_id integer REFERENCES meetings(id) ON DELETE CASCADE,user_id integer REFERENCES users(id),status text,PRIMARY KEY(meeting_id,user_id));
 CREATE TABLE activity_plans(id serial PRIMARY KEY,activity_name text,activity_datetime timestamp,assigned_to integer REFERENCES users(id),purpose text,description text,attendance integer,budget numeric,assignments text,spiritual boolean,social boolean,physical boolean,intellectual boolean,updated_at timestamptz DEFAULT now());
 
-CREATE TABLE speakers(id serial PRIMARY KEY,member_id integer REFERENCES users(id));
+CREATE TABLE temas(id serial PRIMARY KEY,title text NOT NULL);
+CREATE TABLE speakers(id serial PRIMARY KEY,member_id integer REFERENCES users(id),tema_id integer REFERENCES temas(id),speech_title text,duration_minutes integer,speech_date date,is_completed boolean DEFAULT false);

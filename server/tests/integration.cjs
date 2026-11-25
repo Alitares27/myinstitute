@@ -29,6 +29,7 @@ before(async () => {
     await db.exec(notificationsMigration);await db.exec(notificationsMigration);
     const financialRoleMigration=fs.readFileSync(path.join(__dirname,"../migrations/financial_role.sql"),"utf8");
     await db.exec(financialRoleMigration);await db.exec(financialRoleMigration);
+    const speechMigration=fs.readFileSync(path.join(__dirname,"../migrations/speech_references.sql"),"utf8");await db.exec(speechMigration);await db.exec(speechMigration);
     for (const [id, user] of Object.entries(fixtures)) await db.query("INSERT INTO users(id,name,email,password,role) VALUES($1,$2,$3,$4,$5)", [Number(id), `Member ${id}`, `user${id}@test.invalid`, hash, user.role]);
     await db.exec("UPDATE users SET permissions=ARRAY['asistencia','calificaciones','inscripciones','miembros','panel','maestros'] WHERE role='teacher'");
     await db.exec(`INSERT INTO teachers(id,user_id,specialty) VALUES(5,2,'A'),(6,3,'B');
@@ -48,6 +49,44 @@ before(async () => {
     const { startServer } = require("../dist/index"); server = await startServer(); if (!server.listening) await new Promise(resolve => server.once("listening", resolve)); base = `http://127.0.0.1:${server.address().port}`;
 });
 after(async () => { if (server) await new Promise(resolve => server.close(resolve)); if (db) await db.close(); await pool.end(); });
+test('speech catalog validates official references, restricts writes and persists speaker assignments',async()=>{
+    assert.equal((await request('/api/speakers/members',{id:null})).status,401);
+    assert.equal((await request('/api/speakers/members',{id:42})).status,403);
+    const directory=await request('/api/speakers/members');assert.equal(directory.status,200);
+    assert.equal(directory.data.length,(await db.query('SELECT COUNT(*)::int AS total FROM users')).rows[0].total);
+    assert.ok(directory.data.some(member=>member.id===1));assert.ok(directory.data.some(member=>member.id===2));
+    assert.ok(directory.data.some(member=>member.id===42));assert.ok(!directory.data.some(member=>member.id===7));
+    assert.ok(directory.data.every(member=>Object.keys(member).sort().join(',')==='id,name'));
+    assert.equal((await request('/api/speakers/catalog',{id:null})).status,401);
+    assert.equal((await request('/api/speakers/catalog',{id:2})).status,403);
+    const catalog=await request('/api/speakers/catalog');assert.equal(catalog.status,200);assert.equal(catalog.data.length,3);
+    const reference=catalog.data[0];
+    const draft={title:'Referencia de prueba',author:'Autor',conference:'Abril de 2024',url:'https://www.churchofjesuschrist.org/study/general-conference/2024/04/99test?lang=eng&id=p1',topics:['Fe','Servicio']};
+    for(const url of ['https://evil.test/study/general-conference/2024/04/99test','javascript:alert(1)','https://www.churchofjesuschrist.org.evil.test/study/general-conference/2024/04/99test','https://www.churchofjesuschrist.org/study/general-conference/topics/faith','https://user@www.churchofjesuschrist.org/study/general-conference/2024/04/99test'])assert.equal((await request('/api/speakers/catalog',{method:'POST',body:{...draft,url}})).status,400);
+    assert.equal((await request('/api/speakers/catalog',{id:42,method:'POST',body:draft})).status,403);
+    await db.exec("UPDATE users SET permissions=array_append(permissions,'discursantes') WHERE id=2");
+    const teacherAuth=token(2,{tokenVersion:(await db.query('SELECT token_version FROM users WHERE id=2')).rows[0].token_version});
+    assert.equal((await request('/api/speakers/catalog',{id:2,auth:teacherAuth})).status,200);
+    assert.equal((await request('/api/speakers/catalog',{id:2,auth:teacherAuth,method:'POST',body:draft})).status,403);
+    const created=await request('/api/speakers/catalog',{method:'POST',body:draft});assert.equal(created.status,201);assert.match(created.data.url,/\?lang=spa$/);
+    assert.equal((await request('/api/speakers/catalog',{method:'POST',body:draft})).status,409);
+    let speakerId;
+    const tema=(await db.query("INSERT INTO temas(title) VALUES('Fe') RETURNING id")).rows[0].id;
+    try{
+      const body={member_id:42,tema_id:tema,speech_title:'Texto ignorado',time:10,date:'2026-11-25',speech_reference_id:reference.id};
+      assert.equal((await request('/api/speakers',{method:'POST',body:{...body,speech_reference_id:999999}})).status,400);
+      const assigned=await request('/api/speakers',{method:'POST',body});assert.equal(assigned.status,201);speakerId=assigned.data.id;assert.equal(assigned.data.speech_title,reference.title);
+      const list=(await request('/api/speakers')).data.find(row=>row.id===speakerId);assert.equal(list.speech_url,reference.url);assert.equal(list.speech_author,reference.author);assert.equal(list.speech_conference,reference.conference);
+      assert.equal((await request(`/api/speakers/${speakerId}`,{method:'PUT',body:{...body,completed:'No',speech_reference_id:created.data.id}})).status,200);
+      assert.equal((await request('/api/speakers')).data.find(row=>row.id===speakerId).speech_url,created.data.url);
+      assert.equal((await request(`/api/speakers/${speakerId}`,{method:'PUT',body:{...body,speech_reference_id:'',speech_title:'Discurso libre',completed:'No'}})).data.speech_reference_id,null);
+    }finally{
+      if(speakerId)await db.query('DELETE FROM speakers WHERE id=$1',[speakerId]);
+      await db.query('DELETE FROM temas WHERE id=$1',[tema]);await db.query('DELETE FROM speech_references WHERE id=$1',[created.data.id]);
+      await db.exec("UPDATE users SET permissions=array_remove(permissions,'discursantes') WHERE id=2;UPDATE users SET token_version=2 WHERE id=2");
+    }
+});
+
 test('dashboard cards scope courses to each account and return only the nearest permitted trip',async()=>{
     assert.equal((await request('/api/dashboard-cards',{id:null})).status,401);
     const teacher=await request('/api/dashboard-cards',{id:2});assert.equal(teacher.status,200);

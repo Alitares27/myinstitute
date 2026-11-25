@@ -13,6 +13,7 @@ const {pool}=require("../dist/models/db");
   console.log("Security, history and agendas migrations applied.");
   await client.query(readFileSync(require("node:path").join(__dirname,"../migrations/notifications.sql"),"utf8"));
   await client.query(readFileSync(require("node:path").join(__dirname,"../migrations/financial_role.sql"),"utf8"));
+  await client.query(readFileSync(require("node:path").join(__dirname,"../migrations/speech_references.sql"),"utf8"));
  } catch(error) {await client.query("ROLLBACK").catch(()=>{});throw error;}
  finally {client.release();await pool.end();}
 })().catch(error=>{console.error(error.message);process.exitCode=1;});

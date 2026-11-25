@@ -8,6 +8,33 @@ const { sessionFingerprint } = require("../dist/middleware/auth");
 const { cents, isoDate, positiveId, reservationBalance } = require("../dist/utils/validation");
 const { prepareRoleChange } = require("../dist/utils/roles");
 const { attendanceReminder } = require("../dist/utils/notificationSchedule");
+const {parseSpeechSearch,searchOnlineSpeeches}=require('../dist/utils/onlineSpeechSearch');
+const officialResult=(url='https://www.churchofjesuschrist.org/study/general-conference/2023/10/31sabin?lang=spa')=>({document:{derivedStructData:{fields:{link:{stringValue:url},title:{stringValue:'Felicidad &amp; paz'},snippets:{listValue:{values:[{structValue:{fields:{snippet:{stringValue:'<b>Felicidad</b>&nbsp;con fe &#225;'}}}}]}}}},structData:{fields:{author_name:{listValue:{values:[{stringValue:'Gary B. Sabin'}]}}}}}});
+test('online speech adapter filters unsafe and non-talk URLs, decodes text and handles pagination',()=>{
+ const data=parseSpeechSearch({results:[officialResult(),officialResult(),officialResult('javascript:alert(1)'),officialResult('https://evil.test/study/general-conference/2023/10/talk'),officialResult('https://www.churchofjesuschrist.org/study/general-conference/topics/faith')],nextPageToken:'next'},1);
+ assert.equal(data.items.length,1);assert.equal(data.items[0].title,'Felicidad & paz');assert.equal(data.items[0].author,'Gary B. Sabin');assert.equal(data.items[0].conference,'Octubre de 2023');assert.equal(data.items[0].snippet,'Felicidad con fe á');assert.equal(data.hasNext,true);
+ assert.throws(()=>parseSpeechSearch({items:[]},1));assert.equal(parseSpeechSearch({results:[]},1).hasNext,false);
+});
+test('online search enforces permissions and input limits, caches requests and handles upstream failures',async()=>{
+ const originalFetch=global.fetch;let upstreamCalls=0;
+ global.fetch=async(url,options)=>{
+  if(String(url).startsWith('https://www.churchofjesuschrist.org/')){
+   upstreamCalls++;const parsed=new URL(url);assert.equal(parsed.hostname,'www.churchofjesuschrist.org');assert.match(parsed.searchParams.get('filter'),/lang=spa/);
+   if(parsed.searchParams.get('query')==='failure-test')throw Error('Unavailable');
+   return new Response(JSON.stringify({results:[officialResult()],nextPageToken:'next'}),{headers:{'Content-Type':'application/json'}});
+  }return originalFetch(url,options);
+ };
+ try{
+  assert.equal((await request('/api/speakers/search-online?q=felicidad-test',null)).status,401);
+  assert.equal((await request('/api/speakers/search-online?q=felicidad-test',2)).status,403);
+  assert.equal((await request('/api/speakers/search-online?q=x')).status,400);
+  assert.equal((await request('/api/speakers/search-online?q=felicidad-test&page=101')).status,400);
+  const result=await request('/api/speakers/search-online?q=felicidad-test');assert.equal(result.status,200);assert.equal((await result.json()).items[0].author,'Gary B. Sabin');
+  assert.equal((await request('/api/speakers/search-online?q=felicidad-test')).status,200);assert.equal(upstreamCalls,1);
+  assert.equal((await request('/api/speakers/search-online?q=failure-test')).status,502);
+  await assert.rejects(searchOnlineSpeeches('x',1));
+ }finally{global.fetch=originalFetch;}
+});
 test("weekly attendance reminder respects local Saturday 19:00, expires after a day and crosses the year",()=>{
  const zone='America/Argentina/Buenos_Aires';
  assert.equal(attendanceReminder(new Date('2026-11-21T21:59:00Z'),zone,6,'19:00'),null);

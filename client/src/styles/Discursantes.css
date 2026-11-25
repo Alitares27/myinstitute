@@ -7,7 +7,9 @@
   gap: .75rem;
 }
 
-.speakers-header > .mobile-add { flex-shrink: 0; margin: 0; }
+.speakers-header h1 { flex:1; min-width:0; }
+.speakers-header-actions { display:flex; align-items:center; gap:.5rem; flex-shrink:0; }
+.speakers-header-actions > .mobile-add { flex-shrink: 0; margin: 0; }
 
 .speakers-row-actions {
   display: flex;
@@ -16,6 +18,9 @@
 }
 
 .speakers-details { display: grid; gap: .9rem; }
+.speaker-selection-warnings { min-width:0; display:grid; gap:.5rem; }
+.speaker-selection-warning { margin:0; padding:.875rem; display:flex; align-items:flex-start; gap:.625rem; border:1px solid var(--border-color); border-inline-start:4px solid var(--primary); border-radius:12px; background:var(--primary-light); color:var(--text-main); overflow-wrap:anywhere; }
+.speaker-selection-warning svg { flex-shrink:0; margin-top:.2rem; }
 .speakers-details dt { color: var(--text-secondary); font-weight: 600; }
 .speakers-details dd { margin: .2rem 0 0; overflow-wrap: anywhere; }
 .speakers-details-date dd {
@@ -39,3 +44,5 @@
   .speakers-page .link-button { text-align: start; margin: 0; }
   .speakers-page .speakers-row-actions { flex-wrap: nowrap; }
 }
+.native-android .speakers-search-button { width:44px; height:44px; padding:0; border-radius:50%; }
+.native-android .speakers-search-button > span { display:none; }

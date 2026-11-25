@@ -1,8 +1,11 @@
+import {speakerSelectionWarnings} from "../utils/speakerWarnings";
+import SpeechSearch, {officialReferenceLink} from "../components/SpeechSearch";
+import type {SpeechReference} from "../interfaces/SpeechReference";
 import RecordActions from "../components/RecordActions";
 import { TABLE_PAGE_SIZE } from "../shared/constants";
 import Pagination from "../components/Pagination";
 import { ViewRecordButton } from "../components/RecordDetails";
-import { IoAddOutline } from "react-icons/io5";
+import { IoSearchOutline, IoAddOutline } from "react-icons/io5";
 import FormModal from "../components/FormModal";
 import "../styles/Discursantes.css";
 import { confirmAppAction } from "../components/AppDialogHost";
@@ -28,6 +31,9 @@ export default function Speakers() {
   const location = useLocation();
   const navigate = useNavigate();
   const [formOpen, setFormOpen] = useState(false);
+  const [searchOpen,setSearchOpen]=useState(false);
+  const [searchFromForm,setSearchFromForm]=useState(false);
+  const [reference,setReference]=useState<SpeechReference|null>(null);
   const [selectedSpeaker, setSelectedSpeaker] = useState<SpeakerRecord | null>(null);
   const [speakers, setSpeakers] = useState<SpeakerRecord[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
@@ -45,9 +51,7 @@ export default function Speakers() {
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: "asc" | "desc" } | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const [speechWarning, setSpeechWarning] = useState<string | null>(null);
   const [topicWarning, setTopicWarning] = useState<string | null>(null);
-  const speechTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const topicTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [showTemasModal, setShowTemasModal] = useState(false);
@@ -75,6 +79,7 @@ export default function Speakers() {
     member_id: "",
     tema_id: "",
     speech_title: "",
+    speech_reference_id: "",
     time: "10",
     date: businessDate(),
     completed: "No",
@@ -83,11 +88,12 @@ export default function Speakers() {
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) return;
+    const session=JSON.parse(localStorage.getItem("user") || "{}");
 
     Promise.all([
-      Promise.resolve({ data: JSON.parse(localStorage.getItem("user") || "{}") }),
+      Promise.resolve({ data: session }),
       api.get("/speakers"),
-      api.get("/students"),
+      session.role==='admin'?api.get<Member[]>("/speakers/members"):Promise.resolve({data:[]}),
       api.get("/temas"),
     ])
       .then(([userRes, spkRes, memRes, temasRes]) => {
@@ -100,9 +106,10 @@ export default function Speakers() {
       .finally(() => setLoading(false));
   }, []);
 
-  const membersWithSpeeches = useMemo(() => {
-    const speakerIds = new Set(speakers.map(s => s.member_id));
-    return members.filter(m => speakerIds.has(m.id));
+  const memberOptions = useMemo(() => {
+    const options=new Map(members.map(member=>[String(member.id),member]));
+    for(const speaker of speakers)if(!options.has(String(speaker.member_id)))options.set(String(speaker.member_id),{id:Number(speaker.member_id),name:speaker.member_name||'Miembro'});
+    return [...options.values()].sort((a,b)=>a.name.localeCompare(b.name,'es')||a.id-b.id);
   }, [members, speakers]);
 
   const filteredSpeakers = useMemo(() => {
@@ -148,6 +155,7 @@ export default function Speakers() {
         const res = await api.put(`/speakers/${editingId}`, form);
         setSpeakers(prev => prev.map(s => s.id === editingId ? {
           ...res.data,
+          speech_author:reference?.author,speech_conference:reference?.conference,speech_url:reference?.url,
           topic: allTemas.find(t => t.id === Number(form.tema_id))?.title,
           member_name: members.find(m => m.id === Number(form.member_id))?.name,
           completed: form.completed
@@ -157,13 +165,14 @@ export default function Speakers() {
         const res = await api.post(`/speakers`, { ...form, completed: "No" });
         setSpeakers(prev => [{
           ...res.data,
+          speech_author:reference?.author,speech_conference:reference?.conference,speech_url:reference?.url,
           topic: allTemas.find(t => t.id === Number(form.tema_id))?.title,
           member_name: members.find(m => m.id === Number(form.member_id))?.name,
           completed: "No"
         }, ...prev]);
       }
-      setFormOpen(false);
-      setForm({ member_id: "", tema_id: "", speech_title: "", time: "10", date: businessDate(), completed: "No" });
+      setFormOpen(false);setReference(null);
+      setForm({ member_id: "", tema_id: "", speech_title: "", speech_reference_id: "", time: "10", date: businessDate(), completed: "No" });
     } catch {
       alert("Error al procesar la solicitud.");
     }
@@ -172,10 +181,12 @@ export default function Speakers() {
   const handleEdit = (s: SpeakerRecord) => {
       setFormOpen(true);
     setEditingId(s.id);
+    setReference(s.speech_reference_id?{id:s.speech_reference_id,title:s.speech_title,author:s.speech_author||"",conference:s.speech_conference||"",url:s.speech_url||"",topics:[]}:null);
     setForm({
       member_id: String(s.member_id),
       tema_id: String(s.tema_id),
       speech_title: s.speech_title || "",
+      speech_reference_id: s.speech_reference_id?String(s.speech_reference_id):"",
       time: String(s.time || 10),
       date: toYMD(s.date),
       completed: s.completed || "No",
@@ -229,33 +240,7 @@ export default function Speakers() {
     }
   };
 
-  useEffect(() => {
-    if (speechTimerRef.current) clearTimeout(speechTimerRef.current);
-    if (!form.member_id) { setSpeechWarning(null); return; }
-    const memberIdNum = Number(form.member_id);
-    const today = new Date();
-    const sixtyDaysAgo = new Date();
-    sixtyDaysAgo.setDate(today.getDate() - 60);
-
-    const recentSpeeches = speakers.filter(s => {
-      if (s.member_id !== memberIdNum || s.completed !== "Si") return false;
-      const speechDate = parseLocalDate(s.date);
-      if (!speechDate) return false;
-      return speechDate >= sixtyDaysAgo && speechDate <= today;
-    });
-
-    if (recentSpeeches.length > 0) {
-      recentSpeeches.sort((a, b) => b.date.localeCompare(a.date));
-      const mostRecent = recentSpeeches[0];
-      const daysAgo = Math.floor((today.setHours(0, 0, 0, 0) - (parseLocalDate(mostRecent.date)?.getTime() ?? today.getTime())) / (1000 * 3600 * 24));
-      const msg = `Alerta: Este miembro discursó hace ${daysAgo} días (${formatDate(mostRecent.date, { weekday: 'short', day: 'numeric', month: 'short' })}).`;
-      setSpeechWarning(msg);
-      speechTimerRef.current = setTimeout(() => setSpeechWarning(null), 5000);
-    } else {
-      setSpeechWarning(null);
-    }
-    return () => { if (speechTimerRef.current) clearTimeout(speechTimerRef.current); };
-  }, [form.member_id, speakers]);
+  const {previousSpeech,recentMember,daysAgo}=speakerSelectionWarnings(speakers,{...form,speech_url:reference?.url},editingId,businessDate());
 
   useEffect(() => {
     if (topicTimerRef.current) clearTimeout(topicTimerRef.current);
@@ -322,9 +307,11 @@ export default function Speakers() {
     <div className="dashboard-container speakers-page">
       <header className="speakers-header">
         <h1><span className="page-title-icon"><FiMic /></span> Control de Discursantes</h1>
+        <div className="speakers-header-actions">
+        <button type="button" className="btn secondary mobile-header-action speakers-search-button" aria-label="Buscar discurso" title="Buscar discurso" onClick={()=>{setSearchFromForm(false);setSearchOpen(true);}}><IoSearchOutline aria-hidden="true"/><span>Buscar discursos</span></button>
         {role === "admin" && (
           <button type="button" className="btn primary mobile-add" aria-label="Agregar discursante"
-            onClick={() => setFormOpen(true)}>
+            onClick={() => {setReference(null);setFormOpen(true);}}>
             <IoAddOutline className="mobile-only-action-icon" aria-hidden="true" /> <span>Agregar</span>
           </button>
         )}
@@ -332,13 +319,11 @@ export default function Speakers() {
           aria-label="Temas" onClick={() => setShowTemasModal(true)}>
           <TbList aria-hidden="true" />
         </button>}
+        </div>
       </header>
 
-      {(speechWarning || topicWarning) && (
+      {topicWarning && (
         <div className="warning-toast-container">
-          {speechWarning && (
-            <div className="warning-toast"><TbAlertTriangle /> {speechWarning}</div>
-          )}
           {topicWarning && (
             <div className="warning-toast"><TbAlertTriangle /> {topicWarning}</div>
           )}
@@ -347,8 +332,13 @@ export default function Speakers() {
 
       {role === "admin" && (
         <>
-          {formOpen && <FormModal title={editingId ? "Editar discursante" : "Agregar discursante"} onClose={() => { setEditingId(null); setForm({ member_id: "", tema_id: "", speech_title: "", time: "10", date: businessDate(), completed: "No" }); setFormOpen(false); }}>
+          {formOpen && <FormModal title={editingId ? "Editar discursante" : "Agregar discursante"} onClose={() => { setEditingId(null); setForm({ member_id: "", tema_id: "", speech_title: "", speech_reference_id: "", time: "10", date: businessDate(), completed: "No" }); setFormOpen(false);setReference(null); }}>
             <form className="grid-form" onSubmit={handleSubmit}>
+              {(previousSpeech||recentMember)&&<div className="full-width speaker-selection-warnings">
+                {previousSpeech&&<p className="speaker-selection-warning speech-reuse-warning" role="alert"><TbAlertTriangle aria-hidden="true"/><span>Este discurso ya fue elegido para {memberName(previousSpeech)} el {formatDate(previousSpeech.date)}. Puedes continuar si deseas volver a asignarlo.</span></p>}
+                {recentMember&&<p className="speaker-selection-warning speaker-recent-warning" role="alert"><TbAlertTriangle aria-hidden="true"/><span>Este discursante ya tiene una asignación en los últimos 30 días: {formatDate(recentMember.date)} ({daysAgo===0?'hoy':`hace ${daysAgo} días`}), {recentMember.completed==='Si'?'cumplida':'pendiente'}. Puedes continuar si deseas asignarlo nuevamente.</span></p>}
+              </div>}
+
               <div className="form-group">
 
                 <select required value={form.member_id} onChange={e => setForm({ ...form, member_id: e.target.value })}>
@@ -367,9 +357,12 @@ export default function Speakers() {
 
               <div className="form-group">
 
-                <input type="text" placeholder="Ej. El valor de la perseverancia" value={form.speech_title} onChange={e => setForm({ ...form, speech_title: e.target.value })} required />
+                <input type="text" placeholder="Ej. El valor de la perseverancia" value={form.speech_title} onChange={e => {setReference(null);setForm({ ...form, speech_title: e.target.value,speech_reference_id:"" });}} required />
               </div>
 
+              <div className="form-group full-width"><button type="button" className="btn secondary" onClick={()=>{setSearchFromForm(true);setSearchOpen(true);}}><IoSearchOutline aria-hidden="true"/>Buscar discurso</button>
+                {reference&&<div className="speech-reference-preview"><strong>{reference.title}</strong><p>{reference.author} · {reference.conference}</p>{officialReferenceLink(reference.url)&&<a href={officialReferenceLink(reference.url)!} target="_blank" rel="noopener noreferrer">Leer discurso</a>}<button type="button" className="btn secondary" onClick={()=>{setReference(null);setForm({...form,speech_reference_id:""});}}>Quitar referencia</button></div>}
+              </div>
               <div className="form-group">
 
                 <input type="number" placeholder="Ingresa tiempo" value={form.time} onChange={e => setForm({ ...form, time: e.target.value })} />
@@ -403,8 +396,8 @@ export default function Speakers() {
 
       <div className="grid-form extracted-style-2">
         <select value={memberFilter} onChange={e => { setMemberFilter(e.target.value); setCurrentPage(1); }}>
-          <option value="">Todos los miembros ({membersWithSpeeches.length})</option>
-          {membersWithSpeeches.map(m => <option key={m.id} value={String(m.id)}>{m.name}</option>)}
+          <option value="">Todos los miembros ({memberOptions.length})</option>
+          {memberOptions.map(m => <option key={m.id} value={String(m.id)}>{m.name}</option>)}
         </select>
         <input type="date" value={dateFilter} onChange={e => { setDateFilter(e.target.value); setCurrentPage(1); }} />
         {role === "admin" && (
@@ -486,6 +479,11 @@ export default function Speakers() {
       </div>
 
       <Pagination currentPage={currentPage} totalPages={totalPages} onChange={setCurrentPage} />
+      {searchOpen&&<SpeechSearch temas={allTemas} initialTopic={searchFromForm?allTemas.find(t=>String(t.id)===form.tema_id)?.title||'':''} canManage={role==='admin'} onClose={()=>setSearchOpen(false)} onSelect={(chosen,topicId)=>{
+        if(!searchFromForm){setEditingId(null);setForm({member_id:'',tema_id:topicId,speech_title:chosen.title,speech_reference_id:String(chosen.id),time:'10',date:businessDate(),completed:'No'});}
+        else setForm(prev=>({...prev,tema_id:topicId||prev.tema_id,speech_title:chosen.title,speech_reference_id:String(chosen.id)}));
+        setReference(chosen);setSearchOpen(false);setFormOpen(true);
+      }}/>}
       {selectedSpeaker && <FormModal title="Detalles del discursante" onClose={() => setSelectedSpeaker(null)}>
         <dl className="speakers-details">
           <div className="speakers-details-date">
@@ -498,6 +496,9 @@ export default function Speakers() {
           <div><dt>Miembro</dt><dd>{memberName(selectedSpeaker)}</dd></div>
           <div><dt>Tema</dt><dd>{selectedSpeaker.topic || "Sin tema"}</dd></div>
           <div><dt>Discurso</dt><dd>{selectedSpeaker.speech_title || "Sin título"}</dd></div>
+          {selectedSpeaker.speech_author&&<div><dt>Autor</dt><dd>{selectedSpeaker.speech_author}</dd></div>}
+          {selectedSpeaker.speech_conference&&<div><dt>Conferencia</dt><dd>{selectedSpeaker.speech_conference}</dd></div>}
+          {selectedSpeaker.speech_url&&officialReferenceLink(selectedSpeaker.speech_url)&&<div><dt>Fuente oficial</dt><dd><a href={officialReferenceLink(selectedSpeaker.speech_url)!} target="_blank" rel="noopener noreferrer">Leer discurso</a></dd></div>}
           <div><dt>Tiempo</dt><dd>{selectedSpeaker.time ?? 0} min</dd></div>
         </dl>
       </FormModal>}
