@@ -878,3 +878,27 @@ test('speaker selectors include every registered member and save the user identi
   await view.act(async()=>Simulate.submit(form));assert.equal(writes[0][1].member_id,'164');assert.match(view.node.querySelector('tbody').textContent,/Miembro 65/);
  }finally{await view.close();}
 });
+
+
+test('Android autofill commits only on Android without transferring credentials and tolerates older builds',async()=>{
+ let platform='web',commits=0,fail=false;
+ const {completeLoginAutofill}=load('native/androidAutofill.ts',{}, {'@capacitor/core':{Capacitor:{getPlatform:()=>platform},registerPlugin:name=>{assert.equal(name,'AndroidAutofill');return {commitLogin:async(...args)=>{assert.equal(args.length,0);commits++;if(fail)throw Error('Not implemented');}};}}});
+ await completeLoginAutofill();assert.equal(commits,0);platform='android';await completeLoginAutofill();assert.equal(commits,1);fail=true;await completeLoginAutofill();assert.equal(commits,2);
+});
+
+test('login accepts browser-filled credentials without change events and preserves fields while submitting',async()=>{
+ const {Simulate}=require('react-dom/test-utils'),previousFormData=global.FormData;global.FormData=window.FormData;
+ let resolveLogin;const posts=[];
+ const api={get:async()=>({data:[]}),post:async(url,body)=>{posts.push([url,body]);return await new Promise(resolve=>{resolveLogin=resolve;});}};
+ const view=await mountPage('pages/IniciarSesion.tsx',api,{id:1,role:'admin'},true);
+ try{
+  const form=view.node.querySelector('#login-form'),email=form.querySelector('[name="email"]'),password=form.querySelector('[name="password"]');
+  assert.equal(form.getAttribute('autocomplete'),'on');assert.equal(email.getAttribute('autocomplete'),'username');assert.equal(password.getAttribute('autocomplete'),'current-password');assert.equal(email.getAttribute('autocapitalize'),'none');
+  // Password managers can populate values without a React change event.
+  email.value='guardado@example.test';password.value='clave-guardada';
+  await view.act(async()=>Simulate.submit(form));assert.deepEqual(posts,[['/users/login',{email:'guardado@example.test',password:'clave-guardada'}]]);
+  assert.equal(email.disabled,false);assert.equal(password.disabled,false);assert.equal(email.readOnly,true);assert.equal(password.readOnly,true);
+  await view.act(async()=>resolveLogin({data:{token:'fresh-login',user:{id:42,name:'Usuario',role:'student'}}}));
+  assert.equal(localStorage.getItem('token'),'fresh-login');assert.equal(email.readOnly,false);
+ }finally{await view.close();global.FormData=previousFormData;}
+});

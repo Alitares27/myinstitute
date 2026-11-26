@@ -7,6 +7,7 @@ import com.getcapacitor.BridgeActivity;
 import com.gestionar.institute.nativeplugins.AndroidSystemColorsPlugin;
 import com.gestionar.institute.nativeplugins.AndroidReportsPlugin;
 import com.gestionar.institute.nativeplugins.NativeOfflineSyncPlugin;
+import com.gestionar.institute.nativeplugins.AndroidAutofillPlugin;
 
 public class MainActivity extends BridgeActivity {
     @Override
@@ -14,6 +15,7 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(AndroidSystemColorsPlugin.class);
         registerPlugin(AndroidReportsPlugin.class);
         registerPlugin(NativeOfflineSyncPlugin.class);
+        registerPlugin(AndroidAutofillPlugin.class);
         super.onCreate(savedInstanceState);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && getBridge() != null) {
             getBridge().getWebView().setImportantForAutofill(View.IMPORTANT_FOR_AUTOFILL_YES);

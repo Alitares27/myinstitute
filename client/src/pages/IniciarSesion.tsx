@@ -7,6 +7,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import Layout from "../components/Disposicion";
 import { TbLogin, TbAlertTriangle, TbEye, TbEyeOff } from "react-icons/tb";
 import { synchronizePendingChanges } from "../services/offlineSync";
+import { completeLoginAutofill } from "../native/androidAutofill";
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
@@ -29,6 +30,8 @@ export default function Login() {
       if (!res.data?.token) {
         throw new Error("No se recibió el token de autenticación.");
       }
+
+      await completeLoginAutofill();
 
       invalidarCache();
       await limpiarSesion();
@@ -65,7 +68,7 @@ export default function Login() {
 
           {expiredSession && <p role="status">Vuelve a iniciar sesión para continuar y sincronizar tus cambios pendientes.</p>}
 
-          <form onSubmit={handleSubmit} className="auth-form" autoComplete="on">
+          <form id="login-form" name="login" onSubmit={handleSubmit} className="auth-form" autoComplete="on">
             <div className="form-group">
               <label htmlFor="email">Correo Electrónico</label>
               <input
@@ -75,7 +78,12 @@ export default function Login() {
                 placeholder="ejemplo@correo.com"
                 required
                 autoComplete="username"
-                disabled={loading}
+                inputMode="email"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
+                enterKeyHint="next"
+                readOnly={loading}
               />
             </div>
 
@@ -91,7 +99,9 @@ export default function Login() {
                   autoComplete="current-password"
                   autoCapitalize="none"
                   spellCheck={false}
-                  disabled={loading}
+                  autoCorrect="off"
+                  enterKeyHint="go"
+                  readOnly={loading}
                 />
                 <button
                   type="button"
